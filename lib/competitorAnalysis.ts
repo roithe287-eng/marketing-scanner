@@ -1,5 +1,10 @@
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export type Competitor = {
   rank: number;
@@ -10,7 +15,9 @@ export type Competitor = {
   metaTitle?: string;
   metaDescription?: string;
   h1?: string;
+  h2?: string[];
   ctaTexts?: string[];
+  bodySnippet?: string;
   fetchError?: string;
 };
 
@@ -33,7 +40,7 @@ const BROWSER_HEADERS = {
   "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
 };
 
-async function searchNaverWeb(query: string, display = 10) {
+async function searchNaverWeb(query: string, display = 15) {
   const clientId = process.env.NAVER_CLIENT_ID;
   const clientSecret = process.env.NAVER_CLIENT_SECRET;
 
@@ -50,7 +57,7 @@ async function searchNaverWeb(query: string, display = 10) {
       "X-Naver-Client-Id": clientId,
       "X-Naver-Client-Secret": clientSecret,
     },
-    signal: AbortSignal.timeout(5000),
+    signal: AbortSignal.timeout(8000),
   });
 
   if (!res.ok) {
@@ -125,14 +132,19 @@ function pickCompetitors(
   return result;
 }
 
-// 타임아웃 단축 (8s → 4s), 인코딩 처리는 유지
+/**
+ * 경쟁사 사이트 깊이 있는 메타 + 콘텐츠 수집
+ * - 타임아웃 8초
+ * - 인코딩 자동 감지
+ * - H1, H2, CTA 버튼, 본문 일부까지 수집
+ */
 async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
   try {
     const res = await fetch(competitor.link, {
       headers: BROWSER_HEADERS,
       cache: "no-store",
       redirect: "follow",
-      signal: AbortSignal.timeout(4000),
+      signal: AbortSignal.timeout(8000),
     });
 
     if (!res.ok) {
@@ -143,13 +155,14 @@ async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
     const buffer = await res.arrayBuffer();
     const bytes = new Uint8Array(buffer);
 
+    // 인코딩 감지
     let charset = "utf-8";
     const ct = res.headers.get("content-type") || "";
     const ctMatch = ct.match(/charset=([^;]+)/i);
     if (ctMatch) {
       charset = ctMatch[1].trim().toLowerCase().replace(/['"]/g, "");
     } else {
-      const head = new TextDecoder("latin1").decode(bytes.slice(0, 2048));
+      const head = new TextDecoder("latin1").decode(bytes.slice(0, 4096));
       const m =
         head.match(/<meta[^>]+charset\s*=\s*["']?([\w-]+)["']?/i) ||
         head.match(
@@ -173,22 +186,37 @@ async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
     }
 
     const $ = cheerio.load(html);
-    $("script, style, noscript").remove();
+    $("script, style, noscript, iframe").remove();
 
-    competitor.metaTitle = $("title").first().text().trim().slice(0, 150);
+    competitor.metaTitle = $("title").first().text().trim().slice(0, 200);
     competitor.metaDescription =
-      $('meta[name="description"]').attr("content")?.trim().slice(0, 250) ||
+      $('meta[name="description"]').attr("content")?.trim().slice(0, 300) ||
       $('meta[property="og:description"]')
         .attr("content")
         ?.trim()
-        .slice(0, 250) ||
+        .slice(0, 300) ||
       "";
+
     competitor.h1 = $("h1")
       .first()
       .text()
       .replace(/\s+/g, " ")
       .trim()
-      .slice(0, 150);
+      .slice(0, 200);
+
+    // H2 일부 수집 (경쟁사가 강조하는 메시지 파악)
+    competitor.h2 = $("h2")
+      .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
+      .get()
+      .filter(Boolean)
+      .slice(0, 8);
+
+    // 본문 일부 (경쟁사의 핵심 메시지 추출용)
+    competitor.bodySnippet = $("body")
+      .text()
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 1500);
 
     const ctaKeywords = [
       "문의",
@@ -201,31 +229,97 @@ async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
       "가입",
       "체험",
       "견적",
+      "시작",
+      "지금",
     ];
-    const buttons = $("button, a, [role='button']")
-      .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
+    const buttons = $("button, a, [role='button'], input[type='submit']")
+      .map((_, el) => {
+        const $el = $(el);
+        return (
+          $el.text().replace(/\s+/g, " ").trim() ||
+          $el.attr("value")?.trim() ||
+          ""
+        );
+      })
       .get()
       .filter((t) => t.length > 0 && t.length < 30)
       .filter((t) => ctaKeywords.some((k) => t.includes(k)));
-    competitor.ctaTexts = Array.from(new Set(buttons)).slice(0, 5);
+    competitor.ctaTexts = Array.from(new Set(buttons)).slice(0, 8);
   } catch (err: any) {
     competitor.fetchError = err?.message || "fetch failed";
   }
 }
 
 /**
- * 폴백 키워드 추출 (AI 호출 없이 빠르게)
- * - meta keywords 우선
- * - title/og:title 폴백
- * - 회사명 패턴 자동 제거
+ * AI를 활용한 업종 키워드 추출 (정확도 우선)
  */
-function extractKeyword(siteData: {
+async function extractKeywordWithAI(siteData: {
+  title?: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  description?: string;
+  keywords?: string;
+  h1?: string[];
+  h2?: string[];
+}): Promise<string | null> {
+  try {
+    const prompt = `다음 한국 웹사이트 정보를 보고, "네이버 검색"에 사용할 가장 효과적인 업종/제품 키워드를 1개만 추출하라.
+
+규칙:
+- 회사명, 브랜드명, 사이트명은 제외하라.
+- 그 사이트가 판매하는 "제품 카테고리" 또는 "업종" 키워드만 추출하라.
+- 한국어 2~15자 이내.
+- 검색했을 때 동종업종 경쟁사들이 잘 나올 만한 일반명사 위주.
+- 너무 broad한 단어(쇼핑, 인터넷, 비즈니스 등)는 피하라.
+
+예시:
+- title="우리웨어 공식 사이트", keywords="야구잠바,코치자켓,단체복,과잠바..." → 출력: "단체복 과잠바"
+- title="봄카드", keywords="청첩장,모바일청첩장..." → 출력: "모바일 청첩장"
+- title="진짜마케팅", h1="네이버광고 메타광고" → 출력: "메타광고 대행사"
+
+웹사이트 정보:
+- title: ${siteData.title || ""}
+- og:title: ${siteData.ogTitle || ""}
+- og:description: ${siteData.ogDescription || ""}
+- meta description: ${siteData.description || ""}
+- meta keywords: ${(siteData.keywords || "").slice(0, 500)}
+- H1: ${JSON.stringify(siteData.h1?.slice(0, 3) || [])}
+- H2 일부: ${JSON.stringify(siteData.h2?.slice(0, 8) || [])}
+
+JSON 형식으로만 응답하라:
+{"keyword": "추출한 키워드"}`;
+
+    const response = await openai.chat.completions.create({
+      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      response_format: { type: "json_object" },
+      temperature: 0.2,
+      max_tokens: 100,
+    });
+
+    const text = response.choices[0]?.message?.content;
+    if (!text) return null;
+
+    const parsed = JSON.parse(text);
+    const keyword = (parsed.keyword || "").trim();
+    if (!keyword || keyword.length < 2 || keyword.length > 30) return null;
+
+    return keyword;
+  } catch (err: any) {
+    console.warn("AI 키워드 추출 실패:", err?.message);
+    return null;
+  }
+}
+
+/**
+ * 폴백: AI 실패 시 단순 규칙 기반 키워드 추출
+ */
+function extractKeywordFallback(siteData: {
   title?: string;
   ogTitle?: string;
   keywords?: string;
   h1?: string[];
 }): string {
-  // 1순위: meta keywords의 첫 1~2개 단어
   if (siteData.keywords) {
     const firstKeyword = siteData.keywords.split(",")[0]?.trim();
     if (firstKeyword && firstKeyword.length >= 2 && firstKeyword.length <= 30) {
@@ -233,17 +327,17 @@ function extractKeyword(siteData: {
     }
   }
 
-  // 2순위: h1, og:title, title 중 의미 있는 것
   const candidates = [siteData.h1?.[0], siteData.ogTitle, siteData.title]
     .filter((s): s is string => !!s && s.length > 0);
 
   if (candidates.length === 0) return "";
 
   let keyword = candidates[0];
-  // "회사명 | 부제" → "부제" 우선 시도, 없으면 회사명
-  const parts = keyword.split(/[|\-–—·:]/).map((s) => s.trim()).filter(Boolean);
+  const parts = keyword
+    .split(/[|\-–—·:]/)
+    .map((s) => s.trim())
+    .filter(Boolean);
   if (parts.length > 1) {
-    // "공식 사이트", "official" 같은 일반 단어 제외하고 가장 의미있는 거 선택
     const filtered = parts.filter(
       (p) => !/공식|사이트|홈페이지|official|site|home/i.test(p)
     );
@@ -269,41 +363,79 @@ export async function analyzeCompetitors(siteData: {
   keywords: string;
 }): Promise<CompetitorAnalysisResult | null> {
   try {
-    // 키워드 추출 (AI 호출 없이 폴백만 - 빠름)
-    const keyword = extractKeyword({
+    // 1. AI 키워드 추출 우선
+    let keyword = await extractKeywordWithAI({
       title: siteData.title,
       ogTitle: siteData.ogTitle,
+      ogDescription: siteData.ogDescription,
+      description: siteData.description,
       keywords: siteData.keywords,
       h1: siteData.h1,
+      h2: siteData.h2,
     });
+
+    let keywordSource: "ai" | "fallback" = "ai";
+
+    if (!keyword) {
+      keyword = extractKeywordFallback({
+        title: siteData.title,
+        ogTitle: siteData.ogTitle,
+        keywords: siteData.keywords,
+        h1: siteData.h1,
+      });
+      keywordSource = "fallback";
+    }
 
     if (!keyword || keyword.length < 2) {
       console.warn("[경쟁사] 키워드 추출 실패");
       return null;
     }
 
-    console.log(`[경쟁사] 키워드: "${keyword}"`);
+    console.log(`[경쟁사] 키워드: "${keyword}" (${keywordSource})`);
 
     let ourDomain = "";
     try {
       ourDomain = new URL(siteData.url).hostname.replace(/^www\./, "");
     } catch {}
 
-    // 네이버 검색
-    const items = await searchNaverWeb(keyword, 10);
-    const competitors = pickCompetitors(items, ourDomain, 3);
+    // 2. 네이버 검색 (5개로 확장)
+    let items = await searchNaverWeb(keyword, 15);
+    let competitors = pickCompetitors(items, ourDomain, 5);
+
+    // 3. 결과 부족시 폴백 키워드로 재시도
+    if (competitors.length === 0 && keywordSource === "ai") {
+      const fallbackKeyword = extractKeywordFallback({
+        title: siteData.title,
+        ogTitle: siteData.ogTitle,
+        keywords: siteData.keywords,
+        h1: siteData.h1,
+      });
+      if (fallbackKeyword && fallbackKeyword !== keyword) {
+        console.log(
+          `[경쟁사] 0개, 폴백 재시도: "${fallbackKeyword}"`
+        );
+        try {
+          items = await searchNaverWeb(fallbackKeyword, 15);
+          competitors = pickCompetitors(items, ourDomain, 5);
+          if (competitors.length > 0) {
+            keyword = fallbackKeyword;
+            keywordSource = "fallback";
+          }
+        } catch {}
+      }
+    }
 
     if (competitors.length === 0) {
-      console.warn("[경쟁사] 결과 없음");
+      console.warn("[경쟁사] 최종 결과 0개");
       return null;
     }
 
-    // 메타 정보 병렬 수집 (4초 타임아웃, 실패해도 계속)
+    // 4. 각 경쟁사 메타 + 콘텐츠 병렬 수집 (8초 타임아웃)
     await Promise.all(competitors.map((c) => fetchCompetitorMeta(c)));
 
     return {
       searchKeyword: keyword,
-      keywordSource: "fallback",
+      keywordSource,
       competitors,
       ourSite: {
         domain: ourDomain,
