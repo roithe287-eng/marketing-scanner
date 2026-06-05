@@ -8,6 +8,7 @@ import DiagnosisCard from "@/components/DiagnosisCard";
 import PriorityMatrix from "@/components/PriorityMatrix";
 import FinalCTA from "@/components/FinalCTA";
 import DownloadReportButton from "@/components/DownloadReportButton";
+import CompetitorComparison from "@/components/CompetitorComparison";
 import { MarketingReport } from "@/lib/reportSchema";
 
 export default function HomePage() {
@@ -286,6 +287,15 @@ export default function HomePage() {
                 </div>
               </div>
             </div>
+
+            {/* 경쟁사 비교 (네이버 API 키 있고 데이터 수집 성공한 경우만 표시) */}
+            {report.competitorAnalysis &&
+              report.competitorAnalysis.competitors.length > 0 && (
+                <CompetitorComparison
+                  competitorAnalysis={report.competitorAnalysis}
+                  ourUrl={report.url}
+                />
+              )}
 
             {/* Final CTA */}
             <FinalCTA report={report} />
