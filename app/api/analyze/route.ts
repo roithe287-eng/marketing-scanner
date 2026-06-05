@@ -46,22 +46,26 @@ export async function POST(req: NextRequest) {
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        {
-          message:
-            "서버에 OPENAI_API_KEY가 설정되지 않았습니다. Vercel 환경변수를 확인하세요.",
-        },
+        { message: "OPENAI_API_KEY가 설정되지 않았습니다." },
         { status: 500 }
       );
     }
 
-    // 1. 사이트 추출
-    const websiteData = await extractWebsite(url);
+    const t0 = Date.now();
 
-    // 2. 경쟁사 분석 (네이버 API 키가 있을 때만, 실패해도 본 분석은 진행)
-    let competitorAnalysisResult = null;
-    if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
-      try {
-        competitorAnalysisResult = await analyzeCompetitors({
+    // 1. 사이트 추출 (필수, 먼저 실행)
+    const websiteData = await extractWebsite(url);
+    console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
+
+    // 2. 경쟁사 분석과 메인 AI 분석을 "병렬"로 실행 (시간 절약)
+    const t1 = Date.now();
+    const hasNaverApi = !!(
+      process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET
+    );
+
+    // 경쟁사 분석 Promise (네이버 키 있을 때만)
+    const competitorPromise = hasNaverApi
+      ? analyzeCompetitors({
           url,
           title: websiteData.title,
           ogTitle: websiteData.ogTitle,
@@ -70,17 +74,24 @@ export async function POST(req: NextRequest) {
           h1: websiteData.h1,
           h2: websiteData.h2,
           keywords: websiteData.keywords,
-        });
-      } catch (e: any) {
-        console.warn("경쟁사 분석 실패 (계속 진행):", e?.message);
-      }
-    }
+        }).catch((e) => {
+          console.warn("[경쟁사] 실패 (계속 진행):", e?.message);
+          return null;
+        })
+      : Promise.resolve(null);
 
-    // 3. AI 종합 분석 (경쟁사 데이터 포함)
+    // 경쟁사 먼저 대기 (메인 AI 호출 시 데이터 필요)
+    const competitorAnalysisResult = await competitorPromise;
+    console.log(`[타이밍] 경쟁사 분석: ${Date.now() - t1}ms`);
+
+    // 3. AI 메인 분석 (경쟁사 데이터 포함)
+    const t2 = Date.now();
     const report = await analyzeMarketing(
       websiteData,
       competitorAnalysisResult
     );
+    console.log(`[타이밍] AI 분석: ${Date.now() - t2}ms`);
+    console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
     report.url = url;
 
@@ -91,7 +102,7 @@ export async function POST(req: NextRequest) {
       {
         message:
           error?.message ||
-          "분석 중 문제가 발생했습니다. URL을 확인하거나 잠시 후 다시 시도해주세요.",
+          "분석 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.",
       },
       { status: 500 }
     );
