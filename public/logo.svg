@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+  <g transform="translate(4, 8)">
+    <rect x="0" y="0" width="44" height="44" rx="4" fill="#111111"/>
+    <path d="M 8 34 L 18 16 L 26 26 L 34 12 L 38 34 Z" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="32" cy="10" r="1.6" fill="#e31b23"/>
+  </g>
+  <text x="58" y="38" font-family="Pretendard, -apple-system, system-ui, sans-serif" font-size="20" font-weight="900" fill="#111111" letter-spacing="-0.5">진짜마케팅</text>
+</svg>
