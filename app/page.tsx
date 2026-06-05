@@ -29,6 +29,18 @@ export default function HomePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url }),
       });
+      
+      // JSON 이 아닌 응답 처리 (Vercel timeout 등)
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        if (res.status === 504 || res.status === 408) {
+          setError("분석 시간이 초과되었습니다 (Vercel 무료 플랜 10초 제한). 잠시 후 다시 시도하거나 Vercel Pro 플랜 업그레이드를 고려해주세요.");
+        } else {
+          setError(`서버 응답 오류 (HTTP ${res.status}). 잠시 후 다시 시도해주세요.`);
+        }
+        return;
+      }
+      
       const data = await res.json();
       if (!res.ok) {
         setError(data.message || "분석에 실패했습니다.");
