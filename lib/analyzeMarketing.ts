@@ -13,33 +13,31 @@ const SYSTEM_PROMPT = `너는 15년 차 퍼포먼스 마케터이자 랜딩페�
 "진짜마케팅"의 시니어 컨설턴트 역할로, 클라이언트의 웹사이트를 마케팅/전환 관점에서 진단한다.
 
 핵심 원칙:
-- 단순 디자인 평가가 아니라, "광고 유입 후 전환 가능성" 중심으로 판단한다.
-- 일반론("개선이 필요합니다")이 아니라, 실제 사이트의 데이터를 근거로 인용한다.
-- 개선안은 실제 실행 가능한 수준으로 작성한다.
-- 예시 카피는 "한국어"로, 진짜마케팅의 직설적이고 명확한 톤으로 작성한다.
-- 모든 점수는 0~100점이며, 그 사이트의 실제 상태를 반영해야 한다 (전부 70점대로 채우지 말 것).
-- 최종 CTA는 "광고비를 늘리기 전에 랜딩/전환 흐름부터 점검하자"는 진짜마케팅의 메시지로 작성한다.
+- 단순 디자인 평가가 아니라 "광고 유입 후 전환 가능성" 중심으로 판단한다.
+- 일반론이 아니라, 사이트의 실제 데이터(title, h1, 버튼, 이미지 alt 등)를 직접 인용한다.
+- 개선안은 "이렇게 바꾸면 됩니다" 식으로 구체적 예시를 제공한다.
+- 예시 카피는 한국어로, 진짜마케팅의 직설적이고 명확한 톤으로 작성한다.
+- 점수는 0~100점이며, 차등 평가한다 (전부 70점대로 채우지 말 것).
 
 매우 중요:
-- 사이트의 제품/서비스가 무엇인지를 추측할 때, title, og:title, og:description, keywords, h1, h2, 이미지 alt 텍스트를 종합해서 판단하라.
-- 절대로 키워드 한두 개로 추측하지 말 것.
-- 경쟁사 데이터가 제공되면, 우리 사이트와의 "메시지 차이"를 구체적으로 비교하라.
+- 사이트의 제품/서비스 파악은 title + og + h1 + h2 + 이미지 alt + 본문을 종합 판단.
+- 절대 단편 키워드로 추측하지 말 것.
+- 경쟁사 데이터가 있으면 메시지 차이를 구체적으로 비교하라.
 
 반드시 JSON 형식으로만 응답한다.`;
 
 function buildCompetitorPromptSection(
   competitorAnalysis: CompetitorAnalysisResult | null
 ): string {
-  if (!competitorAnalysis || competitorAnalysis.competitors.length === 0) {
+  if (!competitorAnalysis || competitorAnalysis.competitors.length === 0)
     return "";
-  }
 
   const compSection = competitorAnalysis.competitors
     .map(
       (c) => `
 [경쟁사 ${c.rank}: ${c.domain}]
 - 검색결과 제목: ${c.title}
-- 검색결과 설명: ${c.description}
+- 검색결과 설명(파워링크/메타): ${c.description}
 - 실제 사이트 title: ${c.metaTitle || "(수집실패)"}
 - 실제 사이트 meta description: ${c.metaDescription || "(수집실패)"}
 - 실제 사이트 H1: ${c.h1 || "(없음)"}
@@ -49,17 +47,10 @@ function buildCompetitorPromptSection(
     .join("\n");
 
   return `
-
 [경쟁사 분석 데이터]
 검색 키워드: "${competitorAnalysis.searchKeyword}"
 네이버 검색 상위 경쟁사 ${competitorAnalysis.competitors.length}곳:
 ${compSection}
-
-[우리 사이트]
-- 도메인: ${competitorAnalysis.ourSite.domain}
-- title: ${competitorAnalysis.ourSite.title}
-- meta description: ${competitorAnalysis.ourSite.metaDescription}
-- H1: ${competitorAnalysis.ourSite.h1}
 `;
 }
 
@@ -67,17 +58,16 @@ const USER_PROMPT_TEMPLATE = (
   data: ExtractedWebsiteData,
   competitorAnalysis: CompetitorAnalysisResult | null
 ) => `
-아래 웹사이트를 8개 항목으로 진단하라.
+아래 웹사이트를 진단하라.
 
 [웹사이트 기본 정보]
 - URL: ${data.url}
-- 감지된 인코딩: ${data.detectedEncoding}
-- title 태그: ${data.title || "(없음)"}
+- title: ${data.title || "(없음)"}
 - meta description: ${data.description || "(없음)"}
 - meta keywords: ${data.keywords || "(없음)"}
 - og:title: ${data.ogTitle || "(없음)"}
 - og:description: ${data.ogDescription || "(없음)"}
-- viewport: ${data.viewportMeta || "(없음 - 모바일 최적화 안 됨)"}
+- viewport meta: ${data.viewportMeta || "(없음)"}
 - favicon: ${data.hasFavicon ? "있음" : "없음"}
 
 [제목 구조]
@@ -86,40 +76,38 @@ const USER_PROMPT_TEMPLATE = (
 - H3 일부: ${JSON.stringify(data.h3.slice(0, 8))}
 
 [버튼/CTA]
-- 전체 버튼/링크 텍스트: ${JSON.stringify(data.buttons.slice(0, 40))}
+- 전체 버튼 텍스트: ${JSON.stringify(data.buttons.slice(0, 40))}
 - CTA로 보이는 버튼: ${JSON.stringify(data.ctaButtons)}
 - 폼 존재: ${data.hasForm ? "있음" : "없음"}
-- 연락처 정보(전화/이메일): ${data.hasContactInfo ? "있음" : "없음"}
+- 연락처 정보: ${data.hasContactInfo ? "있음" : "없음"}
 
-[이미지 alt 텍스트]
-${JSON.stringify(data.imageAlts.slice(0, 20))}
+[이미지]
+- 이미지 수: ${data.imageCount}개
+- alt 없는 이미지: ${data.imageWithoutAlt}개
+- 이미지 alt 텍스트 일부: ${JSON.stringify(data.imageAlts.slice(0, 15))}
 
 [신뢰 요소 키워드 감지]
 - 후기/리뷰: ${data.hasReviewKeyword ? "있음" : "없음"}
 - 가격/문의: ${data.hasPriceKeyword ? "있음" : "없음"}
 - 인증/수상/파트너: ${data.hasTrustKeyword ? "있음" : "없음"}
 
-[페이지 구조]
-- 이미지 수: ${data.imageCount}개 (alt 없는 이미지: ${data.imageWithoutAlt}개)
-- 내부 링크: ${data.internalLinkCount}개 / 외부 링크: ${data.externalLinkCount}개
-- script 태그 수: ${data.scriptCount}개
-- JS-heavy 사이트 추정: ${data.isJsHeavy ? "예 (콘텐츠 추출 제한적)" : "아니오"}
-
-[본문 텍스트 (앞부분 6000자)]
-${data.bodyText.slice(0, 6000)}
+[본문 텍스트 (앞부분 5000자)]
+${data.bodyText.slice(0, 5000)}
 
 ${buildCompetitorPromptSection(competitorAnalysis)}
 
 ---
 
-위 데이터를 바탕으로 아래 JSON 형식으로만 응답하라.
+위 데이터를 바탕으로 다음 JSON 형식으로만 응답하라.
 
-⚠️ 중요한 진단 원칙:
-1. 제품/서비스 식별: title + og:* + h1 + h2 + 이미지 alt + 본문을 종합 판단.
-2. 본문 텍스트가 200자 미만이거나 isJsHeavy가 true면, "JavaScript 렌더링으로 콘텐츠 추출 제한적"이라고 명시.
-3. 점수는 0~100점, 차등 평가하라.
-4. criticalIssues는 3~5개, quickWins는 3~6개.
-5. 경쟁사 데이터가 있으면 competitorAnalysis 필드를 반드시 채워라. 각 경쟁사의 keyMessage(강조 메시지)와 differentiation(우리와의 차이)를 구체적으로 작성하라.
+⚠️ 작성 원칙:
+1. 모든 진단은 위 데이터에 실제로 있는 값을 인용해야 한다. 추측 금지.
+2. 점수는 차등 평가 (전부 70점대 X).
+3. checklist 12개 항목 모두 작성. currentValue는 위 데이터에서 실제 값을 그대로 넣어라.
+4. criticalIssues 3~5개. 각 이슈에 badExample(현재 사이트 실제 잘못된 예)과 goodExample(개선된 예시)을 반드시 포함.
+5. quickWinsDetailed는 4~6개. 각 항목은 단계(steps) 2~4개로 분해.
+6. priorityRoadmap은 짧고 간결하게 (Critical과 중복되지 않게 - 시점 기준 분류만).
+7. exampleCopy에는 currentHeroHeadline(현재 h1 또는 title)을 반드시 넣고, 경쟁사 데이터가 있다면 competitorCopyInsight도 작성.
 
 {
   "url": "${data.url}",
@@ -130,17 +118,152 @@ ${buildCompetitorPromptSection(competitorAnalysis)}
     "trust": <0-100>, "conversionFlow": <0-100>, "adLanding": <0-100>,
     "mobileUx": <0-100>, "seo": <0-100>
   },
-  "criticalIssues": [
-    { "title": "", "problem": "", "reason": "", "recommendation": "", "priority": "high|medium|low" }
+  "checklist": [
+    {
+      "id": "title",
+      "category": "seo",
+      "label": "title 태그",
+      "status": "pass|warning|fail",
+      "currentValue": "<사이트의 실제 title 값 또는 '(없음)'>",
+      "diagnosis": "<현재 상태를 한 문장으로 평가>",
+      "guide": "<어떻게 개선하면 되는지 한 문장>"
+    },
+    {
+      "id": "meta_description",
+      "category": "seo",
+      "label": "Meta Description",
+      "status": "pass|warning|fail",
+      "currentValue": "...",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "og_tags",
+      "category": "seo",
+      "label": "Open Graph 태그 (og:title, og:description)",
+      "status": "pass|warning|fail",
+      "currentValue": "...",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "h1",
+      "category": "content",
+      "label": "H1 헤드라인 (메인 메시지)",
+      "status": "pass|warning|fail",
+      "currentValue": "...",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "image_alt",
+      "category": "content",
+      "label": "이미지 ALT 텍스트",
+      "status": "pass|warning|fail",
+      "currentValue": "<이미지 N개 중 alt 없는 이미지 M개>",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "viewport",
+      "category": "seo",
+      "label": "모바일 viewport",
+      "status": "pass|warning|fail",
+      "currentValue": "...",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "cta_clarity",
+      "category": "conversion",
+      "label": "CTA 명확도",
+      "status": "pass|warning|fail",
+      "currentValue": "<감지된 CTA 버튼 텍스트 나열>",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "cta_repeat",
+      "category": "conversion",
+      "label": "CTA 반복 노출",
+      "status": "pass|warning|fail",
+      "currentValue": "<CTA 버튼 개수>",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "contact_info",
+      "category": "conversion",
+      "label": "연락처 정보 (전화/이메일)",
+      "status": "pass|warning|fail",
+      "currentValue": "...",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "trust_review",
+      "category": "trust",
+      "label": "후기/리뷰 노출",
+      "status": "pass|warning|fail",
+      "currentValue": "<감지여부>",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "trust_certification",
+      "category": "trust",
+      "label": "인증/수상/파트너 노출",
+      "status": "pass|warning|fail",
+      "currentValue": "...",
+      "diagnosis": "...",
+      "guide": "..."
+    },
+    {
+      "id": "price_info",
+      "category": "conversion",
+      "label": "가격/견적 정보",
+      "status": "pass|warning|fail",
+      "currentValue": "...",
+      "diagnosis": "...",
+      "guide": "..."
+    }
   ],
-  "quickWins": [""],
+  "criticalIssues": [
+    {
+      "title": "<문제 한 줄>",
+      "problem": "<무엇이 문제인지>",
+      "reason": "<왜 문제인지 - 사이트 실제 데이터 인용>",
+      "recommendation": "<어떻게 고치는지>",
+      "priority": "high|medium|low",
+      "badExample": "<현재 사이트의 실제 잘못된 예 - 큰따옴표로 인용. 예: '문의하기'>",
+      "goodExample": "<개선된 예시 - 큰따옴표로. 예: '30초 무료 진단받기 →'>",
+      "exampleNote": "<왜 이렇게 바꾸는 게 좋은지 한 줄 설명>"
+    }
+  ],
+  "quickWinsDetailed": [
+    {
+      "title": "<오늘 바로 적용 가능한 개선 한 줄>",
+      "steps": [
+        "Step 1: <첫 단계>",
+        "Step 2: <두 번째 단계>",
+        "Step 3: <세 번째 단계>"
+      ],
+      "beforeExample": "<수정 전 예시>",
+      "afterExample": "<수정 후 예시>"
+    }
+  ],
   "priorityRoadmap": {
-    "immediately": [""], "thisWeek": [""], "thisMonth": [""]
+    "immediately": ["<짧고 명확한 액션 1>", "<액션 2>"],
+    "thisWeek": ["<액션 1>", "<액션 2>"],
+    "thisMonth": ["<액션 1>", "<액션 2>"]
   },
   "exampleCopy": {
-    "heroHeadline": "<강력한 메인 헤드라인>",
+    "currentHeroHeadline": "<사이트의 실제 h1 또는 title 값>",
+    "currentCtaText": "<감지된 CTA 버튼 중 대표 1개 - 없으면 '(CTA 없음)'>",
+    "heroHeadline": "<개선된 메인 헤드라인 예시>",
     "subHeadline": "<서브 카피>",
-    "ctaText": "<행동 유도형 CTA, 6~12자>"
+    "ctaText": "<개선된 CTA 6~12자>",
+    "competitorCopyInsight": "<경쟁사들이 강조하는 메시지 vs 우리의 차이 한 줄. 경쟁사 데이터 없으면 빈 문자열>"
   },
   "finalCta": {
     "title": "<진짜마케팅 상담 유도 헤드라인>",
@@ -151,27 +274,28 @@ ${buildCompetitorPromptSection(competitorAnalysis)}
       ? `,
   "competitorAnalysis": {
     "searchKeyword": "${competitorAnalysis.searchKeyword}",
+    "keywordSource": "${competitorAnalysis.keywordSource || "ai"}",
     "competitors": [
       ${competitorAnalysis.competitors
         .map(
           (c) => `{
         "rank": ${c.rank},
-        "title": "${c.title.replace(/"/g, '\\"')}",
-        "link": "${c.link}",
-        "description": "${c.description.replace(/"/g, '\\"')}",
-        "domain": "${c.domain}",
-        "metaTitle": "${(c.metaTitle || "").replace(/"/g, '\\"')}",
-        "metaDescription": "${(c.metaDescription || "").replace(/"/g, '\\"')}",
-        "h1": "${(c.h1 || "").replace(/"/g, '\\"')}",
+        "title": ${JSON.stringify(c.title)},
+        "link": ${JSON.stringify(c.link)},
+        "description": ${JSON.stringify(c.description)},
+        "domain": ${JSON.stringify(c.domain)},
+        "metaTitle": ${JSON.stringify(c.metaTitle || "")},
+        "metaDescription": ${JSON.stringify(c.metaDescription || "")},
+        "h1": ${JSON.stringify(c.h1 || "")},
         "ctaTexts": ${JSON.stringify(c.ctaTexts || [])},
-        "keyMessage": "<이 경쟁사가 가장 강조하는 마케팅 메시지 한 줄>",
-        "differentiation": "<우리 사이트와 비교했을 때 어떻게 다른지 구체적으로>"
+        "keyMessage": "<이 경쟁사가 강조하는 메시지 한 줄>",
+        "differentiation": "<우리 사이트와 어떻게 다른지 한 줄>"
       }`
         )
         .join(",\n      ")}
     ],
-    "overallComparison": "<경쟁사들이 공통적으로 강조하는 포인트와 우리가 놓치고 있는 부분을 2-3문장으로>",
-    "ourPositioning": "<이 경쟁 환경에서 우리가 취해야 할 차별화 포지셔닝 제안 2-3문장>"
+    "overallComparison": "<경쟁사 공통 강조점과 우리가 놓치는 부분 2-3문장>",
+    "ourPositioning": "<우리가 취해야 할 차별화 포지셔닝 2-3문장>"
   }`
       : ""
   }
@@ -190,7 +314,7 @@ export async function analyzeMarketing(
     ],
     response_format: { type: "json_object" },
     temperature: 0.4,
-    max_tokens: 5000,
+    max_tokens: 7000,
   });
 
   const text = response.choices[0]?.message?.content;
