@@ -65,8 +65,10 @@ export async function POST(req: NextRequest) {
           url,
           title: websiteData.title,
           ogTitle: websiteData.ogTitle,
+          ogDescription: websiteData.ogDescription,
           description: websiteData.description,
           h1: websiteData.h1,
+          h2: websiteData.h2,
           keywords: websiteData.keywords,
         });
       } catch (e: any) {
