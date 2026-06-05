@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractWebsite } from "@/lib/extractWebsite";
 import { analyzeMarketing } from "@/lib/analyzeMarketing";
+import { analyzeCompetitors } from "@/lib/competitorAnalysis";
 
 export const runtime = "nodejs";
-export const maxDuration = 60; // Vercel: 분석에 시간이 걸릴 수 있음
+export const maxDuration = 60;
 
 function normalizeUrl(input: string) {
   const trimmed = input.trim();
@@ -47,16 +48,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           message:
-            "서버에 OPENAI_API_KEY가 설정되지 않았습니다. .env.local 또는 Vercel 환경변수를 확인하세요.",
+            "서버에 OPENAI_API_KEY가 설정되지 않았습니다. Vercel 환경변수를 확인하세요.",
         },
         { status: 500 }
       );
     }
 
+    // 1. 사이트 추출
     const websiteData = await extractWebsite(url);
-    const report = await analyzeMarketing(websiteData);
 
-    // url 필드 보정
+    // 2. 경쟁사 분석 (네이버 API 키가 있을 때만, 실패해도 본 분석은 진행)
+    let competitorAnalysisResult = null;
+    if (process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET) {
+      try {
+        competitorAnalysisResult = await analyzeCompetitors({
+          url,
+          title: websiteData.title,
+          ogTitle: websiteData.ogTitle,
+          description: websiteData.description,
+          h1: websiteData.h1,
+          keywords: websiteData.keywords,
+        });
+      } catch (e: any) {
+        console.warn("경쟁사 분석 실패 (계속 진행):", e?.message);
+      }
+    }
+
+    // 3. AI 종합 분석 (경쟁사 데이터 포함)
+    const report = await analyzeMarketing(
+      websiteData,
+      competitorAnalysisResult
+    );
+
     report.url = url;
 
     return NextResponse.json(report);
