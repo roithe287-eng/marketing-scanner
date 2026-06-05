@@ -53,36 +53,96 @@ const CTA_KEYWORDS = [
   "subscribe",
 ];
 
+// 실제 Chrome 브라우저처럼 보이는 헤더 (봇 차단 우회)
+const BROWSER_HEADERS = {
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  Accept:
+    "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+  "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+  "Accept-Encoding": "gzip, deflate, br",
+  "Cache-Control": "no-cache",
+  Pragma: "no-cache",
+  "Sec-Ch-Ua":
+    '"Google Chrome";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
+  "Sec-Ch-Ua-Mobile": "?0",
+  "Sec-Ch-Ua-Platform": '"Windows"',
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "none",
+  "Sec-Fetch-User": "?1",
+  "Upgrade-Insecure-Requests": "1",
+};
+
+async function tryFetch(url: string): Promise<Response> {
+  return fetch(url, {
+    headers: BROWSER_HEADERS,
+    cache: "no-store",
+    redirect: "follow",
+    signal: AbortSignal.timeout(20000),
+  });
+}
+
 export async function extractWebsite(
   url: string
 ): Promise<ExtractedWebsiteData> {
-  let res: Response;
+  let res: Response | null = null;
+  let lastError: any = null;
+
+  // 1차: 입력 URL 그대로 시도
   try {
-    res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (compatible; MarketingScanner/1.0; +https://prorealmkt.com)",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
-      },
-      cache: "no-store",
-      // 10초 타임아웃
-      signal: AbortSignal.timeout(15000),
-    });
+    res = await tryFetch(url);
   } catch (err: any) {
+    lastError = err;
+  }
+
+  // 2차: www. 추가해서 재시도 (apex 도메인이 막혀있는 경우)
+  if (!res || !res.ok) {
+    try {
+      const u = new URL(url);
+      if (!u.hostname.startsWith("www.")) {
+        const wwwUrl = `${u.protocol}//www.${u.hostname}${u.pathname}${u.search}`;
+        res = await tryFetch(wwwUrl);
+      }
+    } catch (err: any) {
+      lastError = err;
+    }
+  }
+
+  // 3차: http로 다운그레이드 시도
+  if (!res || !res.ok) {
+    try {
+      if (url.startsWith("https://")) {
+        const httpUrl = url.replace("https://", "http://");
+        res = await tryFetch(httpUrl);
+      }
+    } catch (err: any) {
+      lastError = err;
+    }
+  }
+
+  if (!res) {
     throw new Error(
-      `웹사이트에 접속할 수 없습니다. (URL 또는 네트워크 확인 필요: ${
-        err?.message || "unknown"
+      `웹사이트에 접속할 수 없습니다. 사이트가 봇 접근을 차단하고 있거나 일시적으로 응답이 없습니다. (에러: ${
+        lastError?.message || "unknown"
       })`
     );
   }
 
   if (!res.ok) {
-    throw new Error(`웹사이트 응답 오류: HTTP ${res.status}`);
+    throw new Error(
+      `웹사이트 응답 오류: HTTP ${res.status}. 사이트가 외부 접근을 차단하고 있을 수 있습니다.`
+    );
   }
 
   const html = await res.text();
+
+  if (!html || html.length < 100) {
+    throw new Error(
+      "사이트가 빈 페이지를 반환했습니다. JavaScript로만 렌더링되는 SPA 사이트일 가능성이 높습니다."
+    );
+  }
+
   const $ = cheerio.load(html);
 
   // 불필요한 노드 제거
@@ -144,7 +204,12 @@ export async function extractWebsite(
 
   let internalLinkCount = 0;
   let externalLinkCount = 0;
-  const hostname = new URL(url).hostname;
+  let hostname = "";
+  try {
+    hostname = new URL(url).hostname;
+  } catch {
+    // ignore
+  }
   for (const link of allLinks) {
     try {
       if (link.startsWith("/") || link.startsWith("#")) {
@@ -167,6 +232,12 @@ export async function extractWebsite(
     .trim()
     .slice(0, 12000);
 
+  if (bodyText.length < 50) {
+    throw new Error(
+      "사이트에서 충분한 텍스트를 추출하지 못했습니다. JavaScript로만 렌더링되는 SPA 사이트(React/Vue/Angular)일 가능성이 높습니다. 정적 HTML 사이트로 다시 시도해주세요."
+    );
+  }
+
   const imageCount = $("img").length;
   const imageWithoutAlt = $("img").filter((_, el) => {
     const alt = $(el).attr("alt");
@@ -188,8 +259,6 @@ export async function extractWebsite(
       bodyText
     );
 
-  const scriptCount = $("script").length; // 위에서 제거했지만 원본은 셀 수 있도록
-  // 위에서 script 제거했기 때문에 원본 html에서 카운트
   const scriptCountFromHtml = (html.match(/<script/gi) || []).length;
 
   return {
