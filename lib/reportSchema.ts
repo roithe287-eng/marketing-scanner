@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+// 12가지 마케팅 진단 체크리스트
+export const ChecklistItemSchema = z.object({
+  id: z.string(),
+  category: z.enum(["seo", "content", "trust", "conversion"]),
+  label: z.string(),
+  status: z.enum(["pass", "warning", "fail"]),
+  currentValue: z.string(), // 현재 사이트의 실제 값 (또는 "(없음)")
+  diagnosis: z.string(), // 진단 결과 (한 문장)
+  guide: z.string(), // 어떻게 고치면 되는지 (한 문장)
+});
+
 export const MarketingReportSchema = z.object({
   url: z.string(),
   overallScore: z.number().min(0).max(100),
@@ -14,6 +25,10 @@ export const MarketingReportSchema = z.object({
     mobileUx: z.number().min(0).max(100),
     seo: z.number().min(0).max(100),
   }),
+
+  // 신규: 12가지 진단 체크리스트
+  checklist: z.array(ChecklistItemSchema).optional(),
+
   criticalIssues: z.array(
     z.object({
       title: z.string(),
@@ -21,28 +36,55 @@ export const MarketingReportSchema = z.object({
       reason: z.string(),
       recommendation: z.string(),
       priority: z.enum(["high", "medium", "low"]),
+      // 신규: 안된 예시 / 잘된 예시 (Critical에만)
+      badExample: z.string().optional(), // 현재 사이트의 실제 잘못된 예시
+      goodExample: z.string().optional(), // 개선된 예시
+      exampleNote: z.string().optional(), // 예시 설명
     })
   ),
-  quickWins: z.array(z.string()),
+
+  // 신규: 단계별 플로우가 있는 Quick Wins
+  quickWinsDetailed: z
+    .array(
+      z.object({
+        title: z.string(),
+        steps: z.array(z.string()), // Step 1, 2, 3...
+        beforeExample: z.string().optional(),
+        afterExample: z.string().optional(),
+      })
+    )
+    .optional(),
+
+  // 호환성을 위해 단순 quickWins도 유지 (옵션)
+  quickWins: z.array(z.string()).optional(),
+
   priorityRoadmap: z.object({
     immediately: z.array(z.string()),
     thisWeek: z.array(z.string()),
     thisMonth: z.array(z.string()),
   }),
+
   exampleCopy: z.object({
     heroHeadline: z.string(),
     subHeadline: z.string(),
     ctaText: z.string(),
+    // 신규: 우리 사이트의 현재 카피 (비교용)
+    currentHeroHeadline: z.string().optional(),
+    currentCtaText: z.string().optional(),
+    // 신규: 경쟁사 카피 인사이트
+    competitorCopyInsight: z.string().optional(),
   }),
+
   finalCta: z.object({
     title: z.string(),
     description: z.string(),
     buttonText: z.string(),
   }),
-  // 경쟁사 비교 (옵션 - API 키 없거나 검색 실패 시 null)
+
   competitorAnalysis: z
     .object({
       searchKeyword: z.string(),
+      keywordSource: z.enum(["ai", "fallback"]).optional(),
       competitors: z.array(
         z.object({
           rank: z.number(),
@@ -55,16 +97,16 @@ export const MarketingReportSchema = z.object({
           h1: z.string().optional(),
           ctaTexts: z.array(z.string()).optional(),
           fetchError: z.string().optional(),
-          // AI가 작성한 분석
-          keyMessage: z.string().optional(), // 이 경쟁사가 강조하는 메시지
-          differentiation: z.string().optional(), // 우리와의 차이점
+          keyMessage: z.string().optional(),
+          differentiation: z.string().optional(),
         })
       ),
-      overallComparison: z.string().optional(), // 전체적인 경쟁 환경 요약
-      ourPositioning: z.string().optional(), // 우리가 취해야 할 포지셔닝 제안
+      overallComparison: z.string().optional(),
+      ourPositioning: z.string().optional(),
     })
     .nullable()
     .optional(),
 });
 
 export type MarketingReport = z.infer<typeof MarketingReportSchema>;
+export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
