@@ -91,8 +91,8 @@ const USER_PROMPT_TEMPLATE = (
 - 가격/문의: ${data.hasPriceKeyword ? "있음" : "없음"}
 - 인증/수상/파트너: ${data.hasTrustKeyword ? "있음" : "없음"}
 
-[본문 텍스트 (앞부분 5000자)]
-${data.bodyText.slice(0, 5000)}
+[본문 텍스트 (앞부분 3500자)]
+${data.bodyText.slice(0, 3500)}
 
 ${buildCompetitorPromptSection(competitorAnalysis)}
 
@@ -314,7 +314,7 @@ export async function analyzeMarketing(
     ],
     response_format: { type: "json_object" },
     temperature: 0.4,
-    max_tokens: 7000,
+    max_tokens: 4500,
   });
 
   const text = response.choices[0]?.message?.content;
