@@ -9,6 +9,9 @@ import PriorityMatrix from "@/components/PriorityMatrix";
 import FinalCTA from "@/components/FinalCTA";
 import DownloadReportButton from "@/components/DownloadReportButton";
 import CompetitorComparison from "@/components/CompetitorComparison";
+import DiagnosisChecklist from "@/components/DiagnosisChecklist";
+import QuickWinsFlow from "@/components/QuickWinsFlow";
+import CopyImprovement from "@/components/CopyImprovement";
 import { MarketingReport } from "@/lib/reportSchema";
 
 export default function HomePage() {
@@ -222,71 +225,50 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Quick Wins */}
-            {report.quickWins && report.quickWins.length > 0 && (
-              <div className="jm-card mt-8 p-8">
-                <p className="text-xs font-black tracking-wider text-jm-red">
-                  QUICK WINS
-                </p>
-                <h3 className="mt-2 text-2xl font-black">
-                  오늘 바로 적용 가능한 개선
-                </h3>
-                <ul className="mt-6 grid gap-3 md:grid-cols-2">
-                  {report.quickWins.map((w, i) => (
-                    <li
-                      key={i}
-                      className="flex gap-3 rounded-2xl bg-jm-light-gray p-4 text-sm leading-7"
-                    >
-                      <span className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-jm-black text-white text-xs font-bold">
-                        {i + 1}
-                      </span>
-                      <span>{w}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {/* 12가지 진단 체크리스트 */}
+            {report.checklist && report.checklist.length > 0 && (
+              <DiagnosisChecklist checklist={report.checklist} />
             )}
 
-            {/* 로드맵 */}
-            <div className="mt-8">
-              <PriorityMatrix roadmap={report.priorityRoadmap} />
-            </div>
+            {/* Quick Wins (단계별 플로우 형태) */}
+            {report.quickWinsDetailed && report.quickWinsDetailed.length > 0 ? (
+              <QuickWinsFlow quickWins={report.quickWinsDetailed} />
+            ) : (
+              // 프롤백: 이전 형식 quickWins가 있으면 보여주기
+              report.quickWins &&
+              report.quickWins.length > 0 && (
+                <div className="jm-card mt-8 p-8">
+                  <p className="text-xs font-black tracking-wider text-jm-red">
+                    QUICK WINS
+                  </p>
+                  <h3 className="mt-2 text-2xl font-black">
+                    오늘 바로 적용 가능한 개선
+                  </h3>
+                  <ul className="mt-6 grid gap-3 md:grid-cols-2">
+                    {report.quickWins.map((w, i) => (
+                      <li
+                        key={i}
+                        className="flex gap-3 rounded-2xl bg-jm-light-gray p-4 text-sm leading-7"
+                      >
+                        <span className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-jm-black text-white text-xs font-bold">
+                          {i + 1}
+                        </span>
+                        <span>{w}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )
+            )}
 
-            {/* 카피 예시 */}
-            <div className="jm-card mt-8 p-8">
-              <p className="text-xs font-black tracking-wider text-jm-red">
-                COPY IMPROVEMENT
-              </p>
-              <h3 className="mt-2 text-2xl font-black">
-                바로 적용 가능한 카피 예시
-              </h3>
-              <div className="mt-6 grid gap-4 md:grid-cols-3">
-                <div className="rounded-2xl bg-jm-light-gray p-5">
-                  <p className="text-xs font-bold tracking-wider text-jm-gray">
-                    메인 헤드라인
-                  </p>
-                  <p className="mt-3 font-black leading-7">
-                    {report.exampleCopy?.heroHeadline}
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-jm-light-gray p-5">
-                  <p className="text-xs font-bold tracking-wider text-jm-gray">
-                    서브 문구
-                  </p>
-                  <p className="mt-3 font-medium leading-7">
-                    {report.exampleCopy?.subHeadline}
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-jm-red p-5 text-white">
-                  <p className="text-xs font-bold tracking-wider text-white/70">
-                    CTA 버튼
-                  </p>
-                  <p className="mt-3 font-black text-lg">
-                    {report.exampleCopy?.ctaText}
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* 개선 우선순위 로드맵 (도식화) */}
+            <PriorityMatrix roadmap={report.priorityRoadmap} />
+
+            {/* 카피 개선 비교 (현재 vs 우리 제안 vs 경쟁사) */}
+            <CopyImprovement
+              exampleCopy={report.exampleCopy}
+              competitorAnalysis={report.competitorAnalysis}
+            />
 
             {/* 경쟁사 비교 (네이버 API 키 있고 데이터 수집 성공한 경우만 표시) */}
             {report.competitorAnalysis &&
