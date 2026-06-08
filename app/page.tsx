@@ -149,7 +149,7 @@ export default function HomePage() {
         <section className="jm-container pb-24">
           <div
             id="report-area"
-            className="scroll-mt-24 bg-white p-2 md:p-4 rounded-3xl"
+            className="scroll-mt-24 bg-white p-0 md:p-4 rounded-3xl"
           >
             {/* 헤더 */}
             <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
@@ -174,7 +174,7 @@ export default function HomePage() {
             </div>
 
             {/* 점수 + 레이더 + 핵심 이슈 */}
-            <div className="grid gap-6 md:grid-cols-[360px_1fr]">
+            <div className="grid gap-4 md:gap-6 md:grid-cols-[360px_1fr]">
               <div className="jm-card p-8">
                 <p className="text-xs font-bold tracking-wider text-jm-gray">
                   종합 점수
