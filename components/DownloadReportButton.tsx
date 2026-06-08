@@ -9,7 +9,6 @@ type Props = {
   report: MarketingReport;
 };
 
-// PDF 캡처에 사용할 데스크탑 너비 (A4 가로 비율과 잘 맞는 값)
 const PDF_CAPTURE_WIDTH = 1120;
 
 export default function DownloadReportButton({ targetId, report }: Props) {
@@ -19,7 +18,6 @@ export default function DownloadReportButton({ targetId, report }: Props) {
   async function runDownload() {
     setDownloading(true);
 
-    // 임시 wrapper로 폰트 로딩 보장
     let originalStyles: { [key: string]: string } = {};
     const element = document.getElementById(targetId);
     if (!element) {
@@ -29,7 +27,6 @@ export default function DownloadReportButton({ targetId, report }: Props) {
     }
 
     try {
-      // 동적 import (SSR 회피)
       const html2canvas = (await import("html2canvas")).default;
       const { default: jsPDF } = await import("jspdf");
 
@@ -43,26 +40,25 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         el.style.display = "none";
       });
 
-      // 2) 모바일에서도 데스크탑 레이아웃으로 캡처되도록
-      //    element와 부모의 너비를 임시로 데스크탑 너비로 강제
+      // 2) 모바일에서도 데스크탑 레이아웃으로 캡처
       const isMobile = window.innerWidth < PDF_CAPTURE_WIDTH;
       let pdfWrapper: HTMLDivElement | null = null;
 
       if (isMobile) {
-        // 모바일이면 element를 임시 wrapper에 복제해서 데스크탑 너비로 렌더링
         pdfWrapper = document.createElement("div");
         pdfWrapper.style.position = "fixed";
-        pdfWrapper.style.left = "-99999px"; // 화면 밖
+        pdfWrapper.style.left = "-99999px";
         pdfWrapper.style.top = "0";
         pdfWrapper.style.width = `${PDF_CAPTURE_WIDTH}px`;
         pdfWrapper.style.background = "#ffffff";
         pdfWrapper.style.padding = "24px";
+        pdfWrapper.style.boxSizing = "border-box";
 
         const clone = element.cloneNode(true) as HTMLElement;
         clone.style.width = "100%";
         clone.style.maxWidth = "none";
+        clone.style.padding = "0";
 
-        // 클론 안의 data-hide-on-export도 숨김
         clone
           .querySelectorAll<HTMLElement>("[data-hide-on-export]")
           .forEach((el) => (el.style.display = "none"));
@@ -70,7 +66,6 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         pdfWrapper.appendChild(clone);
         document.body.appendChild(pdfWrapper);
       } else {
-        // 데스크탑이면 element 자체의 너비 고정
         originalStyles["width"] = element.style.width;
         originalStyles["maxWidth"] = element.style.maxWidth;
         element.style.width = `${PDF_CAPTURE_WIDTH}px`;
@@ -79,11 +74,11 @@ export default function DownloadReportButton({ targetId, report }: Props) {
 
       const captureTarget = pdfWrapper || element;
 
-      // 3) 폰트 로드 대기 (한글 폰트 깨짐 방지)
+      // 3) 폰트 로드 대기
       if ((document as any).fonts && (document as any).fonts.ready) {
         await (document as any).fonts.ready;
       }
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // 4) html2canvas로 캡처
       const canvas = await html2canvas(captureTarget, {
@@ -97,7 +92,27 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         scrollY: 0,
         logging: false,
         onclone: (clonedDoc: Document) => {
-          // 복제된 문서에서 export 제외 요소 한 번 더 숨김
+          // 복제된 문서의 모든 카드/박스에 PDF 친화적 스타일 강제
+          const style = clonedDoc.createElement("style");
+          style.textContent = `
+            * { box-sizing: border-box !important; }
+            .jm-card, [class*="rounded-"], [class*="border"] {
+              break-inside: avoid !important;
+              page-break-inside: avoid !important;
+            }
+            /* PDF에서 잘림 방지 - overflow visible로 변경 */
+            .jm-card { overflow: visible !important; }
+            /* 텍스트가 박스 밖으로 튀어나가지 않도록 */
+            p, span, h1, h2, h3, h4 {
+              word-break: keep-all;
+              overflow-wrap: break-word;
+            }
+            /* hide-on-export 한 번 더 확실히 */
+            [data-hide-on-export] { display: none !important; }
+          `;
+          clonedDoc.head.appendChild(style);
+
+          // hide-on-export 직접 처리
           const hidden = clonedDoc.querySelectorAll("[data-hide-on-export]");
           hidden.forEach((el) => {
             (el as HTMLElement).style.display = "none";
@@ -117,8 +132,8 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         el.style.display = hidePrevDisplay[idx] || "";
       });
 
-      // 6) PDF 생성 - 페이지 잘림 방지 로직 강화
-      const imgData = canvas.toDataURL("image/jpeg", 0.92); // JPEG 압축으로 용량 감소
+      // 6) PDF 생성
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
@@ -126,17 +141,15 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         compress: true,
       });
 
-      const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
-      const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
-      const margin = 0; // 여백 (원하면 8 정도로 조정)
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 5; // 좌우 여백 5mm로 살짝 추가 → 우측 잘림 방지
       const usableWidth = pageWidth - margin * 2;
 
-      // 이미지 비율 유지
       const imgAspectRatio = canvas.height / canvas.width;
       const imgWidth = usableWidth;
       const imgHeight = imgWidth * imgAspectRatio;
 
-      // 페이지 수 계산
       const usableHeightPerPage = pageHeight - margin * 2;
       let remainingHeight = imgHeight;
       let position = margin;
@@ -154,7 +167,7 @@ export default function DownloadReportButton({ targetId, report }: Props) {
       );
       remainingHeight -= usableHeightPerPage;
 
-      // 추가 페이지 (이미지를 위로 이동시켜 다음 페이지에 다음 부분 표시)
+      // 추가 페이지
       while (remainingHeight > 0) {
         position -= usableHeightPerPage;
         pdf.addPage();
@@ -171,7 +184,7 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         remainingHeight -= usableHeightPerPage;
       }
 
-      // 푸터에 페이지 번호 + 진짜마케팅 워터마크
+      // 푸터에 페이지 번호
       const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
@@ -180,15 +193,16 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         pdf.text(
           `진짜마케팅 - 마케팅스캐너 | ${i} / ${totalPages}`,
           pageWidth / 2,
-          pageHeight - 4,
+          pageHeight - 2,
           { align: "center" }
         );
       }
 
-      // 파일명에 도메인 + 날짜 포함
       let domainName = "report";
       try {
-        domainName = new URL(report.url).hostname.replace(/^www\./, "").replace(/\./g, "_");
+        domainName = new URL(report.url).hostname
+          .replace(/^www\./, "")
+          .replace(/\./g, "_");
       } catch {}
       const today = new Date().toISOString().slice(0, 10);
       pdf.save(`진짜마케팅_진단_${domainName}_${today}.pdf`);
@@ -213,7 +227,6 @@ export default function DownloadReportButton({ targetId, report }: Props) {
       }).catch(() => {});
 
       setOpen(false);
-      // 모달 닫힘 애니메이션 + 폰트 로드 위해 약간 대기
       await new Promise((r) => setTimeout(r, 200));
       await runDownload();
     } catch (e) {
