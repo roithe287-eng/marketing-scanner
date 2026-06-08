@@ -71,3 +71,20 @@ body {
 
 /* Pretendard 한글 폰트 */
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+/* PDF 캡처 시 카드가 페이지 경계에서 잘리지 않도록 */
+.jm-card {
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+/* 인쇄/PDF 캡처용 미디어 쿼리 */
+@media print {
+  .jm-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  [data-hide-on-export] {
+    display: none !important;
+  }
+}
