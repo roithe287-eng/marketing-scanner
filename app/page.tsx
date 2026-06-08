@@ -34,9 +34,17 @@ export default function HomePage() {
       const contentType = res.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
         if (res.status === 504 || res.status === 408) {
-          setError("분석 시간이 초과되었습니다 (Vercel 무료 플랜 10초 제한). 잠시 후 다시 시도하거나 Vercel Pro 플랜 업그레이드를 고려해주세요.");
+          setError(
+            "분석 시간이 초과되었습니다. 해당 사이트가 매우 무거우거나 응답이 느릴 수 있습니다. 잠시 후 다시 시도하거나 다른 URL로 테스트해보세요."
+          );
+        } else if (res.status === 502 || res.status === 503) {
+          setError(
+            "서버가 일시적으로 응답하지 않습니다. 잠시 후 다시 시도해주세요."
+          );
         } else {
-          setError(`서버 응답 오류 (HTTP ${res.status}). 잠시 후 다시 시도해주세요.`);
+          setError(
+            `서버 응답 오류 (HTTP ${res.status}). 잠시 후 다시 시도해주세요.`
+          );
         }
         return;
       }
@@ -298,7 +306,10 @@ export default function HomePage() {
       )}
 
       {/* Footer */}
-      <footer className="border-t border-jm-border bg-jm-light-gray py-10">
+      <footer
+        className="border-t border-jm-border bg-jm-light-gray py-10"
+        style={{ paddingBottom: "calc(2.5rem + env(safe-area-inset-bottom))" }}
+      >
         <div className="jm-container flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-jm-gray">
           <div>
             © {new Date().getFullYear()} 진짜마케팅 · 마케팅스캐너 (MVP)
