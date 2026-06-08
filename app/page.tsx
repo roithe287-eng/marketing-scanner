@@ -17,12 +17,43 @@ import { MarketingReport } from "@/lib/reportSchema";
 export default function HomePage() {
   const [report, setReport] = useState<MarketingReport | null>(null);
   const [loading, setLoading] = useState(false);
+  const [competitorLoading, setCompetitorLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // v14: 백그라운드 경쟁사 분석 호출
+  async function fetchCompetitor(url: string, hints: any) {
+    setCompetitorLoading(true);
+    try {
+      const res = await fetch("/api/competitor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url, hints }),
+      });
+      const contentType = res.headers.get("content-type") || "";
+      if (!contentType.includes("application/json")) {
+        // 504 등 - 경쟁사 분석은 조용히 실패
+        console.warn("[경쟁사] 비JSON 응답:", res.status);
+        return;
+      }
+      const data = await res.json();
+      if (data?.competitorAnalysis) {
+        // 기존 report에 경쟁사 데이터 병합
+        setReport((prev) =>
+          prev ? { ...prev, competitorAnalysis: data.competitorAnalysis } : prev
+        );
+      }
+    } catch (e: any) {
+      console.warn("[경쟁사] 호출 실패 (조용히 무시):", e?.message);
+    } finally {
+      setCompetitorLoading(false);
+    }
+  }
 
   async function handleAnalyze(url: string) {
     setLoading(true);
     setReport(null);
     setError(null);
+    setCompetitorLoading(false);
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -61,6 +92,12 @@ export default function HomePage() {
           .getElementById("report-area")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 150);
+
+      // v14: 메인 결과 받자마자 백그라운드로 경쟁사 분석 호출
+      if (data?._hasCompetitor && data?._websiteHints) {
+        // await 안함 (백그라운드 실행)
+        fetchCompetitor(data.url || url, data._websiteHints);
+      }
     } catch (e: any) {
       setError(e?.message || "네트워크 오류가 발생했습니다.");
     } finally {
@@ -290,7 +327,23 @@ export default function HomePage() {
               competitorAnalysis={report.competitorAnalysis}
             />
 
-            {/* 경쟁사 비교 (네이버 API 키 있고 데이터 수집 성공한 경우만 표시) */}
+            {/* 경쟁사 비교 (v14: 백그라운드 로딩 상태 + 결과 표시) */}
+            {competitorLoading && !report.competitorAnalysis && (
+              <div className="jm-card mt-8 p-8 text-center" data-hide-on-export>
+                <div className="inline-flex h-10 w-10 items-center justify-center">
+                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-jm-light-gray border-t-jm-red" />
+                </div>
+                <p className="mt-3 text-sm font-black tracking-wider text-jm-red">
+                  COMPETITIVE LANDSCAPE
+                </p>
+                <p className="mt-2 text-lg font-black">
+                  동종업종 경쟁사를 추가 분석하고 있습니다
+                </p>
+                <p className="mt-2 text-sm text-jm-gray">
+                  네이버 검색에서 같은 업종 상위 5개 사이트를 가져와 비교 중입니다 (약 15~25초).
+                </p>
+              </div>
+            )}
             {report.competitorAnalysis &&
               report.competitorAnalysis.competitors.length > 0 && (
                 <CompetitorComparison
