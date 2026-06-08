@@ -43,7 +43,7 @@ function buildCompetitorPromptSection(
 - 실제 사이트 H1: ${c.h1 || "(없음)"}
 - 실제 사이트 H2 일부: ${JSON.stringify(c.h2 || [])}
 - CTA 버튼: ${JSON.stringify(c.ctaTexts || [])}
-- 본문 일부: ${(c.bodySnippet || "").slice(0, 600)}
+- 본문 일부: ${(c.bodySnippet || "").slice(0, 400)}
 ${c.fetchError ? `- 수집 오류: ${c.fetchError}` : ""}
 `
     )
@@ -75,11 +75,11 @@ const USER_PROMPT_TEMPLATE = (
 
 [제목 구조]
 - H1 (${data.h1.length}개): ${JSON.stringify(data.h1)}
-- H2 (${data.h2.length}개): ${JSON.stringify(data.h2.slice(0, 20))}
-- H3 일부: ${JSON.stringify(data.h3.slice(0, 10))}
+- H2 (${data.h2.length}개): ${JSON.stringify(data.h2.slice(0, 12))}
+- H3 일부: ${JSON.stringify(data.h3.slice(0, 6))}
 
 [버튼/CTA]
-- 전체 버튼 텍스트: ${JSON.stringify(data.buttons.slice(0, 50))}
+- 전체 버튼 텍스트: ${JSON.stringify(data.buttons.slice(0, 35))}
 - CTA로 보이는 버튼: ${JSON.stringify(data.ctaButtons)}
 - 폼 존재: ${data.hasForm ? "있음" : "없음"}
 - 연락처 정보: ${data.hasContactInfo ? "있음" : "없음"}
@@ -87,15 +87,15 @@ const USER_PROMPT_TEMPLATE = (
 [이미지]
 - 이미지 수: ${data.imageCount}개
 - alt 없는 이미지: ${data.imageWithoutAlt}개
-- 이미지 alt 텍스트 일부: ${JSON.stringify(data.imageAlts.slice(0, 20))}
+- 이미지 alt 텍스트 일부: ${JSON.stringify(data.imageAlts.slice(0, 15))}
 
 [신뢰 요소 키워드 감지]
 - 후기/리뷰: ${data.hasReviewKeyword ? "있음" : "없음"}
 - 가격/문의: ${data.hasPriceKeyword ? "있음" : "없음"}
 - 인증/수상/파트너: ${data.hasTrustKeyword ? "있음" : "없음"}
 
-[본문 텍스트 (앞부분 8000자)]
-${data.bodyText.slice(0, 8000)}
+[본문 텍스트 (앞부분 6000자)]
+${data.bodyText.slice(0, 6000)}
 
 ${buildCompetitorPromptSection(competitorAnalysis)}
 
@@ -229,7 +229,7 @@ export async function analyzeMarketing(
     ],
     response_format: { type: "json_object" },
     temperature: 0.4,
-    max_tokens: 8000,
+    max_tokens: 5500,
   });
 
   const text = response.choices[0]?.message?.content;
