@@ -430,8 +430,11 @@ export async function analyzeCompetitors(siteData: {
       return null;
     }
 
-    // 4. 각 경쟁사 메타 + 콘텐츠 병렬 수집 (8초 타임아웃)
-    await Promise.all(competitors.map((c) => fetchCompetitorMeta(c)));
+    // 4. 각 경쟁사 메타 + 콘텐츠 병렬 수집 (개별 8초, 전체 15초 상한)
+    await Promise.race([
+      Promise.all(competitors.map((c) => fetchCompetitorMeta(c))),
+      new Promise((resolve) => setTimeout(resolve, 15000)),
+    ]);
 
     return {
       searchKeyword: keyword,
