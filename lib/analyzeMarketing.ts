@@ -6,14 +6,16 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
+// v16: 기본값을 gpt-4.1-mini로 변경 (gpt-4o-mini 대비 속도 2배, 비용 비슷)
+const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 
 // v15: 극한 다이어트. OpenAI API 자체가 느린 환경(Tier 1) 대응.
 // AI 호출 30초 안에 끝나야 안전 (네트워크 + Vercel 오버헤드 감안)
 const AI_TIMEOUT_MS = 30000;
 
 const SYSTEM_PROMPT = `너는 15년차 퍼포먼스 마케터다. "진짜마케팅" 시니어 컨설턴트로서 웹사이트를 마케팅/전환 관점에서 진단한다.
-원칙: 실제 데이터 인용(추측 금지), 점수 차등 평가, 한국어 직설적 톤, JSON만 응답.`;
+원칙: 실제 데이터 인용(추측 금지), 점수 차등 평가, 한국어 직설적 톤.
+중요: 설명문·인사말 없이 오직 JSON 객체만 응답. 마크다운 코드블록 금지. { 로 시작해서 } 로 끝나야 함.`;
 
 /**
  * v15: 본문 텍스트 압축
@@ -106,7 +108,12 @@ async function callOpenAI(
 
     clearTimeout(timeoutId);
     const text = response.choices[0]?.message?.content;
+    const finishReason = response.choices[0]?.finish_reason;
     if (!text) throw new Error("AI 응답이 비어 있습니다.");
+    // v16.1: 응답 품질 디버그 로그
+    console.log(
+      `[AI] 응답 쪽: ${text.length}자, finish_reason: ${finishReason}, 시작: "${text.slice(0, 50).replace(/\n/g, "\\n")}"`
+    );
     return text;
   } catch (err: any) {
     clearTimeout(timeoutId);
@@ -168,17 +175,88 @@ export async function analyzeMarketing(
     );
   }
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(text);
-  } catch {
-    throw new Error("AI 응답을 JSON으로 파싱하지 못했습니다.");
+  // v16.1: 강력한 JSON 파싱 (gpt-4.1-mini의 다양한 응답 형식 대응)
+  const parsed = robustJsonParse(text);
+  if (!parsed) {
+    console.error("[AI] JSON 파싱 완전 실패. 원본 응답 앞 500자:", text.slice(0, 500));
+    throw new Error(
+      "AI 응답 형식이 올바르지 않습니다. 다시 시도해주세요."
+    );
   }
 
   const result = MarketingReportSchema.safeParse(parsed);
   if (!result.success) {
-    console.error("Schema validation failed:", result.error.format());
+    console.warn(
+      "[AI] Schema 경고 (그대로 반환):",
+      JSON.stringify(result.error.format()).slice(0, 300)
+    );
     return parsed as MarketingReport;
   }
   return result.data;
+}
+
+/**
+ * v16.1: 강력한 JSON 파서
+ * - 마크다운 코드블록 제거 (```json ... ```)
+ * - JSON 앞뒤 텍스트 제거
+ * - 끝이 잘린 JSON 복구 시도
+ * - escape 안 된 줄바꿈/따옴표 수정
+ */
+function robustJsonParse(raw: string): any | null {
+  if (!raw) return null;
+  let text = raw.trim();
+
+  // 1차: 바로 파싱 시도
+  try {
+    return JSON.parse(text);
+  } catch {
+    // 계속 진행
+  }
+
+  // 2차: 마크다운 코드블록 제거
+  // ```json\n{...}\n``` 형태 처리
+  const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (codeBlockMatch) {
+    try {
+      return JSON.parse(codeBlockMatch[1].trim());
+    } catch {
+      // 계속
+    }
+  }
+
+  // 3차: { 으로 시작해서 } 로 끝나는 뎍어리 추출
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const candidate = text.slice(firstBrace, lastBrace + 1);
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // 계속
+    }
+
+    // 4차: 잘린 JSON 복구 시도 (끝에 ]} 몇 개 추가해보기)
+    const fixes = ["", "]", "]}", "}}]}", '"}']}', '"}'];
+    for (const suffix of fixes) {
+      try {
+        return JSON.parse(candidate + suffix);
+      } catch {
+        // 계속
+      }
+    }
+  }
+
+  // 5차: BOM / 이상한 제어문자 제거 후 재시도
+  const cleaned = text
+    .replace(/^\uFEFF/, "")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, "");
+  if (cleaned !== text) {
+    try {
+      return JSON.parse(cleaned);
+    } catch {
+      // 계속
+    }
+  }
+
+  return null;
 }
