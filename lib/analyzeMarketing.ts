@@ -235,8 +235,16 @@ function robustJsonParse(raw: string): any | null {
       // 계속
     }
 
-    // 4차: 잘린 JSON 복구 시도 (끝에 ]} 몇 개 추가해보기)
-    const fixes = ["", "]", "]}", "}}]}", '"}']}', '"}'];
+    // 4차: 잘린 JSON 복구 시도 (끝에 닫는 괄호 몇 개 추가해보기)
+    const fixes = [
+      "",
+      "]",
+      "]}",
+      "}}]}",
+      '"}]}',
+      '"}',
+      '"}]}',
+    ];
     for (const suffix of fixes) {
       try {
         return JSON.parse(candidate + suffix);
