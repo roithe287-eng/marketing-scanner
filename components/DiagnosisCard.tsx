@@ -31,20 +31,25 @@ export default function DiagnosisCard({ issue, index }: Props) {
 
   return (
     <div
-      className="jm-card p-5 md:p-6 overflow-hidden"
-      style={{ breakInside: "avoid", pageBreakInside: "avoid" }}
+      className="jm-card p-5 md:p-6"
+      style={{
+        breakInside: "avoid",
+        pageBreakInside: "avoid",
+        overflow: "hidden",
+      }}
     >
-      <div className="flex items-start justify-between gap-3">
+      {/* 헤더: 좌측 타이틀 + 우측 우선순위 라벨 */}
+      <div className="flex items-start justify-between gap-2 md:gap-3">
         <div className="min-w-0 flex-1">
           <p className="text-xs font-black tracking-wider text-jm-red">
             ISSUE {String(index + 1).padStart(2, "0")}
           </p>
-          <h3 className="mt-2 text-lg md:text-xl font-black leading-snug break-keep">
+          <h3 className="mt-2 text-base md:text-xl font-black leading-snug break-keep pr-2">
             {issue.title}
           </h3>
         </div>
         <span
-          className={`shrink-0 rounded-full px-3 py-1 text-xs font-bold whitespace-nowrap ${
+          className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] md:text-xs font-bold whitespace-nowrap ${
             priorityColor[issue.priority]
           }`}
         >
@@ -52,6 +57,7 @@ export default function DiagnosisCard({ issue, index }: Props) {
         </span>
       </div>
 
+      {/* 문제점/판단근거/개선방향 */}
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         <div className="min-w-0">
           <p className="text-xs font-bold tracking-wider text-jm-gray">
@@ -79,9 +85,12 @@ export default function DiagnosisCard({ issue, index }: Props) {
       {hasExample && (
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           {issue.badExample && (
-            <div className="rounded-2xl border-2 border-red-200 bg-red-50/50 p-4 min-w-0 overflow-hidden">
+            <div
+              className="rounded-2xl border-2 border-red-200 bg-red-50/50 p-4 min-w-0"
+              style={{ overflow: "hidden", boxSizing: "border-box" }}
+            >
               <div className="flex items-center gap-2">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-jm-red text-white text-xs font-black shrink-0">
+                <span className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-jm-red text-white text-xs font-black">
                   ✕
                 </span>
                 <span className="text-xs font-black tracking-wider text-jm-red">
@@ -95,9 +104,12 @@ export default function DiagnosisCard({ issue, index }: Props) {
           )}
 
           {issue.goodExample && (
-            <div className="rounded-2xl border-2 border-green-200 bg-green-50/50 p-4 min-w-0 overflow-hidden">
+            <div
+              className="rounded-2xl border-2 border-green-200 bg-green-50/50 p-4 min-w-0"
+              style={{ overflow: "hidden", boxSizing: "border-box" }}
+            >
               <div className="flex items-center gap-2">
-                <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-white text-xs font-black shrink-0">
+                <span className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-white text-xs font-black">
                   ✓
                 </span>
                 <span className="text-xs font-black tracking-wider text-green-700">
