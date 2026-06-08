@@ -9,7 +9,10 @@ type Props = {
   report: MarketingReport;
 };
 
+// PDF 캡처에 사용할 데스크탑 너비
 const PDF_CAPTURE_WIDTH = 1120;
+// wrapper 좌우 안전 padding (총 너비 안에 포함)
+const SAFE_PADDING = 32;
 
 export default function DownloadReportButton({ targetId, report }: Props) {
   const [open, setOpen] = useState(false);
@@ -18,13 +21,15 @@ export default function DownloadReportButton({ targetId, report }: Props) {
   async function runDownload() {
     setDownloading(true);
 
-    let originalStyles: { [key: string]: string } = {};
     const element = document.getElementById(targetId);
     if (!element) {
       alert("다운로드할 리포트를 찾지 못했습니다.");
       setDownloading(false);
       return;
     }
+
+    let pdfWrapper: HTMLDivElement | null = null;
+    let originalStyles: { [key: string]: string } = {};
 
     try {
       const html2canvas = (await import("html2canvas")).default;
@@ -40,39 +45,33 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         el.style.display = "none";
       });
 
-      // 2) 모바일에서도 데스크탑 레이아웃으로 캡처
-      const isMobile = window.innerWidth < PDF_CAPTURE_WIDTH;
-      let pdfWrapper: HTMLDivElement | null = null;
+      // 2) 항상 PDF 전용 wrapper로 복제 (모바일/데스크탑 둘 다)
+      //    이렇게 하면 화면 표시에 영향 없이 안전하게 캡처 가능
+      pdfWrapper = document.createElement("div");
+      pdfWrapper.id = "pdf-export-wrapper";
+      pdfWrapper.style.position = "fixed";
+      pdfWrapper.style.left = "-99999px";
+      pdfWrapper.style.top = "0";
+      pdfWrapper.style.width = `${PDF_CAPTURE_WIDTH}px`;
+      pdfWrapper.style.background = "#ffffff";
+      pdfWrapper.style.padding = `${SAFE_PADDING}px`;
+      pdfWrapper.style.boxSizing = "border-box";
+      pdfWrapper.style.fontFamily =
+        "Pretendard, -apple-system, system-ui, sans-serif";
 
-      if (isMobile) {
-        pdfWrapper = document.createElement("div");
-        pdfWrapper.style.position = "fixed";
-        pdfWrapper.style.left = "-99999px";
-        pdfWrapper.style.top = "0";
-        pdfWrapper.style.width = `${PDF_CAPTURE_WIDTH}px`;
-        pdfWrapper.style.background = "#ffffff";
-        pdfWrapper.style.padding = "24px";
-        pdfWrapper.style.boxSizing = "border-box";
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.style.width = "100%";
+      clone.style.maxWidth = "none";
+      clone.style.padding = "0";
+      clone.style.boxSizing = "border-box";
 
-        const clone = element.cloneNode(true) as HTMLElement;
-        clone.style.width = "100%";
-        clone.style.maxWidth = "none";
-        clone.style.padding = "0";
+      // 클론 안의 hide-on-export 숨김
+      clone
+        .querySelectorAll<HTMLElement>("[data-hide-on-export]")
+        .forEach((el) => (el.style.display = "none"));
 
-        clone
-          .querySelectorAll<HTMLElement>("[data-hide-on-export]")
-          .forEach((el) => (el.style.display = "none"));
-
-        pdfWrapper.appendChild(clone);
-        document.body.appendChild(pdfWrapper);
-      } else {
-        originalStyles["width"] = element.style.width;
-        originalStyles["maxWidth"] = element.style.maxWidth;
-        element.style.width = `${PDF_CAPTURE_WIDTH}px`;
-        element.style.maxWidth = "none";
-      }
-
-      const captureTarget = pdfWrapper || element;
+      pdfWrapper.appendChild(clone);
+      document.body.appendChild(pdfWrapper);
 
       // 3) 폰트 로드 대기
       if ((document as any).fonts && (document as any).fonts.ready) {
@@ -80,39 +79,82 @@ export default function DownloadReportButton({ targetId, report }: Props) {
       }
       await new Promise((resolve) => setTimeout(resolve, 500));
 
-      // 4) html2canvas로 캡처
-      const canvas = await html2canvas(captureTarget, {
+      // 4) 실제 캡처될 영역 너비 계산
+      const captureWidth = pdfWrapper.offsetWidth;
+
+      // 5) html2canvas 캡처
+      const canvas = await html2canvas(pdfWrapper, {
         scale: 2,
         useCORS: true,
         allowTaint: true,
         backgroundColor: "#ffffff",
-        windowWidth: PDF_CAPTURE_WIDTH,
-        width: PDF_CAPTURE_WIDTH,
+        width: captureWidth,
+        windowWidth: captureWidth,
         scrollX: 0,
         scrollY: 0,
         logging: false,
         onclone: (clonedDoc: Document) => {
-          // 복제된 문서의 모든 카드/박스에 PDF 친화적 스타일 강제
+          // 복제된 문서에 강력한 PDF 친화 스타일 주입
           const style = clonedDoc.createElement("style");
           style.textContent = `
-            * { box-sizing: border-box !important; }
-            .jm-card, [class*="rounded-"], [class*="border"] {
+            * {
+              box-sizing: border-box !important;
+            }
+            /* 모든 카드/박스 페이지 잘림 방지 */
+            .jm-card {
               break-inside: avoid !important;
               page-break-inside: avoid !important;
+              overflow: visible !important;
+              box-shadow: 0 8px 24px rgba(17, 17, 17, 0.06) !important;
             }
-            /* PDF에서 잘림 방지 - overflow visible로 변경 */
-            .jm-card { overflow: visible !important; }
-            /* 텍스트가 박스 밖으로 튀어나가지 않도록 */
-            p, span, h1, h2, h3, h4 {
+            /* 박스 안에 내용물이 안 튀어나가도록 강제 */
+            .jm-card, .jm-card * {
+              max-width: 100% !important;
+            }
+            /* 우선순위 라벨 같은 우측 정렬 요소도 카드 안에 들어가도록 */
+            .jm-card .shrink-0 {
+              flex-shrink: 0;
+            }
+            /* 텍스트 줄바꿈 (한글 단어 보호) */
+            p, span, h1, h2, h3, h4, h5, li, div {
               word-break: keep-all;
               overflow-wrap: break-word;
             }
-            /* hide-on-export 한 번 더 확실히 */
-            [data-hide-on-export] { display: none !important; }
+            /* hide-on-export 한 번 더 */
+            [data-hide-on-export] {
+              display: none !important;
+            }
+            /* 모바일 전용 클래스 무시 (PDF는 데스크탑 레이아웃) */
+            .md\\:hidden {
+              display: none !important;
+            }
+            /* 데스크탑 전용 클래스 항상 활성화 */
+            .hidden.md\\:block { display: block !important; }
+            .hidden.md\\:flex { display: flex !important; }
+            .hidden.md\\:inline-flex { display: inline-flex !important; }
+            .hidden.md\\:grid { display: grid !important; }
+            /* md: 미디어쿼리 강제 적용 (PDF는 1120px 너비 기준) */
+            @media (max-width: 9999px) {
+              .md\\:grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+              .md\\:grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; }
+              .md\\:grid-cols-\\[360px_1fr\\] { grid-template-columns: 360px 1fr !important; }
+              .md\\:text-xl { font-size: 1.25rem !important; }
+              .md\\:text-2xl { font-size: 1.5rem !important; }
+              .md\\:text-3xl { font-size: 1.875rem !important; }
+              .md\\:text-4xl { font-size: 2.25rem !important; }
+              .md\\:p-4 { padding: 1rem !important; }
+              .md\\:p-6 { padding: 1.5rem !important; }
+              .md\\:p-8 { padding: 2rem !important; }
+              .md\\:p-12 { padding: 3rem !important; }
+              .md\\:gap-6 { gap: 1.5rem !important; }
+              .md\\:flex-row { flex-direction: row !important; }
+              .md\\:items-end { align-items: flex-end !important; }
+              .md\\:h-20 { height: 5rem !important; }
+              .md\\:h-10 { height: 2.5rem !important; }
+            }
           `;
           clonedDoc.head.appendChild(style);
 
-          // hide-on-export 직접 처리
           const hidden = clonedDoc.querySelectorAll("[data-hide-on-export]");
           hidden.forEach((el) => {
             (el as HTMLElement).style.display = "none";
@@ -120,19 +162,18 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         },
       });
 
-      // 5) 임시 요소 정리
-      if (pdfWrapper) {
-        document.body.removeChild(pdfWrapper);
-      } else {
-        element.style.width = originalStyles["width"] || "";
-        element.style.maxWidth = originalStyles["maxWidth"] || "";
+      // 6) wrapper 제거
+      if (pdfWrapper && pdfWrapper.parentNode) {
+        pdfWrapper.parentNode.removeChild(pdfWrapper);
+        pdfWrapper = null;
       }
 
+      // 7) hide 요소 복원
       hideTargets.forEach((el, idx) => {
         el.style.display = hidePrevDisplay[idx] || "";
       });
 
-      // 6) PDF 생성
+      // 8) PDF 생성
       const imgData = canvas.toDataURL("image/jpeg", 0.92);
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -141,9 +182,9 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         compress: true,
       });
 
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 5; // 좌우 여백 5mm로 살짝 추가 → 우측 잘림 방지
+      const pageWidth = pdf.internal.pageSize.getWidth(); // 210mm
+      const pageHeight = pdf.internal.pageSize.getHeight(); // 297mm
+      const margin = 6;
       const usableWidth = pageWidth - margin * 2;
 
       const imgAspectRatio = canvas.height / canvas.width;
@@ -184,7 +225,7 @@ export default function DownloadReportButton({ targetId, report }: Props) {
         remainingHeight -= usableHeightPerPage;
       }
 
-      // 푸터에 페이지 번호
+      // 페이지 번호 푸터
       const totalPages = pdf.getNumberOfPages();
       for (let i = 1; i <= totalPages; i++) {
         pdf.setPage(i);
@@ -209,6 +250,10 @@ export default function DownloadReportButton({ targetId, report }: Props) {
     } catch (err: any) {
       console.error(err);
       alert("PDF 생성 중 오류가 발생했습니다: " + (err?.message || "unknown"));
+      // 에러 시에도 wrapper 정리
+      if (pdfWrapper && pdfWrapper.parentNode) {
+        pdfWrapper.parentNode.removeChild(pdfWrapper);
+      }
     } finally {
       setDownloading(false);
     }
