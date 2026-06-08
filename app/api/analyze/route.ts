@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractWebsite } from "@/lib/extractWebsite";
 import { analyzeMarketing } from "@/lib/analyzeMarketing";
-import { analyzeCompetitors } from "@/lib/competitorAnalysis";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -53,49 +52,37 @@ export async function POST(req: NextRequest) {
 
     const t0 = Date.now();
 
-    // 1. 사이트 추출 (필수, 먼저 실행)
+    // 1. 사이트 추출
     const websiteData = await extractWebsite(url);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
-    // 2. 경쟁사 분석과 메인 AI 분석을 "병렬"로 실행 (시간 절약)
+    // 2. AI 메인 분석 (경쟁사 X - 별도 엔드포인트로 분리)
     const t1 = Date.now();
-    const hasNaverApi = !!(
-      process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET
-    );
-
-    // 경쟁사 분석 Promise (네이버 키 있을 때만)
-    const competitorPromise = hasNaverApi
-      ? analyzeCompetitors({
-          url,
-          title: websiteData.title,
-          ogTitle: websiteData.ogTitle,
-          ogDescription: websiteData.ogDescription,
-          description: websiteData.description,
-          h1: websiteData.h1,
-          h2: websiteData.h2,
-          keywords: websiteData.keywords,
-        }).catch((e) => {
-          console.warn("[경쟁사] 실패 (계속 진행):", e?.message);
-          return null;
-        })
-      : Promise.resolve(null);
-
-    // 경쟁사 먼저 대기 (메인 AI 호출 시 데이터 필요)
-    const competitorAnalysisResult = await competitorPromise;
-    console.log(`[타이밍] 경쟁사 분석: ${Date.now() - t1}ms`);
-
-    // 3. AI 메인 분석 (경쟁사 데이터 포함)
-    const t2 = Date.now();
-    const report = await analyzeMarketing(
-      websiteData,
-      competitorAnalysisResult
-    );
-    console.log(`[타이밍] AI 분석: ${Date.now() - t2}ms`);
+    const report = await analyzeMarketing(websiteData);
+    console.log(`[타이밍] AI 메인 분석: ${Date.now() - t1}ms`);
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
     report.url = url;
+    // 경쟁사 분석은 null로 표시 (프론트에서 별도 호출)
+    report.competitorAnalysis = null;
 
-    return NextResponse.json(report);
+    return NextResponse.json({
+      ...report,
+      // 프론트가 경쟁사 추가 호출 여부 판단용
+      _hasCompetitor: !!(
+        process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET
+      ),
+      // 경쟁사 분석에 필요한 추출 데이터 전달 (재추출 방지)
+      _websiteHints: {
+        title: websiteData.title,
+        ogTitle: websiteData.ogTitle,
+        ogDescription: websiteData.ogDescription,
+        description: websiteData.description,
+        h1: websiteData.h1,
+        h2: websiteData.h2,
+        keywords: websiteData.keywords,
+      },
+    });
   } catch (error: any) {
     console.error("[/api/analyze] error:", error);
     return NextResponse.json(
