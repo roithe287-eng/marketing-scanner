@@ -4,11 +4,48 @@ type Props = {
   report: MarketingReport;
 };
 
+/**
+ * AI 응답에서 placeholder 흔적·어색한 단어 제거
+ * - "<...>" 같은 placeholder 잔여물 제거
+ * - "유도", "권유" 같은 어색한 단어 제거
+ * - 공백 정리
+ */
+function cleanCtaText(text: string | undefined, fallback: string): string {
+  if (!text) return fallback;
+  let cleaned = text
+    // <...> 형태 placeholder 잔여물 제거
+    .replace(/<[^>]*>/g, "")
+    // 어색한 단어 제거
+    .replace(/상담\s*유도/g, "상담")
+    .replace(/상담\s*권유/g, "상담")
+    .replace(/\s*유도\s*/g, " ")
+    .replace(/\s*권유\s*/g, " ")
+    // 연속 공백 정리
+    .replace(/\s+/g, " ")
+    .trim();
+  // 비어버리면 fallback
+  if (!cleaned || cleaned.length < 5) return fallback;
+  return cleaned;
+}
+
 export default function FinalCTA({ report }: Props) {
   const consultUrl =
     process.env.NEXT_PUBLIC_CONSULT_URL || "https://prorealmkt.com/contact";
   const brandUrl =
     process.env.NEXT_PUBLIC_BRAND_URL || "https://prorealmkt.com";
+
+  const title = cleanCtaText(
+    report.finalCta?.title,
+    "광고비를 늘리기 전에, 전환 흐름부터 점검하세요."
+  );
+  const description = cleanCtaText(
+    report.finalCta?.description,
+    "현재 사이트의 문제는 광고 세팅만의 문제가 아닐 수 있습니다. 첫 화면, CTA, 카피, 신뢰 요소, 랜딩 흐름까지 함께 개선해야 광고 효율이 안정적으로 올라갑니다."
+  );
+  const buttonText = cleanCtaText(
+    report.finalCta?.buttonText,
+    "진짜마케팅 상담 신청하기"
+  );
 
   return (
     <div className="mt-10 overflow-hidden rounded-[32px] bg-jm-black text-white">
@@ -18,12 +55,10 @@ export default function FinalCTA({ report }: Props) {
             JINJJA MARKETING CONSULTING
           </p>
           <h3 className="mt-4 text-3xl font-black leading-tight md:text-4xl">
-            {report.finalCta?.title ||
-              "광고비를 늘리기 전에, 전환 흐름부터 점검하세요."}
+            {title}
           </h3>
           <p className="mt-5 max-w-2xl text-base leading-8 text-gray-300 md:text-lg">
-            {report.finalCta?.description ||
-              "현재 사이트의 문제는 광고 세팅만의 문제가 아닐 수 있습니다. 첫 화면, CTA, 카피, 신뢰 요소, 랜딩 흐름까지 함께 개선해야 광고 효율이 안정적으로 올라갑니다."}
+            {description}
           </p>
           <div className="mt-8 flex flex-col gap-3 sm:flex-row">
             <a
@@ -32,7 +67,7 @@ export default function FinalCTA({ report }: Props) {
               rel="noopener noreferrer"
               className="jm-button text-center"
             >
-              {report.finalCta?.buttonText || "진짜마케팅 상담 신청하기"}
+              {buttonText}
             </a>
             <a
               href={brandUrl}
