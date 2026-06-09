@@ -9,9 +9,9 @@ const openai = new OpenAI({
 // v16: 기본값을 gpt-4.1-mini로 변경 (gpt-4o-mini 대비 속도 2배, 비용 비슷)
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 
-// v15: 극한 다이어트. OpenAI API 자체가 느린 환경(Tier 1) 대응.
-// AI 호출 30초 안에 끝나야 안전 (네트워크 + Vercel 오버헤드 감안)
-const AI_TIMEOUT_MS = 30000;
+// v18: gpt-4.1-mini는 응답이 안정적이넦로 timeout 느슨 늘림
+// AI 호출 45초 안에 끝나야 안전 (Vercel 60초 한도 여유)
+const AI_TIMEOUT_MS = 45000;
 
 const SYSTEM_PROMPT = `너는 15년차 퍼포먼스 마케터다. "진짜마케팅" 시니어 컨설턴트로서 웹사이트를 마케팅/전환 관점에서 진단한다.
 원칙: 실제 데이터 인용(추측 금지), 점수 차등 평가, 한국어 직설적 톤.
@@ -129,7 +129,8 @@ export async function analyzeMarketing(
 ): Promise<MarketingReport> {
   let text: string | null = null;
 
-  // v15: 2단계만. 둘 다 매우 가벼움. 합쳐서 50초 안에 끝나도록.
+  // v18: max_tokens 충분히 늘림 (이전 1800으로 응답 잔림 테스트됨)
+  // gpt-4.1-mini는 빠르므로 timeout도 조금 대워도 안전
   const attempts: Array<{
     name: string;
     prompt: string;
@@ -139,14 +140,14 @@ export async function analyzeMarketing(
     {
       name: "1차 lean",
       prompt: buildPrompt(data, "lean"),
-      timeout: AI_TIMEOUT_MS, // 30초
-      maxTokens: 1800,
+      timeout: 45000, // 45초 (gpt-4.1-mini 응답이 25-35초 걸림)
+      maxTokens: 3500,
     },
     {
       name: "2차 minimal",
       prompt: buildPrompt(data, "minimal"),
-      timeout: 18000, // 18초
-      maxTokens: 1500,
+      timeout: 25000, // 25초
+      maxTokens: 3000,
     },
   ];
 
