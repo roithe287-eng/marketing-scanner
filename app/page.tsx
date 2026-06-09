@@ -8,6 +8,7 @@ import DiagnosisCard from "@/components/DiagnosisCard";
 import PriorityMatrix from "@/components/PriorityMatrix";
 import FinalCTA from "@/components/FinalCTA";
 import DownloadReportButton from "@/components/DownloadReportButton";
+import ShareButton from "@/components/ShareButton";
 import CompetitorComparison from "@/components/CompetitorComparison";
 import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
@@ -210,11 +211,12 @@ export default function HomePage() {
                   {report.oneLineSummary}
                 </p>
               </div>
-              <div data-hide-on-export>
+              <div data-hide-on-export className="flex flex-col gap-2 md:items-end">
                 <DownloadReportButton
                   targetId="report-area"
                   report={report}
                 />
+                <ShareButton report={report} />
               </div>
             </div>
 
