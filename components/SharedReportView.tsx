@@ -10,6 +10,7 @@ import CompetitorComparison from "@/components/CompetitorComparison";
 import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
+import Disclaimer from "@/components/Disclaimer";
 
 type Props = {
   report: MarketingReport;
@@ -167,6 +168,9 @@ export default function SharedReportView({ report, shareId }: Props) {
             )}
 
           <FinalCTA report={report} />
+
+          {/* v23: 면책 안내 (PDF에도 포함) */}
+          <Disclaimer />
         </div>
       </section>
 
