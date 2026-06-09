@@ -9,6 +9,9 @@ export type ExtractedWebsiteData = {
   description: string;
   ogTitle: string;
   ogDescription: string;
+  ogImage: string;
+  ogSiteName: string;
+  faviconUrl: string;
   keywords: string;
   h1: string[];
   h2: string[];
@@ -214,6 +217,32 @@ export async function extractWebsite(
   const ogTitle = $('meta[property="og:title"]').attr("content")?.trim() || "";
   const ogDescription =
     $('meta[property="og:description"]').attr("content")?.trim() || "";
+  let ogImage =
+    $('meta[property="og:image"]').attr("content")?.trim() ||
+    $('meta[name="twitter:image"]').attr("content")?.trim() ||
+    "";
+  const ogSiteName =
+    $('meta[property="og:site_name"]').attr("content")?.trim() || "";
+  let faviconUrl =
+    $('link[rel="icon"]').attr("href")?.trim() ||
+    $('link[rel="shortcut icon"]').attr("href")?.trim() ||
+    $('link[rel="apple-touch-icon"]').attr("href")?.trim() ||
+    "";
+
+  // 상대경로 → 절대경로 변환 (url 매개변수 사용)
+  try {
+    const base = new URL(url);
+    if (ogImage && !ogImage.startsWith("http")) {
+      ogImage = new URL(ogImage, base).toString();
+    }
+    if (faviconUrl && !faviconUrl.startsWith("http")) {
+      faviconUrl = new URL(faviconUrl, base).toString();
+    } else if (!faviconUrl) {
+      faviconUrl = new URL("/favicon.ico", base).toString();
+    }
+  } catch {
+    // 이그노어
+  }
   const keywords =
     $('meta[name="keywords"]').attr("content")?.trim() || "";
   const viewportMeta =
@@ -342,6 +371,9 @@ export async function extractWebsite(
     description,
     ogTitle,
     ogDescription,
+    ogImage,
+    ogSiteName,
+    faviconUrl,
     keywords,
     h1,
     h2,
