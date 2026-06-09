@@ -9,13 +9,14 @@ export default function BrandHeader() {
     >
       <div className="jm-container flex h-16 md:h-20 items-center justify-between gap-3">
         <a href="/" className="flex items-center gap-2 min-w-0">
-          {/* 진짜마케팅 로고 */}
+          {/* 진짜마케팅 로고 (정사각형 PNG) */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/logo.svg"
+            src="/logo-jinjja.png"
             alt="진짜마케팅"
-            width={200}
-            height={60}
-            className="h-9 md:h-10 w-auto shrink-0"
+            width={400}
+            height={400}
+            className="h-9 md:h-10 w-9 md:w-10 shrink-0 object-contain"
           />
           <span className="ml-1 hidden md:inline-flex items-center rounded-full bg-jm-light-gray px-2.5 py-1 text-[10px] font-black tracking-wider text-jm-gray">
             MARKETING SCANNER
