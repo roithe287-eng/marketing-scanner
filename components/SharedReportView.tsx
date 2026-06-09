@@ -10,7 +10,6 @@ import CompetitorComparison from "@/components/CompetitorComparison";
 import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
-import Link from "next/link";
 
 type Props = {
   report: MarketingReport;
@@ -20,12 +19,15 @@ type Props = {
 export default function SharedReportView({ report, shareId }: Props) {
   const siteName = report.meta?.siteName || report.meta?.domain || "분석 사이트";
   const ogImage = report.meta?.ogImage;
+  const brandUrl =
+    process.env.NEXT_PUBLIC_BRAND_URL || "https://prorealmkt.com";
 
   return (
     <main>
-      <BrandHeader />
+      {/* 공유 페이지 전용: 좌측 로고 클릭으로 메인 이동 불가 */}
+      <BrandHeader lockHome />
 
-      {/* 공유 페이지 안내 배너 */}
+      {/* 공유 페이지 안내 배너 (광고주용 - 다른 사이트 분석 경로 없음) */}
       <section className="jm-container pt-8">
         <div className="rounded-2xl border border-jm-border bg-jm-light-gray p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center gap-4 min-w-0">
@@ -42,7 +44,7 @@ export default function SharedReportView({ report, shareId }: Props) {
             )}
             <div className="min-w-0">
               <p className="text-xs font-black tracking-wider text-jm-red">
-                SHARED ANALYSIS REPORT
+                MARKETING DIAGNOSIS REPORT
               </p>
               <p className="mt-1 font-black text-lg truncate">
                 {siteName} 마케팅 진단 결과
@@ -50,12 +52,15 @@ export default function SharedReportView({ report, shareId }: Props) {
               <p className="text-xs text-jm-gray break-all">{report.url}</p>
             </div>
           </div>
-          <Link
-            href="/"
+          {/* 광고주를 위한 안내 - 메인으로 가는 링크 대신 진짜마케팅 상담 안내 */}
+          <a
+            href={brandUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="shrink-0 rounded-full bg-jm-black text-white px-5 py-2.5 text-sm font-bold hover:bg-jm-charcoal transition"
           >
-            내 사이트 무료 진단 →
-          </Link>
+            진짜마케팅 알아보기 →
+          </a>
         </div>
       </section>
 
@@ -165,17 +170,18 @@ export default function SharedReportView({ report, shareId }: Props) {
         </div>
       </section>
 
+      {/* Footer - 메인으로 가는 링크 없음, 브랜드 사이트 링크만 유지 */}
       <footer
         className="border-t border-jm-border bg-jm-light-gray py-10"
         style={{ paddingBottom: "calc(2.5rem + env(safe-area-inset-bottom))" }}
       >
         <div className="jm-container flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-jm-gray">
           <div>
-            © {new Date().getFullYear()} 진짜마케팅 · 마케팅스캐너 (MVP)
+            © {new Date().getFullYear()} 진짜마케팅 · 마케팅스캐너
           </div>
           <div className="flex gap-4">
             <a
-              href={process.env.NEXT_PUBLIC_BRAND_URL || "https://prorealmkt.com"}
+              href={brandUrl}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-jm-black"
