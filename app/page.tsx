@@ -13,6 +13,7 @@ import CompetitorComparison from "@/components/CompetitorComparison";
 import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
+import Disclaimer from "@/components/Disclaimer";
 import { MarketingReport } from "@/lib/reportSchema";
 
 export default function HomePage() {
@@ -356,6 +357,9 @@ export default function HomePage() {
 
             {/* Final CTA */}
             <FinalCTA report={report} />
+
+            {/* v23: 면책 안내 (PDF에도 포함) */}
+            <Disclaimer />
           </div>
         </section>
       )}
