@@ -185,14 +185,68 @@ export async function analyzeMarketing(
   }
 
   const result = MarketingReportSchema.safeParse(parsed);
+  let report: MarketingReport;
   if (!result.success) {
     console.warn(
       "[AI] Schema 경고 (그대로 반환):",
       JSON.stringify(result.error.format()).slice(0, 300)
     );
-    return parsed as MarketingReport;
+    report = parsed as MarketingReport;
+  } else {
+    report = result.data;
   }
-  return result.data;
+
+  // v17: 공유용 meta 정보 자동 채우기
+  report.meta = buildShareMeta(data);
+
+  return report;
+}
+
+/**
+ * v17: 공유 섬네일에 쓰일 meta 정보 추출
+ * 업체명: og:site_name > og:title 첫 단어 > 도메인
+ */
+function buildShareMeta(data: ExtractedWebsiteData): {
+  siteName: string;
+  ogImage: string;
+  ogTitle: string;
+  ogDescription: string;
+  faviconUrl: string;
+  domain: string;
+} {
+  let domain = "";
+  try {
+    domain = new URL(data.url).hostname.replace(/^www\./, "");
+  } catch {
+    domain = data.url;
+  }
+
+  // 업체명 추출 우선순위
+  let siteName = "";
+  if ((data as any).ogSiteName) {
+    siteName = (data as any).ogSiteName;
+  } else if (data.ogTitle) {
+    // "업체명 - 설명" 구조에서 앞부분 추출
+    siteName = data.ogTitle.split(/[-|:|–|—||｜]/)[0].trim();
+  } else if (data.title) {
+    siteName = data.title.split(/[-|:|–|—||｜]/)[0].trim();
+  }
+  if (!siteName || siteName.length < 2) {
+    siteName = domain;
+  }
+  // 너무 길면 잘라냄
+  if (siteName.length > 40) {
+    siteName = siteName.slice(0, 40) + "…";
+  }
+
+  return {
+    siteName,
+    ogImage: (data as any).ogImage || "",
+    ogTitle: data.ogTitle || data.title || "",
+    ogDescription: data.ogDescription || data.description || "",
+    faviconUrl: (data as any).faviconUrl || "",
+    domain,
+  };
 }
 
 /**
