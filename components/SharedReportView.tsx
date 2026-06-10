@@ -11,6 +11,7 @@ import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
 import Disclaimer from "@/components/Disclaimer";
+import ContentProtection from "@/components/ContentProtection";
 
 type Props = {
   report: MarketingReport;
@@ -25,6 +26,9 @@ export default function SharedReportView({ report, shareId }: Props) {
 
   return (
     <main>
+      {/* v25: 공유 페이지 콘텐츠 보호 (F12/우클릭/소스추출 차단) */}
+      <ContentProtection />
+
       {/* 공유 페이지 전용: 좌측 로고 클릭으로 메인 이동 불가 */}
       <BrandHeader lockHome />
 
