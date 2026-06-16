@@ -34,6 +34,28 @@ export type ExtractedWebsiteData = {
   internalLinkCount: number;
   externalLinkCount: number;
   isJsHeavy: boolean;
+
+  // v26: 네이버 AI 광고 준비도 점검용 필드
+  /** JSON-LD schema.org 구조화 데이터 (파싱 성공한 객체 배열) */
+  jsonLdSchemas: any[];
+  /** schema.org @type 목록 (예: ['Product', 'Organization']) */
+  schemaTypes: string[];
+  /** schema에 description 필드 존재 여부 */
+  schemaHasDescription: boolean;
+  /** schema에 name 필드 존재 여부 */
+  schemaHasName: boolean;
+  /** schema에 price 필드 존재 여부 */
+  schemaHasPrice: boolean;
+  /** schema에 aggregateRating 필드 존재 여부 */
+  schemaHasRating: boolean;
+  /** 감지된 전환 추적 스크립트 목록 (네이버 wcs, GTM, GA 등) */
+  trackingScripts: string[];
+  /** 네이버 전환 스크립트(wcs.js/wcslog) 설치 여부 */
+  hasNaverConversionScript: boolean;
+  /** GTM 설치 여부 */
+  hasGTM: boolean;
+  /** Google Analytics 설치 여부 */
+  hasGA: boolean;
 };
 
 const CTA_KEYWORDS = [
@@ -245,6 +267,88 @@ export async function extractWebsite(
   }
   const keywords =
     $('meta[name="keywords"]').attr("content")?.trim() || "";
+
+  // ===== v26: 네이버 AI 광고 준비도 점검용 데이터 추출 =====
+
+  // 1. JSON-LD schema.org 파싱
+  const jsonLdSchemas: any[] = [];
+  $('script[type="application/ld+json"]').each((_, el) => {
+    const raw = $(el).contents().text().trim();
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      // 배열이면 그대로, 단일 객체면 하나씩 추가
+      if (Array.isArray(parsed)) {
+        for (const item of parsed) jsonLdSchemas.push(item);
+      } else if (parsed && typeof parsed === "object") {
+        // @graph 필드 처리
+        if (Array.isArray(parsed["@graph"])) {
+          for (const item of parsed["@graph"]) jsonLdSchemas.push(item);
+        } else {
+          jsonLdSchemas.push(parsed);
+        }
+      }
+    } catch {
+      // JSON 파싱 실패 시 조용히 무시
+    }
+  });
+
+  // 2. @type 목록 추출
+  const schemaTypes: string[] = [];
+  let schemaHasDescription = false;
+  let schemaHasName = false;
+  let schemaHasPrice = false;
+  let schemaHasRating = false;
+
+  function inspectSchemaObject(obj: any) {
+    if (!obj || typeof obj !== "object") return;
+    const t = obj["@type"];
+    if (typeof t === "string") schemaTypes.push(t);
+    else if (Array.isArray(t)) for (const x of t) if (typeof x === "string") schemaTypes.push(x);
+    if (typeof obj.name === "string" && obj.name.trim().length > 0) schemaHasName = true;
+    if (typeof obj.description === "string" && obj.description.trim().length > 0)
+      schemaHasDescription = true;
+    // price 확인: 직접 price 또는 offers.price
+    if (obj.price !== undefined && obj.price !== null && String(obj.price).length > 0)
+      schemaHasPrice = true;
+    if (obj.offers) {
+      const offers = Array.isArray(obj.offers) ? obj.offers : [obj.offers];
+      for (const o of offers) {
+        if (o && (o.price !== undefined && o.price !== null && String(o.price).length > 0))
+          schemaHasPrice = true;
+      }
+    }
+    if (obj.aggregateRating) schemaHasRating = true;
+  }
+  for (const s of jsonLdSchemas) inspectSchemaObject(s);
+
+  // 3. 전환 추적 스크립트 감지 (HTML 전체 문자열에서)
+  const lowerHtml = html.toLowerCase();
+  const hasNaverConversionScript =
+    lowerHtml.includes("wcs.js") ||
+    lowerHtml.includes("wcs_do") ||
+    lowerHtml.includes("wcslog") ||
+    lowerHtml.includes("siteanalytics.naver");
+  const hasGTM =
+    lowerHtml.includes("googletagmanager.com/gtm.js") ||
+    /gtm-[a-z0-9]+/i.test(html);
+  const hasGA =
+    lowerHtml.includes("google-analytics.com") ||
+    lowerHtml.includes("gtag(") ||
+    /ga-[a-z0-9-]+/i.test(html) ||
+    /g-[a-z0-9]{8,}/i.test(html);
+
+  const trackingScripts: string[] = [];
+  if (hasNaverConversionScript) trackingScripts.push("네이버 전환스크립트(wcs)");
+  if (hasGTM) trackingScripts.push("Google Tag Manager");
+  if (hasGA) trackingScripts.push("Google Analytics");
+  if (lowerHtml.includes("connect.facebook.net") || lowerHtml.includes("fbq("))
+    trackingScripts.push("Meta Pixel");
+  if (lowerHtml.includes("kakaopixel") || lowerHtml.includes("kakao.com/k_track"))
+    trackingScripts.push("카카오 픽셀");
+
+  // ===== v26 끝 =====
+
   const viewportMeta =
     $('meta[name="viewport"]').attr("content")?.trim() || "";
   const hasFavicon =
@@ -375,6 +479,17 @@ export async function extractWebsite(
     ogSiteName,
     faviconUrl,
     keywords,
+    // v26: 네이버 AI 광고 준비도 점검용
+    jsonLdSchemas,
+    schemaTypes,
+    schemaHasDescription,
+    schemaHasName,
+    schemaHasPrice,
+    schemaHasRating,
+    trackingScripts,
+    hasNaverConversionScript,
+    hasGTM,
+    hasGA,
     h1,
     h2,
     h3,
