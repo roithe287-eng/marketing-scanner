@@ -92,6 +92,30 @@ export const MarketingReportSchema = z.object({
     buttonText: z.string(),
   }),
 
+  // v26: 네이버 AI 광고 준비도 점검
+  naverAiReadiness: z
+    .object({
+      overallScore: z.number().min(0).max(100),
+      grade: z.enum(["A", "B", "C", "D", "F"]).optional(),
+      summary: z.string(),
+      checks: z.array(
+        z.object({
+          id: z.string(),
+          label: z.string(),
+          category: z.enum(["schema", "site_name", "tracking", "content", "mobile"]),
+          status: z.enum(["pass", "warning", "fail"]),
+          weight: z.number().optional(),
+          currentValue: z.string(),
+          diagnosis: z.string(),
+          guide: z.string(),
+        })
+      ),
+      // 의료/제한 업종 경고 등 추가 메모
+      notes: z.array(z.string()).optional(),
+    })
+    .nullable()
+    .optional(),
+
   competitorAnalysis: z
     .object({
       searchKeyword: z.string(),
