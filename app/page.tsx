@@ -13,6 +13,7 @@ import CompetitorComparison from "@/components/CompetitorComparison";
 import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
+import NaverAiReadiness from "@/components/NaverAiReadiness";
 import Disclaimer from "@/components/Disclaimer";
 import { MarketingReport } from "@/lib/reportSchema";
 
@@ -319,6 +320,11 @@ export default function HomePage() {
                   </ul>
                 </div>
               )
+            )}
+
+            {/* v26: 네이버 AI 광고 준비도 점검 (2026.7 정식 오픈) */}
+            {report.naverAiReadiness && (
+              <NaverAiReadiness readiness={report.naverAiReadiness} />
             )}
 
             {/* 개선 우선순위 로드맵 (도식화) */}
