@@ -3,12 +3,13 @@
 import React from "react";
 import type { ChecklistItem } from "@/lib/reportSchema";
 
+// v31-2: page.tsx에서 checklist={report.checklist} 로 넘김.
 interface Props {
   checklist: ChecklistItem[];
 }
 
 /**
- * v31 가독성 강화 + 반응형
+ * v31-2 가독성 강화 + 반응형 + 100% 타입 동기화
  * 12가지 진단 체크리스트
  */
 export default function DiagnosisChecklist({ checklist }: Props) {
@@ -49,7 +50,7 @@ export default function DiagnosisChecklist({ checklist }: Props) {
         </div>
       </div>
 
-      {/* 통계 요약 (모바일 3열 유지) */}
+      {/* 통계 요약 */}
       <div className="grid grid-cols-3 gap-2 md:gap-3 mb-5 md:mb-6">
         <div className="bg-white border-2 border-[#10b98133] rounded-2xl p-3 md:p-4 shadow-md text-center">
           <div className="text-2xl md:text-3xl mb-0.5 md:mb-1">✅</div>
