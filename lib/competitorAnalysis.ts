@@ -84,6 +84,60 @@ function stripHtml(html: string): string {
     .trim();
 }
 
+/**
+ * v27: 대형 종합몰 · 오픈마켓 · 가격비교 사이트 제외 리스트
+ * - 동종업종 경쟁사로 볼 수 없는 일반 소상공인 광고주 관점 차단
+ * - 도메인 설사도 포함 (예: m.coupang.com, mall.coupang.com 등)
+ */
+const LARGE_MARKETPLACE_DOMAINS = [
+  // 오픈마켓
+  "coupang.com",
+  "gmarket.co.kr",
+  "auction.co.kr",
+  "11st.co.kr",
+  "tmon.co.kr",
+  "wemakeprice.com",
+  "interpark.com",
+  // 종합쇼핑몰
+  "ssg.com",
+  "lotteon.com",
+  "emart.com",
+  "hmall.com",
+  "hyundaihmall.com",
+  "akmall.com",
+  "galleria.co.kr",
+  "shinsegae.com",
+  // 가격비교
+  "enuri.com",
+  "danawa.com",
+  "bestkeyword.co.kr",
+  // 대형 전문몰
+  "oliveyoung.co.kr",
+  "musinsa.com",
+  "ablyrocks.com",
+  "zigzag.kr",
+  "a-bly.com",
+  "brandi.co.kr",
+  "kakaomakers.com",
+  "kakaomakers.co.kr",
+  "market.kakao.com",
+  // 해외직구
+  "aliexpress.com",
+  "amazon.com",
+  "amazon.co.jp",
+  "taobao.com",
+  "tmall.com",
+  // 더 추가 가능
+];
+
+function isLargeMarketplace(domain: string): boolean {
+  const d = domain.toLowerCase();
+  return LARGE_MARKETPLACE_DOMAINS.some((blocked) => {
+    // 정확 일치 또는 서브도메인 (e.g. m.coupang.com)
+    return d === blocked || d.endsWith(`.${blocked}`);
+  });
+}
+
 function pickCompetitors(
   items: Array<{ title: string; link: string; description: string }>,
   ourDomain: string,
@@ -104,6 +158,7 @@ function pickCompetitors(
     if (ourDomain.endsWith(`.${domain}`)) continue;
     if (seen.has(domain)) continue;
 
+    // v27: 광포털 · 검색엔진 · 백과사전 제외
     if (
       domain.includes("naver.com") ||
       domain.includes("search.daum.net") ||
@@ -116,6 +171,9 @@ function pickCompetitors(
     ) {
       continue;
     }
+
+    // v27: 대형 종합몰 · 오픈마켓 · 가격비교 사이트 제외
+    if (isLargeMarketplace(domain)) continue;
 
     seen.add(domain);
     result.push({
@@ -290,7 +348,7 @@ JSON 형식으로만 응답하라:
 {"keyword": "추출한 키워드"}`;
 
     const response = await openai.chat.completions.create({
-      model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },
       temperature: 0.2,
