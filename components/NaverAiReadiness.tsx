@@ -1,32 +1,16 @@
 "use client";
 
 import React from "react";
+import type { MarketingReport } from "@/lib/reportSchema";
 
-interface NaverCheck {
-  id: string;
-  label: string;
-  category: "schema" | "site_name" | "tracking" | "content" | "mobile";
-  status: "pass" | "warning" | "fail";
-  weight?: number;
-  currentValue: string;
-  diagnosis: string;
-  guide: string;
-}
-
-interface Readiness {
-  overallScore: number;
-  grade?: "A" | "B" | "C" | "D" | "F";
-  summary: string;
-  checks: NaverCheck[];
-  notes?: string[];
-}
-
+// v31-2: page.tsx에서 readiness={report.naverAiReadiness} 로 넘김.
+// naverAiReadiness는 .nullable().optional()이므로 null/undefined 안전 처리.
 interface Props {
-  readiness: Readiness | null | undefined;
+  readiness: MarketingReport["naverAiReadiness"];
 }
 
 /**
- * v31 가독성 강화 + 반응형
+ * v31-2 가독성 강화 + 반응형 + 100% 타입 동기화
  * 네이버 AI 광고 준비도 점검
  */
 export default function NaverAiReadiness({ readiness }: Props) {
@@ -176,7 +160,7 @@ export default function NaverAiReadiness({ readiness }: Props) {
         </div>
       )}
 
-      {/* 추가 메모 (의료/제한 업종 경고 등) */}
+      {/* 추가 메모 */}
       {readiness.notes && readiness.notes.length > 0 && (
         <div className="mt-4 bg-[#fef3c7] border-2 border-[#f59e0b55] rounded-2xl p-4 md:p-5 shadow-md">
           <div className="flex items-center gap-2 mb-2">
@@ -186,7 +170,7 @@ export default function NaverAiReadiness({ readiness }: Props) {
             </span>
           </div>
           <ul className="space-y-1.5">
-            {readiness.notes.map((note, i) => (
+            {readiness.notes.map((note: string, i: number) => (
               <li
                 key={i}
                 className="flex items-start gap-2 text-sm md:text-base text-[#111] leading-relaxed"
