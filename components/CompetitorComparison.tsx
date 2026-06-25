@@ -325,7 +325,8 @@ export default function CompetitorComparison({
               </span>
             </div>
 
-            <div className="relative aspect-[16/11] bg-gradient-to-br from-jm-light-gray/50 to-white border border-jm-border rounded-xl">
+            {/* v29: 모바일 4:3, 태블릿+ 더 16:11 비율 */}
+            <div className="relative aspect-[4/3] md:aspect-[16/11] bg-gradient-to-br from-jm-light-gray/50 to-white border border-jm-border rounded-xl">
               {/* 4분면 라벨 */}
               <div className="absolute top-3 left-3 text-[10px] font-black text-jm-gray bg-white/80 px-2 py-1 rounded">
                 감성 가성비형
@@ -409,7 +410,8 @@ export default function CompetitorComparison({
             </div>
 
             {/* 버블 표시 (큰 영역) */}
-            <div className="mt-5 grid grid-cols-3 md:grid-cols-6 gap-3">
+            {/* v29: 모바일 2컬럼 → 태블릿 3컬럼 → 데스크톱 6컬럼 */}
+            <div className="mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {toneSorted.map((t) => {
                 const size = Math.max(48, 48 + t.count * 14);
                 return (
@@ -425,7 +427,7 @@ export default function CompetitorComparison({
                         opacity: t.count === 0 ? 0.25 : 1,
                       }}
                     >
-                      <span className="text-2xl">{t.cat.emoji}</span>
+                      <span className="text-xl md:text-2xl">{t.cat.emoji}</span>
                     </div>
                     <p className="mt-2 text-xs font-black">{t.cat.label}</p>
                     <p className="text-[10px] text-jm-gray">
@@ -478,11 +480,12 @@ export default function CompetitorComparison({
               </span>
             </div>
 
-            <div className="overflow-x-auto -mx-1">
-              <table className="w-full text-xs md:text-sm border-collapse">
+            {/* v29: 모바일에서 가로 스크롤 + 첫 열 sticky */}
+            <div className="overflow-x-auto -mx-1 md:mx-0">
+              <table className="w-full text-xs md:text-sm border-collapse min-w-[520px] md:min-w-0">
                 <thead>
                   <tr>
-                    <th className="text-left p-2 md:p-3 font-black text-jm-gray bg-jm-light-gray rounded-l-lg whitespace-nowrap">
+                    <th className="text-left p-2 md:p-3 font-black text-jm-gray bg-jm-light-gray rounded-l-lg whitespace-nowrap sticky left-0 z-10 md:relative">
                       평가 항목
                     </th>
                     {evalResults.map((r) => (
@@ -523,7 +526,7 @@ export default function CompetitorComparison({
                     const avgBadge = STATUS_BADGE[avgStatus];
                     return (
                       <tr key={row.label} className="border-b border-jm-border last:border-b-0">
-                        <td className="p-2 md:p-3 font-bold text-jm-black">
+                        <td className="p-2 md:p-3 font-bold text-jm-black sticky left-0 bg-white z-10 md:relative md:bg-transparent whitespace-nowrap">
                           {row.label}
                         </td>
                         {evalResults.map((r) => {
@@ -565,7 +568,8 @@ export default function CompetitorComparison({
           <p className="text-xs font-black tracking-wider text-jm-red mb-3">
             ⑤ COMPETITOR CARDS
           </p>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {/* v29: 모바일 1컬럼 → 태블릿 2컬럼 → 데스크톱 3컬럼 */}
+          <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {competitors.map((comp) => (
               <div
                 key={comp.rank}
