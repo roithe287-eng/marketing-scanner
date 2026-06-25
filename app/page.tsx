@@ -239,44 +239,10 @@ export default function HomePage() {
                 <div className="mt-2 text-xs text-jm-gray">
                   마케팅/전환 관점 종합 점수
                 </div>
-                <div className="mt-6">
-                  <ScoreRadar diagnosis={report.diagnosis} />
-                </div>
-
-                {/* 항목별 점수 리스트 */}
-                <div className="mt-4 space-y-2">
-                  {Object.entries({
-                    firstView: "첫 화면 설득력",
-                    cta: "CTA 명확도",
-                    copywriting: "카피라이팅",
-                    trust: "신뢰 요소",
-                    conversionFlow: "전환 흐름",
-                    adLanding: "광고 랜딩 적합도",
-                    mobileUx: "모바일 UX",
-                    seo: "SEO 기본",
-                  }).map(([key, label]) => {
-                    const score = (report.diagnosis as any)[key] as number;
-                    return (
-                      <div
-                        key={key}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span className="text-jm-gray">{label}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-24 rounded-full bg-jm-light-gray overflow-hidden">
-                            <div
-                              className="h-full bg-jm-red"
-                              style={{ width: `${score}%` }}
-                            />
-                          </div>
-                          <span className="w-9 text-right font-bold">
-                            {score}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                <p className="mt-6 text-xs text-jm-gray leading-relaxed">
+                  아래 <span className="font-bold text-jm-charcoal">영역별 점수 분석</span> 섹션에서
+                  8개 핵심 영역의 세부 점수를 확인하세요.
+                </p>
               </div>
 
               <div className="grid gap-4">
@@ -284,6 +250,11 @@ export default function HomePage() {
                   <DiagnosisCard key={index} issue={issue} index={index} />
                 ))}
               </div>
+            </div>
+
+            {/* v33: 영역별 점수 분석 (독립 섹션, 풀폭) */}
+            <div className="mt-8">
+              <ScoreRadar diagnosis={report.diagnosis} />
             </div>
 
             {/* 12가지 진단 체크리스트 */}
