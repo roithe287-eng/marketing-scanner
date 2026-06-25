@@ -127,7 +127,18 @@ const LARGE_MARKETPLACE_DOMAINS = [
   "amazon.co.jp",
   "taobao.com",
   "tmall.com",
-  // 더 추가 가능
+  // v27.1: SNS · 소셜커머스 · 영상플랫폼
+  "tiktok.com",
+  "tiktokshop.com",
+  "instagram.com",
+  "facebook.com",
+  "m.facebook.com",
+  "youtube.com",
+  "youtu.be",
+  "twitter.com",
+  "x.com",
+  "threads.net",
+  "pinterest.com",
 ];
 
 function isLargeMarketplace(domain: string): boolean {
