@@ -1,36 +1,30 @@
 "use client";
 
 import React from "react";
+import type { MarketingReport } from "@/lib/reportSchema";
 
-interface Diagnosis {
-  firstView: number;
-  cta: number;
-  copywriting: number;
-  trust: number;
-  conversionFlow: number;
-  adLanding: number;
-  mobileUx: number;
-  seo: number;
-}
-
+// v31-2: page.tsx 에서 report.diagnosis 를 그대로 넘김.
+// MarketingReport["diagnosis"] 타입을 직접 사용해 100% 동기화.
 interface Props {
-  diagnosis: Diagnosis;
+  diagnosis: MarketingReport["diagnosis"];
 }
 
 /**
- * v31 가독성 강화 + 반응형
- * 8개 영역 점수 그리드 (mobile: 2col / tablet: 4col / desktop: 4col)
+ * v31-2 가독성 강화 + 반응형 + 100% 타입 동기화
+ * 8개 영역 점수 그리드 (mobile: 2col → tablet: 3col → desktop: 4col)
  */
 export default function ScoreRadar({ diagnosis }: Props) {
+  if (!diagnosis) return null;
+
   const items = [
-    { key: "firstView", label: "첫인상", icon: "👁️", score: diagnosis.firstView, color: "#e31b23" },
-    { key: "cta", label: "CTA", icon: "🎯", score: diagnosis.cta, color: "#f59e0b" },
-    { key: "copywriting", label: "카피라이팅", icon: "✍️", score: diagnosis.copywriting, color: "#8b5cf6" },
-    { key: "trust", label: "신뢰 요소", icon: "🛡️", score: diagnosis.trust, color: "#10b981" },
-    { key: "conversionFlow", label: "전환 흐름", icon: "🔄", score: diagnosis.conversionFlow, color: "#3b82f6" },
-    { key: "adLanding", label: "광고 랜딩", icon: "📢", score: diagnosis.adLanding, color: "#ec4899" },
-    { key: "mobileUx", label: "모바일 UX", icon: "📱", score: diagnosis.mobileUx, color: "#06b6d4" },
-    { key: "seo", label: "SEO", icon: "🔍", score: diagnosis.seo, color: "#84cc16" },
+    { key: "firstView", label: "첫인상", icon: "👁️", score: diagnosis.firstView ?? 0, color: "#e31b23" },
+    { key: "cta", label: "CTA", icon: "🎯", score: diagnosis.cta ?? 0, color: "#f59e0b" },
+    { key: "copywriting", label: "카피라이팅", icon: "✍️", score: diagnosis.copywriting ?? 0, color: "#8b5cf6" },
+    { key: "trust", label: "신뢰 요소", icon: "🛡️", score: diagnosis.trust ?? 0, color: "#10b981" },
+    { key: "conversionFlow", label: "전환 흐름", icon: "🔄", score: diagnosis.conversionFlow ?? 0, color: "#3b82f6" },
+    { key: "adLanding", label: "광고 랜딩", icon: "📢", score: diagnosis.adLanding ?? 0, color: "#ec4899" },
+    { key: "mobileUx", label: "모바일 UX", icon: "📱", score: diagnosis.mobileUx ?? 0, color: "#06b6d4" },
+    { key: "seo", label: "SEO", icon: "🔍", score: diagnosis.seo ?? 0, color: "#84cc16" },
   ];
 
   const getGrade = (score: number) => {
@@ -57,7 +51,7 @@ export default function ScoreRadar({ diagnosis }: Props) {
         </div>
       </div>
 
-      {/* 점수 카드 그리드: 모바일 2열 → 태블릿/데스크 4열 */}
+      {/* 점수 카드 그리드: 모바일 2열 → 태블릿 3열 → 데스크 4열 */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 md:gap-4">
         {items.map((item) => {
           const grade = getGrade(item.score);
