@@ -1,32 +1,16 @@
 "use client";
 
 import React from "react";
+import type { MarketingReport } from "@/lib/reportSchema";
 
-interface ExampleCopy {
-  heroHeadline: string;
-  subHeadline: string;
-  ctaText: string;
-  currentHeroHeadline?: string;
-  currentCtaText?: string;
-  competitorCopyInsight?: string;
-}
-
-interface CompetitorAnalysis {
-  searchKeyword: string;
-  competitors: Array<{
-    rank: number;
-    title: string;
-    keyMessage?: string;
-  }>;
-}
-
+// v31-2: page.tsx에서 exampleCopy와 competitorAnalysis를 그대로 넘김.
 interface Props {
-  exampleCopy: ExampleCopy;
-  competitorAnalysis?: CompetitorAnalysis | null;
+  exampleCopy: MarketingReport["exampleCopy"];
+  competitorAnalysis?: MarketingReport["competitorAnalysis"];
 }
 
 /**
- * v31 가독성 강화 + 반응형
+ * v31-2 가독성 강화 + 반응형 + 100% 타입 동기화
  * 카피 개선 비교 (현재 vs 제안)
  */
 export default function CopyImprovement({ exampleCopy, competitorAnalysis }: Props) {
@@ -42,7 +26,7 @@ export default function CopyImprovement({ exampleCopy, competitorAnalysis }: Pro
     {
       label: "서브 헤드라인",
       icon: "📝",
-      current: undefined,
+      current: undefined as string | undefined,
       proposed: exampleCopy.subHeadline,
     },
     {
@@ -76,7 +60,6 @@ export default function CopyImprovement({ exampleCopy, competitorAnalysis }: Pro
             key={idx}
             className="bg-white border-2 border-gray-200 rounded-2xl p-4 md:p-6 shadow-md hover:shadow-xl transition-all"
           >
-            {/* 라벨 */}
             <div className="flex items-center gap-2 mb-3 md:mb-4 flex-wrap">
               <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-[#fee2e2] flex items-center justify-center flex-shrink-0">
                 <span className="text-lg md:text-xl">{it.icon}</span>
@@ -86,9 +69,7 @@ export default function CopyImprovement({ exampleCopy, competitorAnalysis }: Pro
               </span>
             </div>
 
-            {/* Before / After 비교 */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              {/* Before - 현재 카피 (있을 때만) */}
               <div className="rounded-xl border-2 border-[#e31b2333] bg-[#fef2f2] p-4 md:p-5">
                 <div className="flex items-center gap-2 mb-2 md:mb-3">
                   <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-[#e31b23] flex items-center justify-center">
@@ -109,7 +90,6 @@ export default function CopyImprovement({ exampleCopy, competitorAnalysis }: Pro
                 )}
               </div>
 
-              {/* After - 개선안 */}
               <div className="rounded-xl border-2 border-[#10b98155] bg-[#f0fdf4] p-4 md:p-5">
                 <div className="flex items-center gap-2 mb-2 md:mb-3">
                   <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg bg-[#10b981] flex items-center justify-center">
@@ -142,7 +122,7 @@ export default function CopyImprovement({ exampleCopy, competitorAnalysis }: Pro
                   {exampleCopy.competitorCopyInsight}
                 </p>
                 {competitorAnalysis?.searchKeyword && (
-                  <div className="mt-2 text-xs md:text-sm text-[#6b7280] font-medium">
+                  <div className="mt-2 text-xs md:text-sm text-[#6b7280] font-medium break-words">
                     🔍 검색 키워드:{" "}
                     <span className="font-bold text-[#374151]">
                       {competitorAnalysis.searchKeyword}
