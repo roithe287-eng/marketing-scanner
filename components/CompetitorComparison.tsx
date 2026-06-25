@@ -308,20 +308,26 @@ export default function CompetitorComparison({
       </div>
 
       <div className="p-6 md:p-8 space-y-6">
-        {/* ===== ② 포지셔닝 맵 (2D 산점도) ===== */}
+        {/* ===== ② 포지셔닝 맵 (2D 산점도) v32: 카드 컨테이너 + 격자 강화 ===== */}
         {competitors.length > 0 && (
-          <div className="rounded-2xl border-2 border-jm-border p-5 md:p-6">
-            <div className="flex items-baseline justify-between flex-wrap gap-2 mb-4">
-              <div>
-                <p className="text-xs font-black tracking-wider text-jm-red">
-                  ② POSITIONING MAP
-                </p>
-                <p className="mt-1 text-base md:text-lg font-black">
-                  업종 포지셔닝 맵
-                </p>
+          <div className="rounded-2xl border-2 border-gray-300 bg-gradient-to-br from-white to-gray-50 p-5 md:p-7 shadow-lg">
+            {/* 헤더 영역 강화 */}
+            <div className="flex items-start justify-between flex-wrap gap-3 mb-5 pb-4 border-b-2 border-gray-200">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 md:w-12 md:h-12 rounded-xl bg-[#e31b23] flex items-center justify-center shadow-md flex-shrink-0">
+                  <span className="text-xl md:text-2xl">🗺️</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] md:text-xs font-black tracking-widest text-[#e31b23]">
+                    ② POSITIONING MAP
+                  </p>
+                  <p className="mt-0.5 text-lg md:text-xl font-black text-[#111]">
+                    업종 포지셔닝 맵
+                  </p>
+                </div>
               </div>
-              <span className="text-[10px] text-jm-gray">
-                각 사이트의 메시지 키워드 빈도로 자동 산정
+              <span className="text-[11px] md:text-xs text-gray-500 font-medium bg-gray-100 px-2.5 py-1 rounded-full">
+                메시지 키워드 빈도 기준 자동 산정
               </span>
             </div>
 
@@ -336,18 +342,32 @@ export default function CompetitorComparison({
                 { bg: "bg-violet-500", border: "border-violet-600", text: "text-white" }, // 5위
               ];
               return (
-                <div className="relative aspect-[4/3] md:aspect-[16/11] border-2 border-jm-border rounded-2xl overflow-hidden">
-                  {/* 4분면 컬러 배경 */}
+                <div className="relative aspect-[4/3] md:aspect-[16/11] border-2 border-gray-400 rounded-2xl overflow-hidden bg-white shadow-inner">
+                  {/* 4분면 컬러 배경 (조금 더 진하게) */}
                   <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
                     {/* 좌상: 감성 가성비 (분홍) */}
-                    <div className="bg-gradient-to-br from-pink-50 to-pink-100/60" />
+                    <div className="bg-gradient-to-br from-pink-100 to-pink-50/70" />
                     {/* 우상: 프리미엄 감성 (보라) */}
-                    <div className="bg-gradient-to-bl from-violet-100 to-violet-50/60" />
+                    <div className="bg-gradient-to-bl from-violet-100 to-violet-50/70" />
                     {/* 좌하: 저가 실용 (노랑) */}
-                    <div className="bg-gradient-to-tr from-amber-100 to-amber-50/60" />
+                    <div className="bg-gradient-to-tr from-amber-100 to-amber-50/70" />
                     {/* 우하: 고급 실용 (에메랄드) */}
-                    <div className="bg-gradient-to-tl from-emerald-100 to-emerald-50/60" />
+                    <div className="bg-gradient-to-tl from-emerald-100 to-emerald-50/70" />
                   </div>
+
+                  {/* v32: 격자 가이드 라인 (차트처럼 단단하게) */}
+                  <svg
+                    className="absolute inset-0 w-full h-full pointer-events-none"
+                    preserveAspectRatio="none"
+                    viewBox="0 0 100 100"
+                  >
+                    {/* 가로 보조선 (25%, 75%) */}
+                    <line x1="0" y1="25" x2="100" y2="25" stroke="#9ca3af" strokeWidth="0.15" strokeDasharray="1,1" />
+                    <line x1="0" y1="75" x2="100" y2="75" stroke="#9ca3af" strokeWidth="0.15" strokeDasharray="1,1" />
+                    {/* 세로 보조선 (25%, 75%) */}
+                    <line x1="25" y1="0" x2="25" y2="100" stroke="#9ca3af" strokeWidth="0.15" strokeDasharray="1,1" />
+                    <line x1="75" y1="0" x2="75" y2="100" stroke="#9ca3af" strokeWidth="0.15" strokeDasharray="1,1" />
+                  </svg>
 
                   {/* 4분면 라벨 (큰 폰트 + 존대감) */}
                   <div className="absolute top-4 left-4 z-10">
@@ -375,24 +395,38 @@ export default function CompetitorComparison({
                     </span>
                   </div>
 
-                  {/* 십자축 (굵고 진하게) */}
-                  <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-jm-charcoal/30" />
-                  <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-jm-charcoal/30" />
+                  {/* v32: 십자축 (더 굵고 진하게 - 차트 느낌) */}
+                  <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-gray-700/50" />
+                  <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-gray-700/50" />
 
-                  {/* 축 라벨 (큰 폰트 + 화살표) */}
+                  {/* 중심점 마커 */}
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-gray-700 z-10" />
+
+                  {/* Y축 라벨 (세로 - 위쪽) */}
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 -rotate-90 origin-center whitespace-nowrap"
-                    style={{ left: "-2px" }}
+                    className="absolute -rotate-90 origin-center whitespace-nowrap z-10"
+                    style={{ left: "-8px", top: "25%" }}
                   >
-                    <span className="inline-flex items-center gap-1 bg-jm-black text-white px-3 py-1 rounded-full text-xs md:text-sm font-black shadow-md">
-                      감성·라이프 ↑
+                    <span className="inline-flex items-center gap-1 bg-[#111] text-white px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black shadow-md">
+                      ↑ 감성·라이프
                     </span>
                   </div>
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10">
-                    <span className="inline-flex items-center gap-2 bg-jm-black text-white px-3 py-1 rounded-full text-xs md:text-sm font-black shadow-md whitespace-nowrap">
-                      <span>가격 강조</span>
-                      <span className="text-jm-red">←→</span>
-                      <span>프리미엄 강조</span>
+                  {/* Y축 라벨 (세로 - 아래쪽) */}
+                  <div
+                    className="absolute -rotate-90 origin-center whitespace-nowrap z-10"
+                    style={{ left: "-8px", top: "75%" }}
+                  >
+                    <span className="inline-flex items-center gap-1 bg-gray-700 text-white px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black shadow-md">
+                      실용·기능 ↓
+                    </span>
+                  </div>
+
+                  {/* X축 라벨 (가로) */}
+                  <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-10">
+                    <span className="inline-flex items-center gap-1.5 bg-[#111] text-white px-3 py-1 rounded-md text-[10px] md:text-xs font-black shadow-md whitespace-nowrap">
+                      <span>← 가격 강조</span>
+                      <span className="text-[#e31b23]">|</span>
+                      <span>프리미엄 강조 →</span>
                     </span>
                   </div>
 
@@ -430,8 +464,14 @@ export default function CompetitorComparison({
               );
             })()}
 
-            {/* v30: 범례 + 경쟁사 순위 리스트 */}
-            <div className="mt-4 flex flex-wrap items-center gap-2">
+            {/* v32: 범례 + 경쟁사 순위 리스트 (카드 안 강조) */}
+            <div className="mt-5 p-3 md:p-4 rounded-xl bg-gray-50 border border-gray-200">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs md:text-sm font-black text-[#111] uppercase tracking-wider">
+                  📍 경쟁사 순위
+                </span>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
               {competitors.map((c, idx) => {
                 const COLORS = [
                   "bg-rose-500",
@@ -464,10 +504,11 @@ export default function CompetitorComparison({
                   </span>
                 );
               })}
+              </div>
+              <p className="mt-2.5 text-[11px] md:text-xs text-gray-500 font-medium leading-relaxed">
+                💡 각 점은 상위 경쟁사의 포지셔닝입니다. 점 호버 시 순위 + 도메인이 표시됩니다.
+              </p>
             </div>
-            <p className="mt-2 text-xs text-jm-gray">
-              · 각 점은 상위 경쟁사의 포지셔닝입니다. 점 호버 시 순위 + 도메인이 표시됩니다.
-            </p>
           </div>
         )}
 
