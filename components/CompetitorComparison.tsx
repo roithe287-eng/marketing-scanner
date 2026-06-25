@@ -325,70 +325,149 @@ export default function CompetitorComparison({
               </span>
             </div>
 
-            {/* v29: 모바일 4:3, 태블릿+ 더 16:11 비율 */}
-            <div className="relative aspect-[4/3] md:aspect-[16/11] bg-gradient-to-br from-jm-light-gray/50 to-white border border-jm-border rounded-xl">
-              {/* 4분면 라벨 */}
-              <div className="absolute top-3 left-3 text-[10px] font-black text-jm-gray bg-white/80 px-2 py-1 rounded">
-                감성 가성비형
-              </div>
-              <div className="absolute top-3 right-3 text-[10px] font-black text-jm-gray bg-white/80 px-2 py-1 rounded">
-                프리미엄 감성형
-              </div>
-              <div className="absolute bottom-3 left-3 text-[10px] font-black text-jm-gray bg-white/80 px-2 py-1 rounded">
-                저가 실용형
-              </div>
-              <div className="absolute bottom-3 right-3 text-[10px] font-black text-jm-gray bg-white/80 px-2 py-1 rounded">
-                고급 실용형
-              </div>
-
-              {/* 십자축 */}
-              <div className="absolute left-1/2 top-0 bottom-0 w-px bg-jm-border" />
-              <div className="absolute top-1/2 left-0 right-0 h-px bg-jm-border" />
-
-              {/* 축 라벨 */}
-              <div className="absolute -left-1 top-1/2 -translate-y-1/2 -rotate-90 text-[10px] font-black text-jm-gray whitespace-nowrap origin-center" style={{ transformOrigin: "left center", left: "-30px" }}>
-                감성·라이프 ↑
-              </div>
-              <div className="absolute bottom-[-22px] left-1/2 -translate-x-1/2 text-[10px] font-black text-jm-gray whitespace-nowrap">
-                가격 강조 ←→ 프리미엄 강조
-              </div>
-
-              {/* 경쟁사 점 */}
-              {competitors.map((c) => {
-                const pos = calculatePosition(getCompetitorText(c));
-                return (
-                  <div
-                    key={c.rank}
-                    className="absolute -translate-x-1/2 -translate-y-1/2 group"
-                    style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
-                  >
-                    <div className="flex items-center gap-1 bg-white border-2 border-jm-black rounded-full px-2 py-1 shadow-md hover:scale-110 transition-transform cursor-pointer">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getFaviconUrl(c.domain)}
-                        alt=""
-                        className="h-4 w-4 rounded"
-                      />
-                      <span className="text-[10px] font-black">{c.rank}</span>
-                    </div>
-                    {/* 호버 툴팁 */}
-                    <div className="opacity-0 group-hover:opacity-100 absolute left-1/2 -translate-x-1/2 -bottom-7 bg-jm-black text-white text-[10px] px-2 py-0.5 rounded whitespace-nowrap transition-opacity pointer-events-none">
-                      {c.domain}
-                    </div>
+            {/* v30: 가독성 강화 — 4분면 색상 배경 + 큰 라벨 + 컬러링 점 + 순위별 색상 */}
+            {(() => {
+              // 순위별 색상 팔레트
+              const RANK_COLORS = [
+                { bg: "bg-rose-500", border: "border-rose-600", text: "text-white" },     // 1위
+                { bg: "bg-amber-500", border: "border-amber-600", text: "text-white" },   // 2위
+                { bg: "bg-emerald-500", border: "border-emerald-600", text: "text-white" },// 3위
+                { bg: "bg-sky-500", border: "border-sky-600", text: "text-white" },       // 4위
+                { bg: "bg-violet-500", border: "border-violet-600", text: "text-white" }, // 5위
+              ];
+              return (
+                <div className="relative aspect-[4/3] md:aspect-[16/11] border-2 border-jm-border rounded-2xl overflow-hidden">
+                  {/* 4분면 컬러 배경 */}
+                  <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
+                    {/* 좌상: 감성 가성비 (분홍) */}
+                    <div className="bg-gradient-to-br from-pink-50 to-pink-100/60" />
+                    {/* 우상: 프리미엄 감성 (보라) */}
+                    <div className="bg-gradient-to-bl from-violet-100 to-violet-50/60" />
+                    {/* 좌하: 저가 실용 (노랑) */}
+                    <div className="bg-gradient-to-tr from-amber-100 to-amber-50/60" />
+                    {/* 우하: 고급 실용 (에메랄드) */}
+                    <div className="bg-gradient-to-tl from-emerald-100 to-emerald-50/60" />
                   </div>
+
+                  {/* 4분면 라벨 (큰 폰트 + 존대감) */}
+                  <div className="absolute top-4 left-4 z-10">
+                    <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-pink-200">
+                      <span className="text-lg">🌸</span>
+                      <span className="text-sm font-black text-pink-700">감성 가성비형</span>
+                    </span>
+                  </div>
+                  <div className="absolute top-4 right-4 z-10">
+                    <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-violet-200">
+                      <span className="text-lg">👑</span>
+                      <span className="text-sm font-black text-violet-700">프리미엄 감성형</span>
+                    </span>
+                  </div>
+                  <div className="absolute bottom-4 left-4 z-10">
+                    <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-amber-200">
+                      <span className="text-lg">💰</span>
+                      <span className="text-sm font-black text-amber-700">저가 실용형</span>
+                    </span>
+                  </div>
+                  <div className="absolute bottom-4 right-4 z-10">
+                    <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-emerald-200">
+                      <span className="text-lg">✅</span>
+                      <span className="text-sm font-black text-emerald-700">고급 실용형</span>
+                    </span>
+                  </div>
+
+                  {/* 십자축 (굵고 진하게) */}
+                  <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-jm-charcoal/30" />
+                  <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-jm-charcoal/30" />
+
+                  {/* 축 라벨 (큰 폰트 + 화살표) */}
+                  <div
+                    className="absolute top-1/2 -translate-y-1/2 -rotate-90 origin-center whitespace-nowrap"
+                    style={{ left: "-2px" }}
+                  >
+                    <span className="inline-flex items-center gap-1 bg-jm-black text-white px-3 py-1 rounded-full text-xs md:text-sm font-black shadow-md">
+                      감성·라이프 ↑
+                    </span>
+                  </div>
+                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10">
+                    <span className="inline-flex items-center gap-2 bg-jm-black text-white px-3 py-1 rounded-full text-xs md:text-sm font-black shadow-md whitespace-nowrap">
+                      <span>가격 강조</span>
+                      <span className="text-jm-red">←→</span>
+                      <span>프리미엄 강조</span>
+                    </span>
+                  </div>
+
+                  {/* 경쟁사 점 (순위별 색 + 큰 아이콘) */}
+                  {competitors.map((c, idx) => {
+                    const pos = calculatePosition(getCompetitorText(c));
+                    const color = RANK_COLORS[idx % RANK_COLORS.length];
+                    return (
+                      <div
+                        key={c.rank}
+                        className="absolute -translate-x-1/2 -translate-y-1/2 group z-20"
+                        style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
+                      >
+                        <div
+                          className={`flex items-center gap-1.5 ${color.bg} ${color.text} border-2 ${color.border} rounded-full px-3 py-2 shadow-lg hover:scale-110 transition-transform cursor-pointer`}
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={getFaviconUrl(c.domain)}
+                            alt=""
+                            className="h-6 w-6 md:h-7 md:w-7 rounded bg-white p-0.5"
+                          />
+                          <span className="text-base md:text-lg font-black">
+                            {c.rank}
+                          </span>
+                        </div>
+                        {/* 호버 툴팁 */}
+                        <div className="opacity-0 group-hover:opacity-100 absolute left-1/2 -translate-x-1/2 -bottom-9 bg-jm-black text-white text-xs px-3 py-1 rounded-lg whitespace-nowrap transition-opacity pointer-events-none shadow-lg z-30">
+                          {c.rank}위 {c.domain}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
+
+            {/* v30: 범례 + 경쟁사 순위 리스트 */}
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              {competitors.map((c, idx) => {
+                const COLORS = [
+                  "bg-rose-500",
+                  "bg-amber-500",
+                  "bg-emerald-500",
+                  "bg-sky-500",
+                  "bg-violet-500",
+                ];
+                const bg = COLORS[idx % COLORS.length];
+                return (
+                  <span
+                    key={c.rank}
+                    className="inline-flex items-center gap-2 bg-white border border-jm-border rounded-full pl-1 pr-3 py-1"
+                    title={c.domain}
+                  >
+                    <span
+                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${bg} text-white text-xs font-black`}
+                    >
+                      {c.rank}
+                    </span>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getFaviconUrl(c.domain)}
+                      alt=""
+                      className="h-4 w-4 rounded"
+                    />
+                    <span className="text-xs md:text-sm font-bold text-jm-charcoal truncate max-w-[140px]">
+                      {c.domain}
+                    </span>
+                  </span>
                 );
               })}
             </div>
-
-            {/* 범례 */}
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-[10px] text-jm-gray">
-              <span className="inline-flex items-center gap-1">
-                <span className="inline-block h-2 w-2 rounded-full bg-jm-black" />
-                경쟁사 위치
-              </span>
-              <span>·</span>
-              <span>점 호버 시 도메인 표시</span>
-            </div>
+            <p className="mt-2 text-xs text-jm-gray">
+              · 각 점은 상위 경쟁사의 포지셔닝입니다. 점 호버 시 순위 + 도메인이 표시됩니다.
+            </p>
           </div>
         )}
 
