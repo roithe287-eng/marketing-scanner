@@ -342,17 +342,25 @@ export default function CompetitorComparison({
                 { bg: "bg-violet-500", border: "border-violet-600", text: "text-white" }, // 5위
               ];
               return (
-                <div className="relative aspect-[4/3] md:aspect-[16/11] border-2 border-gray-400 rounded-2xl overflow-hidden bg-white shadow-inner">
-                  {/* 4분면 컬러 배경 (조금 더 진하게) */}
+                // v34: 모바일 겹침/잘림 방지 - 웨이드 패딩 + 내부 차트 영역 구분
+                <div className="relative w-full px-2 pb-2 pt-2 sm:px-3 sm:pb-3 sm:pt-3">
+                  {/* Y축 외부 라벨 - 컬러스에서 분리해 잘림 방지 */}
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1 sm:-translate-x-2 flex flex-col items-center gap-1 z-30 pointer-events-none">
+                    <span className="writing-vertical text-[10px] sm:text-[11px] font-bold text-[#0f172a]" style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}>
+                      ↑ 감성·라이프
+                    </span>
+                    <span className="writing-vertical text-[10px] sm:text-[11px] font-semibold text-[#64748b]" style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}>
+                      실용·기능 ↓
+                    </span>
+                  </div>
+
+                  <div className="relative aspect-[4/3] md:aspect-[16/11] border border-[#cbd5e1] rounded-xl overflow-hidden bg-white shadow-inner ml-5 sm:ml-6">
+                  {/* 4분면 컬러 배경 (파스텔 톤 - 경쟁사 점 시인성 우선) */}
                   <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-                    {/* 좌상: 감성 가성비 (분홍) */}
-                    <div className="bg-gradient-to-br from-pink-100 to-pink-50/70" />
-                    {/* 우상: 프리미엄 감성 (보라) */}
-                    <div className="bg-gradient-to-bl from-violet-100 to-violet-50/70" />
-                    {/* 좌하: 저가 실용 (노랑) */}
-                    <div className="bg-gradient-to-tr from-amber-100 to-amber-50/70" />
-                    {/* 우하: 고급 실용 (에메랄드) */}
-                    <div className="bg-gradient-to-tl from-emerald-100 to-emerald-50/70" />
+                    <div className="bg-gradient-to-br from-pink-50 to-white" />
+                    <div className="bg-gradient-to-bl from-violet-50 to-white" />
+                    <div className="bg-gradient-to-tr from-amber-50 to-white" />
+                    <div className="bg-gradient-to-tl from-emerald-50 to-white" />
                   </div>
 
                   {/* v32: 격자 가이드 라인 (차트처럼 단단하게) */}
@@ -369,70 +377,57 @@ export default function CompetitorComparison({
                     <line x1="75" y1="0" x2="75" y2="100" stroke="#9ca3af" strokeWidth="0.15" strokeDasharray="1,1" />
                   </svg>
 
-                  {/* 4분면 라벨 (큰 폰트 + 존대감) */}
-                  <div className="absolute top-4 left-4 z-10">
-                    <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-pink-200">
-                      <span className="text-lg">🌸</span>
-                      <span className="text-sm font-black text-pink-700">감성 가성비형</span>
+                  {/* v34: 4분면 라벨 - 모바일은 아이콘만, 데스크탑은 아이콘+텍스트 */}
+                  <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10">
+                    <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md shadow-sm border border-pink-200">
+                      <span className="text-sm sm:text-base">🌸</span>
+                      <span className="hidden sm:inline text-[11px] md:text-xs font-bold text-pink-700">감성·가성비</span>
                     </span>
                   </div>
-                  <div className="absolute top-4 right-4 z-10">
-                    <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-violet-200">
-                      <span className="text-lg">👑</span>
-                      <span className="text-sm font-black text-violet-700">프리미엄 감성형</span>
+                  <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
+                    <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md shadow-sm border border-violet-200">
+                      <span className="text-sm sm:text-base">👑</span>
+                      <span className="hidden sm:inline text-[11px] md:text-xs font-bold text-violet-700">프리미엄·감성</span>
                     </span>
                   </div>
-                  <div className="absolute bottom-4 left-4 z-10">
-                    <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-amber-200">
-                      <span className="text-lg">💰</span>
-                      <span className="text-sm font-black text-amber-700">저가 실용형</span>
+                  <div className="absolute bottom-8 left-2 sm:bottom-10 sm:left-3 z-10">
+                    <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md shadow-sm border border-amber-200">
+                      <span className="text-sm sm:text-base">💰</span>
+                      <span className="hidden sm:inline text-[11px] md:text-xs font-bold text-amber-700">저가·실용</span>
                     </span>
                   </div>
-                  <div className="absolute bottom-4 right-4 z-10">
-                    <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg shadow-sm border border-emerald-200">
-                      <span className="text-lg">✅</span>
-                      <span className="text-sm font-black text-emerald-700">고급 실용형</span>
+                  <div className="absolute bottom-8 right-2 sm:bottom-10 sm:right-3 z-10">
+                    <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-md shadow-sm border border-emerald-200">
+                      <span className="text-sm sm:text-base">✅</span>
+                      <span className="hidden sm:inline text-[11px] md:text-xs font-bold text-emerald-700">고급·실용</span>
                     </span>
                   </div>
 
-                  {/* v32: 십자축 (더 굵고 진하게 - 차트 느낌) */}
-                  <div className="absolute left-1/2 top-0 bottom-0 w-[2px] bg-gray-700/50" />
-                  <div className="absolute top-1/2 left-0 right-0 h-[2px] bg-gray-700/50" />
+                  {/* v34: 십자축 - 차트 느낌 */}
+                  <div className="absolute left-1/2 top-0 bottom-0 w-px bg-[#94a3b8]" />
+                  <div className="absolute top-1/2 left-0 right-0 h-px bg-[#94a3b8]" />
 
                   {/* 중심점 마커 */}
-                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-gray-700 z-10" />
+                  <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#475569] z-10" />
 
-                  {/* Y축 라벨 (세로 - 위쪽) */}
-                  <div
-                    className="absolute -rotate-90 origin-center whitespace-nowrap z-10"
-                    style={{ left: "-8px", top: "25%" }}
-                  >
-                    <span className="inline-flex items-center gap-1 bg-[#111] text-white px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black shadow-md">
-                      ↑ 감성·라이프
+                  {/* v34: X축 하단 라벨 - 차트 내부에 따로 공간 존재, 모바일은 압축 */}
+                  <div className="absolute bottom-1 left-1/2 -translate-x-1/2 z-10 w-[calc(100%-16px)] flex justify-between items-center pointer-events-none">
+                    <span className="text-[9px] sm:text-[10px] md:text-[11px] font-bold text-[#0f172a] bg-white/85 px-1.5 py-0.5 rounded">
+                      ← 가격
                     </span>
-                  </div>
-                  {/* Y축 라벨 (세로 - 아래쪽) */}
-                  <div
-                    className="absolute -rotate-90 origin-center whitespace-nowrap z-10"
-                    style={{ left: "-8px", top: "75%" }}
-                  >
-                    <span className="inline-flex items-center gap-1 bg-gray-700 text-white px-2.5 py-1 rounded-md text-[10px] md:text-xs font-black shadow-md">
-                      실용·기능 ↓
+                    <span className="text-[9px] sm:text-[10px] md:text-[11px] font-bold text-[#0f172a] bg-white/85 px-1.5 py-0.5 rounded">
+                      프리미엄 →
                     </span>
                   </div>
 
-                  {/* X축 라벨 (가로) */}
-                  <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 z-10">
-                    <span className="inline-flex items-center gap-1.5 bg-[#111] text-white px-3 py-1 rounded-md text-[10px] md:text-xs font-black shadow-md whitespace-nowrap">
-                      <span>← 가격 강조</span>
-                      <span className="text-[#e31b23]">|</span>
-                      <span>프리미엄 강조 →</span>
-                    </span>
-                  </div>
-
-                  {/* 경쟁사 점 (순위별 색 + 큰 아이콘) */}
+                  {/* v34: 경쟁사 점 - 모바일에서 작게 + 가장자리 8% 여유 */}
                   {competitors.map((c, idx) => {
-                    const pos = calculatePosition(getCompetitorText(c));
+                    const rawPos = calculatePosition(getCompetitorText(c));
+                    // 차트 밖으로 나가지 않도록 클리핑 (8% ~ 92%)
+                    const pos = {
+                      x: Math.max(8, Math.min(92, rawPos.x)),
+                      y: Math.max(8, Math.min(92, rawPos.y)),
+                    };
                     const color = RANK_COLORS[idx % RANK_COLORS.length];
                     return (
                       <div
@@ -441,25 +436,26 @@ export default function CompetitorComparison({
                         style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
                       >
                         <div
-                          className={`flex items-center gap-1.5 ${color.bg} ${color.text} border-2 ${color.border} rounded-full px-3 py-2 shadow-lg hover:scale-110 transition-transform cursor-pointer`}
+                          className={`flex items-center gap-1 ${color.bg} ${color.text} border-2 ${color.border} rounded-full px-2 py-1 sm:px-2.5 sm:py-1.5 shadow-md hover:scale-110 transition-transform cursor-pointer`}
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={getFaviconUrl(c.domain)}
                             alt=""
-                            className="h-6 w-6 md:h-7 md:w-7 rounded bg-white p-0.5"
+                            className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 rounded bg-white p-0.5"
                           />
-                          <span className="text-base md:text-lg font-black">
+                          <span className="text-xs sm:text-sm md:text-base font-black">
                             {c.rank}
                           </span>
                         </div>
                         {/* 호버 툴팁 */}
-                        <div className="opacity-0 group-hover:opacity-100 absolute left-1/2 -translate-x-1/2 -bottom-9 bg-jm-black text-white text-xs px-3 py-1 rounded-lg whitespace-nowrap transition-opacity pointer-events-none shadow-lg z-30">
-                          {c.rank}위 {c.domain}
+                        <div className="opacity-0 group-hover:opacity-100 absolute left-1/2 -translate-x-1/2 -bottom-8 bg-[#0f172a] text-white text-[10px] sm:text-xs px-2.5 py-1 rounded-md whitespace-nowrap transition-opacity pointer-events-none shadow-lg z-30">
+                          {c.rank}위 · {c.domain}
                         </div>
                       </div>
                     );
                   })}
+                  </div>
                 </div>
               );
             })()}
