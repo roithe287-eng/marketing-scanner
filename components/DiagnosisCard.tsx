@@ -1,186 +1,147 @@
 "use client";
 
 import React from "react";
-import type { MarketingReport } from "@/lib/reportSchema";
+
+interface Issue {
+  title: string;
+  problem: string;
+  reason: string;
+  recommendation: string;
+  priority: "high" | "medium" | "low";
+  badExample?: string;
+  goodExample?: string;
+  exampleNote?: string;
+}
 
 interface Props {
-  report: MarketingReport;
+  issue: Issue;
+  index: number;
 }
 
 /**
- * v31 - 가독성 강화 리디자인
- * 5개 영역(첫인상/CTA/카피/신뢰/전환) 진단 결과
+ * v31 가독성 강화 + 반응형
+ * Critical Issue 개별 카드
  */
-export default function DiagnosisCard({ report }: Props) {
-  const diagnosis = report.diagnosis || {};
-
-  const sections = [
-    {
-      key: "firstView",
-      label: "첫인상",
-      icon: "👁️",
-      color: "#e31b23",
-      bgColor: "#fee2e2",
-      data: diagnosis.firstView,
-    },
-    {
-      key: "cta",
-      label: "행동 유도 (CTA)",
-      icon: "🎯",
-      color: "#f59e0b",
-      bgColor: "#fef3c7",
-      data: diagnosis.cta,
-    },
-    {
-      key: "copywriting",
-      label: "카피라이팅",
-      icon: "✍️",
-      color: "#8b5cf6",
-      bgColor: "#ede9fe",
-      data: diagnosis.copywriting,
-    },
-    {
-      key: "trust",
-      label: "신뢰 요소",
-      icon: "🛡️",
-      color: "#10b981",
-      bgColor: "#d1fae5",
-      data: diagnosis.trust,
-    },
-    {
-      key: "conversionFlow",
-      label: "전환 흐름",
-      icon: "🔄",
-      color: "#3b82f6",
-      bgColor: "#dbeafe",
-      data: diagnosis.conversionFlow,
-    },
-  ];
+export default function DiagnosisCard({ issue, index }: Props) {
+  const priorityConfig: Record<string, { color: string; bg: string; icon: string; label: string }> = {
+    high: { color: "#e31b23", bg: "#fee2e2", icon: "🔥", label: "긴급" },
+    medium: { color: "#f59e0b", bg: "#fef3c7", icon: "⚡", label: "중요" },
+    low: { color: "#10b981", bg: "#d1fae5", icon: "🌱", label: "보강" },
+  };
+  const cfg = priorityConfig[issue.priority] || priorityConfig.medium;
 
   return (
-    <section className="mb-10">
-      {/* 섹션 헤더 */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-xl bg-[#e31b23] flex items-center justify-center shadow-lg">
-          <span className="text-2xl">🔍</span>
+    <div
+      className="bg-white border-2 rounded-2xl p-5 md:p-6 shadow-md hover:shadow-xl transition-all"
+      style={{ borderColor: `${cfg.color}55` }}
+    >
+      {/* 헤더: 번호 + 아이콘 + 우선순위 */}
+      <div className="flex items-start gap-3 md:gap-4 mb-4 pb-4 border-b-2 border-gray-100">
+        <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+          <div
+            className="w-11 h-11 md:w-12 md:h-12 rounded-2xl flex items-center justify-center shadow-sm"
+            style={{ backgroundColor: cfg.bg }}
+          >
+            <span className="text-xl md:text-2xl">{cfg.icon}</span>
+          </div>
+          <div
+            className="w-7 h-7 md:w-8 md:h-8 rounded-full flex items-center justify-center text-xs md:text-sm font-black shadow-sm"
+            style={{ backgroundColor: cfg.color, color: "#fff" }}
+          >
+            {index + 1}
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-[#111] tracking-tight">
-            영역별 상세 진단
-          </h2>
-          <p className="text-base text-[#6b7280] mt-1 font-medium">
-            각 항목별 강점과 개선점을 확인하세요
-          </p>
-        </div>
-      </div>
-
-      {/* 진단 카드 그리드 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {sections.map((sec) => {
-          const data: any = sec.data || {};
-          const score = data.score ?? 0;
-          const summary = data.summary || data.diagnosis || "분석 데이터가 없습니다.";
-          const strengths: string[] = data.strengths || [];
-          const weaknesses: string[] = data.weaknesses || data.issues || [];
-
-          return (
-            <div
-              key={sec.key}
-              className="bg-white border-2 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all"
-              style={{ borderColor: `${sec.color}33` }}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+            <span
+              className="px-2.5 py-0.5 rounded-full text-xs md:text-sm font-bold uppercase tracking-wide"
+              style={{ color: cfg.color, backgroundColor: cfg.bg }}
             >
-              {/* 카드 헤더 */}
-              <div className="flex items-start justify-between mb-4 pb-4 border-b-2 border-gray-100">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-                    style={{ backgroundColor: sec.bgColor }}
-                  >
-                    <span className="text-2xl">{sec.icon}</span>
-                  </div>
-                  <h3 className="text-xl font-extrabold text-[#111]">
-                    {sec.label}
-                  </h3>
-                </div>
-                <div className="text-right">
-                  <div
-                    className="text-3xl font-black leading-none"
-                    style={{ color: sec.color }}
-                  >
-                    {score}
-                  </div>
-                  <div className="text-xs text-[#9ca3af] font-medium mt-1">/ 100</div>
-                </div>
-              </div>
-
-              {/* 요약 */}
-              <div
-                className="rounded-xl p-4 mb-4"
-                style={{ backgroundColor: sec.bgColor }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-base">💬</span>
-                  <span
-                    className="text-sm font-bold uppercase tracking-wide"
-                    style={{ color: sec.color }}
-                  >
-                    진단 요약
-                  </span>
-                </div>
-                <p className="text-base text-[#111] leading-relaxed font-medium">
-                  {summary}
-                </p>
-              </div>
-
-              {/* 강점 */}
-              {strengths.length > 0 && (
-                <div className="mb-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">✅</span>
-                    <span className="text-sm font-bold text-[#10b981] uppercase tracking-wide">
-                      강점
-                    </span>
-                  </div>
-                  <ul className="space-y-2">
-                    {strengths.map((s, i) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-2 text-base text-[#111] leading-relaxed"
-                      >
-                        <span className="text-[#10b981] font-bold mt-0.5">▸</span>
-                        <span>{s}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* 약점 */}
-              {weaknesses.length > 0 && (
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-lg">⚠️</span>
-                    <span className="text-sm font-bold text-[#e31b23] uppercase tracking-wide">
-                      개선 필요
-                    </span>
-                  </div>
-                  <ul className="space-y-2">
-                    {weaknesses.map((w, i) => (
-                      <li
-                        key={i}
-                        className="flex items-start gap-2 text-base text-[#111] leading-relaxed"
-                      >
-                        <span className="text-[#e31b23] font-bold mt-0.5">▸</span>
-                        <span>{w}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
-          );
-        })}
+              {cfg.label}
+            </span>
+          </div>
+          <h3 className="text-lg md:text-xl font-extrabold text-[#111] leading-tight break-words">
+            {issue.title}
+          </h3>
+        </div>
       </div>
-    </section>
+
+      {/* 문제 */}
+      <div className="mb-3 md:mb-4 rounded-xl bg-[#fef2f2] border-l-4 border-[#e31b23] p-3 md:p-4">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-base md:text-lg">❌</span>
+          <span className="text-xs md:text-sm font-extrabold text-[#e31b23] uppercase tracking-wide">
+            문제점
+          </span>
+        </div>
+        <p className="text-sm md:text-base text-[#111] leading-relaxed font-medium break-words">
+          {issue.problem}
+        </p>
+      </div>
+
+      {/* 원인 */}
+      <div className="mb-3 md:mb-4 rounded-xl bg-[#fef3c7] border-l-4 border-[#f59e0b] p-3 md:p-4">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-base md:text-lg">🔎</span>
+          <span className="text-xs md:text-sm font-extrabold text-[#f59e0b] uppercase tracking-wide">
+            원인 분석
+          </span>
+        </div>
+        <p className="text-sm md:text-base text-[#111] leading-relaxed font-medium break-words">
+          {issue.reason}
+        </p>
+      </div>
+
+      {/* 권장 조치 */}
+      <div className="rounded-xl bg-[#dbeafe] border-l-4 border-[#3b82f6] p-3 md:p-4">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-base md:text-lg">💡</span>
+          <span className="text-xs md:text-sm font-extrabold text-[#3b82f6] uppercase tracking-wide">
+            권장 조치
+          </span>
+        </div>
+        <p className="text-sm md:text-base text-[#111] leading-relaxed font-medium break-words">
+          {issue.recommendation}
+        </p>
+      </div>
+
+      {/* Before / After 예시 */}
+      {(issue.badExample || issue.goodExample) && (
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+          {issue.badExample && (
+            <div className="rounded-xl border-2 border-[#e31b2333] bg-[#fef2f2] p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-base">❌</span>
+                <span className="text-xs md:text-sm font-extrabold text-[#e31b23] uppercase tracking-wide">
+                  현재 (안된 예시)
+                </span>
+              </div>
+              <p className="text-sm md:text-base text-[#111] leading-relaxed font-medium break-words line-through decoration-[#e31b23]/40">
+                {issue.badExample}
+              </p>
+            </div>
+          )}
+          {issue.goodExample && (
+            <div className="rounded-xl border-2 border-[#10b98155] bg-[#f0fdf4] p-3 md:p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-base">✨</span>
+                <span className="text-xs md:text-sm font-extrabold text-[#10b981] uppercase tracking-wide">
+                  개선안 (잘된 예시)
+                </span>
+              </div>
+              <p className="text-sm md:text-base text-[#111] leading-relaxed font-bold break-words">
+                {issue.goodExample}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {issue.exampleNote && (
+        <p className="mt-3 text-xs md:text-sm text-[#6b7280] font-medium leading-relaxed break-words">
+          💬 {issue.exampleNote}
+        </p>
+      )}
+    </div>
   );
 }
