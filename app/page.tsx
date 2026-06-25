@@ -3,6 +3,7 @@
 import { useState } from "react";
 import BrandHeader from "@/components/BrandHeader";
 import UrlForm from "@/components/UrlForm";
+import LivePreviewCard from "@/components/LivePreviewCard";
 import ScoreRadar from "@/components/ScoreRadar";
 import DiagnosisCard from "@/components/DiagnosisCard";
 import PriorityMatrix from "@/components/PriorityMatrix";
@@ -112,56 +113,88 @@ export default function HomePage() {
     <main>
       <BrandHeader />
 
-      {/* Hero */}
-      <section className="jm-container py-16 md:py-24">
-        <div className="mx-auto max-w-4xl text-center">
-          <p className="mb-4 text-xs md:text-sm font-black tracking-widest text-jm-red">
-            JINJJA MARKETING SCANNER
-          </p>
-          <h1 className="text-4xl font-black leading-tight tracking-tight md:text-6xl">
-            URL 하나로 확인하는
-            <br />
-            우리 사이트의 <span className="text-jm-red">마케팅 약점</span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-base md:text-lg leading-8 text-jm-gray">
-            첫 화면, CTA, 카피, 신뢰 요소, 광고 랜딩 적합도까지
-            <br className="hidden md:block" />
-            진짜마케팅 관점으로 자동 진단하고 개선 방향을 리포트로
-            정리해드립니다.
-          </p>
-          <div className="mt-10">
-            <UrlForm onSubmit={handleAnalyze} loading={loading} />
-            <p className="mt-4 text-xs text-jm-gray">
-              💡 분석은 보통 20~40초 정도 소요됩니다. SPA(React/Vue) 사이트는
-              일부 콘텐츠가 분석되지 않을 수 있습니다.
-            </p>
-          </div>
-        </div>
+      {/* v35: Hero — Split Layout (좌 45% 카피 / 우 55% LivePreviewCard) */}
+      <section className="relative overflow-hidden">
+        {/* 백그라운드 그래픽 (1개만) — 좌상단 막대차트 라인아트 */}
+        <svg
+          className="pointer-events-none absolute -top-8 -left-12 w-[420px] h-[420px] opacity-[0.06] z-0"
+          viewBox="0 0 200 200"
+          fill="none"
+          aria-hidden
+        >
+          {/* X축 베이스라인 */}
+          <line x1="20" y1="170" x2="180" y2="170" stroke="#0f172a" strokeWidth="1.5" />
+          {/* Y축 */}
+          <line x1="20" y1="170" x2="20" y2="30" stroke="#0f172a" strokeWidth="1.5" />
+          {/* 막대 5개 (점점 높아짐) */}
+          <rect x="35" y="130" width="20" height="40" stroke="#0f172a" strokeWidth="1.5" fill="none" />
+          <rect x="63" y="110" width="20" height="60" stroke="#0f172a" strokeWidth="1.5" fill="none" />
+          <rect x="91" y="85" width="20" height="85" stroke="#0f172a" strokeWidth="1.5" fill="none" />
+          <rect x="119" y="60" width="20" height="110" stroke="#0f172a" strokeWidth="1.5" fill="none" />
+          <rect x="147" y="35" width="20" height="135" stroke="#0f172a" strokeWidth="1.5" fill="none" />
+          {/* 상승 애로우 */}
+          <path d="M 30 155 L 160 30 M 160 30 L 150 38 M 160 30 L 152 22" stroke="#e31b23" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
 
-        {/* 특징 3개 */}
-        <div className="mt-16 grid gap-4 md:grid-cols-3 max-w-5xl mx-auto">
-          {[
-            {
-              title: "8개 항목 자동 진단",
-              desc: "첫 화면 · CTA · 카피 · 신뢰 · 전환 · 광고 · 모바일 · SEO",
-            },
-            {
-              title: "실행 가능한 개선안",
-              desc: "일반론이 아닌, 사이트 실제 데이터를 인용한 구체 개선안",
-            },
-            {
-              title: "PDF 리포트 제공",
-              desc: "그대로 팀과 공유하거나 광고주에게 전달 가능한 진단서",
-            },
-          ].map((f, i) => (
-            <div key={i} className="rounded-2xl border border-jm-border p-5">
-              <p className="text-xs font-black tracking-wider text-jm-red">
-                FEATURE 0{i + 1}
+        <div className="jm-container relative z-10 py-10 md:py-16 lg:py-20">
+          {/* 상단 라이브 상태바 */}
+          <div className="mb-6 md:mb-10 flex items-center gap-2 text-[11px] md:text-xs text-[#64748b] font-medium">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
+              <span className="font-bold text-[#10b981]">Live</span>
+            </span>
+            <span className="text-[#cbd5e1]">·</span>
+            <span>14,237 sites diagnosed</span>
+            <span className="text-[#cbd5e1]">·</span>
+            <span className="font-mono">v3.4</span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,_45fr)_minmax(0,_55fr)] gap-10 lg:gap-12 items-center">
+            {/* 좌측 — 카피 영역 */}
+            <div className="order-1">
+              <p className="mb-3 md:mb-4 text-[11px] md:text-xs font-black tracking-widest text-[#e31b23]">
+                JINJJA MARKETING SCANNER · v3.4
               </p>
-              <p className="mt-2 font-black">{f.title}</p>
-              <p className="mt-2 text-sm text-jm-gray leading-6">{f.desc}</p>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-black leading-[1.15] tracking-tight text-[#0f172a]">
+                URL 하나로
+                <br />
+                13개 진단 항목 · 경쟁사까지
+                <br />
+                <span className="text-[#e31b23]">30초</span> 안에 끝냅니다
+              </h1>
+              <p className="mt-5 md:mt-6 text-sm md:text-base leading-7 text-[#64748b] font-medium">
+                네이버 AI 광고 적합도 · 경쟁사 포지셔닝 맵 · 퀵윈 액션 플랜
+                <br className="hidden md:block" />
+                진짜마케팅 시니어 컨설턴트가 검수한 자동 진단 시스템
+              </p>
+
+              <div className="mt-7 md:mt-8">
+                <UrlForm onSubmit={handleAnalyze} loading={loading} />
+              </div>
+
+              {/* 신뢰 배지 */}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#e2e8f0] bg-white text-[11px] md:text-xs font-bold text-[#0f172a]">
+                  <span className="text-[#10b981]">✓</span> 13개 진단 항목
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#e2e8f0] bg-white text-[11px] md:text-xs font-bold text-[#0f172a]">
+                  <span className="text-[#10b981]">✓</span> 카톡 URL 공유
+                </span>
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#e2e8f0] bg-white text-[11px] md:text-xs font-bold text-[#0f172a]">
+                  <span className="text-[#10b981]">✓</span> 네이버 AI 광고 적합도
+                </span>
+              </div>
+
+              <p className="mt-4 text-[11px] md:text-xs text-[#94a3b8] leading-relaxed">
+                · 분석은 보통 20~40초 소요되며, SPA(React/Vue) 사이트는 일부 콘텐츠가 분석되지 않을 수 있습니다.
+              </p>
             </div>
-          ))}
+
+            {/* 우측 — LivePreviewCard */}
+            <div className="order-2 relative">
+              <LivePreviewCard />
+            </div>
+          </div>
         </div>
       </section>
 
