@@ -1,28 +1,22 @@
 "use client";
 
 import React from "react";
+import type { MarketingReport } from "@/lib/reportSchema";
 
-interface Issue {
-  title: string;
-  problem: string;
-  reason: string;
-  recommendation: string;
-  priority: "high" | "medium" | "low";
-  badExample?: string;
-  goodExample?: string;
-  exampleNote?: string;
-}
-
+// v31-2: page.tsx에서 issue={issue} 로 criticalIssues 배열의 개별 항목을 넘김.
+// MarketingReport["criticalIssues"][number] 타입을 직접 사용해 100% 동기화.
 interface Props {
-  issue: Issue;
+  issue: MarketingReport["criticalIssues"][number];
   index: number;
 }
 
 /**
- * v31 가독성 강화 + 반응형
+ * v31-2 가독성 강화 + 반응형 + 100% 타입 동기화
  * Critical Issue 개별 카드
  */
 export default function DiagnosisCard({ issue, index }: Props) {
+  if (!issue) return null;
+
   const priorityConfig: Record<string, { color: string; bg: string; icon: string; label: string }> = {
     high: { color: "#e31b23", bg: "#fee2e2", icon: "🔥", label: "긴급" },
     medium: { color: "#f59e0b", bg: "#fef3c7", icon: "⚡", label: "중요" },
@@ -35,7 +29,7 @@ export default function DiagnosisCard({ issue, index }: Props) {
       className="bg-white border-2 rounded-2xl p-5 md:p-6 shadow-md hover:shadow-xl transition-all"
       style={{ borderColor: `${cfg.color}55` }}
     >
-      {/* 헤더: 번호 + 아이콘 + 우선순위 */}
+      {/* 헤더 */}
       <div className="flex items-start gap-3 md:gap-4 mb-4 pb-4 border-b-2 border-gray-100">
         <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
           <div
