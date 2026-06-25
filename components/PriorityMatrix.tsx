@@ -1,119 +1,144 @@
 "use client";
 
 import React from "react";
-import type { MarketingReport } from "@/lib/reportSchema";
+
+interface Roadmap {
+  immediately: string[];
+  thisWeek: string[];
+  thisMonth: string[];
+}
 
 interface Props {
-  report: MarketingReport;
+  roadmap: Roadmap;
 }
 
 /**
- * v31 - 가독성 강화 리디자인
- * 우선순위 로드맵 매트릭스
+ * v31 가독성 강화 + 반응형
+ * 우선순위 로드맵 (즉시/이번주/이번달)
  */
-export default function PriorityMatrix({ report }: Props) {
-  const roadmap = report.priorityRoadmap || [];
-  if (!roadmap.length) return null;
+export default function PriorityMatrix({ roadmap }: Props) {
+  if (!roadmap) return null;
 
-  const priorityConfig: Record<string, { color: string; bg: string; border: string; icon: string; label: string }> = {
-    high: { color: "#e31b23", bg: "#fee2e2", border: "#e31b23", icon: "🔥", label: "긴급" },
-    medium: { color: "#f59e0b", bg: "#fef3c7", border: "#f59e0b", icon: "⚡", label: "중요" },
-    low: { color: "#10b981", bg: "#d1fae5", border: "#10b981", icon: "🌱", label: "보강" },
-  };
+  const phases = [
+    {
+      key: "immediately",
+      label: "즉시 실행",
+      sublabel: "오늘 바로",
+      icon: "🔥",
+      color: "#e31b23",
+      bg: "#fee2e2",
+      items: roadmap.immediately || [],
+    },
+    {
+      key: "thisWeek",
+      label: "이번 주",
+      sublabel: "7일 내",
+      icon: "⚡",
+      color: "#f59e0b",
+      bg: "#fef3c7",
+      items: roadmap.thisWeek || [],
+    },
+    {
+      key: "thisMonth",
+      label: "이번 달",
+      sublabel: "30일 내",
+      icon: "🌱",
+      color: "#10b981",
+      bg: "#d1fae5",
+      items: roadmap.thisMonth || [],
+    },
+  ];
 
   return (
-    <section className="mb-10">
+    <section className="mt-8 mb-8 md:mb-10">
       {/* 섹션 헤더 */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-xl bg-[#e31b23] flex items-center justify-center shadow-lg">
-          <span className="text-2xl">🗺️</span>
+      <div className="flex items-center gap-3 mb-5 md:mb-6">
+        <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-[#e31b23] flex items-center justify-center shadow-lg flex-shrink-0">
+          <span className="text-xl md:text-2xl">🗺️</span>
         </div>
-        <div>
-          <h2 className="text-2xl md:text-3xl font-extrabold text-[#111] tracking-tight">
+        <div className="min-w-0">
+          <h2 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-[#111] tracking-tight">
             우선순위 로드맵
           </h2>
-          <p className="text-base text-[#6b7280] mt-1 font-medium">
-            긴급도와 영향력 기준 실행 순서
+          <p className="text-sm md:text-base text-[#6b7280] mt-0.5 md:mt-1 font-medium">
+            긴급도 기준 실행 일정
           </p>
         </div>
       </div>
 
-      {/* 로드맵 카드 */}
-      <div className="space-y-4">
-        {roadmap.map((item: any, idx: number) => {
-          const cfg = priorityConfig[item.priority] || priorityConfig.medium;
-          return (
+      {/* 3단계 그리드: 모바일 1열 / 태블릿 이상 3열 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+        {phases.map((phase, idx) => (
+          <div
+            key={phase.key}
+            className="bg-white border-2 rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden flex flex-col"
+            style={{ borderColor: `${phase.color}55` }}
+          >
+            {/* 카드 헤더 */}
             <div
-              key={idx}
-              className="bg-white border-2 rounded-2xl p-6 shadow-md hover:shadow-xl transition-all"
-              style={{ borderColor: `${cfg.color}55` }}
+              className="p-4 md:p-5 border-b-2"
+              style={{ backgroundColor: phase.bg, borderColor: `${phase.color}33` }}
             >
-              <div className="flex items-start gap-4">
-                {/* 순번 + 우선순위 아이콘 */}
-                <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-md"
-                    style={{ backgroundColor: cfg.bg }}
-                  >
-                    <span className="text-3xl">{cfg.icon}</span>
-                  </div>
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-lg font-black shadow-sm"
-                    style={{ backgroundColor: cfg.color, color: "#fff" }}
-                  >
-                    {idx + 1}
-                  </div>
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm flex-shrink-0"
+                >
+                  <span className="text-2xl md:text-3xl">{phase.icon}</span>
                 </div>
-
-                {/* 본문 */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-3 flex-wrap">
-                    <span
-                      className="px-3 py-1 rounded-full text-sm font-bold uppercase tracking-wide"
-                      style={{ color: cfg.color, backgroundColor: cfg.bg }}
+                  <div className="flex items-baseline gap-2">
+                    <h3
+                      className="text-lg md:text-xl font-extrabold leading-tight"
+                      style={{ color: phase.color }}
                     >
-                      {cfg.label}
+                      {phase.label}
+                    </h3>
+                    <span className="text-xs md:text-sm font-bold text-[#6b7280]">
+                      {phase.sublabel}
                     </span>
-                    {item.timeframe && (
-                      <span className="px-3 py-1 rounded-full text-sm font-bold bg-gray-100 text-[#374151]">
-                        ⏱️ {item.timeframe}
-                      </span>
-                    )}
-                    {item.effort && (
-                      <span className="px-3 py-1 rounded-full text-sm font-bold bg-blue-50 text-[#3b82f6]">
-                        💪 {item.effort}
-                      </span>
-                    )}
                   </div>
-                  <h3 className="text-xl font-extrabold text-[#111] mb-2 leading-tight">
-                    {item.title || item.task}
-                  </h3>
-                  {item.description && (
-                    <p className="text-base text-[#374151] leading-relaxed font-medium mb-3">
-                      {item.description}
-                    </p>
-                  )}
-                  {item.expectedImpact && (
-                    <div
-                      className="rounded-xl p-3 border-l-4"
-                      style={{ backgroundColor: cfg.bg, borderColor: cfg.color }}
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span
+                      className="px-2 py-0.5 rounded-full text-[10px] md:text-xs font-black"
+                      style={{ backgroundColor: phase.color, color: "#fff" }}
                     >
-                      <span
-                        className="text-sm font-bold uppercase tracking-wide mr-2"
-                        style={{ color: cfg.color }}
-                      >
-                        📈 기대 효과
-                      </span>
-                      <span className="text-base text-[#111] font-medium">
-                        {item.expectedImpact}
-                      </span>
-                    </div>
-                  )}
+                      STEP {idx + 1}
+                    </span>
+                    <span className="text-xs md:text-sm font-bold text-[#374151]">
+                      {phase.items.length}개 항목
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-          );
-        })}
+
+            {/* 항목 리스트 */}
+            <div className="p-4 md:p-5 flex-1">
+              {phase.items.length === 0 ? (
+                <p className="text-sm md:text-base text-[#9ca3af] font-medium text-center py-4">
+                  해당 항목이 없습니다
+                </p>
+              ) : (
+                <ul className="space-y-2.5 md:space-y-3">
+                  {phase.items.map((item, i) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 md:gap-2.5 text-sm md:text-base text-[#111] leading-relaxed"
+                    >
+                      <span
+                        className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5"
+                        style={{ backgroundColor: phase.bg, color: phase.color }}
+                      >
+                        {i + 1}
+                      </span>
+                      <span className="font-medium break-words">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
