@@ -222,8 +222,11 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 점수 + 레이더 + 핵심 이슈 */}
-            <div className="grid gap-4 md:gap-6 md:grid-cols-[360px_1fr]">
+            {/* v34: 영역별 점수 분석 (최상단 이동) */}
+            <ScoreRadar diagnosis={report.diagnosis} />
+
+            {/* 종합 점수 + 핵심 이슈 */}
+            <div className="mt-8 grid gap-4 md:gap-6 md:grid-cols-[360px_1fr]">
               <div className="jm-card p-8">
                 <p className="text-xs font-bold tracking-wider text-jm-gray">
                   종합 점수
@@ -240,8 +243,9 @@ export default function HomePage() {
                   마케팅/전환 관점 종합 점수
                 </div>
                 <p className="mt-6 text-xs text-jm-gray leading-relaxed">
-                  아래 <span className="font-bold text-jm-charcoal">영역별 점수 분석</span> 섹션에서
-                  8개 핵심 영역의 세부 점수를 확인하세요.
+                  위 <span className="font-bold text-jm-charcoal">영역별 점수 분석</span>에서
+                  8개 핵심 영역의 세부 점수를 확인했다면,
+                  아래에서는 가장 긴급한 개선 이슈와 구체적 조치를 알아보세요.
                 </p>
               </div>
 
@@ -250,11 +254,6 @@ export default function HomePage() {
                   <DiagnosisCard key={index} issue={issue} index={index} />
                 ))}
               </div>
-            </div>
-
-            {/* v33: 영역별 점수 분석 (독립 섹션, 풀폭) */}
-            <div className="mt-8">
-              <ScoreRadar diagnosis={report.diagnosis} />
             </div>
 
             {/* 12가지 진단 체크리스트 */}
