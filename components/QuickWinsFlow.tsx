@@ -1,20 +1,18 @@
 "use client";
 
 import React from "react";
+import type { MarketingReport } from "@/lib/reportSchema";
 
-interface QuickWin {
-  title: string;
-  steps: string[];
-  beforeExample?: string;
-  afterExample?: string;
-}
+// v31-2: page.tsx에서 quickWins={report.quickWinsDetailed} 로 넘김.
+// quickWinsDetailed는 optional이므로 undefined 안전 처리.
+type QuickWin = NonNullable<MarketingReport["quickWinsDetailed"]>[number];
 
 interface Props {
-  quickWins: QuickWin[];
+  quickWins: QuickWin[] | undefined;
 }
 
 /**
- * v31 가독성 강화 + 반응형
+ * v31-2 가독성 강화 + 반응형 + 100% 타입 동기화
  * 단계별 플로우 Quick Wins
  */
 export default function QuickWinsFlow({ quickWins }: Props) {
@@ -44,10 +42,8 @@ export default function QuickWinsFlow({ quickWins }: Props) {
             key={idx}
             className="bg-white border-2 border-[#f59e0b55] rounded-2xl p-5 md:p-6 shadow-md hover:shadow-xl transition-all relative overflow-hidden"
           >
-            {/* 좌측 그라데이션 바 */}
             <div className="absolute left-0 top-0 bottom-0 w-1 md:w-1.5 bg-gradient-to-b from-[#f59e0b] to-[#e31b23]" />
 
-            {/* 헤더 */}
             <div className="flex items-start gap-3 mb-3 md:mb-4 pl-1.5 md:pl-2">
               <div className="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-gradient-to-br from-[#fef3c7] to-[#fee2e2] flex items-center justify-center shadow-md flex-shrink-0">
                 <span className="text-xl md:text-2xl font-black text-[#e31b23]">
@@ -66,7 +62,6 @@ export default function QuickWinsFlow({ quickWins }: Props) {
               </div>
             </div>
 
-            {/* 실행 단계 */}
             {win.steps && win.steps.length > 0 && (
               <div className="mb-3 md:mb-4 pl-1.5 md:pl-2">
                 <div className="flex items-center gap-2 mb-2">
@@ -91,7 +86,6 @@ export default function QuickWinsFlow({ quickWins }: Props) {
               </div>
             )}
 
-            {/* Before / After */}
             {(win.beforeExample || win.afterExample) && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 md:gap-3 pl-1.5 md:pl-2">
                 {win.beforeExample && (
