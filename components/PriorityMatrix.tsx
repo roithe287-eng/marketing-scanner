@@ -1,19 +1,15 @@
 "use client";
 
 import React from "react";
+import type { MarketingReport } from "@/lib/reportSchema";
 
-interface Roadmap {
-  immediately: string[];
-  thisWeek: string[];
-  thisMonth: string[];
-}
-
+// v31-2: page.tsx에서 roadmap={report.priorityRoadmap} 로 넘김.
 interface Props {
-  roadmap: Roadmap;
+  roadmap: MarketingReport["priorityRoadmap"];
 }
 
 /**
- * v31 가독성 강화 + 반응형
+ * v31-2 가독성 강화 + 반응형 + 100% 타입 동기화
  * 우선순위 로드맵 (즉시/이번주/이번달)
  */
 export default function PriorityMatrix({ roadmap }: Props) {
@@ -66,7 +62,7 @@ export default function PriorityMatrix({ roadmap }: Props) {
         </div>
       </div>
 
-      {/* 3단계 그리드: 모바일 1열 / 태블릿 이상 3열 */}
+      {/* 3단계: 모바일 1열 / 태블릿 이상 3열 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
         {phases.map((phase, idx) => (
           <div
@@ -74,19 +70,16 @@ export default function PriorityMatrix({ roadmap }: Props) {
             className="bg-white border-2 rounded-2xl shadow-md hover:shadow-xl transition-all overflow-hidden flex flex-col"
             style={{ borderColor: `${phase.color}55` }}
           >
-            {/* 카드 헤더 */}
             <div
               className="p-4 md:p-5 border-b-2"
               style={{ backgroundColor: phase.bg, borderColor: `${phase.color}33` }}
             >
               <div className="flex items-center gap-3">
-                <div
-                  className="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm flex-shrink-0"
-                >
+                <div className="w-11 h-11 md:w-12 md:h-12 rounded-2xl bg-white flex items-center justify-center shadow-sm flex-shrink-0">
                   <span className="text-2xl md:text-3xl">{phase.icon}</span>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-baseline gap-2">
+                  <div className="flex items-baseline gap-2 flex-wrap">
                     <h3
                       className="text-lg md:text-xl font-extrabold leading-tight"
                       style={{ color: phase.color }}
@@ -97,7 +90,7 @@ export default function PriorityMatrix({ roadmap }: Props) {
                       {phase.sublabel}
                     </span>
                   </div>
-                  <div className="mt-1 flex items-center gap-1.5">
+                  <div className="mt-1 flex items-center gap-1.5 flex-wrap">
                     <span
                       className="px-2 py-0.5 rounded-full text-[10px] md:text-xs font-black"
                       style={{ backgroundColor: phase.color, color: "#fff" }}
@@ -112,7 +105,6 @@ export default function PriorityMatrix({ roadmap }: Props) {
               </div>
             </div>
 
-            {/* 항목 리스트 */}
             <div className="p-4 md:p-5 flex-1">
               {phase.items.length === 0 ? (
                 <p className="text-sm md:text-base text-[#9ca3af] font-medium text-center py-4">
@@ -120,7 +112,7 @@ export default function PriorityMatrix({ roadmap }: Props) {
                 </p>
               ) : (
                 <ul className="space-y-2.5 md:space-y-3">
-                  {phase.items.map((item, i) => (
+                  {phase.items.map((item: string, i: number) => (
                     <li
                       key={i}
                       className="flex items-start gap-2 md:gap-2.5 text-sm md:text-base text-[#111] leading-relaxed"
