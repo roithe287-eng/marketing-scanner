@@ -1,85 +1,115 @@
-import { MarketingReport } from "@/lib/reportSchema";
+"use client";
 
-type Props = {
-  quickWins: NonNullable<MarketingReport["quickWinsDetailed"]>;
-};
+import React from "react";
+import type { MarketingReport } from "@/lib/reportSchema";
 
-export default function QuickWinsFlow({ quickWins }: Props) {
-  if (!quickWins || quickWins.length === 0) return null;
+interface Props {
+  report: MarketingReport;
+}
+
+/**
+ * v31 - 가독성 강화 리디자인
+ * 즉시 실행 가능한 퀵윈 액션
+ */
+export default function QuickWinsFlow({ report }: Props) {
+  const wins = report.quickWinsDetailed || [];
+  if (!wins.length) return null;
 
   return (
-    <div className="jm-card mt-8 p-8">
-      <p className="text-xs font-black tracking-wider text-jm-red">
-        QUICK WINS
-      </p>
-      <h3 className="mt-2 text-2xl font-black">오늘 바로 적용 가능한 개선</h3>
-      <p className="mt-2 text-sm text-jm-gray">
-        각 항목별로 단계별 실행 플로우와 Before/After 예시를 함께 제공합니다.
-      </p>
+    <section className="mb-10">
+      {/* 섹션 헤더 */}
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-12 h-12 rounded-xl bg-[#e31b23] flex items-center justify-center shadow-lg">
+          <span className="text-2xl">⚡</span>
+        </div>
+        <div>
+          <h2 className="text-2xl md:text-3xl font-extrabold text-[#111] tracking-tight">
+            퀵윈 액션 플랜
+          </h2>
+          <p className="text-base text-[#6b7280] mt-1 font-medium">
+            바로 적용 가능한 즉시 개선 항목
+          </p>
+        </div>
+      </div>
 
-      <div className="mt-6 grid gap-5 md:grid-cols-2">
-        {quickWins.map((win, idx) => (
+      {/* 퀵윈 카드 그리드 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {wins.map((win: any, idx: number) => (
           <div
             key={idx}
-            className="rounded-2xl border-2 border-jm-border p-5 flex flex-col"
+            className="bg-white border-2 border-[#f59e0b55] rounded-2xl p-6 shadow-md hover:shadow-xl transition-all relative overflow-hidden"
           >
-            {/* 제목 */}
-            <div className="flex items-start gap-3">
-              <span className="shrink-0 inline-flex h-8 w-8 items-center justify-center rounded-full bg-jm-red text-white text-sm font-black">
-                {idx + 1}
-              </span>
-              <h4 className="font-black text-base leading-snug">{win.title}</h4>
+            {/* 좌측 그라데이션 바 */}
+            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-[#f59e0b] to-[#e31b23]" />
+
+            {/* 헤더 */}
+            <div className="flex items-start gap-3 mb-4 pl-2">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#fef3c7] to-[#fee2e2] flex items-center justify-center shadow-md flex-shrink-0">
+                <span className="text-2xl font-black text-[#e31b23]">{idx + 1}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#fef3c7] text-[#f59e0b] uppercase tracking-wide">
+                    ⚡ 퀵윈
+                  </span>
+                  {win.timeRequired && (
+                    <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-[#3b82f6]">
+                      ⏱️ {win.timeRequired}
+                    </span>
+                  )}
+                </div>
+                <h3 className="text-xl font-extrabold text-[#111] leading-tight">
+                  {win.title || win.action}
+                </h3>
+              </div>
             </div>
 
-            {/* 단계별 플로우 */}
-            {win.steps && win.steps.length > 0 && (
-              <div className="mt-4 pl-2">
-                <p className="text-[10px] font-black tracking-wider text-jm-gray mb-2">
-                  STEP BY STEP
-                </p>
-                <ol className="space-y-2.5">
-                  {win.steps.map((step, sIdx) => (
-                    <li key={sIdx} className="flex gap-2 text-xs leading-6">
-                      <span className="shrink-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-jm-black text-white text-[10px] font-bold">
-                        {sIdx + 1}
+            {/* 상세 설명 */}
+            {win.description && (
+              <p className="text-base text-[#374151] leading-relaxed font-medium mb-3 pl-2">
+                {win.description}
+              </p>
+            )}
+
+            {/* 실행 단계 */}
+            {win.steps && Array.isArray(win.steps) && win.steps.length > 0 && (
+              <div className="mb-3 pl-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-base">🔧</span>
+                  <span className="text-sm font-bold text-[#111] uppercase tracking-wide">
+                    실행 단계
+                  </span>
+                </div>
+                <ol className="space-y-2">
+                  {win.steps.map((step: string, i: number) => (
+                    <li
+                      key={i}
+                      className="flex items-start gap-2.5 text-base text-[#111] leading-relaxed"
+                    >
+                      <span className="w-6 h-6 rounded-full bg-[#e31b23] text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                        {i + 1}
                       </span>
-                      <span>{step}</span>
+                      <span className="font-medium">{step}</span>
                     </li>
                   ))}
                 </ol>
               </div>
             )}
 
-            {/* Before / After */}
-            {(win.beforeExample || win.afterExample) && (
-              <div className="mt-auto pt-4">
-                <div className="grid grid-cols-1 gap-2">
-                  {win.beforeExample && (
-                    <div className="rounded-xl bg-red-50 px-3 py-2 border-l-4 border-jm-red">
-                      <p className="text-[10px] font-black tracking-wider text-jm-red">
-                        BEFORE
-                      </p>
-                      <p className="mt-1 text-xs leading-5">
-                        {win.beforeExample}
-                      </p>
-                    </div>
-                  )}
-                  {win.afterExample && (
-                    <div className="rounded-xl bg-green-50 px-3 py-2 border-l-4 border-green-500">
-                      <p className="text-[10px] font-black tracking-wider text-green-700">
-                        AFTER
-                      </p>
-                      <p className="mt-1 text-xs leading-5 font-medium">
-                        {win.afterExample}
-                      </p>
-                    </div>
-                  )}
-                </div>
+            {/* 기대 효과 */}
+            {win.expectedResult && (
+              <div className="rounded-xl bg-gradient-to-r from-[#d1fae5] to-[#dbeafe] p-3 border-l-4 border-[#10b981] ml-2">
+                <span className="text-sm font-bold text-[#10b981] uppercase tracking-wide mr-2">
+                  📈 기대 효과
+                </span>
+                <span className="text-base text-[#111] font-medium">
+                  {win.expectedResult}
+                </span>
               </div>
             )}
           </div>
         ))}
       </div>
-    </div>
+    </section>
   );
 }
