@@ -8,7 +8,8 @@ interface Props {
 }
 
 /**
- * v34 - 영역별 점수 분석 (정교한 가독성 위계)
+ * v39 - 영역별 점수 분석 (PC 깨짐 완전 해결)
+ * 이전 v34 - 정교한 가독성 위계
  *
  * 디자인 원칙:
  * - 메인 텍스트(섹션 제목/점수 숫자): 굵게(900) + 진한 검정(#0f172a)
@@ -156,15 +157,16 @@ export default function ScoreRadar({ diagnosis }: Props) {
         <div className="border-t border-[#e2e8f0]" />
 
         {/* ② 본문 - 차트 + 리스트 */}
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-6 xl:gap-8 p-5 md:p-6 lg:p-8">
-          {/* 좌측: 팔각형 레이더 차트 */}
-          <div className="order-1 min-w-0">
-            <div className="text-center mb-3 xl:hidden">
+        {/* v39: 어떤 폭에서도 깨지지 않도록 완전 1단 세로 고정 */}
+        <div className="flex flex-col gap-6 md:gap-8 p-5 md:p-6 lg:p-8">
+          {/* 차트 영역 (위) */}
+          <div className="w-full min-w-0">
+            <div className="text-center mb-3">
               <div className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">
                 Radar Chart
               </div>
             </div>
-            <div className="aspect-square max-w-[420px] xl:max-w-[480px] mx-auto">
+            <div className="aspect-square w-full max-w-[440px] mx-auto">
               <svg viewBox={`0 0 ${VB} ${VB}`} className="w-full h-full">
                 {/* 가이드 그리드 */}
                 {gridLevels.map((level) => {
@@ -322,8 +324,8 @@ export default function ScoreRadar({ diagnosis }: Props) {
             </div>
           </div>
 
-          {/* 우측: 점수 리스트 */}
-          <div className="order-2 flex flex-col min-w-0">
+          {/* 점수 리스트 (아래) */}
+          <div className="w-full flex flex-col min-w-0">
             <div className="flex items-center justify-between mb-3 px-1">
               <div className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">
                 Score Breakdown
@@ -332,7 +334,8 @@ export default function ScoreRadar({ diagnosis }: Props) {
                 8 영역
               </div>
             </div>
-            <div className="space-y-2 md:space-y-2.5">
+            {/* v39: PC에서도 리스트를 2열로 펼쳐서 세로길이 절약 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 md:gap-2.5">
               {scores.map((s) => {
                 const grade = getGrade(s.score);
                 return (
