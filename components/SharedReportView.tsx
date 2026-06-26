@@ -238,7 +238,7 @@ export default function SharedReportView({ report, shareId }: Props) {
                     value={competitorCount}
                     unit="개"
                     color="#2563eb"
-                    pendingNote={competitorCount === 0 ? "분석 중" : undefined}
+                    pendingNote={competitorCount === 0 ? "데이터 없음" : undefined}
                   />
                 </div>
               </div>
@@ -272,19 +272,19 @@ export default function SharedReportView({ report, shareId }: Props) {
             </div>
           )}
 
-          {/* v42: 경쟁사 데이터 없을 때 안내 메시지 (동기화 미완료 안내) */}
+          {/* v43: 경쟁사 데이터 없을 때 안내 (최종 실패 상태) */}
           {!report.competitorAnalysis?.competitors?.length && (
             <div className="mt-8 md:mt-10 bg-[#f8fafc] border border-dashed border-[#cbd5e1] rounded-2xl p-6 md:p-8 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white border border-[#e2e8f0] mb-3">
                 <span className="text-xl">🎯</span>
               </div>
               <h3 className="text-base md:text-lg font-black text-[#0f172a] mb-1">
-                경쟁사 분석 데이터가 포함되지 않은 링크입니다
+                경쟁사 분석 데이터는 이 링크에 포함되지 않았습니다
               </h3>
               <p className="text-xs md:text-sm text-[#64748b] font-medium">
-                분석 증간에 공유 링크를 생성하면 경쟁사 데이터가 누락될 수 있습니다.
+                이용 환경 또는 검색 API 제한으로 경쟁사 정보를 분석하지 못한 경우입니다.
                 <br className="hidden md:block" />
-                경쟁사 분석이 완료된 후(약 10–20초) 다시 공유해 주세요.
+                다른 모든 진단 항목은 정상적으로 표시됩니다.
               </p>
             </div>
           )}
