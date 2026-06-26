@@ -97,35 +97,35 @@ export default function ScoreRadar({ diagnosis }: Props) {
       {/* ━━━ 메인 카드 ━━━ */}
       <div className="bg-white border border-[#e2e8f0] rounded-2xl shadow-sm">
         {/* ① 요약 인사이트 (3카드 - 상단 헤더 영역) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#e2e8f0] rounded-t-2xl overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-[#e2e8f0] rounded-t-2xl overflow-hidden min-w-0">
           {/* 평균 */}
-          <div className="bg-white px-4 md:px-5 py-4 md:py-5 flex items-center gap-3 sm:gap-4">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-[#fef2f2] border border-[#e31b23]/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl md:text-2xl font-black text-[#e31b23] leading-none">
+          <div className="bg-white px-3 md:px-4 lg:px-5 py-3 md:py-4 lg:py-5 flex items-center gap-2.5 md:gap-3 lg:gap-4 min-w-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl bg-[#fef2f2] border border-[#e31b23]/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-base md:text-xl lg:text-2xl font-black text-[#e31b23] leading-none">
                 {avg}
               </span>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] md:text-xs font-semibold text-[#64748b] uppercase tracking-wider">
+              <div className="text-[10px] md:text-[11px] lg:text-xs font-semibold text-[#64748b] uppercase tracking-wider truncate">
                 평균 점수
               </div>
-              <div className="text-sm md:text-base font-bold text-[#0f172a] mt-0.5 truncate">
+              <div className="text-xs md:text-sm lg:text-base font-bold text-[#0f172a] mt-0.5 truncate">
                 전체 영역 평균
               </div>
             </div>
           </div>
 
           {/* 최고 */}
-          <div className="bg-white px-4 md:px-5 py-4 md:py-5 flex items-center gap-3 sm:gap-4">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-[#ecfdf5] border border-[#10b981]/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl md:text-2xl">{highest.icon}</span>
+          <div className="bg-white px-3 md:px-4 lg:px-5 py-3 md:py-4 lg:py-5 flex items-center gap-2.5 md:gap-3 lg:gap-4 min-w-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl bg-[#ecfdf5] border border-[#10b981]/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg md:text-xl lg:text-2xl">{highest.icon}</span>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] md:text-xs font-semibold text-[#059669] uppercase tracking-wider">
+              <div className="text-[10px] md:text-[11px] lg:text-xs font-semibold text-[#059669] uppercase tracking-wider truncate whitespace-nowrap">
                 최고 · {highest.score}점
               </div>
               <div
-                className="text-sm md:text-base font-bold text-[#0f172a] mt-0.5 truncate"
+                className="text-xs md:text-sm lg:text-base font-bold text-[#0f172a] mt-0.5 truncate"
                 title={highest.label}
               >
                 {highest.label}
@@ -134,16 +134,16 @@ export default function ScoreRadar({ diagnosis }: Props) {
           </div>
 
           {/* 최저 */}
-          <div className="bg-white px-4 md:px-5 py-4 md:py-5 flex items-center gap-3 sm:gap-4">
-            <div className="w-12 h-12 md:w-14 md:h-14 rounded-xl bg-[#fef2f2] border border-[#dc2626]/20 flex items-center justify-center flex-shrink-0">
-              <span className="text-xl md:text-2xl">{lowest.icon}</span>
+          <div className="bg-white px-3 md:px-4 lg:px-5 py-3 md:py-4 lg:py-5 flex items-center gap-2.5 md:gap-3 lg:gap-4 min-w-0">
+            <div className="w-10 h-10 md:w-12 md:h-12 lg:w-14 lg:h-14 rounded-xl bg-[#fef2f2] border border-[#dc2626]/20 flex items-center justify-center flex-shrink-0">
+              <span className="text-lg md:text-xl lg:text-2xl">{lowest.icon}</span>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="text-[11px] md:text-xs font-semibold text-[#dc2626] uppercase tracking-wider">
+              <div className="text-[10px] md:text-[11px] lg:text-xs font-semibold text-[#dc2626] uppercase tracking-wider truncate whitespace-nowrap">
                 최저 · {lowest.score}점
               </div>
               <div
-                className="text-sm md:text-base font-bold text-[#0f172a] mt-0.5 truncate"
+                className="text-xs md:text-sm lg:text-base font-bold text-[#0f172a] mt-0.5 truncate"
                 title={lowest.label}
               >
                 {lowest.label}
@@ -156,15 +156,15 @@ export default function ScoreRadar({ diagnosis }: Props) {
         <div className="border-t border-[#e2e8f0]" />
 
         {/* ② 본문 - 차트 + 리스트 */}
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-6 lg:gap-8 p-5 md:p-6 lg:p-8">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-6 xl:gap-8 p-5 md:p-6 lg:p-8">
           {/* 좌측: 팔각형 레이더 차트 */}
-          <div className="order-1">
-            <div className="text-center mb-3 lg:hidden">
+          <div className="order-1 min-w-0">
+            <div className="text-center mb-3 xl:hidden">
               <div className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">
                 Radar Chart
               </div>
             </div>
-            <div className="aspect-square max-w-[480px] mx-auto">
+            <div className="aspect-square max-w-[420px] xl:max-w-[480px] mx-auto">
               <svg viewBox={`0 0 ${VB} ${VB}`} className="w-full h-full">
                 {/* 가이드 그리드 */}
                 {gridLevels.map((level) => {
@@ -323,8 +323,8 @@ export default function ScoreRadar({ diagnosis }: Props) {
           </div>
 
           {/* 우측: 점수 리스트 */}
-          <div className="order-2 flex flex-col">
-            <div className="hidden lg:flex items-center justify-between mb-3 px-1">
+          <div className="order-2 flex flex-col min-w-0">
+            <div className="flex items-center justify-between mb-3 px-1">
               <div className="text-xs font-semibold text-[#64748b] uppercase tracking-wider">
                 Score Breakdown
               </div>
