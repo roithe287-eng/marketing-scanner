@@ -3,7 +3,7 @@
 import { useState } from "react";
 import BrandHeader from "@/components/BrandHeader";
 import UrlForm from "@/components/UrlForm";
-import LivePreviewCard from "@/components/LivePreviewCard";
+import LivePreviewCard from "../components/LivePreviewCard";
 import ScoreRadar from "@/components/ScoreRadar";
 import DiagnosisCard from "@/components/DiagnosisCard";
 import PriorityMatrix from "@/components/PriorityMatrix";
