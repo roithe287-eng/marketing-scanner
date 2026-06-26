@@ -20,6 +20,17 @@ export default function ShareButton({ report }: Props) {
       return;
     }
 
+    // v42: 경쟁사 분석 다이다 미완료 경고
+    if (!report.competitorAnalysis || !report.competitorAnalysis.competitors?.length) {
+      const proceed = window.confirm(
+        "⚠️ 경쟁사 분석이 아직 완료되지 않았습니다.\n\n" +
+          "지금 공유하면 경쟁사 데이터가 누락된 채로 링크가 생성됩니다.\n" +
+          "10–20초 더 기다린 후 다시 공유 버튼을 눌러주세요.\n\n" +
+          "그래도 지금 공유하시겠습니까?"
+      );
+      if (!proceed) return;
+    }
+
     setLoading(true);
     setError(null);
     try {
