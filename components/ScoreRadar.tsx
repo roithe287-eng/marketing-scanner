@@ -80,10 +80,10 @@ export default function ScoreRadar({ diagnosis }: Props) {
 
   return (
     <section className="mb-8 md:mb-10">
-      {/* ━━━ 섹션 헤더 ━━━ */}
+      {/* ━━━ 섹션 헤더 (v41: 🎯 정조준 아이콘) ━━━ */}
       <div className="flex items-center gap-3 mb-5 md:mb-6">
         <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-[#0f172a] flex items-center justify-center flex-shrink-0">
-          <span className="text-lg md:text-xl">📊</span>
+          <span className="text-lg md:text-xl">🎯</span>
         </div>
         <div className="min-w-0">
           <h2 className="text-xl md:text-2xl font-black text-[#0f172a] tracking-tight leading-tight">
