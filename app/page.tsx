@@ -136,9 +136,9 @@ export default function HomePage() {
           <path d="M 30 155 L 160 30 M 160 30 L 150 38 M 160 30 L 152 22" stroke="#e31b23" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
 
-        <div className="jm-container relative z-10 py-10 md:py-16 lg:py-20">
+        <div className="jm-container relative z-10 py-6 md:py-10 lg:py-14">
           {/* 상단 라이브 상태바 */}
-          <div className="mb-6 md:mb-10 flex items-center gap-2 text-[11px] md:text-xs text-[#64748b] font-medium">
+          <div className="mb-4 md:mb-6 flex items-center gap-2 text-[11px] md:text-xs text-[#64748b] font-medium">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
               <span className="font-bold text-[#10b981]">Live</span>
@@ -149,26 +149,25 @@ export default function HomePage() {
             <span className="font-mono">v3.4</span>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,_45fr)_minmax(0,_55fr)] gap-10 lg:gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,_45fr)_minmax(0,_55fr)] gap-8 md:gap-10 lg:gap-12 items-center">
             {/* 좌측 — 카피 영역 */}
             <div className="order-1">
-              <p className="mb-3 md:mb-4 text-[11px] md:text-xs font-black tracking-widest text-[#e31b23]">
+              <p className="mb-2.5 md:mb-3 text-[11px] md:text-xs font-black tracking-widest text-[#e31b23]">
                 JINJJA MARKETING SCANNER · v3.4
               </p>
-              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[52px] font-black leading-[1.15] tracking-tight text-[#0f172a]">
-                URL 하나로
-                <br />
-                13개 진단 항목 · 경쟁사까지
-                <br />
+              <h1 className="text-[28px] sm:text-4xl md:text-[44px] lg:text-[44px] xl:text-[52px] font-black leading-[1.2] tracking-tight text-[#0f172a]">
+                URL 하나로<br />
+                <span className="whitespace-nowrap">13개 진단 항목</span>{" · "}
+                <span className="whitespace-nowrap">경쟁사까지</span><br />
                 <span className="text-[#e31b23]">30초</span> 안에 끝냅니다
               </h1>
-              <p className="mt-5 md:mt-6 text-sm md:text-base leading-7 text-[#64748b] font-medium">
+              <p className="mt-4 md:mt-5 text-sm md:text-base leading-relaxed text-[#64748b] font-medium">
                 네이버 AI 광고 적합도 · 경쟁사 포지셔닝 맵 · 퀵윈 액션 플랜
                 <br className="hidden md:block" />
                 진짜마케팅 시니어 컨설턴트가 검수한 자동 진단 시스템
               </p>
 
-              <div className="mt-7 md:mt-8">
+              <div className="mt-6 md:mt-7">
                 <UrlForm onSubmit={handleAnalyze} loading={loading} />
               </div>
 
@@ -185,7 +184,7 @@ export default function HomePage() {
                 </span>
               </div>
 
-              <p className="mt-4 text-[11px] md:text-xs text-[#94a3b8] leading-relaxed">
+              <p className="mt-3 text-[11px] md:text-xs text-[#94a3b8] leading-relaxed">
                 · 분석은 보통 20~40초 소요되며, SPA(React/Vue) 사이트는 일부 콘텐츠가 분석되지 않을 수 있습니다.
               </p>
             </div>
