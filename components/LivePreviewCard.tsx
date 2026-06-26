@@ -47,45 +47,44 @@ export default function LivePreviewCard() {
   // 단일 데이터 배열에서 클래스로 hidden 처리
   return (
     <div className="relative w-full max-w-[640px] mx-auto">
-      {/* 플로팅 도넛 (우상단 - 모바일에서는 작아짐) */}
-      <div className="absolute -top-3 -right-2 sm:-top-4 sm:-right-4 z-20">
-        <div className="relative w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full shadow-lg border border-[#e2e8f0] flex items-center justify-center">
+      {/* v36: 플로팅 도넛 — 더 크게, 가독성 잔여 공간 강화 */}
+      <div className="absolute -top-4 -right-3 sm:-top-5 sm:-right-5 z-20 flex flex-col items-center gap-1.5">
+        <div className="relative w-[68px] h-[68px] sm:w-[84px] sm:h-[84px] bg-white rounded-full shadow-xl border-2 border-white flex items-center justify-center">
           <svg viewBox="0 0 36 36" className="absolute inset-0 w-full h-full">
             <circle
               cx="18"
               cy="18"
-              r="15.5"
+              r="15"
               fill="none"
               stroke="#e2e8f0"
-              strokeWidth="2.5"
+              strokeWidth="3"
             />
             <circle
               cx="18"
               cy="18"
-              r="15.5"
+              r="15"
               fill="none"
               stroke="#10b981"
-              strokeWidth="2.5"
-              strokeDasharray="100 100"
+              strokeWidth="3"
+              strokeDasharray="94 94"
               strokeLinecap="round"
               transform="rotate(-90 18 18)"
             />
           </svg>
-          <div className="relative text-center leading-none">
-            <div className="text-[10px] sm:text-[11px] font-black text-[#059669]">
+          {/* 안쪽 흰 원 (텍스트 가독성 확보) */}
+          <div className="relative w-[44px] h-[44px] sm:w-[56px] sm:h-[56px] bg-white rounded-full flex flex-col items-center justify-center leading-none">
+            <div className="text-xs sm:text-sm font-black text-[#059669] leading-none">
               13/13
             </div>
-            <div className="text-[8px] sm:text-[9px] font-bold text-[#64748b] mt-0.5">
+            <div className="text-[8px] sm:text-[9px] font-bold text-[#64748b] mt-0.5 tracking-tight">
               완료
             </div>
           </div>
         </div>
-        {/* 30초 라벨 */}
-        <div className="mt-1 sm:mt-1.5 text-center">
-          <span className="inline-block px-1.5 py-0.5 rounded-md bg-[#0f172a] text-white text-[8px] sm:text-[9px] font-bold whitespace-nowrap">
-            30초 전후
-          </span>
-        </div>
+        {/* 30초 라벨 — 도넛 아래로 배치 */}
+        <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full bg-[#0f172a] text-white text-[9px] sm:text-[10px] font-bold whitespace-nowrap shadow-sm">
+          ⏱ 30초 전후
+        </span>
       </div>
 
       {/* 메인 카드 */}
@@ -106,9 +105,9 @@ export default function LivePreviewCard() {
           <div className="w-10" />
         </div>
 
-        {/* [1] 헤더 - 사이트 + 점수 */}
-        <div className="px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between gap-3 border-b border-[#e2e8f0]">
-          <div className="flex items-center gap-2.5 min-w-0">
+        {/* [1] 헤더 - 사이트 + 점수 (v36: 도넛과 겹치지 않도록 우측 여유 확보) */}
+        <div className="px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between gap-3 border-b border-[#e2e8f0] pr-16 sm:pr-24">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
             <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-md bg-[#fef2f2] border border-[#e31b23]/20 flex items-center justify-center flex-shrink-0">
               <span className="text-sm sm:text-base">🏢</span>
             </div>
@@ -121,14 +120,16 @@ export default function LivePreviewCard() {
               </div>
             </div>
           </div>
-          <div className="flex items-baseline gap-1 flex-shrink-0">
-            <span className="text-2xl sm:text-3xl md:text-4xl font-black text-[#e31b23] leading-none">
-              72
-            </span>
-            <span className="text-[10px] sm:text-xs text-[#94a3b8] font-bold">
-              /100
-            </span>
-            <span className="ml-1.5 px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-[#eff6ff] text-[#2563eb] border border-[#2563eb]/20">
+          <div className="flex flex-col items-end gap-1 flex-shrink-0">
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-2xl sm:text-3xl md:text-[32px] font-black text-[#e31b23] leading-none">
+                72
+              </span>
+              <span className="text-[10px] sm:text-xs text-[#94a3b8] font-bold">
+                /100
+              </span>
+            </div>
+            <span className="px-1.5 py-0.5 rounded-md text-[9px] sm:text-[10px] font-bold bg-[#eff6ff] text-[#2563eb] border border-[#2563eb]/20 leading-none">
               양호
             </span>
           </div>
@@ -221,29 +222,59 @@ export default function LivePreviewCard() {
           </div>
         </div>
 
-        {/* [3] 하단 액션 스트립 */}
+        {/* [3] 하단 액션 스트립 (v36: 통계 카드 4열로 풍성 + 패딩 여유) */}
         <div className="px-4 sm:px-5 py-3 sm:py-4 bg-[#f8fafc] border-t border-[#e2e8f0]">
-          {/* 통계 카드 */}
-          <div className="grid grid-cols-2 gap-1.5 sm:gap-2 mb-2.5 sm:mb-3">
-            <div className="bg-white rounded-lg border border-[#e2e8f0] px-2 sm:px-2.5 py-1.5 flex items-center gap-1.5">
-              <span className="text-sm sm:text-base">🔥</span>
-              <div className="min-w-0">
-                <div className="text-[8px] sm:text-[9px] text-[#64748b] font-bold uppercase tracking-wide">
+          {/* 통계 카드 - 4열 그리드, 아이콘 안에 잔여 공간 완전 확보 */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 mb-2.5 sm:mb-3">
+            <div className="bg-white rounded-lg border border-[#fee2e2] px-2 sm:px-2.5 py-2 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-[#fef2f2] flex items-center justify-center flex-shrink-0">
+                <span className="text-sm">🔥</span>
+              </div>
+              <div className="min-w-0 leading-tight">
+                <div className="text-[8px] sm:text-[9px] text-[#dc2626] font-bold uppercase tracking-wide">
                   긴급
                 </div>
                 <div className="text-[11px] sm:text-xs font-black text-[#0f172a]">
-                  3건
+                  3<span className="text-[9px] font-bold text-[#94a3b8] ml-0.5">건</span>
                 </div>
               </div>
             </div>
-            <div className="bg-white rounded-lg border border-[#e2e8f0] px-2 sm:px-2.5 py-1.5 flex items-center gap-1.5">
-              <span className="text-sm sm:text-base">⚡</span>
-              <div className="min-w-0">
-                <div className="text-[8px] sm:text-[9px] text-[#64748b] font-bold uppercase tracking-wide">
+            <div className="bg-white rounded-lg border border-[#fef3c7] px-2 sm:px-2.5 py-2 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-[#fffbeb] flex items-center justify-center flex-shrink-0">
+                <span className="text-sm">⚡</span>
+              </div>
+              <div className="min-w-0 leading-tight">
+                <div className="text-[8px] sm:text-[9px] text-[#d97706] font-bold uppercase tracking-wide">
                   퀵윈
                 </div>
                 <div className="text-[11px] sm:text-xs font-black text-[#0f172a]">
-                  5건
+                  5<span className="text-[9px] font-bold text-[#94a3b8] ml-0.5">건</span>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg border border-[#dbeafe] px-2 sm:px-2.5 py-2 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-[#eff6ff] flex items-center justify-center flex-shrink-0">
+                <span className="text-sm">🎯</span>
+              </div>
+              <div className="min-w-0 leading-tight">
+                <div className="text-[8px] sm:text-[9px] text-[#2563eb] font-bold uppercase tracking-wide">
+                  경쟁사
+                </div>
+                <div className="text-[11px] sm:text-xs font-black text-[#0f172a]">
+                  5<span className="text-[9px] font-bold text-[#94a3b8] ml-0.5">개</span>
+                </div>
+              </div>
+            </div>
+            <div className="bg-white rounded-lg border border-[#d1fae5] px-2 sm:px-2.5 py-2 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-md bg-[#ecfdf5] flex items-center justify-center flex-shrink-0">
+                <span className="text-sm">✅</span>
+              </div>
+              <div className="min-w-0 leading-tight">
+                <div className="text-[8px] sm:text-[9px] text-[#059669] font-bold uppercase tracking-wide">
+                  완료도
+                </div>
+                <div className="text-[11px] sm:text-xs font-black text-[#0f172a]">
+                  100<span className="text-[9px] font-bold text-[#94a3b8] ml-0.5">%</span>
                 </div>
               </div>
             </div>
