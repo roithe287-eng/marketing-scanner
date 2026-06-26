@@ -19,6 +19,54 @@ type Props = {
   shareId: string;
 };
 
+// v42: 상단 헤더 통계 카드 셀 (0일 때 우아한 회색 처리)
+function StatCell({
+  icon,
+  label,
+  value,
+  unit,
+  color,
+  pendingNote,
+}: {
+  icon: string;
+  label: string;
+  value: number;
+  unit: string;
+  color: string;
+  pendingNote?: string;
+}) {
+  const isEmpty = value === 0;
+  return (
+    <div className="px-4 md:px-5 py-3 md:py-3.5 flex items-center gap-2 min-w-0">
+      <span className={`text-base md:text-lg flex-shrink-0 ${isEmpty ? "grayscale opacity-40" : ""}`}>
+        {icon}
+      </span>
+      <div className="min-w-0 leading-tight">
+        <div
+          className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider truncate"
+          style={{ color: isEmpty ? "#94a3b8" : color }}
+        >
+          {label}
+        </div>
+        <div className="flex items-baseline gap-1">
+          <span
+            className="text-xs md:text-sm font-black"
+            style={{ color: isEmpty ? "#94a3b8" : "#0f172a" }}
+          >
+            {value}
+            <span className="text-[10px] font-bold text-[#94a3b8] ml-0.5">{unit}</span>
+          </span>
+          {pendingNote && (
+            <span className="text-[9px] md:text-[10px] font-semibold text-[#94a3b8] italic">
+              ({pendingNote})
+            </span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SharedReportView({ report, shareId }: Props) {
   const siteName = report.meta?.siteName || report.meta?.domain || "분석 사이트";
   const ogImage = report.meta?.ogImage;
@@ -76,57 +124,70 @@ export default function SharedReportView({ report, shareId }: Props) {
           id="report-area"
           className="scroll-mt-24 bg-white p-0 md:p-4 rounded-3xl"
         >
-          {/* v41: 마케팅 진단 결과 헤더 (6요소 통합 카드형) */}
-          <div className="mb-8 bg-white border border-[#e2e8f0] rounded-2xl shadow-sm overflow-hidden">
-            {/* ① 메타 라벨 스트립 (상단) */}
-            <div className="px-5 md:px-7 pt-5 md:pt-6 pb-3 flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#fef2f2] text-[#e31b23] text-[10px] md:text-[11px] font-black tracking-widest">
-                📋 DIAGNOSIS REPORT
-              </span>
-              <span className="text-[10px] md:text-[11px] font-mono text-[#94a3b8]">v3.4</span>
-              <span className="text-[10px] md:text-[11px] text-[#cbd5e1]">·</span>
-              <span className="text-[10px] md:text-[11px] font-semibold text-[#64748b]">
-                진짜마케팅 시니어 컨설턴트 검수
-              </span>
-            </div>
+          {/* v42: 공유 페이지 헤더 (시인성 강화 + 우아한 빈 데이터 처리) */}
+          {(() => {
+            const cleanDomain = report.meta?.domain || report.url.replace(/^https?:\/\//, "").replace(/\/$/, "");
+            const s = report.overallScore;
+            const grade =
+              s >= 80
+                ? { label: "우수", color: "#059669", bg: "#ecfdf5", barColor: "#10b981" }
+                : s >= 60
+                ? { label: "양호", color: "#2563eb", bg: "#eff6ff", barColor: "#3b82f6" }
+                : s >= 40
+                ? { label: "보통", color: "#d97706", bg: "#fffbeb", barColor: "#f59e0b" }
+                : { label: "취약", color: "#dc2626", bg: "#fef2f2", barColor: "#ef4444" };
 
-            {/* ② 타이틀 + 종합 점수 인라인 */}
-            <div className="px-5 md:px-7 pb-4 flex items-start justify-between gap-4 flex-wrap">
-              <div className="min-w-0 flex-1">
-                <h2 className="text-2xl md:text-3xl lg:text-[34px] font-black leading-tight tracking-tight text-[#0f172a]">
-                  <span className="text-[#e31b23] break-all">
-                    {report.meta?.domain || report.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+            const checklistCount =
+              (report.checklist?.length || 0) + (report.naverAiReadiness?.checks?.length || 0);
+            const urgentCount = report.criticalIssues?.filter((i) => i.priority === "high").length || 0;
+            const quickWinCount = report.quickWinsDetailed?.length || 0;
+            const competitorCount = report.competitorAnalysis?.competitors?.length || 0;
+
+            return (
+              <div className="mb-8 bg-white border border-[#e2e8f0] rounded-2xl shadow-sm overflow-hidden">
+                {/* 점수 색 상단 액세드 바 */}
+                <div className="h-1" style={{ backgroundColor: grade.barColor }} />
+
+                {/* ① 메타 라벨 스트립 */}
+                <div className="px-5 md:px-7 pt-5 md:pt-6 pb-3 flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#fef2f2] text-[#e31b23] text-[10px] md:text-[11px] font-black tracking-widest">
+                    📋 DIAGNOSIS REPORT
                   </span>
-                  <span className="block md:inline"> 의</span>
-                  <br className="hidden md:block" />
-                  <span> 마케팅 진단 결과</span>
-                </h2>
-              </div>
-              {/* 종합 점수 인라인 배지 */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-                <div className="text-right leading-none">
-                  <div className="text-[10px] md:text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-1">
-                    종합 점수
-                  </div>
-                  <div className="flex items-baseline gap-0.5 justify-end">
-                    <span className="text-4xl md:text-5xl font-black text-[#e31b23] leading-none">
-                      {report.overallScore}
-                    </span>
-                    <span className="text-sm md:text-base font-bold text-[#94a3b8]">/100</span>
-                  </div>
+                  <span className="text-[10px] md:text-[11px] font-mono text-[#94a3b8]">v3.4</span>
+                  <span className="text-[10px] md:text-[11px] text-[#cbd5e1]">·</span>
+                  <span className="text-[10px] md:text-[11px] font-semibold text-[#64748b]">
+                    진짜마케팅 시니어 컨설턴트 검수
+                  </span>
                 </div>
-                {/* 등급 배지 */}
-                {(() => {
-                  const s = report.overallScore;
-                  const grade =
-                    s >= 80
-                      ? { label: "우수", color: "#059669", bg: "#ecfdf5" }
-                      : s >= 60
-                      ? { label: "양호", color: "#2563eb", bg: "#eff6ff" }
-                      : s >= 40
-                      ? { label: "보통", color: "#d97706", bg: "#fffbeb" }
-                      : { label: "취약", color: "#dc2626", bg: "#fef2f2" };
-                  return (
+
+                {/* ② 타이틀 + 종합 점수 인라인 */}
+                <div className="px-5 md:px-7 pb-4 flex items-start justify-between gap-4 flex-wrap">
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-2xl md:text-3xl lg:text-[34px] font-black leading-[1.25] tracking-tight text-[#0f172a]">
+                      <span className="text-[#0f172a] break-all">
+                        {cleanDomain}
+                      </span>
+                      <span className="text-[#64748b] font-bold">의</span>
+                      <br />
+                      <span className="text-[#0f172a]">마케팅 진단 결과</span>
+                    </h2>
+                  </div>
+                  {/* 종합 점수 인라인 배지 */}
+                  <div className="flex items-center gap-2.5 md:gap-3 flex-shrink-0">
+                    <div className="text-right leading-none">
+                      <div className="text-[10px] md:text-[11px] font-bold text-[#64748b] uppercase tracking-wider mb-1">
+                        종합 점수
+                      </div>
+                      <div className="flex items-baseline gap-0.5 justify-end">
+                        <span
+                          className="text-4xl md:text-5xl font-black leading-none"
+                          style={{ color: grade.color }}
+                        >
+                          {s}
+                        </span>
+                        <span className="text-sm md:text-base font-bold text-[#94a3b8]">/100</span>
+                      </div>
+                    </div>
                     <span
                       className="px-2.5 py-1 rounded-lg text-xs md:text-sm font-black border"
                       style={{
@@ -137,94 +198,57 @@ export default function SharedReportView({ report, shareId }: Props) {
                     >
                       {grade.label}
                     </span>
-                  );
-                })()}
-              </div>
-            </div>
+                  </div>
+                </div>
 
-            {/* ③ URL pill */}
-            <div className="px-5 md:px-7 pb-4">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f8fafc] border border-[#e2e8f0]">
-                <span className="text-xs">🔒</span>
-                <span className="text-xs md:text-sm font-bold text-[#0f172a] break-all">
-                  {report.meta?.domain || report.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                </span>
-                <span className="text-[#cbd5e1] text-xs">·</span>
-                <span className="text-[11px] md:text-xs font-semibold text-[#10b981] inline-flex items-center gap-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
-                  분석 완료
-                </span>
-              </div>
-            </div>
+                {/* ③ URL pill */}
+                <div className="px-5 md:px-7 pb-4">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#f8fafc] border border-[#e2e8f0]">
+                    <span className="text-xs">🔒</span>
+                    <span className="text-xs md:text-sm font-bold text-[#0f172a] break-all">
+                      {cleanDomain}
+                    </span>
+                    <span className="text-[#cbd5e1] text-xs">·</span>
+                    <span className="text-[11px] md:text-xs font-semibold text-[#10b981] inline-flex items-center gap-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]" />
+                      분석 완료
+                    </span>
+                  </div>
+                </div>
 
-            {/* ④ 인용러 요약 (one-line summary) */}
-            <div className="mx-5 md:mx-7 mb-5 md:mb-6 px-4 md:px-5 py-3 md:py-4 bg-[#fef2f2] border-l-4 border-[#e31b23] rounded-r-lg">
-              <div className="flex items-start gap-2">
-                <span className="text-[#e31b23] text-xl md:text-2xl font-black leading-none flex-shrink-0">“</span>
-                <p className="text-sm md:text-base text-[#0f172a] leading-relaxed font-semibold flex-1 min-w-0">
-                  {report.oneLineSummary}
-                </p>
-                <span className="text-[#e31b23] text-xl md:text-2xl font-black leading-none flex-shrink-0 self-end">”</span>
-              </div>
-            </div>
+                {/* ④ 인용러 요약 */}
+                <div className="mx-5 md:mx-7 mb-5 md:mb-6 px-4 md:px-5 py-3 md:py-4 bg-[#fef2f2] border-l-4 border-[#e31b23] rounded-r-lg">
+                  <div className="flex items-start gap-2">
+                    <span className="text-[#e31b23] text-xl md:text-2xl font-black leading-none flex-shrink-0">“</span>
+                    <p className="text-sm md:text-base text-[#0f172a] leading-relaxed font-semibold flex-1 min-w-0">
+                      {report.oneLineSummary}
+                    </p>
+                    <span className="text-[#e31b23] text-xl md:text-2xl font-black leading-none flex-shrink-0 self-end">”</span>
+                  </div>
+                </div>
 
-            {/* ⑤ 통계 strip (하단) */}
-            <div className="border-t border-[#e2e8f0] grid grid-cols-2 md:grid-cols-4 divide-x divide-[#e2e8f0]">
-              <div className="px-4 md:px-5 py-3 md:py-3.5 flex items-center gap-2 min-w-0">
-                <span className="text-base md:text-lg flex-shrink-0">📋</span>
-                <div className="min-w-0 leading-tight">
-                  <div className="text-[9px] md:text-[10px] font-bold text-[#64748b] uppercase tracking-wider truncate">
-                    진단 항목
-                  </div>
-                  <div className="text-xs md:text-sm font-black text-[#0f172a]">
-                    {(report.checklist?.length || 0) + (report.naverAiReadiness?.checks?.length || 0)}
-                    <span className="text-[10px] font-bold text-[#94a3b8] ml-0.5">개</span>
-                  </div>
+                {/* ⑤ 통계 strip (0 일 때 우아하게 회색 처리) */}
+                <div className="border-t border-[#e2e8f0] grid grid-cols-2 md:grid-cols-4 divide-x divide-[#e2e8f0]">
+                  <StatCell icon="📋" label="진단 항목" value={checklistCount} unit="개" color="#64748b" />
+                  <StatCell icon="🔥" label="긴급 이슈" value={urgentCount} unit="건" color="#dc2626" />
+                  <StatCell icon="⚡" label="퀵윈" value={quickWinCount} unit="건" color="#d97706" />
+                  <StatCell
+                    icon="🎯"
+                    label="경쟁사"
+                    value={competitorCount}
+                    unit="개"
+                    color="#2563eb"
+                    pendingNote={competitorCount === 0 ? "분석 중" : undefined}
+                  />
                 </div>
               </div>
-              <div className="px-4 md:px-5 py-3 md:py-3.5 flex items-center gap-2 min-w-0">
-                <span className="text-base md:text-lg flex-shrink-0">🔥</span>
-                <div className="min-w-0 leading-tight">
-                  <div className="text-[9px] md:text-[10px] font-bold text-[#dc2626] uppercase tracking-wider truncate">
-                    긴급 이슈
-                  </div>
-                  <div className="text-xs md:text-sm font-black text-[#0f172a]">
-                    {report.criticalIssues?.filter((i) => i.priority === "high").length || 0}
-                    <span className="text-[10px] font-bold text-[#94a3b8] ml-0.5">건</span>
-                  </div>
-                </div>
-              </div>
-              <div className="px-4 md:px-5 py-3 md:py-3.5 flex items-center gap-2 min-w-0">
-                <span className="text-base md:text-lg flex-shrink-0">⚡</span>
-                <div className="min-w-0 leading-tight">
-                  <div className="text-[9px] md:text-[10px] font-bold text-[#d97706] uppercase tracking-wider truncate">
-                    퀵윈
-                  </div>
-                  <div className="text-xs md:text-sm font-black text-[#0f172a]">
-                    {report.quickWinsDetailed?.length || 0}
-                    <span className="text-[10px] font-bold text-[#94a3b8] ml-0.5">건</span>
-                  </div>
-                </div>
-              </div>
-              <div className="px-4 md:px-5 py-3 md:py-3.5 flex items-center gap-2 min-w-0">
-                <span className="text-base md:text-lg flex-shrink-0">🎯</span>
-                <div className="min-w-0 leading-tight">
-                  <div className="text-[9px] md:text-[10px] font-bold text-[#2563eb] uppercase tracking-wider truncate">
-                    경쟁사
-                  </div>
-                  <div className="text-xs md:text-sm font-black text-[#0f172a]">
-                    {report.competitorAnalysis?.competitors?.length || 0}
-                    <span className="text-[10px] font-bold text-[#94a3b8] ml-0.5">개</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
 
           {/* v39: 영역별 점수 분석 (풀폭 독립 섹션, 최상단) */}
           <ScoreRadar diagnosis={report.diagnosis} />
 
-          {/* v41: 핵심 개선 이슈 (종합점수는 상단 헤더에 포함됨) */}
+          {/* v42: 핵심 개선 이슈 */}
           {report.criticalIssues && report.criticalIssues.length > 0 && (
             <div className="mt-8 md:mt-10">
               <div className="flex items-center gap-3 mb-5 md:mb-6">
@@ -245,6 +269,23 @@ export default function SharedReportView({ report, shareId }: Props) {
                   <DiagnosisCard key={index} issue={issue} index={index} />
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* v42: 경쟁사 데이터 없을 때 안내 메시지 (동기화 미완료 안내) */}
+          {!report.competitorAnalysis?.competitors?.length && (
+            <div className="mt-8 md:mt-10 bg-[#f8fafc] border border-dashed border-[#cbd5e1] rounded-2xl p-6 md:p-8 text-center">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white border border-[#e2e8f0] mb-3">
+                <span className="text-xl">🎯</span>
+              </div>
+              <h3 className="text-base md:text-lg font-black text-[#0f172a] mb-1">
+                경쟁사 분석 데이터가 포함되지 않은 링크입니다
+              </h3>
+              <p className="text-xs md:text-sm text-[#64748b] font-medium">
+                분석 증간에 공유 링크를 생성하면 경쟁사 데이터가 누락될 수 있습니다.
+                <br className="hidden md:block" />
+                경쟁사 분석이 완료된 후(약 10–20초) 다시 공유해 주세요.
+              </p>
             </div>
           )}
 
