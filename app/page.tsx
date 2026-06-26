@@ -155,11 +155,11 @@ export default function HomePage() {
               <p className="mb-2.5 md:mb-3 text-[11px] md:text-xs font-black tracking-widest text-[#e31b23]">
                 JINJJA MARKETING SCANNER · v3.4
               </p>
-              <h1 className="text-[28px] sm:text-4xl md:text-[44px] lg:text-[44px] xl:text-[52px] font-black leading-[1.2] tracking-tight text-[#0f172a]">
-                URL 하나로<br />
-                <span className="whitespace-nowrap">13개 진단 항목</span>{" · "}
-                <span className="whitespace-nowrap">경쟁사까지</span><br />
-                <span className="text-[#e31b23]">30초</span> 안에 끝냅니다
+              <h1 className="text-[26px] sm:text-[32px] md:text-[40px] lg:text-[42px] xl:text-[48px] font-black leading-[1.35] md:leading-[1.3] tracking-tight text-[#0f172a]">
+                URL 하나로, <span className="whitespace-nowrap">13개 진단 항목</span><br />
+                <span className="whitespace-nowrap">경쟁사 분석까지</span>{" "}
+                <span className="text-[#e31b23] whitespace-nowrap">30초 안에</span><br />
+                끝냅니다
               </h1>
               <p className="mt-4 md:mt-5 text-sm md:text-base leading-relaxed text-[#64748b] font-medium">
                 네이버 AI 광고 적합도 · 경쟁사 포지셔닝 맵 · 퀵윈 액션 플랜
