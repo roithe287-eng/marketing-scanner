@@ -23,6 +23,8 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [competitorLoading, setCompetitorLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // v43: 공유 ID 추적 — 경쟁사 분석 완료 시 자동 PATCH 호출용
+  const [sharedId, setSharedId] = useState<string | null>(null);
 
   // v14: 백그라운드 경쟁사 분석 호출
   async function fetchCompetitor(url: string, hints: any) {
@@ -45,6 +47,28 @@ export default function HomePage() {
         setReport((prev) =>
           prev ? { ...prev, competitorAnalysis: data.competitorAnalysis } : prev
         );
+
+        // v43: 이미 공유된 링크가 있으면 경쟁사 데이터만 자동 PATCH
+        if (sharedId) {
+          fetch("/api/share", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: sharedId,
+              competitorAnalysis: data.competitorAnalysis,
+            }),
+          })
+            .then((r) => {
+              if (r.ok) {
+                console.log(`[공유] 경쟁사 데이터 자동 업데이트 완료: ${sharedId}`);
+              } else {
+                console.warn(`[공유] 경쟁사 업데이트 실패 (status=${r.status})`);
+              }
+            })
+            .catch((e) => {
+              console.warn("[공유] 경쟁사 PATCH 실패:", e?.message);
+            });
+        }
       }
     } catch (e: any) {
       console.warn("[경쟁사] 호출 실패 (조용히 무시):", e?.message);
@@ -58,6 +82,7 @@ export default function HomePage() {
     setReport(null);
     setError(null);
     setCompetitorLoading(false);
+    setSharedId(null); // v43: 새 분석 시 공유 ID 초기화
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -250,7 +275,11 @@ export default function HomePage() {
                   targetId="report-area"
                   report={report}
                 />
-                <ShareButton report={report} />
+                <ShareButton
+                  report={report}
+                  competitorLoading={competitorLoading}
+                  onShareCreated={(id) => setSharedId(id)}
+                />
               </div>
             </div>
 
