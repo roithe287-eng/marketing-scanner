@@ -93,6 +93,62 @@ export async function getSharedReport(
 }
 
 /**
+ * v43: 이미 저장된 공유 리포트의 competitorAnalysis 만 사후 업데이트
+ * (사용자가 경쟁사 분석 완료 전 공유 버튼을 눌렀을 때
+ *  page.tsx 에서 자동으로 호출)
+ *
+ * - TTL을 유지하기 위해 기존 key 의 TTL을 조회 후 동일하게 설정
+ * - 검증: 존재하면 update, 없으면 false
+ */
+export async function updateSharedReportCompetitor(
+  id: string,
+  competitorAnalysis: any
+): Promise<boolean> {
+  const redis = getRedis();
+  if (!redis) return false;
+
+  if (!/^[A-Za-z0-9]{4,12}$/.test(id)) return false;
+
+  const key = KEY_PREFIX + id;
+  try {
+    // 기존 데이터 로드
+    const raw = await redis.get(key);
+    if (!raw) {
+      console.warn(`[shareStore] update 실패 - 존재하지 않음: ${id}`);
+      return false;
+    }
+
+    const report: MarketingReport =
+      typeof raw === "string" ? JSON.parse(raw) : (raw as MarketingReport);
+
+    // 경쟁사 데이터만 교체
+    const updated = { ...report, competitorAnalysis } as MarketingReport;
+
+    // 기존 TTL 조회 후 동일하게 설정 (-1 이면 무기한이므로 기본 TTL 적용)
+    let remainingTtl: number = TTL_SECONDS;
+    try {
+      const ttl = await redis.ttl(key);
+      if (typeof ttl === "number" && ttl > 0) remainingTtl = ttl;
+    } catch {
+      // TTL 조회 실패 시 기본값 사용
+    }
+
+    const result = await redis.set(key, JSON.stringify(updated), {
+      ex: remainingTtl,
+    });
+
+    if (result === "OK") {
+      console.log(`[shareStore] 경쟁사 업데이트 성공: ${id}`);
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.error("[shareStore] update 실패:", e);
+    return false;
+  }
+}
+
+/**
  * Redis 사용 가능 여부 (UI 표시용)
  */
 export function isShareStoreAvailable(): boolean {
