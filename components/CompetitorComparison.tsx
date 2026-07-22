@@ -1,8 +1,13 @@
+"use client";
+
+import { useState } from "react";
 import { MarketingReport } from "@/lib/reportSchema";
+import CompetitorDeepDiveModal from "@/components/CompetitorDeepDiveModal";
 
 type Props = {
   competitorAnalysis: NonNullable<MarketingReport["competitorAnalysis"]>;
   ourUrl: string;
+  ourTitle?: string;
 };
 
 function getDomainFromUrl(url: string): string {
@@ -241,9 +246,16 @@ function getTagSizeClass(count: number, max: number): string {
 export default function CompetitorComparison({
   competitorAnalysis,
   ourUrl,
+  ourTitle,
 }: Props) {
   const ourDomain = getDomainFromUrl(ourUrl);
   const competitors = competitorAnalysis.competitors || [];
+
+  // v45-W2: 딥다이브 모달 상태
+  const [deepDiveTarget, setDeepDiveTarget] = useState<{
+    url: string;
+    domain: string;
+  } | null>(null);
 
   // 메시지 톤 분포
   const toneCounts: Record<string, number> = {};
@@ -776,6 +788,19 @@ export default function CompetitorComparison({
                     * 사이트 접근 제한 (검색 결과 기반 분석)
                   </p>
                 )}
+
+                {/* v45-W2: 딥다이브 버튼 */}
+                <button
+                  onClick={() =>
+                    setDeepDiveTarget({
+                      url: comp.link,
+                      domain: comp.domain,
+                    })
+                  }
+                  className="mt-4 w-full inline-flex items-center justify-center gap-1.5 bg-jm-black text-white text-xs font-bold py-2.5 rounded-lg hover:bg-jm-red transition-colors"
+                >
+                  🔍 딥다이브 분석
+                </button>
               </div>
             ))}
           </div>
@@ -837,6 +862,18 @@ export default function CompetitorComparison({
           </div>
         )}
       </div>
+
+      {/* v45-W2: 경쟁사 딥다이브 모달 */}
+      {deepDiveTarget && (
+        <CompetitorDeepDiveModal
+          open={!!deepDiveTarget}
+          onClose={() => setDeepDiveTarget(null)}
+          targetUrl={deepDiveTarget.url}
+          targetDomain={deepDiveTarget.domain}
+          ourDomain={ourDomain}
+          ourTitle={ourTitle}
+        />
+      )}
     </div>
   );
 }
