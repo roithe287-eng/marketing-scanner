@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { extractWebsite } from "@/lib/extractWebsite";
 import { analyzeMarketing } from "@/lib/analyzeMarketing";
+import { analyzeDiscoverability } from "@/lib/analyzeDiscoverability";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -56,15 +57,25 @@ export async function POST(req: NextRequest) {
     const websiteData = await extractWebsite(url);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
-    // 2. AI 메인 분석 (경쟁사 X - 별도 엔드포인트로 분리)
+    // 2. v44: 메인 분석 + Discoverability 분석 병렬 실행
+    //    - 메인 분석: 기존 8개 커머스 지표 (필수)
+    //    - Discoverability: SEO·GEO·AI 답변 대응력 8개 (옵셔널, 실패 시 null)
     const t1 = Date.now();
-    const report = await analyzeMarketing(websiteData);
-    console.log(`[타이밍] AI 메인 분석: ${Date.now() - t1}ms`);
+    const [report, discoverability] = await Promise.all([
+      analyzeMarketing(websiteData),
+      analyzeDiscoverability(websiteData).catch((e) => {
+        console.warn("[discoverability] 병렬 실행 실패:", e?.message || e);
+        return null;
+      }),
+    ]);
+    console.log(`[타이밍] AI 병렬 분석: ${Date.now() - t1}ms`);
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
     report.url = url;
     // 경쟁사 분석은 null로 표시 (프론트에서 별도 호출)
     report.competitorAnalysis = null;
+    // v44: Discoverability 결과 병합 (실패 시 null → UI에서 자동 숨김)
+    report.discoverability = discoverability;
 
     return NextResponse.json({
       ...report,
