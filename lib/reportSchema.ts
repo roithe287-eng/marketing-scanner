@@ -6,9 +6,9 @@ export const ChecklistItemSchema = z.object({
   category: z.enum(["seo", "content", "trust", "conversion"]),
   label: z.string(),
   status: z.enum(["pass", "warning", "fail"]),
-  currentValue: z.string(), // 현재 사이트의 실제 값 (또는 "(없음)")
-  diagnosis: z.string(), // 진단 결과 (한 문장)
-  guide: z.string(), // 어떻게 고치면 되는지 (한 문장)
+  currentValue: z.string(),
+  diagnosis: z.string(),
+  guide: z.string(),
 });
 
 // v44: Discoverability 개별 항목 스키마
@@ -22,7 +22,7 @@ export const DiscoverabilityItemSchema = z.object({
   guide: z.string(),
 });
 
-// v44: 비판매/정보성 사이트를 위한 Discoverability 스키마 (add-only, optional)
+// v44: 비판매/정보성 사이트를 위한 Discoverability 스키마
 export const DiscoverabilitySchema = z.object({
   overallScore: z.number().min(0).max(100),
   grade: z.enum(["A", "B", "C", "D", "F"]).optional(),
@@ -41,15 +41,64 @@ export const DiscoverabilitySchema = z.object({
   priorityActions: z.array(z.string()).optional(),
 });
 
+// v45-W1: AI 인용 시뮬레이션 스키마
+export const LlmCitationEngineSchema = z.enum(["chatgpt", "gemini"]);
+
+export const LlmCitationQuestionResultSchema = z.object({
+  engine: LlmCitationEngineSchema,
+  question: z.string(),
+  questionType: z.enum(["brand", "industry", "service", "local"]),
+  cited: z.boolean(),
+  citationRank: z.number().nullable().optional(), // 1위, 2위 등
+  responseSnippet: z.string().optional(), // AI 답변 발췌
+  reasoning: z.string().optional(),
+});
+
+export const LlmCitationTestSchema = z.object({
+  overallScore: z.number().min(0).max(100),
+  grade: z.enum(["A", "B", "C", "D", "F"]).optional(),
+  citationRate: z.number().min(0).max(100), // 인용률 (0~100%)
+  totalTests: z.number(),
+  totalCited: z.number(),
+  summary: z.string(),
+  results: z.array(LlmCitationQuestionResultSchema),
+  engineScores: z.object({
+    chatgpt: z.number().min(0).max(100),
+    gemini: z.number().min(0).max(100),
+  }),
+  priorityActions: z.array(z.string()).optional(),
+});
+
+// v45-W1: 광고비 낭비 시뮬레이션 스키마
+export const AdWasteScenarioSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  savingAmount: z.number(), // 월 절감액 (원)
+  savingRate: z.number(), // 절감률 (%)
+  duration: z.string(), // 예상 개선 기간 ("즉시", "1주", "1개월")
+  actions: z.array(z.string()), // 실행 액션 목록
+});
+
+export const AdWasteSimulationSchema = z.object({
+  baseWasteRate: z.number(), // 현재 낭비율 (%)
+  contributionFactors: z.object({
+    cta: z.number(),
+    firstView: z.number(),
+    trust: z.number(),
+    mobileUx: z.number(),
+  }),
+  scenarios: z.array(AdWasteScenarioSchema),
+  summary: z.string(),
+});
+
 export const MarketingReportSchema = z.object({
   url: z.string(),
   overallScore: z.number().min(0).max(100),
   oneLineSummary: z.string(),
-  // 공유용 meta 정보 (서버에서 추가, AI 아니어도 입력용)
   meta: z
     .object({
-      siteName: z.string().optional(), // 업체명 (og:site_name 또는 도메인에서)
-      ogImage: z.string().optional(), // 업체 대표 이미지
+      siteName: z.string().optional(),
+      ogImage: z.string().optional(),
       ogTitle: z.string().optional(),
       ogDescription: z.string().optional(),
       faviconUrl: z.string().optional(),
@@ -67,7 +116,6 @@ export const MarketingReportSchema = z.object({
     seo: z.number().min(0).max(100),
   }),
 
-  // 신규: 12가지 진단 체크리스트
   checklist: z.array(ChecklistItemSchema).optional(),
 
   criticalIssues: z.array(
@@ -77,14 +125,12 @@ export const MarketingReportSchema = z.object({
       reason: z.string(),
       recommendation: z.string(),
       priority: z.enum(["high", "medium", "low"]),
-      // 신규: 안된 예시 / 잘된 예시 (Critical에만)
       badExample: z.string().optional(),
       goodExample: z.string().optional(),
       exampleNote: z.string().optional(),
     })
   ),
 
-  // 신규: 단계별 플로우가 있는 Quick Wins
   quickWinsDetailed: z
     .array(
       z.object({
@@ -96,7 +142,6 @@ export const MarketingReportSchema = z.object({
     )
     .optional(),
 
-  // 호환성을 위해 단순 quickWins도 유지 (옵션)
   quickWins: z.array(z.string()).optional(),
 
   priorityRoadmap: z.object({
@@ -109,10 +154,8 @@ export const MarketingReportSchema = z.object({
     heroHeadline: z.string(),
     subHeadline: z.string(),
     ctaText: z.string(),
-    // 신규: 우리 사이트의 현재 카피 (비교용)
     currentHeroHeadline: z.string().optional(),
     currentCtaText: z.string().optional(),
-    // 신규: 경쟁사 카피 인사이트
     competitorCopyInsight: z.string().optional(),
   }),
 
@@ -122,7 +165,6 @@ export const MarketingReportSchema = z.object({
     buttonText: z.string(),
   }),
 
-  // v26: 네이버 AI 광고 준비도 점검
   naverAiReadiness: z
     .object({
       overallScore: z.number().min(0).max(100),
@@ -151,8 +193,14 @@ export const MarketingReportSchema = z.object({
     .nullable()
     .optional(),
 
-  // v44: 비판매/정보성 사이트용 발견성·GEO 지표 (add-only, 항상 표시)
+  // v44: 비판매/정보성 발견성 지표
   discoverability: DiscoverabilitySchema.nullable().optional(),
+
+  // v45-W1: AI 인용 시뮬레이션 (ChatGPT + Gemini)
+  llmCitationTest: LlmCitationTestSchema.nullable().optional(),
+
+  // v45-W1: 광고비 낭비 시뮬레이션 (기본값 서버에서 계산)
+  adWasteSimulation: AdWasteSimulationSchema.nullable().optional(),
 
   competitorAnalysis: z
     .object({
@@ -185,3 +233,9 @@ export type MarketingReport = z.infer<typeof MarketingReportSchema>;
 export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
 export type DiscoverabilityItem = z.infer<typeof DiscoverabilityItemSchema>;
 export type Discoverability = z.infer<typeof DiscoverabilitySchema>;
+export type LlmCitationTest = z.infer<typeof LlmCitationTestSchema>;
+export type LlmCitationQuestionResult = z.infer<
+  typeof LlmCitationQuestionResultSchema
+>;
+export type AdWasteSimulation = z.infer<typeof AdWasteSimulationSchema>;
+export type AdWasteScenario = z.infer<typeof AdWasteScenarioSchema>;
