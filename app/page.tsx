@@ -16,6 +16,8 @@ import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
 import NaverAiReadiness from "@/components/NaverAiReadiness";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
+import LlmCitationCard from "@/components/LlmCitationCard";
+import AdWasteCalculator from "@/components/AdWasteCalculator";
 import Disclaimer from "@/components/Disclaimer";
 import { MarketingReport } from "@/lib/reportSchema";
 
@@ -291,6 +293,23 @@ export default function HomePage() {
             {report.discoverability && (
               <div className="mt-6 md:mt-8">
                 <DiscoverabilityPanel discoverability={report.discoverability} />
+              </div>
+            )}
+
+            {/* v45-W1: AI 인용 시뮬레이션 (ChatGPT + Gemini) */}
+            {report.llmCitationTest && (
+              <div className="mt-6 md:mt-8">
+                <LlmCitationCard citation={report.llmCitationTest} />
+              </div>
+            )}
+
+            {/* v45-W1: 광고비 낭비 시뮬레이터 (인터랙티브 슬라이더) */}
+            {report.diagnosis && (
+              <div className="mt-6 md:mt-8">
+                <AdWasteCalculator
+                  diagnosis={report.diagnosis}
+                  defaultSimulation={report.adWasteSimulation}
+                />
               </div>
             )}
 
