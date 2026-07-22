@@ -14,6 +14,7 @@ import NaverAiReadiness from "@/components/NaverAiReadiness";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import LlmCitationCard from "@/components/LlmCitationCard";
 import AdWasteCalculator from "@/components/AdWasteCalculator";
+import KeywordRankCard from "@/components/KeywordRankCard";
 import Disclaimer from "@/components/Disclaimer";
 import ContentProtection from "@/components/ContentProtection";
 
@@ -336,11 +337,19 @@ export default function SharedReportView({ report, shareId }: Props) {
             competitorAnalysis={report.competitorAnalysis}
           />
 
+          {/* v45-W2: 네이버 키워드 순위 트래킹 */}
+          {report.keywordRankTracking && (
+            <div className="mt-8 md:mt-10">
+              <KeywordRankCard tracking={report.keywordRankTracking} />
+            </div>
+          )}
+
           {report.competitorAnalysis &&
             report.competitorAnalysis.competitors.length > 0 && (
               <CompetitorComparison
                 competitorAnalysis={report.competitorAnalysis}
                 ourUrl={report.url}
+                ourTitle={report.meta?.siteName || report.meta?.ogTitle}
               />
             )}
 

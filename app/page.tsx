@@ -18,6 +18,7 @@ import NaverAiReadiness from "@/components/NaverAiReadiness";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import LlmCitationCard from "@/components/LlmCitationCard";
 import AdWasteCalculator from "@/components/AdWasteCalculator";
+import KeywordRankCard from "@/components/KeywordRankCard";
 import Disclaimer from "@/components/Disclaimer";
 import { MarketingReport } from "@/lib/reportSchema";
 
@@ -313,6 +314,13 @@ export default function HomePage() {
               </div>
             )}
 
+            {/* v45-W2: 네이버 키워드 순위 트래킹 */}
+            {report.keywordRankTracking && (
+              <div className="mt-6 md:mt-8">
+                <KeywordRankCard tracking={report.keywordRankTracking} />
+              </div>
+            )}
+
             {/* 종합 점수 + 핵심 이슈 */}
             <div className="mt-8 grid gap-4 md:gap-6 md:grid-cols-[360px_1fr]">
               <div className="jm-card p-8">
@@ -416,6 +424,7 @@ export default function HomePage() {
                 <CompetitorComparison
                   competitorAnalysis={report.competitorAnalysis}
                   ourUrl={report.url}
+                  ourTitle={report.meta?.siteName || report.meta?.ogTitle}
                 />
               )}
 
