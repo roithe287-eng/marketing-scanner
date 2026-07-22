@@ -11,6 +11,36 @@ export const ChecklistItemSchema = z.object({
   guide: z.string(), // 어떻게 고치면 되는지 (한 문장)
 });
 
+// v44: Discoverability 개별 항목 스키마
+export const DiscoverabilityItemSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  score: z.number().min(0).max(100),
+  status: z.enum(["pass", "warning", "fail"]),
+  currentValue: z.string(),
+  diagnosis: z.string(),
+  guide: z.string(),
+});
+
+// v44: 비판매/정보성 사이트를 위한 Discoverability 스키마 (add-only, optional)
+export const DiscoverabilitySchema = z.object({
+  overallScore: z.number().min(0).max(100),
+  grade: z.enum(["A", "B", "C", "D", "F"]).optional(),
+  siteType: z
+    .enum(["commerce", "content", "brand", "service", "mixed", "unknown"])
+    .optional(),
+  summary: z.string(),
+  seoFoundation: DiscoverabilityItemSchema,
+  contentStructure: DiscoverabilityItemSchema,
+  redundancy: DiscoverabilityItemSchema,
+  geo: DiscoverabilityItemSchema,
+  structuredData: DiscoverabilityItemSchema,
+  eeat: DiscoverabilityItemSchema,
+  localBrand: DiscoverabilityItemSchema,
+  aiAnswerability: DiscoverabilityItemSchema,
+  priorityActions: z.array(z.string()).optional(),
+});
+
 export const MarketingReportSchema = z.object({
   url: z.string(),
   overallScore: z.number().min(0).max(100),
@@ -48,9 +78,9 @@ export const MarketingReportSchema = z.object({
       recommendation: z.string(),
       priority: z.enum(["high", "medium", "low"]),
       // 신규: 안된 예시 / 잘된 예시 (Critical에만)
-      badExample: z.string().optional(), // 현재 사이트의 실제 잘못된 예시
-      goodExample: z.string().optional(), // 개선된 예시
-      exampleNote: z.string().optional(), // 예시 설명
+      badExample: z.string().optional(),
+      goodExample: z.string().optional(),
+      exampleNote: z.string().optional(),
     })
   ),
 
@@ -59,7 +89,7 @@ export const MarketingReportSchema = z.object({
     .array(
       z.object({
         title: z.string(),
-        steps: z.array(z.string()), // Step 1, 2, 3...
+        steps: z.array(z.string()),
         beforeExample: z.string().optional(),
         afterExample: z.string().optional(),
       })
@@ -102,7 +132,13 @@ export const MarketingReportSchema = z.object({
         z.object({
           id: z.string(),
           label: z.string(),
-          category: z.enum(["schema", "site_name", "tracking", "content", "mobile"]),
+          category: z.enum([
+            "schema",
+            "site_name",
+            "tracking",
+            "content",
+            "mobile",
+          ]),
           status: z.enum(["pass", "warning", "fail"]),
           weight: z.number().optional(),
           currentValue: z.string(),
@@ -110,11 +146,13 @@ export const MarketingReportSchema = z.object({
           guide: z.string(),
         })
       ),
-      // 의료/제한 업종 경고 등 추가 메모
       notes: z.array(z.string()).optional(),
     })
     .nullable()
     .optional(),
+
+  // v44: 비판매/정보성 사이트용 발견성·GEO 지표 (add-only, 항상 표시)
+  discoverability: DiscoverabilitySchema.nullable().optional(),
 
   competitorAnalysis: z
     .object({
@@ -145,3 +183,5 @@ export const MarketingReportSchema = z.object({
 
 export type MarketingReport = z.infer<typeof MarketingReportSchema>;
 export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
+export type DiscoverabilityItem = z.infer<typeof DiscoverabilityItemSchema>;
+export type Discoverability = z.infer<typeof DiscoverabilitySchema>;
