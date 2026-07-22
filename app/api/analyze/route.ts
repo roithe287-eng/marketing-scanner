@@ -4,6 +4,7 @@ import { analyzeMarketing } from "@/lib/analyzeMarketing";
 import { analyzeDiscoverability } from "@/lib/analyzeDiscoverability";
 import { analyzeCitation } from "@/lib/analyzeCitation";
 import { analyzeAdWaste } from "@/lib/analyzeAdWaste";
+import { analyzeKeywordRank } from "@/lib/analyzeKeywordRank";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -59,31 +60,37 @@ export async function POST(req: NextRequest) {
     const websiteData = await extractWebsite(url);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
-    // 2. v45-W1: 메인 분석 + Discoverability + AI Citation 병렬 실행
+    // 2. v45-W2: 4가지 병렬 분석
     //    - 메인 분석 (필수)
-    //    - Discoverability (옵셔널, 실패 시 null)
-    //    - AI Citation (옵셔널, 실패 시 null)
+    //    - Discoverability (v44)
+    //    - AI Citation (v45-W1)
+    //    - Keyword Rank (v45-W2 신규)
     const t1 = Date.now();
-    const [report, discoverability, llmCitation] = await Promise.all([
-      analyzeMarketing(websiteData),
-      analyzeDiscoverability(websiteData).catch((e) => {
-        console.warn("[discoverability] 실패:", e?.message || e);
-        return null;
-      }),
-      analyzeCitation(websiteData).catch((e) => {
-        console.warn("[citation] 실패:", e?.message || e);
-        return null;
-      }),
-    ]);
+    const [report, discoverability, llmCitation, keywordRank] =
+      await Promise.all([
+        analyzeMarketing(websiteData),
+        analyzeDiscoverability(websiteData).catch((e) => {
+          console.warn("[discoverability] 실패:", e?.message || e);
+          return null;
+        }),
+        analyzeCitation(websiteData).catch((e) => {
+          console.warn("[citation] 실패:", e?.message || e);
+          return null;
+        }),
+        analyzeKeywordRank(websiteData).catch((e) => {
+          console.warn("[keyword] 실패:", e?.message || e);
+          return null;
+        }),
+      ]);
     console.log(`[타이밍] AI 병렬 분석: ${Date.now() - t1}ms`);
 
     report.url = url;
     report.competitorAnalysis = null;
     report.discoverability = discoverability;
     report.llmCitationTest = llmCitation;
+    report.keywordRankTracking = keywordRank;
 
-    // v45-W1: 광고비 낭비 시뮬레이션 (기본 500만원 기준 서버 계산)
-    //         → 클라이언트에서 슬라이더로 실시간 재계산
+    // v45-W1: 광고비 낭비 시뮬레이션
     try {
       report.adWasteSimulation = analyzeAdWaste(report.diagnosis, 5_000_000);
     } catch (e) {
