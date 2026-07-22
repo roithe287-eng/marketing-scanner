@@ -49,15 +49,15 @@ export const LlmCitationQuestionResultSchema = z.object({
   question: z.string(),
   questionType: z.enum(["brand", "industry", "service", "local"]),
   cited: z.boolean(),
-  citationRank: z.number().nullable().optional(), // 1위, 2위 등
-  responseSnippet: z.string().optional(), // AI 답변 발췌
+  citationRank: z.number().nullable().optional(),
+  responseSnippet: z.string().optional(),
   reasoning: z.string().optional(),
 });
 
 export const LlmCitationTestSchema = z.object({
   overallScore: z.number().min(0).max(100),
   grade: z.enum(["A", "B", "C", "D", "F"]).optional(),
-  citationRate: z.number().min(0).max(100), // 인용률 (0~100%)
+  citationRate: z.number().min(0).max(100),
   totalTests: z.number(),
   totalCited: z.number(),
   summary: z.string(),
@@ -73,14 +73,14 @@ export const LlmCitationTestSchema = z.object({
 export const AdWasteScenarioSchema = z.object({
   id: z.string(),
   label: z.string(),
-  savingAmount: z.number(), // 월 절감액 (원)
-  savingRate: z.number(), // 절감률 (%)
-  duration: z.string(), // 예상 개선 기간 ("즉시", "1주", "1개월")
-  actions: z.array(z.string()), // 실행 액션 목록
+  savingAmount: z.number(),
+  savingRate: z.number(),
+  duration: z.string(),
+  actions: z.array(z.string()),
 });
 
 export const AdWasteSimulationSchema = z.object({
-  baseWasteRate: z.number(), // 현재 낭비율 (%)
+  baseWasteRate: z.number(),
   contributionFactors: z.object({
     cta: z.number(),
     firstView: z.number(),
@@ -88,6 +88,62 @@ export const AdWasteSimulationSchema = z.object({
     mobileUx: z.number(),
   }),
   scenarios: z.array(AdWasteScenarioSchema),
+  summary: z.string(),
+});
+
+// v45-W2: 키워드 순위 트래킹 (네이버만)
+export const KeywordRankItemSchema = z.object({
+  keyword: z.string(),
+  naverWebRank: z.number().nullable(), // 웹문서 순위 (1~15, null=미노출)
+  naverBlogRank: z.number().nullable().optional(), // 블로그 순위 (선택)
+  totalResults: z.number().optional(), // 네이버 검색 결과 총 개수
+  status: z.enum(["top", "mid", "low", "none"]), // top(1-5), mid(6-10), low(11-15), none(미노출)
+  competitorAtTop: z.string().optional(), // 1위에 있는 경쟁사 도메인
+});
+
+export const KeywordRankTrackingSchema = z.object({
+  totalKeywords: z.number(),
+  averageRank: z.number().nullable(), // 노출된 키워드 평균 순위
+  visibleCount: z.number(), // 15위 내 노출 개수
+  topFiveCount: z.number(), // 5위 내 노출 개수
+  hiddenCount: z.number(), // 미노출 개수
+  summary: z.string(),
+  keywords: z.array(KeywordRankItemSchema),
+  priorityActions: z.array(z.string()).optional(),
+});
+
+// v45-W2: 경쟁사 딥다이브 스키마
+export const CompetitorDeepDiveSchema = z.object({
+  domain: z.string(),
+  targetUrl: z.string(),
+  fetchedAt: z.string(),
+  overallScore: z.number().min(0).max(100).optional(),
+  copyStrategy: z.object({
+    keyMessages: z.array(z.string()),
+    repeatedPhrases: z.array(z.string()),
+    toneStyle: z.string(),
+    weakness: z.string().optional(),
+  }),
+  ctaStyle: z.object({
+    ctaTexts: z.array(z.string()),
+    ctaCount: z.number(),
+    ctaColor: z.string().optional(),
+    analysis: z.string(),
+  }),
+  performance: z.object({
+    loadingSpeed: z.string().optional(),
+    hasJsonLd: z.boolean(),
+    schemaTypes: z.array(z.string()).optional(),
+    h1Count: z.number().optional(),
+    imageCount: z.number().optional(),
+  }),
+  trustElements: z.object({
+    hasReview: z.boolean(),
+    hasContact: z.boolean(),
+    hasAward: z.boolean().optional(),
+    trustSignals: z.array(z.string()),
+  }),
+  winPoints: z.array(z.string()), // 우리가 이길 수 있는 포인트
   summary: z.string(),
 });
 
@@ -193,14 +249,12 @@ export const MarketingReportSchema = z.object({
     .nullable()
     .optional(),
 
-  // v44: 비판매/정보성 발견성 지표
   discoverability: DiscoverabilitySchema.nullable().optional(),
-
-  // v45-W1: AI 인용 시뮬레이션 (ChatGPT + Gemini)
   llmCitationTest: LlmCitationTestSchema.nullable().optional(),
-
-  // v45-W1: 광고비 낭비 시뮬레이션 (기본값 서버에서 계산)
   adWasteSimulation: AdWasteSimulationSchema.nullable().optional(),
+
+  // v45-W2: 키워드 순위 트래킹 (네이버 검색 API)
+  keywordRankTracking: KeywordRankTrackingSchema.nullable().optional(),
 
   competitorAnalysis: z
     .object({
@@ -239,3 +293,6 @@ export type LlmCitationQuestionResult = z.infer<
 >;
 export type AdWasteSimulation = z.infer<typeof AdWasteSimulationSchema>;
 export type AdWasteScenario = z.infer<typeof AdWasteScenarioSchema>;
+export type KeywordRankItem = z.infer<typeof KeywordRankItemSchema>;
+export type KeywordRankTracking = z.infer<typeof KeywordRankTrackingSchema>;
+export type CompetitorDeepDive = z.infer<typeof CompetitorDeepDiveSchema>;
