@@ -15,6 +15,7 @@ import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
 import NaverAiReadiness from "@/components/NaverAiReadiness";
+import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import Disclaimer from "@/components/Disclaimer";
 import { MarketingReport } from "@/lib/reportSchema";
 
@@ -285,6 +286,13 @@ export default function HomePage() {
 
             {/* v34: 영역별 점수 분석 (최상단 이동) */}
             <ScoreRadar diagnosis={report.diagnosis} />
+
+            {/* v44: 콘텐츠 발견성 & AI 답변 대응력 (ScoreRadar 바로 아래) */}
+            {report.discoverability && (
+              <div className="mt-6 md:mt-8">
+                <DiscoverabilityPanel discoverability={report.discoverability} />
+              </div>
+            )}
 
             {/* 종합 점수 + 핵심 이슈 */}
             <div className="mt-8 grid gap-4 md:gap-6 md:grid-cols-[360px_1fr]">
