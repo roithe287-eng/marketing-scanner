@@ -19,6 +19,7 @@ import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import LlmCitationCard from "@/components/LlmCitationCard";
 import AdWasteCalculator from "@/components/AdWasteCalculator";
 import KeywordRankCard from "@/components/KeywordRankCard";
+import IndustryBenchmarkCard from "@/components/IndustryBenchmarkCard";
 import Disclaimer from "@/components/Disclaimer";
 import { MarketingReport } from "@/lib/reportSchema";
 
@@ -318,6 +319,13 @@ export default function HomePage() {
             {report.keywordRankTracking && (
               <div className="mt-6 md:mt-8">
                 <KeywordRankCard tracking={report.keywordRankTracking} />
+              </div>
+            )}
+
+            {/* v45-W3: 업종별 벤치마크 */}
+            {report.industryBenchmark && (
+              <div className="mt-6 md:mt-8">
+                <IndustryBenchmarkCard benchmark={report.industryBenchmark} />
               </div>
             )}
 

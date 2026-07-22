@@ -5,6 +5,7 @@ import { analyzeDiscoverability } from "@/lib/analyzeDiscoverability";
 import { analyzeCitation } from "@/lib/analyzeCitation";
 import { analyzeAdWaste } from "@/lib/analyzeAdWaste";
 import { analyzeKeywordRank } from "@/lib/analyzeKeywordRank";
+import { analyzeBenchmark } from "@/lib/analyzeBenchmark";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -60,11 +61,11 @@ export async function POST(req: NextRequest) {
     const websiteData = await extractWebsite(url);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
-    // 2. v45-W2: 4가지 병렬 분석
+    // 2. v45-W3: 4가지 병렬 분석
     //    - 메인 분석 (필수)
     //    - Discoverability (v44)
     //    - AI Citation (v45-W1)
-    //    - Keyword Rank (v45-W2 신규)
+    //    - Keyword Rank (v45-W2)
     const t1 = Date.now();
     const [report, discoverability, llmCitation, keywordRank] =
       await Promise.all([
@@ -96,6 +97,15 @@ export async function POST(req: NextRequest) {
     } catch (e) {
       console.warn("[adwaste] 실패:", e);
       report.adWasteSimulation = null;
+    }
+
+    // v45-W3: 업종별 벤치마크 (메인 분석 이후 · 우리 점수 필요)
+    try {
+      const bench = await analyzeBenchmark(websiteData, report.diagnosis);
+      report.industryBenchmark = bench;
+    } catch (e) {
+      console.warn("[benchmark] 실패:", e);
+      report.industryBenchmark = null;
     }
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);

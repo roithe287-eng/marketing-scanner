@@ -22,7 +22,7 @@ export const DiscoverabilityItemSchema = z.object({
   guide: z.string(),
 });
 
-// v44: 비판매/정보성 사이트를 위한 Discoverability 스키마
+// v44: Discoverability 스키마
 export const DiscoverabilitySchema = z.object({
   overallScore: z.number().min(0).max(100),
   grade: z.enum(["A", "B", "C", "D", "F"]).optional(),
@@ -41,9 +41,8 @@ export const DiscoverabilitySchema = z.object({
   priorityActions: z.array(z.string()).optional(),
 });
 
-// v45-W1: AI 인용 시뮬레이션 스키마
+// v45-W1: AI 인용 시뮬레이션
 export const LlmCitationEngineSchema = z.enum(["chatgpt", "gemini"]);
-
 export const LlmCitationQuestionResultSchema = z.object({
   engine: LlmCitationEngineSchema,
   question: z.string(),
@@ -53,7 +52,6 @@ export const LlmCitationQuestionResultSchema = z.object({
   responseSnippet: z.string().optional(),
   reasoning: z.string().optional(),
 });
-
 export const LlmCitationTestSchema = z.object({
   overallScore: z.number().min(0).max(100),
   grade: z.enum(["A", "B", "C", "D", "F"]).optional(),
@@ -69,7 +67,7 @@ export const LlmCitationTestSchema = z.object({
   priorityActions: z.array(z.string()).optional(),
 });
 
-// v45-W1: 광고비 낭비 시뮬레이션 스키마
+// v45-W1: 광고비 낭비 시뮬레이션
 export const AdWasteScenarioSchema = z.object({
   id: z.string(),
   label: z.string(),
@@ -78,7 +76,6 @@ export const AdWasteScenarioSchema = z.object({
   duration: z.string(),
   actions: z.array(z.string()),
 });
-
 export const AdWasteSimulationSchema = z.object({
   baseWasteRate: z.number(),
   contributionFactors: z.object({
@@ -91,28 +88,27 @@ export const AdWasteSimulationSchema = z.object({
   summary: z.string(),
 });
 
-// v45-W2: 키워드 순위 트래킹 (네이버만)
+// v45-W2: 키워드 순위 트래킹
 export const KeywordRankItemSchema = z.object({
   keyword: z.string(),
-  naverWebRank: z.number().nullable(), // 웹문서 순위 (1~15, null=미노출)
-  naverBlogRank: z.number().nullable().optional(), // 블로그 순위 (선택)
-  totalResults: z.number().optional(), // 네이버 검색 결과 총 개수
-  status: z.enum(["top", "mid", "low", "none"]), // top(1-5), mid(6-10), low(11-15), none(미노출)
-  competitorAtTop: z.string().optional(), // 1위에 있는 경쟁사 도메인
+  naverWebRank: z.number().nullable(),
+  naverBlogRank: z.number().nullable().optional(),
+  totalResults: z.number().optional(),
+  status: z.enum(["top", "mid", "low", "none"]),
+  competitorAtTop: z.string().optional(),
 });
-
 export const KeywordRankTrackingSchema = z.object({
   totalKeywords: z.number(),
-  averageRank: z.number().nullable(), // 노출된 키워드 평균 순위
-  visibleCount: z.number(), // 15위 내 노출 개수
-  topFiveCount: z.number(), // 5위 내 노출 개수
-  hiddenCount: z.number(), // 미노출 개수
+  averageRank: z.number().nullable(),
+  visibleCount: z.number(),
+  topFiveCount: z.number(),
+  hiddenCount: z.number(),
   summary: z.string(),
   keywords: z.array(KeywordRankItemSchema),
   priorityActions: z.array(z.string()).optional(),
 });
 
-// v45-W2: 경쟁사 딥다이브 스키마
+// v45-W2: 경쟁사 딥다이브
 export const CompetitorDeepDiveSchema = z.object({
   domain: z.string(),
   targetUrl: z.string(),
@@ -143,8 +139,55 @@ export const CompetitorDeepDiveSchema = z.object({
     hasAward: z.boolean().optional(),
     trustSignals: z.array(z.string()),
   }),
-  winPoints: z.array(z.string()), // 우리가 이길 수 있는 포인트
+  winPoints: z.array(z.string()),
   summary: z.string(),
+});
+
+// v45-W3: 업종별 벤치마크 리더보드
+export const IndustryCategorySchema = z.enum([
+  "education",
+  "medical",
+  "commerce",
+  "realestate",
+  "legal",
+  "beauty",
+  "food",
+  "travel",
+  "it_service",
+  "manufacturing",
+  "finance",
+  "consulting",
+  "media",
+  "sports",
+  "pet",
+  "automotive",
+  "parenting",
+  "interior",
+  "ecommerce",
+  "etc",
+]);
+
+export const IndustryMetricSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  ours: z.number(),
+  average: z.number(),
+  topTen: z.number(),
+  gapVsAverage: z.number(), // ours - average
+  gapVsTopTen: z.number(), // ours - topTen
+  status: z.enum(["above_top", "above_avg", "below_avg", "critical"]),
+});
+
+export const IndustryBenchmarkSchema = z.object({
+  category: IndustryCategorySchema,
+  categoryLabel: z.string(), // 한글 라벨 (예: "교육")
+  sampleSize: z.number(), // 표본 개수 N
+  hasSufficientSample: z.boolean(), // 10개 이상 여부
+  summary: z.string(),
+  metrics: z.array(IndustryMetricSchema).optional(),
+  strongestArea: z.string().optional(), // "상위 10% 근접" 영역
+  weakestArea: z.string().optional(), // "가장 뒤처진" 영역
+  priorityActions: z.array(z.string()).optional(),
 });
 
 export const MarketingReportSchema = z.object({
@@ -252,9 +295,10 @@ export const MarketingReportSchema = z.object({
   discoverability: DiscoverabilitySchema.nullable().optional(),
   llmCitationTest: LlmCitationTestSchema.nullable().optional(),
   adWasteSimulation: AdWasteSimulationSchema.nullable().optional(),
-
-  // v45-W2: 키워드 순위 트래킹 (네이버 검색 API)
   keywordRankTracking: KeywordRankTrackingSchema.nullable().optional(),
+
+  // v45-W3: 업종별 벤치마크
+  industryBenchmark: IndustryBenchmarkSchema.nullable().optional(),
 
   competitorAnalysis: z
     .object({
@@ -296,3 +340,6 @@ export type AdWasteScenario = z.infer<typeof AdWasteScenarioSchema>;
 export type KeywordRankItem = z.infer<typeof KeywordRankItemSchema>;
 export type KeywordRankTracking = z.infer<typeof KeywordRankTrackingSchema>;
 export type CompetitorDeepDive = z.infer<typeof CompetitorDeepDiveSchema>;
+export type IndustryCategory = z.infer<typeof IndustryCategorySchema>;
+export type IndustryMetric = z.infer<typeof IndustryMetricSchema>;
+export type IndustryBenchmark = z.infer<typeof IndustryBenchmarkSchema>;
