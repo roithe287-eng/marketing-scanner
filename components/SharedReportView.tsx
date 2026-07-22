@@ -11,6 +11,7 @@ import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
 import NaverAiReadiness from "@/components/NaverAiReadiness";
+import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import Disclaimer from "@/components/Disclaimer";
 import ContentProtection from "@/components/ContentProtection";
 
@@ -247,6 +248,13 @@ export default function SharedReportView({ report, shareId }: Props) {
 
           {/* v39: 영역별 점수 분석 (풀폭 독립 섹션, 최상단) */}
           <ScoreRadar diagnosis={report.diagnosis} />
+
+          {/* v44: 콘텐츠 발견성 & AI 답변 대응력 (ScoreRadar 바로 아래) */}
+          {report.discoverability && (
+            <div className="mt-8 md:mt-10">
+              <DiscoverabilityPanel discoverability={report.discoverability} />
+            </div>
+          )}
 
           {/* v42: 핵심 개선 이슈 */}
           {report.criticalIssues && report.criticalIssues.length > 0 && (
