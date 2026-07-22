@@ -12,6 +12,8 @@ import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
 import NaverAiReadiness from "@/components/NaverAiReadiness";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
+import LlmCitationCard from "@/components/LlmCitationCard";
+import AdWasteCalculator from "@/components/AdWasteCalculator";
 import Disclaimer from "@/components/Disclaimer";
 import ContentProtection from "@/components/ContentProtection";
 
@@ -253,6 +255,23 @@ export default function SharedReportView({ report, shareId }: Props) {
           {report.discoverability && (
             <div className="mt-8 md:mt-10">
               <DiscoverabilityPanel discoverability={report.discoverability} />
+            </div>
+          )}
+
+          {/* v45-W1: AI 인용 시뮬레이션 */}
+          {report.llmCitationTest && (
+            <div className="mt-8 md:mt-10">
+              <LlmCitationCard citation={report.llmCitationTest} />
+            </div>
+          )}
+
+          {/* v45-W1: 광고비 낭비 시뮬레이터 */}
+          {report.diagnosis && (
+            <div className="mt-8 md:mt-10">
+              <AdWasteCalculator
+                diagnosis={report.diagnosis}
+                defaultSimulation={report.adWasteSimulation}
+              />
             </div>
           )}
 
