@@ -78,7 +78,7 @@ export async function analyzeBenchmark(
         categoryLabel,
         sampleSize,
         hasSufficientSample: false,
-        summary: `${categoryLabel} 업종 표본 부족 (현재 N=${sampleSize}, 최소 ${MIN_SAMPLE} 필요). 데이터가 쌓이면 벤치마크가 활성화됩니다.`,
+        summary: `${categoryLabel} 업종 비교군 구성 준비 중 (현재 N=${sampleSize}, 최소 ${MIN_SAMPLE} 필요). 표본 규모가 확보되면 벤치마크 비교가 자동 제공됩니다.`,
       };
     }
 
@@ -174,11 +174,11 @@ export async function analyzeBenchmark(
 
     let summary: string;
     if (aboveAvgCount >= metrics.length * 0.7) {
-      summary = `${categoryLabel} 업종 상위권. ${metrics.length}개 지표 중 ${aboveAvgCount}개가 업계 평균 이상. (표본 N=${sampleSize})`;
+      summary = `${categoryLabel} 업종 비교군 상위권 수준. ${metrics.length}개 지표 중 ${aboveAvgCount}개가 업계 평균 이상. (비교군 N=${sampleSize})`;
     } else if (criticalCount >= 3) {
-      summary = `${categoryLabel} 업종 대비 개선 여지 큼. 심각 격차 ${criticalCount}개 영역 우선 대응 필요. (표본 N=${sampleSize})`;
+      summary = `${categoryLabel} 업종 비교군 대비 개선 여지 큼. 심각 격차 ${criticalCount}개 영역 우선 대응 필요. (비교군 N=${sampleSize})`;
     } else {
-      summary = `${categoryLabel} 업종 평균 수준. ${aboveAvgCount}개 영역 평균 이상, ${criticalCount}개 영역 심각. (표본 N=${sampleSize})`;
+      summary = `${categoryLabel} 업종 비교군 평균 수준. ${aboveAvgCount}개 영역 평균 이상, ${criticalCount}개 영역 심각. (비교군 N=${sampleSize})`;
     }
 
     return {
