@@ -136,7 +136,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
             </h3>
           </div>
           <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
-            같은 업종 사이트들과 익명으로 비교합니다. (URL·회사명 저장 X)
+            동일 업종 사이트 그룹의 지표 분포와 현재 사이트를 비교합니다.
           </p>
         </div>
 
@@ -145,14 +145,13 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
             <span className="text-[20px] md:text-[22px]">📊</span>
             <div className="min-w-0">
               <h4 className="text-[15px] md:text-[16px] font-bold text-amber-900 mb-1">
-                {categoryLabel} 업종 데이터 축적 중
+                {categoryLabel} 업종 벤치마크 준비 중
               </h4>
               <p className="text-[13px] md:text-[14px] text-amber-800 leading-relaxed break-words">
                 {summary}
               </p>
               <p className="text-[12px] md:text-[13px] text-amber-700/80 mt-2 leading-relaxed">
-                * 진짜마케팅 스캐너 사용자가 늘어날수록 정확한 벤치마크가
-                제공됩니다. 지금 이 진단도 익명 통계에 반영되었습니다.
+                * 표본 규모 확대 시 정밀도가 향상되며 벤치마크가 자동 활성화됩니다.
               </p>
             </div>
           </div>
@@ -173,8 +172,8 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
         </div>
         <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
           <span className="font-bold text-neutral-900">{categoryLabel}</span> 업종
-          사이트 <span className="font-bold text-neutral-900">{sampleSize}개</span>와
-          익명 비교. 우리 사이트는 업계에서 어디쯤 있을까요?
+          사이트 <span className="font-bold text-neutral-900">{sampleSize}개</span>{" "}
+          그룹의 지표 분포와 비교했습니다. 현재 사이트는 업계에서 어디쯤일까요?
         </p>
       </div>
 
@@ -188,7 +187,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
             {categoryLabel}
           </div>
           <div className="text-[11px] md:text-[12px] text-neutral-500 mt-1">
-            표본 N={sampleSize} · AI 자동 분류
+            비교군 N={sampleSize} · AI 자동 분류
           </div>
         </div>
         {strongestArea && (
@@ -258,7 +257,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
       )}
 
       <p className="mt-4 text-[11px] md:text-[12px] text-neutral-400 leading-relaxed">
-        * 익명 집계 데이터 기준 · URL·회사명 저장 안 함 · 개인정보 보호 완벽 준수.
+        * 업종 지표 분포 기반 참고용 비교값 · 실제 성과는 다양한 요인에 따라 달라질 수 있습니다.
       </p>
     </section>
   );
