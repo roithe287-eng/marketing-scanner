@@ -182,6 +182,13 @@ export default function NaverAiReadiness({ readiness }: Props) {
           </ul>
         </div>
       )}
+
+      {/* v45-W5: 독립 서비스 면책 문구 (네이버 상표 가이드 준수) */}
+      <p className="mt-4 text-[11px] md:text-[12px] text-neutral-400 leading-relaxed">
+        * 본 진단은 네이버 공식 서비스가 아닌 진짜마케팅의 독립 분석 도구이며,
+        네이버 공개 가이드라인을 참고한 참고용 결과입니다. 실제 광고 노출은
+        네이버 광고 플랫폼의 정책에 따릅니다.
+      </p>
     </section>
   );
 }

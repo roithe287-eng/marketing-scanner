@@ -223,8 +223,9 @@ export default function NaverBriefingReadinessCard({ readiness }: Props) {
       )}
 
       <p className="mt-4 text-[11px] md:text-[12px] text-neutral-400 leading-relaxed">
-        * 네이버 공식 AEO 권장 기준 참고용 진단 · 실제 노출은 검색어 연관도·광고
-        설정·입찰 경쟁 등 다양한 요인의 영향을 받습니다.
+        * 본 진단은 네이버 공식 서비스가 아닌 진짜마케팅의 독립 분석 도구이며,
+        네이버 공개 AEO 가이드라인을 참고한 참고용 결과입니다. 실제 노출은 검색어
+        연관도·광고 설정·입찰 경쟁 등 다양한 요인의 영향을 받습니다.
       </p>
     </section>
   );
