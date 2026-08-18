@@ -6,6 +6,7 @@ import { analyzeCitation } from "@/lib/analyzeCitation";
 import { analyzeAdWaste } from "@/lib/analyzeAdWaste";
 import { analyzeKeywordRank } from "@/lib/analyzeKeywordRank";
 import { analyzeBenchmark } from "@/lib/analyzeBenchmark";
+import { analyzeAeoBriefing } from "@/lib/analyzeAeoBriefing";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -100,12 +101,24 @@ export async function POST(req: NextRequest) {
     }
 
     // v45-W3: 업종별 벤치마크 (메인 분석 이후 · 우리 점수 필요)
+    // v45-W4: 네이버 AI 브리핑 준비도 (규칙 기반 · AI 호출 없음 · 병렬 가능)
     try {
-      const bench = await analyzeBenchmark(websiteData, report.diagnosis);
+      const [bench, briefing] = await Promise.all([
+        analyzeBenchmark(websiteData, report.diagnosis).catch((e) => {
+          console.warn("[benchmark] 실패:", e);
+          return null;
+        }),
+        analyzeAeoBriefing(websiteData).catch((e) => {
+          console.warn("[briefing] 실패:", e);
+          return null;
+        }),
+      ]);
       report.industryBenchmark = bench;
+      (report as any).naverBriefingReadiness = briefing;
     } catch (e) {
-      console.warn("[benchmark] 실패:", e);
+      console.warn("[benchmark/briefing] 실패:", e);
       report.industryBenchmark = null;
+      (report as any).naverBriefingReadiness = null;
     }
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
