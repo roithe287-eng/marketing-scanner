@@ -30,6 +30,11 @@ export type ExtractedWebsiteData = {
   hasContactInfo: boolean;
   viewportMeta: string;
   hasFavicon: boolean;
+  // v46-W1: 서치어드바이저·플레이스 진단용 필드
+  naverSiteVerification: boolean; // <meta name="naver-site-verification">
+  rssLink: string; // <link type="application/rss+xml" href>
+  hasMapEmbed: boolean; // 지도 임베드 (네이버맵/구글맵/카카오맵 iframe)
+  hasNaverPlaceLink: boolean; // 네이버 플레이스 링크 존재
   scriptCount: number;
   internalLinkCount: number;
   externalLinkCount: number;
@@ -388,6 +393,41 @@ export async function extractWebsite(
   const hasFavicon =
     $('link[rel="icon"], link[rel="shortcut icon"]').length > 0;
 
+  // v46-W1: 네이버 서치어드바이저 소유 확인 메타태그
+  const naverSiteVerification =
+    $('meta[name="naver-site-verification"]').length > 0;
+
+  // v46-W1: RSS 피드 링크
+  const rssLink =
+    $('link[type="application/rss+xml"]').attr("href")?.trim() || "";
+
+  // v46-W1: 지도 임베드 감지 (iframe src 기준)
+  let hasMapEmbed = false;
+  $("iframe").each((_, el) => {
+    const src = ($(el).attr("src") || "").toLowerCase();
+    if (
+      src.includes("map.naver.com") ||
+      src.includes("maps.google") ||
+      src.includes("google.com/maps") ||
+      src.includes("map.kakao.com")
+    ) {
+      hasMapEmbed = true;
+    }
+  });
+
+  // v46-W1: 네이버 플레이스 링크 감지
+  let hasNaverPlaceLink = false;
+  $("a[href]").each((_, el) => {
+    const href = ($(el).attr("href") || "").toLowerCase();
+    if (
+      href.includes("place.naver.com") ||
+      href.includes("map.naver.com") ||
+      href.includes("pcmap.place.naver.com")
+    ) {
+      hasNaverPlaceLink = true;
+    }
+  });
+
   const h1 = $("h1")
     .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
     .get()
@@ -541,6 +581,10 @@ export async function extractWebsite(
     hasContactInfo,
     viewportMeta,
     hasFavicon,
+    naverSiteVerification,
+    rssLink,
+    hasMapEmbed,
+    hasNaverPlaceLink,
     scriptCount: scriptCountFromHtml,
     internalLinkCount,
     externalLinkCount,

@@ -163,6 +163,28 @@ export const NaverBriefingReadinessSchema = z.object({
   priorityActions: z.array(z.string()),
 });
 
+// v46-W1: 네이버 생태계 연동 진단 스키마
+export const EcoCheckSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  group: z.enum(["place", "advisor"]),
+  status: z.enum(["pass", "warning", "fail"]),
+  currentValue: z.string(),
+  diagnosis: z.string(),
+  guide: z.string(),
+});
+
+export const NaverEcosystemReadinessSchema = z.object({
+  overallScore: z.number().min(0).max(100),
+  grade: z.enum(["A", "B", "C", "D", "F"]),
+  isLocalBusiness: z.boolean(),
+  placeScore: z.number().min(0).max(100),
+  advisorScore: z.number().min(0).max(100),
+  summary: z.string(),
+  checks: z.array(EcoCheckSchema),
+  priorityActions: z.array(z.string()),
+});
+
 // v45-W3: 업종별 벤치마크 리더보드
 export const IndustryCategorySchema = z.enum([
   "education",
@@ -323,6 +345,9 @@ export const MarketingReportSchema = z.object({
   // v45-W4: 네이버 AI 브리핑(ADVoost AEO) 준비도 (규칙 기반 · 규칙 분석)
   naverBriefingReadiness: NaverBriefingReadinessSchema.nullable().optional(),
 
+  // v46-W1: 네이버 생태계 연동 진단 (플레이스 + 서치어드바이저 · 규칙 기반)
+  naverEcosystemReadiness: NaverEcosystemReadinessSchema.nullable().optional(),
+
   competitorAnalysis: z
     .object({
       searchKeyword: z.string(),
@@ -368,3 +393,5 @@ export type IndustryMetric = z.infer<typeof IndustryMetricSchema>;
 export type IndustryBenchmark = z.infer<typeof IndustryBenchmarkSchema>;
 export type BriefingCheck = z.infer<typeof BriefingCheckSchema>;
 export type NaverBriefingReadiness = z.infer<typeof NaverBriefingReadinessSchema>;
+export type EcoCheck = z.infer<typeof EcoCheckSchema>;
+export type NaverEcosystemReadiness = z.infer<typeof NaverEcosystemReadinessSchema>;

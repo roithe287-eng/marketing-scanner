@@ -16,6 +16,7 @@ import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
 import NaverAiReadiness from "@/components/NaverAiReadiness";
 import NaverBriefingReadinessCard from "@/components/NaverBriefingReadiness";
+import NaverEcosystemReadinessCard from "@/components/NaverEcosystemReadiness";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import LlmCitationCard from "@/components/LlmCitationCard";
 import AdWasteCalculator from "@/components/AdWasteCalculator";
@@ -407,6 +408,15 @@ export default function HomePage() {
               <div className="mt-6 md:mt-8">
                 <NaverBriefingReadinessCard
                   readiness={(report as any).naverBriefingReadiness}
+                />
+              </div>
+            )}
+
+            {/* v46-W1: 네이버 생태계 연동 진단 (플레이스 + 서치어드바이저) */}
+            {(report as any).naverEcosystemReadiness && (
+              <div className="mt-6 md:mt-8">
+                <NaverEcosystemReadinessCard
+                  readiness={(report as any).naverEcosystemReadiness}
                 />
               </div>
             )}
