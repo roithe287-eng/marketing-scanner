@@ -143,6 +143,26 @@ export const CompetitorDeepDiveSchema = z.object({
   summary: z.string(),
 });
 
+// v45-W4: 네이버 AI 브리핑(ADVoost AEO) 준비도 스키마
+export const BriefingCheckSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  group: z.enum(["technical", "content"]),
+  status: z.enum(["pass", "warning", "fail"]),
+  currentValue: z.string(),
+  diagnosis: z.string(),
+  guide: z.string(),
+  naverRef: z.string().optional(),
+});
+
+export const NaverBriefingReadinessSchema = z.object({
+  overallScore: z.number().min(0).max(100),
+  grade: z.enum(["A", "B", "C", "D", "F"]),
+  summary: z.string(),
+  checks: z.array(BriefingCheckSchema),
+  priorityActions: z.array(z.string()),
+});
+
 // v45-W3: 업종별 벤치마크 리더보드
 export const IndustryCategorySchema = z.enum([
   "education",
@@ -300,6 +320,9 @@ export const MarketingReportSchema = z.object({
   // v45-W3: 업종별 벤치마크
   industryBenchmark: IndustryBenchmarkSchema.nullable().optional(),
 
+  // v45-W4: 네이버 AI 브리핑(ADVoost AEO) 준비도 (규칙 기반 · 규칙 분석)
+  naverBriefingReadiness: NaverBriefingReadinessSchema.nullable().optional(),
+
   competitorAnalysis: z
     .object({
       searchKeyword: z.string(),
@@ -343,3 +366,5 @@ export type CompetitorDeepDive = z.infer<typeof CompetitorDeepDiveSchema>;
 export type IndustryCategory = z.infer<typeof IndustryCategorySchema>;
 export type IndustryMetric = z.infer<typeof IndustryMetricSchema>;
 export type IndustryBenchmark = z.infer<typeof IndustryBenchmarkSchema>;
+export type BriefingCheck = z.infer<typeof BriefingCheckSchema>;
+export type NaverBriefingReadiness = z.infer<typeof NaverBriefingReadinessSchema>;
