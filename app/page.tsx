@@ -15,6 +15,7 @@ import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
 import NaverAiReadiness from "@/components/NaverAiReadiness";
+import NaverBriefingReadinessCard from "@/components/NaverBriefingReadiness";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import LlmCitationCard from "@/components/LlmCitationCard";
 import AdWasteCalculator from "@/components/AdWasteCalculator";
@@ -399,6 +400,15 @@ export default function HomePage() {
             {/* v26: 네이버 AI 광고 준비도 점검 (2026.7 정식 오픈) */}
             {report.naverAiReadiness && (
               <NaverAiReadiness readiness={report.naverAiReadiness} />
+            )}
+
+            {/* v45-W4: 네이버 AI 브리핑(ADVoost AEO) 준비도 */}
+            {(report as any).naverBriefingReadiness && (
+              <div className="mt-6 md:mt-8">
+                <NaverBriefingReadinessCard
+                  readiness={(report as any).naverBriefingReadiness}
+                />
+              </div>
             )}
 
             {/* 개선 우선순위 로드맵 (도식화) */}
