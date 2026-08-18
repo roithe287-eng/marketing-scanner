@@ -36,7 +36,10 @@ function generateShortId(length = 6): string {
 }
 
 const KEY_PREFIX = "ms:report:";
-const TTL_SECONDS = 30 * 24 * 60 * 60; // 30일
+// v45-W5: 네이버 API 약관 준수 — 임시 캐시 허용 기간(21일)에 맞춰 조정
+// (리포트 내 네이버 검색 API 파생 데이터(경쟁사 목록)가 포함되므로
+//  21일 이내 보관이 안전선)
+const TTL_SECONDS = 21 * 24 * 60 * 60; // 21일
 
 /**
  * 분석 결과 저장 → 짧은 ID 반환

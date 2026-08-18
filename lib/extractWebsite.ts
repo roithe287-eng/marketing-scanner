@@ -83,10 +83,36 @@ const CTA_KEYWORDS = [
   "subscribe",
 ];
 
+// v45-W5: robots.txt 준수 가드 — 'Disallow: /' (전체 차단) 사이트는 추출 거부
+// robots 파싱은 경량 정규식 기반 (완전한 robots 파서 도입 대신 최소 규칙)
+async function isBlockedByRobots(url: string): Promise<boolean> {
+  try {
+    const u = new URL(url);
+    const robotsUrl = `${u.protocol}//${u.host}/robots.txt`;
+    const res = await fetch(robotsUrl, {
+      headers: { "User-Agent": SCANNER_UA },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return false; // robots.txt 없음/오류 → 차단 규칙 없음으로 간주
+    const text = (await res.text()).toLowerCase();
+    // User-agent: * 아래의 Disallow: / (루트 전체 차단) 탐지
+    return /user-agent:\s*\*[\s\S]*?disallow:\s*\/\s*$/m.test(text) ||
+           /user-agent:\s*\*[\s\S]*?disallow:\s*\/(\r?\n|$)/.test(text);
+  } catch {
+    return false; // 확인 실패 시 추출 허용 (서비스 중단 방지)
+  }
+}
+
+// v45-W5: 식별 가능한 봇 UA — 크롤러 정체성을 명시 (법적 투명성)
+// 환경변수 SCANNER_CONTACT_URL 로 연락처 URL 지정 가능 (미설정 시 서비스 URL)
+const SCANNER_UA = `JinjjaScanner/1.0 (+${
+  process.env.NEXT_PUBLIC_SITE_URL || "https://marketingscanner.com"
+})`;
+
 // 실제 Chrome 브라우저처럼 보이는 헤더 (봇 차단 우회)
+// v45-W5: User-Agent만 식별 가능한 값으로 교체, 나머지 브라우저 헤더 유지
 const BROWSER_HEADERS = {
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+  "User-Agent": SCANNER_UA,
   Accept:
     "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
   "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -165,6 +191,14 @@ function decodeHtml(
 export async function extractWebsite(
   url: string
 ): Promise<ExtractedWebsiteData> {
+  // v45-W5: robots.txt 전체 차단 사이트는 추출 거부 (법적 준수)
+  const blocked = await isBlockedByRobots(url);
+  if (blocked) {
+    throw new Error(
+      "해당 사이트는 robots.txt에서 크롤링을 전면 차단하고 있어 진단할 수 없습니다."
+    );
+  }
+
   let res: Response | null = null;
   let lastError: any = null;
 
