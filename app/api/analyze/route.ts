@@ -7,6 +7,7 @@ import { analyzeAdWaste } from "@/lib/analyzeAdWaste";
 import { analyzeKeywordRank } from "@/lib/analyzeKeywordRank";
 import { analyzeBenchmark } from "@/lib/analyzeBenchmark";
 import { analyzeAeoBriefing } from "@/lib/analyzeAeoBriefing";
+import { analyzePlaceAdvisor } from "@/lib/analyzePlaceAdvisor";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -102,8 +103,9 @@ export async function POST(req: NextRequest) {
 
     // v45-W3: 업종별 벤치마크 (메인 분석 이후 · 우리 점수 필요)
     // v45-W4: 네이버 AI 브리핑 준비도 (규칙 기반 · AI 호출 없음 · 병렬 가능)
+    // v46-W1: 네이버 생태계 연동 진단 (플레이스 + 서치어드바이저 · 규칙 기반)
     try {
-      const [bench, briefing] = await Promise.all([
+      const [bench, briefing, ecosystem] = await Promise.all([
         analyzeBenchmark(websiteData, report.diagnosis).catch((e) => {
           console.warn("[benchmark] 실패:", e);
           return null;
@@ -112,13 +114,19 @@ export async function POST(req: NextRequest) {
           console.warn("[briefing] 실패:", e);
           return null;
         }),
+        analyzePlaceAdvisor(websiteData).catch((e) => {
+          console.warn("[ecosystem] 실패:", e);
+          return null;
+        }),
       ]);
       report.industryBenchmark = bench;
       (report as any).naverBriefingReadiness = briefing;
+      (report as any).naverEcosystemReadiness = ecosystem;
     } catch (e) {
-      console.warn("[benchmark/briefing] 실패:", e);
+      console.warn("[benchmark/briefing/ecosystem] 실패:", e);
       report.industryBenchmark = null;
       (report as any).naverBriefingReadiness = null;
+      (report as any).naverEcosystemReadiness = null;
     }
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
