@@ -185,6 +185,48 @@ export const NaverEcosystemReadinessSchema = z.object({
   priorityActions: z.array(z.string()),
 });
 
+// v46-W2: 수집·색인 기술 진단 (네이버 애드부스트 진단 대응)
+export const TechnicalSeoCheckSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  group: z.enum(["aeo", "index", "crawl"]),
+  status: z.enum(["pass", "warning", "fail"]),
+  currentValue: z.string(),
+  diagnosis: z.string(),
+  guide: z.string(),
+  evidence: z.array(z.string()).optional(),
+});
+
+export const TechnicalSeoSchema = z.object({
+  overallScore: z.number().min(0).max(100),
+  grade: z.enum(["A", "B", "C", "D", "F"]),
+  summary: z.string(),
+  counts: z.object({
+    pass: z.number(),
+    warning: z.number(),
+    fail: z.number(),
+  }),
+  checks: z.array(TechnicalSeoCheckSchema),
+  priorityActions: z.array(z.string()),
+});
+
+// v46-W2: 키워드 빈도 분석 (네이버 애드부스트 '키워드 요약' 대응)
+export const KeywordFreqItemSchema = z.object({
+  keyword: z.string(),
+  count: z.number(),
+  density: z.number(),
+  inTitle: z.boolean(),
+  inMetaDescription: z.boolean(),
+});
+
+export const KeywordFrequencySchema = z.object({
+  totalTokens: z.number(),
+  uniqueSingles: z.number(),
+  uniquePhrases: z.number(),
+  singles: z.array(KeywordFreqItemSchema),
+  phrases: z.array(KeywordFreqItemSchema),
+});
+
 // v45-W3: 업종별 벤치마크 리더보드
 export const IndustryCategorySchema = z.enum([
   "education",
@@ -348,6 +390,10 @@ export const MarketingReportSchema = z.object({
   // v46-W1: 네이버 생태계 연동 진단 (플레이스 + 서치어드바이저 · 규칙 기반)
   naverEcosystemReadiness: NaverEcosystemReadinessSchema.nullable().optional(),
 
+  // v46-W2: 수집·색인 기술 진단 + 키워드 빈도 분석 (규칙 기반 · AI 호출 없음)
+  technicalSeo: TechnicalSeoSchema.nullable().optional(),
+  keywordFrequency: KeywordFrequencySchema.nullable().optional(),
+
   competitorAnalysis: z
     .object({
       searchKeyword: z.string(),
@@ -394,4 +440,8 @@ export type IndustryBenchmark = z.infer<typeof IndustryBenchmarkSchema>;
 export type BriefingCheck = z.infer<typeof BriefingCheckSchema>;
 export type NaverBriefingReadiness = z.infer<typeof NaverBriefingReadinessSchema>;
 export type EcoCheck = z.infer<typeof EcoCheckSchema>;
+export type TechnicalSeoCheck = z.infer<typeof TechnicalSeoCheckSchema>;
+export type TechnicalSeo = z.infer<typeof TechnicalSeoSchema>;
+export type KeywordFreqItem = z.infer<typeof KeywordFreqItemSchema>;
+export type KeywordFrequency = z.infer<typeof KeywordFrequencySchema>;
 export type NaverEcosystemReadiness = z.infer<typeof NaverEcosystemReadinessSchema>;

@@ -40,6 +40,28 @@ export type ExtractedWebsiteData = {
   externalLinkCount: number;
   isJsHeavy: boolean;
 
+  // v46-W2: 수집·색인 기술 진단용 필드 (네이버 애드부스트 진단 대응)
+  /** 최종 성공 요청의 소요 시간 (요청 시작 ~ 본문 수신 완료, ms) */
+  responseTimeMs: number;
+  /** HTML 문서 바이트 크기 */
+  pageSizeBytes: number;
+  /** Content-Type이 text/html 계열인지 */
+  contentTypeOk: boolean;
+  /** 리다이렉트 hop 경로 (최종 성공 요청 기준, 최대 6개) */
+  redirectChain: string[];
+  /** 자기 자신으로의 리다이렉트 감지 */
+  selfRedirect: boolean;
+  /** H1 요소 총 개수 (빈 텍스트 포함) */
+  h1Count: number;
+  /** 모든 앵커 href (최대 500개, # · javascript: 포함) */
+  anchorHrefs: string[];
+  /** <head> 내 동기(렌더 차단) 스크립트 src (최대 30개) */
+  headSyncScripts: string[];
+  /** <head> 내 스타일시트 href (최대 30개) */
+  headStylesheets: string[];
+  /** 본문 텍스트 전체 길이 (slice 전 원본 기준) */
+  bodyTextLength: number;
+
   // v26: 네이버 AI 광고 준비도 점검용 필드
   /** JSON-LD schema.org 구조화 데이터 (파싱 성공한 객체 배열) */
   jsonLdSchemas: any[];
@@ -134,13 +156,69 @@ const BROWSER_HEADERS = {
   "Upgrade-Insecure-Requests": "1",
 };
 
-async function tryFetch(url: string): Promise<Response> {
-  return fetch(url, {
+type FetchAttempt = {
+  res: Response;
+  redirectChain: string[];
+  selfRedirect: boolean;
+  durationMs: number;
+};
+
+// v46-W2: 리다이렉트 수동 추적 (네이버 수집 진단 대응 — hop 수·자기 자신 리다이렉트 감지)
+// fetch redirect:'follow'는 체인 정보를 숨기므로 'manual'로 직접 따라간다 (최대 6회)
+async function tryFetch(startUrl: string): Promise<FetchAttempt> {
+  const t0 = Date.now();
+  const chain: string[] = [];
+  let selfRedirect = false;
+  let current = startUrl;
+
+  for (let hop = 0; hop <= 6; hop++) {
+    const res = await fetch(current, {
+      headers: BROWSER_HEADERS,
+      cache: "no-store",
+      redirect: "manual",
+      signal: AbortSignal.timeout(20000),
+    });
+
+    const isRedirect = res.status >= 300 && res.status < 400;
+    const loc = res.headers.get("location");
+    if (!isRedirect || !loc) {
+      return {
+        res,
+        redirectChain: chain,
+        selfRedirect,
+        durationMs: Date.now() - t0,
+      };
+    }
+
+    let next: string;
+    try {
+      next = new URL(loc, current).toString();
+    } catch {
+      return {
+        res,
+        redirectChain: chain,
+        selfRedirect,
+        durationMs: Date.now() - t0,
+      };
+    }
+    if (next === current) selfRedirect = true;
+    chain.push(next);
+    current = next;
+    try {
+      await res.body?.cancel();
+    } catch {
+      // ignore
+    }
+  }
+
+  // 6회 초과: 마지막 리다이렉트 응답을 그대로 반환 (호출부에서 !res.ok 처리)
+  const res = await fetch(current, {
     headers: BROWSER_HEADERS,
     cache: "no-store",
-    redirect: "follow",
+    redirect: "manual",
     signal: AbortSignal.timeout(20000),
   });
+  return { res, redirectChain: chain, selfRedirect, durationMs: Date.now() - t0 };
 }
 
 /**
@@ -206,12 +284,30 @@ export async function extractWebsite(
 
   let res: Response | null = null;
   let lastError: any = null;
+  // v46-W2: 최종 성공 요청의 리다이렉트 정보
+  let redirectChain: string[] = [];
+  let selfRedirect = false;
+  let fetchMs = 0;
+
+  // v46-W2: TS 제어 흐름 분석 대응 — attempt는 반환만 하고, res 할당은 외부 스코프에서 직접 수행
+  async function attempt(u: string): Promise<FetchAttempt | null> {
+    try {
+      return await tryFetch(u);
+    } catch (err: any) {
+      lastError = err;
+      return null;
+    }
+  }
 
   // 1차: 입력 URL 그대로 시도
-  try {
-    res = await tryFetch(url);
-  } catch (err: any) {
-    lastError = err;
+  let a = await attempt(url);
+  if (a) {
+    res = a.res;
+    if (a.res.ok) {
+      redirectChain = a.redirectChain;
+      selfRedirect = a.selfRedirect;
+      fetchMs = a.durationMs;
+    }
   }
 
   // 2차: www. 추가해서 재시도
@@ -220,7 +316,15 @@ export async function extractWebsite(
       const u = new URL(url);
       if (!u.hostname.startsWith("www.")) {
         const wwwUrl = `${u.protocol}//www.${u.hostname}${u.pathname}${u.search}`;
-        res = await tryFetch(wwwUrl);
+        a = await attempt(wwwUrl);
+        if (a) {
+          res = a.res;
+          if (a.res.ok) {
+            redirectChain = a.redirectChain;
+            selfRedirect = a.selfRedirect;
+            fetchMs = a.durationMs;
+          }
+        }
       }
     } catch (err: any) {
       lastError = err;
@@ -232,7 +336,15 @@ export async function extractWebsite(
     try {
       if (url.startsWith("https://")) {
         const httpUrl = url.replace("https://", "http://");
-        res = await tryFetch(httpUrl);
+        a = await attempt(httpUrl);
+        if (a) {
+          res = a.res;
+          if (a.res.ok) {
+            redirectChain = a.redirectChain;
+            selfRedirect = a.selfRedirect;
+            fetchMs = a.durationMs;
+          }
+        }
       }
     } catch (err: any) {
       lastError = err;
@@ -254,8 +366,15 @@ export async function extractWebsite(
   }
 
   // 인코딩 자동 감지하여 디코딩 (EUC-KR/CP949/UTF-8 지원)
+  // v46-W2: 다운로드 소요 시간(네이버 기준 3초)·페이지 크기(4MB)·Content-Type 판정
+  const tBuf = Date.now();
   const buffer = await res.arrayBuffer();
+  const responseTimeMs = fetchMs + (Date.now() - tBuf);
+  const pageSizeBytes = buffer.byteLength;
   const contentTypeHeader = res.headers.get("content-type");
+  const contentTypeOk =
+    !!contentTypeHeader &&
+    /text\/html|application\/xhtml/i.test(contentTypeHeader);
   const { html, encoding: detectedEncoding } = decodeHtml(
     buffer,
     contentTypeHeader
@@ -268,6 +387,24 @@ export async function extractWebsite(
   }
 
   const $ = cheerio.load(html);
+
+  // v46-W2: 렌더 차단 리소스 추출 — script 제거 전 원본에서 수집
+  const headSyncScripts = $("head script[src]")
+    .filter(
+      (_, el) =>
+        $(el).attr("async") === undefined &&
+        $(el).attr("defer") === undefined &&
+        ($(el).attr("type") || "").toLowerCase() !== "module"
+    )
+    .map((_, el) => $(el).attr("src") || "")
+    .get()
+    .filter(Boolean)
+    .slice(0, 30);
+  const headStylesheets = $('head link[rel="stylesheet"]')
+    .map((_, el) => $(el).attr("href") || "")
+    .get()
+    .filter(Boolean)
+    .slice(0, 30);
 
   // 불필요한 노드 제거
   $("script, style, noscript, iframe").remove();
@@ -428,6 +565,9 @@ export async function extractWebsite(
     }
   });
 
+  // v46-W2: H1 개수 (네이버 기준: 2개 이상 경고)
+  const h1Count = $("h1").length;
+
   const h1 = $("h1")
     .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
     .get()
@@ -494,6 +634,8 @@ export async function extractWebsite(
   }
 
   const links = allLinks.slice(0, 50);
+  // v46-W2: 프로토콜 혼용·접근 제한 링크 판정용 원본 href (# · javascript: 포함)
+  const anchorHrefs = allLinks.slice(0, 500);
 
   // 이미지 alt 텍스트도 수집 (이미지로만 만든 사이트 대응)
   const imageAlts = $("img")
@@ -502,11 +644,10 @@ export async function extractWebsite(
     .filter((alt) => alt.length > 0 && alt.length < 100)
     .slice(0, 30);
 
-  const bodyText = $("body")
-    .text()
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 12000);
+  // v46-W2: thin content 판정용 원본 길이 (slice 전)
+  const fullBodyText = $("body").text().replace(/\s+/g, " ").trim();
+  const bodyTextLength = fullBodyText.length;
+  const bodyText = fullBodyText.slice(0, 12000);
 
   const imageCount = $("img").length;
   const imageWithoutAlt = $("img").filter((_, el) => {
@@ -589,5 +730,16 @@ export async function extractWebsite(
     internalLinkCount,
     externalLinkCount,
     isJsHeavy,
+    // v46-W2: 수집·색인 기술 진단용
+    responseTimeMs,
+    pageSizeBytes,
+    contentTypeOk,
+    redirectChain,
+    selfRedirect,
+    h1Count,
+    anchorHrefs,
+    headSyncScripts,
+    headStylesheets,
+    bodyTextLength,
   };
 }
