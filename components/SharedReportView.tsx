@@ -13,6 +13,8 @@ import CopyImprovement from "@/components/CopyImprovement";
 import NaverAiReadiness from "@/components/NaverAiReadiness";
 import NaverBriefingReadinessCard from "@/components/NaverBriefingReadiness";
 import NaverEcosystemReadinessCard from "@/components/NaverEcosystemReadiness";
+import TechnicalSeoCard from "@/components/TechnicalSeoCard";
+import KeywordFrequencyCard from "@/components/KeywordFrequencyCard";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import LlmCitationCard from "@/components/LlmCitationCard";
 import AdWasteCalculator from "@/components/AdWasteCalculator";
@@ -348,6 +350,18 @@ export default function SharedReportView({ report, shareId }: Props) {
               <NaverEcosystemReadinessCard
                 readiness={(report as any).naverEcosystemReadiness}
               />
+            </div>
+          )}
+
+          {/* v46-W2: 수집·색인 기술 진단 + 키워드 빈도 분석 */}
+          {report.technicalSeo && (
+            <div className="mt-8 md:mt-10">
+              <TechnicalSeoCard technicalSeo={report.technicalSeo} />
+            </div>
+          )}
+          {report.keywordFrequency && (
+            <div className="mt-8 md:mt-10">
+              <KeywordFrequencyCard frequency={report.keywordFrequency} />
             </div>
           )}
 
