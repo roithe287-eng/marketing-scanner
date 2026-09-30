@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { IndustryCategory } from "./reportSchema";
 
@@ -8,10 +8,6 @@ import { IndustryCategory } from "./reportSchema";
  * - 개인정보 저장 X · 오직 카테고리만 반환
  * - 실패 시 "etc" 반환
  */
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 const OPENAI_MODEL = "gpt-4o-mini";
 const AI_TIMEOUT_MS = 15000;
@@ -134,7 +130,7 @@ JSON만 응답:
   const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
   try {
-    const resp = await openai.chat.completions.create(
+    const resp = await getOpenAI().chat.completions.create(
       {
         model: OPENAI_MODEL,
         messages: [

@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis";
+import { getRedisClient } from "./redisClient";
 import { IndustryCategory } from "./reportSchema";
 
 /**
@@ -14,21 +14,6 @@ import { IndustryCategory } from "./reportSchema";
  *
  * TTL 없음 (영구 누적) · 매우 안전한 익명 데이터
  */
-
-let redis: Redis | null = null;
-try {
-  if (
-    process.env.UPSTASH_REDIS_REST_URL &&
-    process.env.UPSTASH_REDIS_REST_TOKEN
-  ) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-  }
-} catch (e) {
-  console.warn("[benchmark] Redis 초기화 실패:", e);
-}
 
 // 집계할 8개 지표 (기존 diagnosis 필드와 매칭)
 export const BENCHMARK_METRICS = [
@@ -75,6 +60,7 @@ export async function saveBenchmarkSample(
   category: IndustryCategory,
   scores: DiagnosisScores
 ): Promise<void> {
+  const redis = getRedisClient();
   if (!redis) return;
 
   try {
@@ -117,6 +103,7 @@ export async function getBenchmarkStats(
     { average: number; topTen: number } | null
   >;
 } | null> {
+  const redis = getRedisClient();
   if (!redis) return null;
 
   try {

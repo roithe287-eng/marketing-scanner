@@ -1,10 +1,6 @@
-import OpenAI from "openai";
+import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { MarketingReport, MarketingReportSchema } from "./reportSchema";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 // v16: 기본값을 gpt-4.1-mini로 변경 (gpt-4o-mini 대비 속도 2배, 비용 비슷)
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
@@ -120,7 +116,7 @@ async function callOpenAI(
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const response = await openai.chat.completions.create(
+    const response = await getOpenAI().chat.completions.create(
       {
         model: MODEL,
         messages: [

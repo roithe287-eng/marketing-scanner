@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { Discoverability, DiscoverabilitySchema } from "./reportSchema";
 
@@ -9,10 +9,6 @@ import { Discoverability, DiscoverabilitySchema } from "./reportSchema";
  *   E-E-A-T, 로컬·브랜드, AI 답변 대응력 8개 축 진단
  * - 병렬 호출용, 실패 시 null 반환 (기존 리포트 흐름 방해 X)
  */
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
 const AI_TIMEOUT_MS = 40000;
@@ -123,7 +119,7 @@ export async function analyzeDiscoverability(
   const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
   try {
-    const resp = await openai.chat.completions.create(
+    const resp = await getOpenAI().chat.completions.create(
       {
         model: MODEL,
         messages: [

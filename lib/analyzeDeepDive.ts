@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { getOpenAI } from "./openaiClient";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 import { CompetitorDeepDive } from "./reportSchema";
@@ -10,10 +10,6 @@ import { CompetitorDeepDive } from "./reportSchema";
  * - 사용자 인터랙션(모달 클릭) 후 지연 호출
  * - 실패 시 null 반환
  */
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 const OPENAI_MODEL = "gpt-4o-mini";
 const AI_TIMEOUT_MS = 30000;
@@ -209,7 +205,7 @@ JSON만 응답:
   const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
   try {
-    const resp = await openai.chat.completions.create(
+    const resp = await getOpenAI().chat.completions.create(
       {
         model: OPENAI_MODEL,
         messages: [

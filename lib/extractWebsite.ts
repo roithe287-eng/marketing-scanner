@@ -1,3 +1,4 @@
+import { getScannerContactUrl } from "./siteConfig";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 
@@ -132,9 +133,7 @@ async function isBlockedByRobots(url: string): Promise<boolean> {
 
 // v45-W5: 식별 가능한 봇 UA — 크롤러 정체성을 명시 (법적 투명성)
 // 환경변수 SCANNER_CONTACT_URL 로 연락처 URL 지정 가능 (미설정 시 서비스 URL)
-const SCANNER_UA = `JinjjaScanner/1.0 (+${
-  process.env.NEXT_PUBLIC_SITE_URL || "https://marketingscanner.com"
-})`;
+const SCANNER_UA = `JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
 
 // 실제 Chrome 브라우저처럼 보이는 헤더 (봇 차단 우회)
 // v45-W5: User-Agent만 식별 가능한 값으로 교체, 나머지 브라우저 헤더 유지
@@ -406,9 +405,6 @@ export async function extractWebsite(
     .filter(Boolean)
     .slice(0, 30);
 
-  // 불필요한 노드 제거
-  $("script, style, noscript, iframe").remove();
-
   const title = $("title").first().text().trim();
   const description =
     $('meta[name="description"]').attr("content")?.trim() || "";
@@ -564,6 +560,9 @@ export async function extractWebsite(
       hasNaverPlaceLink = true;
     }
   });
+
+  // 구조화 데이터와 지도 임베드를 읽은 뒤, 본문 텍스트 분석에서만 제외합니다.
+  $("script, style, noscript, iframe").remove();
 
   // v46-W2: H1 개수 (네이버 기준: 2개 이상 경고)
   const h1Count = $("h1").length;

@@ -7,28 +7,33 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --import tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
     "cheerio": "^1.0.0",
     "html2canvas": "^1.4.1",
     "iconv-lite": "^0.6.3",
-    "jspdf": "^2.5.2",
-    "next": "14.2.5",
+    "jspdf": "4.2.1",
+    "next": "15.5.26",
     "openai": "^4.67.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "recharts": "^2.12.7",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
     "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.47",
+    "postcss": "8.5.28",
     "tailwindcss": "^3.4.13",
+    "tsx": "^4.23.15",
     "typescript": "^5"
+  },
+  "overrides": {
+    "postcss": "$postcss"
   }
 }
