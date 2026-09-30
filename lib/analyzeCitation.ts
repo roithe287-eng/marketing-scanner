@@ -1,11 +1,11 @@
-import OpenAI from "openai";
+import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import {
   LlmCitationTest,
   LlmCitationTestSchema,
   LlmCitationQuestionResult,
 } from "./reportSchema";
-import { Redis } from "@upstash/redis";
+import { getRedisClient } from "./redisClient";
 
 /**
  * v45-W1: AI 인용 시뮬레이션 (ChatGPT + Gemini 2.5 Flash)
@@ -15,30 +15,10 @@ import { Redis } from "@upstash/redis";
  * - 실패 시 null 반환 (기존 흐름 방해 X)
  */
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 const OPENAI_MODEL = "gpt-4o-mini";
 const GEMINI_MODEL = "gemini-2.5-flash";
 const AI_TIMEOUT_MS = 25000;
 const CACHE_TTL_SECONDS = 24 * 60 * 60; // 24h
-
-// Redis 캐싱 (선택적)
-let redis: Redis | null = null;
-try {
-  if (
-    process.env.UPSTASH_REDIS_REST_URL &&
-    process.env.UPSTASH_REDIS_REST_TOKEN
-  ) {
-    redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN,
-    });
-  }
-} catch (e) {
-  console.warn("[citation] Redis 초기화 실패:", e);
-}
 
 function hashUrl(url: string): string {
   // 간단한 hash — cache key용
@@ -108,7 +88,7 @@ JSON만 응답:
 ]}`;
 
   try {
-    const resp = await openai.chat.completions.create({
+    const resp = await getOpenAI().chat.completions.create({
       model: OPENAI_MODEL,
       messages: [
         {
@@ -153,7 +133,7 @@ async function askChatGPT(
   const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
 
   try {
-    const resp = await openai.chat.completions.create(
+    const resp = await getOpenAI().chat.completions.create(
       {
         model: OPENAI_MODEL,
         messages: [
@@ -364,6 +344,8 @@ export async function analyzeCitation(
   const brandName = extractBrandName(data);
   const domain = extractDomain(url);
   const cacheKey = `ms:citation:${hashUrl(url)}`;
+
+  const redis = getRedisClient();
 
   // 캐시 조회
   if (redis) {

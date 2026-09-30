@@ -1,25 +1,5 @@
-import { Redis } from "@upstash/redis";
+import { getRedisClient } from "./redisClient";
 import { MarketingReport } from "./reportSchema";
-
-// Upstash Redis 클라이언트 (환경변수 자동 인식)
-let _redis: Redis | null = null;
-function getRedis(): Redis | null {
-  if (_redis) return _redis;
-  const url =
-    process.env.UPSTASH_REDIS_REST_URL ||
-    process.env.KV_REST_API_URL ||
-    "";
-  const token =
-    process.env.UPSTASH_REDIS_REST_TOKEN ||
-    process.env.KV_REST_API_TOKEN ||
-    "";
-  if (!url || !token) {
-    console.warn("[shareStore] Upstash Redis 환경변수 미설정");
-    return null;
-  }
-  _redis = new Redis({ url, token });
-  return _redis;
-}
 
 /**
  * 6글자 짧은 ID 생성 (URL-safe)
@@ -47,7 +27,7 @@ const TTL_SECONDS = 21 * 24 * 60 * 60; // 21일
 export async function saveSharedReport(
   report: MarketingReport
 ): Promise<string | null> {
-  const redis = getRedis();
+  const redis = getRedisClient();
   if (!redis) return null;
 
   // 최대 5번 ID 충돌 재시도
@@ -74,7 +54,7 @@ export async function saveSharedReport(
 export async function getSharedReport(
   id: string
 ): Promise<MarketingReport | null> {
-  const redis = getRedis();
+  const redis = getRedisClient();
   if (!redis) return null;
 
   // ID 유효성 검증 (영숫자만, 4~12자)
@@ -107,7 +87,7 @@ export async function updateSharedReportCompetitor(
   id: string,
   competitorAnalysis: any
 ): Promise<boolean> {
-  const redis = getRedis();
+  const redis = getRedisClient();
   if (!redis) return false;
 
   if (!/^[A-Za-z0-9]{4,12}$/.test(id)) return false;
@@ -155,9 +135,5 @@ export async function updateSharedReportCompetitor(
  * Redis 사용 가능 여부 (UI 표시용)
  */
 export function isShareStoreAvailable(): boolean {
-  return !!(
-    (process.env.UPSTASH_REDIS_REST_URL ||
-      process.env.KV_REST_API_URL) &&
-    (process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN)
-  );
+  return getRedisClient() !== null;
 }

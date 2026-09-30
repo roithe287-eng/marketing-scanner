@@ -24,11 +24,11 @@ export function isInternalGuardEnabled(): boolean {
 /**
  * 서버 컴포넌트용: 쿠키로 내부 직원인지 확인
  */
-export function isInternalUser(): boolean {
+export async function isInternalUser(): Promise<boolean> {
   if (!isInternalGuardEnabled()) return true; // 키 미설정 시 차단 안 함
   const key = getInternalKey();
   if (!key) return true;
-  const store = cookies();
+  const store = await cookies();
   const token = store.get(COOKIE_NAME)?.value;
   return token === key;
 }

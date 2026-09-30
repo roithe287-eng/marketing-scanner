@@ -1,10 +1,6 @@
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
-import OpenAI from "openai";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getOpenAI } from "./openaiClient";
 
 export type Competitor = {
   rank: number;
@@ -358,7 +354,7 @@ async function extractKeywordWithAI(siteData: {
 JSON 형식으로만 응답하라:
 {"keyword": "추출한 키워드"}`;
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
       messages: [{ role: "user", content: prompt }],
       response_format: { type: "json_object" },

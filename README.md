@@ -3,6 +3,10 @@
 > URL 하나로 확인하는 우리 사이트의 마케팅 약점
 > Powered by **진짜마케팅 (prorealmkt.com)**
 
+> 개발 인수인계 및 최신 설정은 [개발 인수인계 문서](docs/DEVELOPMENT_HANDOVER.md)를 확인하세요. 아래 MVP 설명에는 현재 구현과 다른 초기 안내가 포함되어 있습니다.
+
+운영: https://www.mktscanner.com/ · Node.js 24.x · Next.js 15.5.26
+
 URL을 입력하면 AI가 웹사이트를 분석해 마케팅/전환 관점 8개 항목으로 진단 리포트를 생성하고, PDF로 다운로드할 수 있는 MVP입니다.
 
 ---
@@ -10,7 +14,7 @@ URL을 입력하면 AI가 웹사이트를 분석해 마케팅/전환 관점 8개
 ## ✨ 기능
 
 - ✅ URL 입력 → HTML/메타/CTA/카피 자동 수집 (Cheerio)
-- ✅ OpenAI(`gpt-4o-mini` 기본)로 8개 항목 진단
+- ✅ OpenAI(`gpt-4.1-mini` 기본)로 8개 항목 진단
   - 첫 화면, CTA, 카피, 신뢰, 전환, 광고 랜딩, 모바일, SEO
 - ✅ 레이더 차트 + 항목별 점수 막대
 - ✅ 핵심 이슈 카드 (문제·근거·개선안·우선순위)
@@ -28,7 +32,7 @@ URL을 입력하면 AI가 웹사이트를 분석해 마케팅/전환 관점 8개
 ### 1. 의존성 설치
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 2. 환경변수 설정
@@ -43,7 +47,7 @@ cp .env.local.example .env.local
 
 ```env
 OPENAI_API_KEY=sk-your-actual-key
-OPENAI_MODEL=gpt-4o-mini
+OPENAI_MODEL=gpt-4.1-mini
 
 NEXT_PUBLIC_CONSULT_URL=https://prorealmkt.com/contact
 NEXT_PUBLIC_BRAND_URL=https://prorealmkt.com
@@ -68,7 +72,7 @@ npm run dev
 2. [vercel.com](https://vercel.com) → Import Project
 3. **Environment Variables** 에 다음 추가:
    - `OPENAI_API_KEY` (필수)
-   - `OPENAI_MODEL` (선택, 기본 `gpt-4o-mini`)
+   - `OPENAI_MODEL` (선택, 기본 `gpt-4.1-mini`)
    - `NEXT_PUBLIC_CONSULT_URL` (선택)
    - `NEXT_PUBLIC_BRAND_URL` (선택)
    - `SLACK_WEBHOOK_URL` (선택)
@@ -119,7 +123,7 @@ marketing-scanner/
 `.env.local`:
 
 ```env
-OPENAI_MODEL=gpt-4o-mini    # 빠르고 저렴 (MVP 기본)
+OPENAI_MODEL=gpt-4.1-mini    # 빠르고 저렴 (MVP 기본)
 # OPENAI_MODEL=gpt-4o       # 더 정밀한 분석 (10배 비쌈)
 # OPENAI_MODEL=gpt-4.1-mini # 대안
 ```

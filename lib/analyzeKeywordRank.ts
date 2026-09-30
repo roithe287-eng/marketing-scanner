@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import {
   KeywordRankTracking,
@@ -12,10 +12,6 @@ import {
  * - 우리 도메인이 15위 내 노출되는지 확인
  * - 실패 시 null 반환 (기존 흐름 방해 X)
  */
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 const OPENAI_MODEL = "gpt-4o-mini";
 const AI_TIMEOUT_MS = 20000;
@@ -60,7 +56,7 @@ JSON만 응답:
 {"keywords":["...","...","...","...","..."]}`;
 
   try {
-    const resp = await openai.chat.completions.create({
+    const resp = await getOpenAI().chat.completions.create({
       model: OPENAI_MODEL,
       messages: [
         {
