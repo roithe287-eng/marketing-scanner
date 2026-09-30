@@ -79,7 +79,16 @@ GitHub 기준 커밋에는 Vercel의 `success / Deployment has completed` 상태
 
 https://vercel.com/jinjjamarketing-s-projects/marketing-scanner/6dVztbgJhdhVkMcCijBLAEgJ9xZW
 
-그러나 이번 연결의 Vercel 프로젝트 목록에는 `marketing-scanner`가 없고, 프로젝트 및 배포 직접 조회도 404였습니다. 현재 프로젝트 존재 여부, 연결 권한 범위, 다른 계정으로 이동했는지는 확정하지 못했습니다. GitHub의 과거 성공 상태만으로 현재 서비스가 정상이라고 판단하면 안 됩니다.
+이번 연결의 Vercel 프로젝트 목록에는 `marketing-scanner`가 없고, 프로젝트 및 배포 직접 조회도 404였습니다. 아래 새 미리보기 배포로 프로젝트와 자동 배포 연결의 존재는 확인했으나, 관리 연결의 조회 가능 범위가 일치하지 않는 이유는 확인하지 못했습니다. GitHub의 배포 성공 상태만으로 운영 도메인과 실제 분석 기능까지 정상이라고 판단하면 안 됩니다.
+
+준비 브랜치 `chore/codex-handover-20260930`의 커밋 `3dd6c90108694885abc8d465d2d54f1fef74293c`는 GitHub Vercel 상태 `success` 및 PR의 Vercel 봇 `Ready` 표시를 모두 확인했습니다.
+
+- 초안 PR: https://github.com/roithe287-eng/marketing-scanner/pull/6
+- 미리보기: https://marketing-scanner-git-chore-c-9476a6-jinjjamarketing-s-projects.vercel.app
+- 미리보기 배포: https://vercel.com/jinjjamarketing-s-projects/marketing-scanner/CUxzmAUGAbWUx2V7MEp8UkXDuZZ6
+- 봇이 제공한 프로젝트 ID: `prj_2BHTgMJZACOiHsbp5ptGF5Z6NJm3`
+
+정확한 프로젝트 ID와 미리보기 호스트로 관리 API를 다시 조회해도 404였습니다. 현재 확보한 경로로 GitHub 편집·초안 PR·자동 미리보기 배포는 가능하며, Vercel의 환경변수·로그·도메인 관리 직접 접근은 미확인입니다. `main`에 병합하거나 운영 배포를 갱신하지 않았습니다.
 
 공개 주소 접근도 점검 환경에서 `marketingscanner.com`은 502, `marketing-scanner-beta.vercel.app`은 404를 반환했습니다. 접근 환경의 영향과 실제 서비스 상태를 구분할 수 없으므로 서비스 장애로 단정하지 않습니다. 대상 Vercel 프로젝트를 조회할 수 있게 된 뒤 운영 도메인, 배포 커밋, 환경변수 이름 및 적용 환경을 확인해야 합니다.
 
@@ -100,6 +109,7 @@ https://vercel.com/jinjjamarketing-s-projects/marketing-scanner/6dVztbgJhdhVkMcC
 - `npm run typecheck`: 통과.
 - 비밀키 없는 빌드: OpenAI 초기화 단계 실패 확인.
 - 임시 비인증 문자열을 사용한 `npm run build`: 통과. 실제 AI 요청은 하지 않음.
+- 준비 브랜치 첫 커밋의 Vercel 미리보기: GitHub 상태 `success`, Vercel 봇 표시 `Ready` 확인.
 - 로컬 프로덕션 서버 HTTP 검사 7개: 통과. 메인·접근 제한 안내·로고 200, 존재하지 않는 공유 링크 404, 빈 입력·잘못된 URL 400, Redis 미설정 시 공유 API 503 확인.
 - 브라우저 시각 검수: 실행 도구 시작 실패 및 대체 브라우저 실행 파일 다운로드 실패로 미완료. HTTP 검사 결과를 시각 검수 결과로 대체하지 않음.
 - 실제 OpenAI·Gemini·네이버·Redis 연동 및 분석 결과 품질: 유효한 개발용 설정이 없어 미검증.
