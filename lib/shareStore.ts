@@ -1,5 +1,6 @@
 import { getRedisClient } from "./redisClient";
-import { MarketingReport } from "./reportSchema";
+import { randomInt } from "node:crypto";
+import { MarketingReport, MarketingReportSchema } from "./reportSchema";
 
 /**
  * 6글자 짧은 ID 생성 (URL-safe)
@@ -10,7 +11,7 @@ function generateShortId(length = 6): string {
     "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 헷갈리는 0,o,l,1 제외
   let result = "";
   for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length));
+    result += chars.charAt(randomInt(chars.length));
   }
   return result;
 }
@@ -32,7 +33,7 @@ export async function saveSharedReport(
 
   // 최대 5번 ID 충돌 재시도
   for (let attempt = 0; attempt < 5; attempt++) {
-    const id = generateShortId(6);
+    const id = generateShortId(12);
     const key = KEY_PREFIX + id;
     // NX = key가 없을 때만 set (충돌 방지)
     const result = await redis.set(key, JSON.stringify(report), {
@@ -65,10 +66,8 @@ export async function getSharedReport(
     const raw = await redis.get(key);
     if (!raw) return null;
     // Upstash는 자동으로 JSON 파싱하기도 함
-    if (typeof raw === "string") {
-      return JSON.parse(raw) as MarketingReport;
-    }
-    return raw as MarketingReport;
+    const parsed = MarketingReportSchema.safeParse(typeof raw === "string" ? JSON.parse(raw) : raw);
+    return parsed.success ? parsed.data : null;
   } catch (e) {
     console.error("[shareStore] 조회 실패:", e);
     return null;

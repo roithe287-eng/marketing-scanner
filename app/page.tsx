@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import BrandHeader from "@/components/BrandHeader";
 import UrlForm from "@/components/UrlForm";
 import LivePreviewCard from "../components/LivePreviewCard";
@@ -32,17 +32,17 @@ export default function HomePage() {
   const [loading, setLoading] = useState(false);
   const [competitorLoading, setCompetitorLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // v43: 공유 ID 추적 — 경쟁사 분석 완료 시 자동 PATCH 호출용
-  const [sharedId, setSharedId] = useState<string | null>(null);
+  const analysisRun = useRef(0);
 
   // v14: 백그라운드 경쟁사 분석 호출
-  async function fetchCompetitor(url: string, hints: any) {
+  async function fetchCompetitor(url: string, hints: any, run: number) {
     setCompetitorLoading(true);
     try {
       const res = await fetch("/api/competitor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url, hints }),
+        signal: AbortSignal.timeout(55000),
       });
       const contentType = res.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
@@ -51,52 +51,33 @@ export default function HomePage() {
         return;
       }
       const data = await res.json();
-      if (data?.competitorAnalysis) {
+      if (analysisRun.current === run && data?.competitorAnalysis) {
         // 기존 report에 경쟁사 데이터 병합
         setReport((prev) =>
           prev ? { ...prev, competitorAnalysis: data.competitorAnalysis } : prev
         );
 
-        // v43: 이미 공유된 링크가 있으면 경쟁사 데이터만 자동 PATCH
-        if (sharedId) {
-          fetch("/api/share", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id: sharedId,
-              competitorAnalysis: data.competitorAnalysis,
-            }),
-          })
-            .then((r) => {
-              if (r.ok) {
-                console.log(`[공유] 경쟁사 데이터 자동 업데이트 완료: ${sharedId}`);
-              } else {
-                console.warn(`[공유] 경쟁사 업데이트 실패 (status=${r.status})`);
-              }
-            })
-            .catch((e) => {
-              console.warn("[공유] 경쟁사 PATCH 실패:", e?.message);
-            });
-        }
+
       }
     } catch (e: any) {
       console.warn("[경쟁사] 호출 실패 (조용히 무시):", e?.message);
     } finally {
-      setCompetitorLoading(false);
+      if (analysisRun.current === run) setCompetitorLoading(false);
     }
   }
 
-  async function handleAnalyze(url: string) {
+  async function handleAnalyze(url: string, geoQuestions?: string[]) {
+    const run = ++analysisRun.current;
     setLoading(true);
     setReport(null);
     setError(null);
     setCompetitorLoading(false);
-    setSharedId(null); // v43: 새 분석 시 공유 ID 초기화
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, geoQuestions }),
+        signal: AbortSignal.timeout(90000),
       });
       
       // JSON 이 아닌 응답 처리 (Vercel timeout 등)
@@ -134,7 +115,7 @@ export default function HomePage() {
       // v14: 메인 결과 받자마자 백그라운드로 경쟁사 분석 호출
       if (data?._hasCompetitor && data?._websiteHints) {
         // await 안함 (백그라운드 실행)
-        fetchCompetitor(data.url || url, data._websiteHints);
+        fetchCompetitor(data.url || url, data._websiteHints, run);
       }
     } catch (e: any) {
       setError(e?.message || "네트워크 오류가 발생했습니다.");
@@ -283,11 +264,11 @@ export default function HomePage() {
                 <DownloadReportButton
                   targetId="report-area"
                   report={report}
+                  pending={competitorLoading}
                 />
                 <ShareButton
                   report={report}
                   competitorLoading={competitorLoading}
-                  onShareCreated={(id) => setSharedId(id)}
                 />
               </div>
             </div>

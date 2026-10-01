@@ -6,6 +6,8 @@ import {
   updateSharedReportCompetitor,
 } from "@/lib/shareStore";
 
+import { MarketingReportSchema } from "@/lib/reportSchema";
+
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
@@ -21,23 +23,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const body = await req.json();
-    const report = body?.report;
-
-    if (!report || typeof report !== "object") {
-      return NextResponse.json(
-        { message: "분석 결과 데이터가 필요합니다." },
-        { status: 400 }
-      );
-    }
-
-    // 스키마 검증은 너무 엄격하지 않게. report 필수 필드만 확인.
-    if (!report.url || typeof report.overallScore !== "number") {
-      return NextResponse.json(
-        { message: "분석 결과 형식이 올바르지 않습니다." },
-        { status: 400 }
-      );
-    }
+    const raw = await req.text();
+    if (raw.length > 2_000_000) return NextResponse.json({message:"리포트 데이터가 너무 큽니다."},{status:413});
+    let body;
+    try { body = JSON.parse(raw); } catch { return NextResponse.json({message:"올바른 JSON 형식이 필요합니다."},{status:400}); }
+    const parsed = MarketingReportSchema.safeParse(body?.report);
+    if (!parsed.success) return NextResponse.json({message:"분석 결과 형식이 올바르지 않습니다."},{status:400});
+    const report = parsed.data;
 
     const id = await saveSharedReport(report);
     if (!id) {
@@ -91,6 +83,8 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    const checked = MarketingReportSchema.shape.competitorAnalysis.safeParse(competitorAnalysis);
+    if (!checked.success) return NextResponse.json({message:"경쟁사 결과 형식이 올바르지 않습니다."},{status:400});
     const existing = await getSharedReport(id);
     if (!existing) {
       return NextResponse.json(
@@ -99,7 +93,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const ok = await updateSharedReportCompetitor(id, competitorAnalysis);
+    const ok = await updateSharedReportCompetitor(id, checked.data);
     if (!ok) {
       return NextResponse.json(
         { message: "업데이트에 실패했습니다." },

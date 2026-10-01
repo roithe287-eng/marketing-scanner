@@ -21,6 +21,7 @@ import AdWasteCalculator from "@/components/AdWasteCalculator";
 import KeywordRankCard from "@/components/KeywordRankCard";
 import IndustryBenchmarkCard from "@/components/IndustryBenchmarkCard";
 import Disclaimer from "@/components/Disclaimer";
+import DownloadReportButton from "@/components/DownloadReportButton";
 import ContentProtection from "@/components/ContentProtection";
 
 type Props = {
@@ -126,6 +127,8 @@ export default function SharedReportView({ report, shareId }: Props) {
           </a>
         </div>
       </section>
+
+      <section className="jm-container pt-4"><DownloadReportButton targetId="report-area" report={report} direct /></section>
 
       {/* Report */}
       <section className="jm-container pb-24 pt-6">

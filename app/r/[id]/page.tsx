@@ -5,7 +5,7 @@ import { getSharedReport } from "@/lib/shareStore";
 import SharedReportView from "@/components/SharedReportView";
 
 // 30분마다 재생성 (Next.js ISR 비슷한 효과)
-export const revalidate = 1800;
+export const dynamic = "force-dynamic";
 
 type Props = {
   params: Promise<{ id: string }>;
