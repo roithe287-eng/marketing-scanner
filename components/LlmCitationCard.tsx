@@ -9,8 +9,9 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
   if (!citation) return null;
   const modern = citation.measurementVersion === 2;
   return <section className="jm-card p-5 md:p-8" aria-label="GEO 질문·출처·실행 과제">
-    <p className="text-xs font-bold text-jm-red">GEO INSIGHTS</p>
-    <h3 className="text-2xl font-black mt-2">고객 질문에서 개선 과제까지</h3>
+    <p className="text-xs font-bold text-jm-red">GEO · 브랜드 언급과 출처 인용</p>
+    <h3 className="text-2xl font-black mt-2">AI 답변에서 확인한 GEO 결과</h3>
+    <p className="mt-3 text-sm text-jm-charcoal leading-7">{modern?'고객 질문에 대한 AI 답변에서 우리 브랜드가 언급되는지, 우리 사이트가 근거 출처로 인용되는지 확인합니다. 아래 OpenAI·Gemini 결과는 이 GEO 진단을 위한 관측입니다.':'아래 AI 결과는 고객 질문에 대한 브랜드 언급을 확인한 구버전 GEO 자료입니다. 자사 URL의 실제 출처 인용은 이 결과에서 측정하지 않았습니다.'}</p>
     <p className="mt-3 text-sm text-jm-gray leading-6">{modern ? citation.summary : '이 리포트는 구버전의 브랜드 언급 기반 측정입니다. 실제 URL 출처 인용률과 비교할 수 없습니다.'}</p>
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-5">
       {[
@@ -28,7 +29,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
     <div className="space-y-3">
       {citation.results.map((r,i) => <details key={`${r.engine}-${i}`} className="geo-detail rounded-xl border p-4">
         <summary className="cursor-pointer font-bold text-sm leading-6">
-          <span className="text-jm-red">{r.engine === 'chatgpt' ? 'OpenAI' : 'Gemini'} · {r.journey || r.questionType}</span>
+          <span className="text-jm-red">{r.engine === 'chatgpt' ? 'OpenAI' : 'Gemini'} · GEO {modern?'답변 관측':'구버전 측정'} · {r.journey || r.questionType}</span>
           <span className="block mt-1 break-words">{r.question}</span>
           <span className="block font-normal text-jm-gray">{!modern ? (r.cited ? '브랜드 언급 있음' : '브랜드 언급 없음') : r.status === 'ok' ? `브랜드 언급 ${r.brandMentioned ? '있음' : '없음'} · 자사 출처 ${r.cited ? '확인' : '없음'}` : r.status === 'unverified' ? '답변 수신 · 검색 또는 출처 확인 불가' : r.errorMessage || '측정 실패'} · 답변·출처 펼치기</span>
         </summary>

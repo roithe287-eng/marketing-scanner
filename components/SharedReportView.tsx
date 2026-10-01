@@ -18,6 +18,7 @@ import TechnicalSeoCard from "@/components/TechnicalSeoCard";
 import KeywordFrequencyCard from "@/components/KeywordFrequencyCard";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import LlmCitationCard from "@/components/LlmCitationCard";
+import GeoIntroduction from "@/components/GeoIntroduction";
 import AdWasteCalculator from "@/components/AdWasteCalculator";
 import KeywordRankCard from "@/components/KeywordRankCard";
 import IndustryBenchmarkCard from "@/components/IndustryBenchmarkCard";
@@ -260,6 +261,8 @@ export default function SharedReportView({ report, shareId }: Props) {
 
           {/* v39: 영역별 점수 분석 (풀폭 독립 섹션, 최상단) */}
           <ScoreRadar diagnosis={report.diagnosis} />
+
+          {(report.discoverability || report.llmCitationTest) && <GeoIntroduction />}
 
           {/* v44: 콘텐츠 발견성 & AI 답변 대응력 (ScoreRadar 바로 아래) */}
           {report.discoverability && (

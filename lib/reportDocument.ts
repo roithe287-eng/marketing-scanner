@@ -1,5 +1,6 @@
 import type { MarketingReport } from './reportSchema';
 import { safeHttpUrl } from './citationMeasurement';
+import {GEO_TITLE,GEO_DESCRIPTION,GEO_METRICS} from './geoPresentation';
 export type ReportBlock = {text:string;kind:'title'|'heading'|'subheading'|'body';href?:string};
 const labels:Record<string,string> = {
   engine:'AI 엔진',overallScore:'종합 점수',grade:'등급',summary:'요약',score:'점수',status:'상태',message:'안내',currentValue:'현재 상태',diagnosis:'진단',guide:'개선 가이드',evidence:'확인 근거',priorityActions:'우선 실행 과제',
@@ -71,6 +72,10 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   for (const [title,data] of sections) {
     if (data == null || (Array.isArray(data) && data.length===0)) continue;
     blocks.push({kind:'heading',text:title});
+    if(data===report.llmCitationTest || (!report.llmCitationTest && data===report.discoverability)) {
+      blocks.push({kind:'subheading',text:GEO_TITLE},{kind:'body',text:GEO_DESCRIPTION});
+      for(const metric of GEO_METRICS) blocks.push({kind:'body',text:`${metric.title}: ${metric.description}`});
+    }
     if (data === report.llmCitationTest) blocks.push({kind:'body',text:report.llmCitationTest?.measurementVersion === 2
       ? '정상 응답 기준 브랜드 언급과 검색 출처 기준 자사 인용을 분리했습니다. 실패·미설정·검색 또는 출처 미확인은 인용률 분모에서 제외합니다. API 관측은 일반 AI 화면이나 시장 전체 노출률과 다릅니다.'
       : '구버전의 브랜드 언급 기반 측정입니다. 실제 URL 인용률로 해석하지 마세요.'});
