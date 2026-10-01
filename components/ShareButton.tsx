@@ -25,8 +25,9 @@ export default function ShareButton({report,competitorLoading=false,onShareCreat
         savedReport.current=snapshot;
         link=`${window.location.origin}/r/${data.id}`;setUrl(link);onShareCreated?.(data.id);
       }
-      try {await navigator.clipboard.writeText(link);setCopied(true);} catch { /* The selectable link below remains available. */ }
-    } catch {setError('공유 링크 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');}
+      if(currentReport.current!==snapshot) return;
+      try {await navigator.clipboard.writeText(link);if(currentReport.current===snapshot) setCopied(true);} catch { /* The selectable link below remains available. */ }
+    } catch {if(currentReport.current===snapshot) setError('공유 링크 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');}
     finally {busy.current=false;setLoading(false);}
   }
   return <div className="flex flex-col gap-2 max-w-md" data-hide-on-export>
