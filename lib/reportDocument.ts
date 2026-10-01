@@ -14,7 +14,7 @@ const labels:Record<string,string> = {
   category:'분류',categoryLabel:'업종',sampleSize:'표본 수',hasSufficientSample:'표본 충분 여부',metrics:'영역별 비교',ours:'우리 점수',average:'평균',topTen:'상위 10%',gapVsAverage:'평균과 차이',gapVsTopTen:'상위와 차이',strongestArea:'강점',weakestArea:'보완점',naverRef:'참고',group:'점검 그룹',isLocalBusiness:'지역 사업 여부',placeScore:'플레이스 점수',advisorScore:'서치어드바이저 점수',counts:'항목 수',pass:'통과',warning:'주의',fail:'미충족',
   totalTokens:'전체 토큰 수',uniqueSingles:'단일 키워드 수',uniquePhrases:'구문 수',singles:'단일 키워드',phrases:'키워드 구문',count:'횟수',density:'빈도(%)',inTitle:'제목 포함',inMetaDescription:'설명 포함',searchKeyword:'검색 키워드',keywordSource:'키워드 생성 방식',competitors:'경쟁사',rank:'순위',link:'페이지 링크',description:'설명',domain:'도메인',metaTitle:'페이지 제목',metaDescription:'메타 설명',h1:'H1',ctaTexts:'CTA 문구',fetchError:'수집 오류',keyMessage:'핵심 메시지',differentiation:'차별점',overallComparison:'전체 비교',ourPositioning:'우리 포지셔닝',buttonText:'버튼 문구',url:'URL',
 };
-const values:Record<string,string> = {true:'예',false:'아니오',ok:'정상',error:'실패',timeout:'시간 초과',unavailable:'미설정',unverified:'검색·출처 확인 불가',own:'자사',external:'외부',unresolved:'대상 도메인 미확인',needs_review:'검토 필요',review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요',pass:'통과',warning:'주의',fail:'미충족',high:'높음',medium:'보통',low:'낮음',brand:'브랜드 확인',industry:'업종 비교',service:'서비스',local:'지역·특성'};
+const values:Record<string,string> = {chatgpt:'OpenAI',gemini:'Gemini',true:'예',false:'아니오',ok:'정상',error:'실패',timeout:'시간 초과',unavailable:'미설정',unverified:'검색·출처 확인 불가',own:'자사',external:'외부',unresolved:'대상 도메인 미확인',needs_review:'검토 필요',review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요',pass:'통과',warning:'주의',fail:'미충족',high:'높음',medium:'보통',low:'낮음',brand:'브랜드 확인',industry:'업종 비교',service:'서비스',local:'지역·특성'};
 export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   const blocks:ReportBlock[] = [
     {kind:'title',text:`${report.meta?.siteName || report.meta?.domain || '웹사이트'} 마케팅 진단 리포트`},
@@ -46,7 +46,10 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     const raw=String(value);
     const href=safeHttpUrl(raw)||undefined;
     const text=href && raw.length>180 ? `${new URL(raw).hostname}${new URL(raw).pathname.slice(0,90)} (클릭하여 출처 열기)` : values[raw] || raw;
-    if (text.trim()) blocks.push({kind:'body',text:key ? `${labels[key] || key}: ${text}` : text,href});
+    if (text.trim()) {
+      const paragraphs=href ? [text] : text.split(/\n+/).filter(Boolean);
+      paragraphs.forEach((paragraph,i) => blocks.push({kind:'body',text:key && i===0 ? `${labels[key] || key}: ${paragraph}` : paragraph,href}));
+    }
   }
   const sections:[string,unknown][] = [
     ['영역별 점수',report.diagnosis],['GEO 질문·답변·출처·실행 과제',report.llmCitationTest],
@@ -60,7 +63,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     ['경쟁사 분석',report.competitorAnalysis],['다음 단계',report.finalCta],
   ];
   for (const [title,data] of sections) {
-    if (data == null) continue;
+    if (data == null || (Array.isArray(data) && data.length===0)) continue;
     blocks.push({kind:'heading',text:title});
     if (data === report.llmCitationTest) blocks.push({kind:'body',text:report.llmCitationTest?.measurementVersion === 2
       ? '정상 응답 기준 브랜드 언급과 검색 출처 기준 자사 인용을 분리했습니다. 실패·미설정·검색 또는 출처 미확인은 인용률 분모에서 제외합니다. API 관측은 일반 AI 화면이나 시장 전체 노출률과 다릅니다.'

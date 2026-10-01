@@ -1,3 +1,4 @@
+import { blocksAllCrawling } from '../lib/robotsRules';
 import { fixture } from './fixtures/report';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
@@ -74,4 +75,11 @@ test('provider request contracts and partial errors produce honest metrics',asyn
     globalThis.fetch=oldFetch;
     for(const [key,value] of [['OPENAI_API_KEY',saved.openai],['GEMINI_API_KEY',saved.gemini],['ENABLE_LLM_CITATION',saved.enabled]])if(value===undefined)delete process.env[key!];else process.env[key!]=value;
   }
+});
+
+test('robots partial paths and other bot groups never imply site-wide wildcard block',()=>{
+  assert.equal(blocksAllCrawling('User-agent: *\nDisallow: /admin'),false);
+  assert.equal(blocksAllCrawling('User-agent: *\nAllow: /\nUser-agent: BadBot\nDisallow: /'),false);
+  assert.equal(blocksAllCrawling('User-agent: *\nDisallow: / # private'),true);
+  assert.equal(blocksAllCrawling('User-agent: *\nDisallow: /\nAllow: /'),false);
 });

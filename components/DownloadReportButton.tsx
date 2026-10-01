@@ -12,10 +12,11 @@ export default function DownloadReportButton({report,direct=false,pending=false}
   async function runDownload() {
     if(busy.current || pending)return;
     busy.current=true;setDownloading(true);setError('');setProgress('PDF 준비 중...');
+    const started=Date.now();
     try {
       const {exportReportPdf}=await import('@/lib/exportReportPdf');
       const result=await exportReportPdf(report,setProgress);
-      setProgress(`전체 상세 내용 ${result.pages}페이지 PDF를 다운로드했습니다.`);
+      setProgress(`전체 상세 내용 ${result.pages}페이지 PDF를 다운로드했습니다. (${((Date.now()-started)/1000).toFixed(1)}초)`);
     } catch {setError('PDF 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');setProgress('');}
     finally {busy.current=false;setDownloading(false);}
   }

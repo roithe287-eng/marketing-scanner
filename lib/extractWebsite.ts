@@ -1,3 +1,4 @@
+import { blocksAllCrawling } from "./robotsRules";
 import { getScannerContactUrl } from "./siteConfig";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
@@ -124,8 +125,7 @@ async function isBlockedByRobots(url: string): Promise<boolean> {
     if (!res.ok) return false; // robots.txt 없음/오류 → 차단 규칙 없음으로 간주
     const text = (await res.text()).toLowerCase();
     // User-agent: * 아래의 Disallow: / (루트 전체 차단) 탐지
-    return /user-agent:\s*\*[\s\S]*?disallow:\s*\/\s*$/m.test(text) ||
-           /user-agent:\s*\*[\s\S]*?disallow:\s*\/(\r?\n|$)/.test(text);
+    return blocksAllCrawling(text);
   } catch {
     return false; // 확인 실패 시 추출 허용 (서비스 중단 방지)
   }
