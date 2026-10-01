@@ -26,8 +26,14 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   function walk(value:unknown,key='',depth=0) {
     if (value === undefined) return;
     if (value === null) {blocks.push({kind:'body',text:`${labels[key] || key}: 측정 불가 / 데이터 없음`});return;}
-    if (Array.isArray(value)) {if (key && value.length) blocks.push({kind:'subheading',text:labels[key] || key}); value.forEach((v,i) => {
-      if (typeof v === 'object' && v !== null) { if (key !== 'results' && key !== 'actionPlan') blocks.push({kind:'subheading',text:`${labels[key] || key} ${i+1}`}); walk(v,'',depth+1); }
+    if (Array.isArray(value)) {
+      if (key && value.length) blocks.push({kind:'subheading',text:labels[key] || key});
+      if (key === 'singles' || key === 'phrases') {
+        value.forEach(v => blocks.push({kind:'body',text:`${v.keyword} · ${v.count}회 · 빈도 ${v.density}% · 제목 ${v.inTitle?'포함':'미포함'} · 설명 ${v.inMetaDescription?'포함':'미포함'}`}));
+        return;
+      }
+      value.forEach((v,i) => {
+      if (typeof v === 'object' && v !== null) { if (key !== 'results' && key !== 'actionPlan' && !('title' in v) && !('label' in v) && !('question' in v)) blocks.push({kind:'subheading',text:`${labels[key] || key} ${i+1}`}); walk(v,'',depth+1); }
       else walk(v,key,depth+1);
     });return;}
     if (typeof value === 'object') {
