@@ -43,6 +43,11 @@ export const DiscoverabilitySchema = z.object({
 
 // v45-W1: AI 인용 시뮬레이션
 export const LlmCitationEngineSchema = z.enum(["chatgpt", "gemini"]);
+export const CitationSourceSchema = z.object({
+  url: z.string().url().refine(value => /^https?:\/\//i.test(value)),
+  title: z.string(),
+  ownership: z.enum(["own", "external", "unresolved"]),
+});
 export const LlmCitationQuestionResultSchema = z.object({
   engine: LlmCitationEngineSchema,
   question: z.string(),
@@ -51,8 +56,40 @@ export const LlmCitationQuestionResultSchema = z.object({
   citationRank: z.number().nullable().optional(),
   responseSnippet: z.string().optional(),
   reasoning: z.string().optional(),
+  status: z.enum(["ok", "error", "timeout", "unavailable", "unverified"]).optional(),
+  brandMentioned: z.boolean().optional(),
+  branded: z.boolean().optional(),
+  journey: z.string().optional(),
+  model: z.string().optional(),
+  measuredAt: z.string().optional(),
+  durationMs: z.number().optional(),
+  searchUsed: z.boolean().optional(),
+  citationVerified: z.boolean().optional(),
+  sources: z.array(CitationSourceSchema).optional(),
+  responseText: z.string().optional(),
+  errorMessage: z.string().optional(),
 });
 export const LlmCitationTestSchema = z.object({
+  measurementVersion: z.literal(2).optional(),
+  measuredAt: z.string().optional(),
+  questionSetId: z.string().optional(),
+  cacheHit: z.boolean().optional(),
+  validTests: z.number().optional(),
+  citationValidTests: z.number().optional(),
+  failedTests: z.number().optional(),
+  mentionRate: z.number().nullable().optional(),
+  ownedCitationRate: z.number().nullable().optional(),
+  brandedCitationRate: z.number().nullable().optional(),
+  unbrandedCitationRate: z.number().nullable().optional(),
+  actionPlan: z.array(z.object({
+    question: z.string(),
+    journey: z.string(),
+    targetUrl: z.string().optional(),
+    action: z.enum(["review_cited", "improve_candidate", "research_page", "retry"]),
+    evidence: z.string(),
+    nextStep: z.string(),
+    accuracy: z.literal("needs_review"),
+  })).optional(),
   overallScore: z.number().min(0).max(100),
   grade: z.enum(["A", "B", "C", "D", "F"]).optional(),
   citationRate: z.number().min(0).max(100),

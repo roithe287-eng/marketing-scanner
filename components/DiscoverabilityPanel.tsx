@@ -178,8 +178,8 @@ export default function DiscoverabilityPanel({ discoverability }: Props) {
           </h3>
         </div>
         <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
-          네이버·구글 검색 + ChatGPT·Claude·Gemini·Perplexity 등 생성형 AI가 이
-          사이트를 얼마나 잘 발견·인용하는지 진단합니다.
+          검색과 AI 답변에 활용되기 위한 사이트 구조·콘텐츠 준비도를 진단합니다.
+          실제 AI 답변과 출처 관측은 아래 GEO 진단에서 확인할 수 있습니다.
         </p>
       </div>
 

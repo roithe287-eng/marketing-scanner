@@ -1,303 +1,53 @@
 "use client";
+import { memo } from 'react';
+import type { LlmCitationTest } from '@/lib/reportSchema';
+import { safeHttpUrl } from '@/lib/citationMeasurement';
 
-/**
- * v45-W1: AI 인용 시뮬레이션 결과 카드
- * - ChatGPT + Gemini 2엔진 × 4질문 = 8회 테스트 결과 표시
- * - 매트릭스 뷰 + 엔진별 점수 + 개선 액션
- * - 데이터 없으면 자동 숨김
- */
-
-import type { LlmCitationTest } from "../lib/reportSchema";
-
-type Props = {
-  citation?: LlmCitationTest | null;
-};
-
-function gradeColor(grade?: string) {
-  switch (grade) {
-    case "A":
-      return "text-emerald-600 bg-emerald-50 border-emerald-200";
-    case "B":
-      return "text-sky-600 bg-sky-50 border-sky-200";
-    case "C":
-      return "text-amber-600 bg-amber-50 border-amber-200";
-    case "D":
-      return "text-orange-600 bg-orange-50 border-orange-200";
-    case "F":
-    default:
-      return "text-rose-600 bg-rose-50 border-rose-200";
-  }
-}
-
-function engineLabel(engine: "chatgpt" | "gemini") {
-  return engine === "chatgpt" ? "ChatGPT" : "Gemini";
-}
-
-function engineIcon(engine: "chatgpt" | "gemini") {
-  return engine === "chatgpt" ? "🤖" : "✨";
-}
-
-function questionTypeLabel(t: "brand" | "industry" | "service" | "local") {
-  switch (t) {
-    case "brand":
-      return "브랜드 인지";
-    case "industry":
-      return "업종 추천";
-    case "service":
-      return "서비스 문의";
-    case "local":
-      return "지역/특성";
-  }
-}
-
-function CitationCell({
-  cited,
-  rank,
-}: {
-  cited: boolean;
-  rank: number | null | undefined;
-}) {
-  if (!cited) {
-    return (
-      <div className="flex items-center justify-center py-2 px-2 md:px-3 rounded-lg bg-rose-50 border border-rose-100">
-        <span className="text-[13px] md:text-[14px] font-semibold text-rose-600">
-          ❌ 없음
-        </span>
-      </div>
-    );
-  }
-  return (
-    <div className="flex items-center justify-center py-2 px-2 md:px-3 rounded-lg bg-emerald-50 border border-emerald-100">
-      <span className="text-[13px] md:text-[14px] font-semibold text-emerald-700 whitespace-nowrap">
-        ✅ {rank ? `${rank}번째` : "인용됨"}
-      </span>
-    </div>
-  );
-}
-
-export default function LlmCitationCard({ citation }: Props) {
+const percent = (value:number|null|undefined) => value == null ? '측정 불가' : `${value}%`;
+const actionLabels = {review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요'};
+function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
   if (!citation) return null;
-
-  const {
-    overallScore,
-    grade,
-    citationRate,
-    totalTests,
-    totalCited,
-    summary,
-    results,
-    engineScores,
-    priorityActions,
-  } = citation;
-
-  // 질문 유니크 리스트 (순서 유지)
-  const questionsMap = new Map<
-    string,
-    { question: string; type: "brand" | "industry" | "service" | "local" }
-  >();
-  for (const r of results) {
-    if (!questionsMap.has(r.question)) {
-      questionsMap.set(r.question, { question: r.question, type: r.questionType });
-    }
-  }
-  const questions = Array.from(questionsMap.values());
-
-  // 질문 × 엔진 조회 함수
-  const findResult = (question: string, engine: "chatgpt" | "gemini") =>
-    results.find((r) => r.question === question && r.engine === engine);
-
-  const gColor = gradeColor(grade);
-
-  return (
-    <section className="jm-card p-5 md:p-7 lg:p-8">
-      {/* Header */}
-      <div className="mb-5 md:mb-6">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-[20px] md:text-[22px]">🤖</span>
-          <h3 className="text-[20px] md:text-[24px] lg:text-[26px] font-extrabold text-neutral-900 leading-tight">
-            AI 답변 인용 시뮬레이션
-          </h3>
+  const modern = citation.measurementVersion === 2;
+  return <section className="jm-card p-5 md:p-8" aria-label="GEO 질문·출처·실행 과제">
+    <p className="text-xs font-bold text-jm-red">GEO INSIGHTS</p>
+    <h3 className="text-2xl font-black mt-2">고객 질문에서 개선 과제까지</h3>
+    <p className="mt-3 text-sm text-jm-gray leading-6">{modern ? citation.summary : '이 리포트는 구버전의 브랜드 언급 기반 측정입니다. 실제 URL 출처 인용률과 비교할 수 없습니다.'}</p>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-5">
+      {[
+        ['브랜드 언급률',modern ? percent(citation.mentionRate) : `${citation.citationRate}% (구버전)`],
+        ['자사 출처 인용률',modern ? percent(citation.ownedCitationRate) : '미측정'],
+        ['측정 실패·미설정',modern ? `${citation.failedTests || 0}건 / ${citation.totalTests}건` : '구분되지 않음'],
+      ].map(([label,value]) => <div key={label} className="rounded-2xl bg-neutral-50 border p-4"><p className="text-sm text-jm-gray">{label}</p><p className="text-2xl font-black mt-2">{value}</p></div>)}
+    </div>
+    {modern && <div className="text-xs text-jm-gray leading-6 mb-5">
+      <p>브랜드 포함 질문 인용률 {percent(citation.brandedCitationRate)} · 미포함 질문 {percent(citation.unbrandedCitationRate)}</p>
+      <p>정상 답변 {citation.validTests}건 · 검색 출처 판정 {citation.citationValidTests}건. 실패·검색 미확인 응답은 인용률 분모에서 제외합니다.</p>
+      <p>측정: {citation.measuredAt?.replace('T',' ').replace('Z',' UTC')} · 질문 세트 {citation.questionSetId}{citation.cacheHit ? ' · 저장된 관측 결과' : ''}</p>
+      <p>API에서 관측한 결과이며 일반 ChatGPT·Gemini 화면이나 시장 전체 노출률을 의미하지 않습니다.</p>
+    </div>}
+    <div className="space-y-3">
+      {citation.results.map((r,i) => <details key={`${r.engine}-${i}`} className="geo-detail rounded-xl border p-4">
+        <summary className="cursor-pointer font-bold text-sm leading-6">
+          <span className="text-jm-red">{r.engine === 'chatgpt' ? 'OpenAI' : 'Gemini'} · {r.journey || r.questionType}</span>
+          <span className="block mt-1 break-words">{r.question}</span>
+          <span className="block font-normal text-jm-gray">{!modern ? (r.cited ? '브랜드 언급 있음' : '브랜드 언급 없음') : r.status === 'ok' ? `브랜드 언급 ${r.brandMentioned ? '있음' : '없음'} · 자사 출처 ${r.cited ? '확인' : '없음'}` : r.status === 'unverified' ? '답변 수신 · 검색 또는 출처 확인 불가' : r.errorMessage || '측정 실패'} · 답변·출처 펼치기</span>
+        </summary>
+        <div className="pt-4 space-y-3 text-sm leading-7">
+          <p className="text-xs text-jm-gray">{r.model} {r.measuredAt && `· ${r.measuredAt}`} {r.durationMs != null && `· ${(r.durationMs/1000).toFixed(1)}초`}</p>
+          <p className="whitespace-pre-wrap break-words">{r.responseText || r.responseSnippet || '수신한 답변이 없습니다.'}</p>
+          {(r.sources || []).length > 0 ? <ul className="space-y-2">{r.sources!.map((s,j) => <li key={`${s.url}-${j}`} className="rounded-lg bg-neutral-50 p-3 break-words">
+            <span className="text-xs font-bold">{s.ownership === 'own' ? '자사 출처' : s.ownership === 'unresolved' ? '대상 도메인 확인 필요' : '외부 출처'} · </span>
+            {safeHttpUrl(s.url) && <a className="underline text-blue-700" href={s.url} target="_blank" rel="noopener noreferrer">{s.title || s.url}</a>}
+          </li>)}</ul> : <p className="text-jm-gray">확인 가능한 출처 링크가 없습니다.</p>}
         </div>
-        <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
-          ChatGPT · Gemini 2개 AI 엔진에 실제 질문을 던져 사이트가 답변에
-          인용되는지 실증 테스트합니다. 총 {totalTests}회 테스트.
-        </p>
-      </div>
-
-      {/* Summary strip: 종합점수 / 인용률 / 요약 */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
-        <div
-          className={`rounded-2xl border p-4 md:p-5 ${gColor} flex items-center justify-between`}
-        >
-          <div>
-            <div className="text-[12px] md:text-[13px] font-semibold uppercase tracking-wide opacity-80">
-              종합 점수
-            </div>
-            <div className="text-[13px] md:text-[14px] mt-0.5 opacity-80">
-              등급 {grade || "-"}
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-[34px] md:text-[40px] font-extrabold leading-none tabular-nums">
-              {overallScore}
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 md:p-5 flex items-center justify-between">
-          <div className="min-w-0">
-            <div className="text-[12px] md:text-[13px] font-semibold uppercase tracking-wide text-neutral-500">
-              인용률
-            </div>
-            <div className="text-[13px] md:text-[14px] mt-0.5 text-neutral-500">
-              {totalCited} / {totalTests} 성공
-            </div>
-          </div>
-          <div className="text-right shrink-0">
-            <div className="text-[28px] md:text-[34px] font-extrabold text-neutral-900 leading-none tabular-nums">
-              {citationRate}%
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-5">
-          <div className="text-[12px] md:text-[13px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">
-            AI 총평
-          </div>
-          <p className="text-[14px] md:text-[15px] text-neutral-900 font-semibold leading-snug break-words">
-            {summary}
-          </p>
-        </div>
-      </div>
-
-      {/* 엔진별 점수 */}
-      <div className="grid grid-cols-2 gap-3 md:gap-4 mb-5 md:mb-6">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[18px]">🤖</span>
-            <span className="text-[14px] md:text-[15px] font-bold text-neutral-900">
-              ChatGPT
-            </span>
-          </div>
-          <div className="flex items-end gap-1">
-            <span className="text-[24px] md:text-[28px] font-extrabold text-neutral-900 tabular-nums">
-              {engineScores.chatgpt}
-            </span>
-            <span className="text-[12px] md:text-[13px] text-neutral-500 pb-1">
-              /100
-            </span>
-          </div>
-          <div className="mt-2 w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-neutral-900 rounded-full transition-all"
-              style={{
-                width: `${Math.max(0, Math.min(100, engineScores.chatgpt))}%`,
-              }}
-            />
-          </div>
-        </div>
-        <div className="rounded-2xl border border-neutral-200 bg-white p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-[18px]">✨</span>
-            <span className="text-[14px] md:text-[15px] font-bold text-neutral-900">
-              Gemini
-            </span>
-            <span className="text-[10px] md:text-[11px] text-neutral-500 border border-neutral-200 rounded-full px-1.5 py-0.5">
-              Google Search
-            </span>
-          </div>
-          <div className="flex items-end gap-1">
-            <span className="text-[24px] md:text-[28px] font-extrabold text-neutral-900 tabular-nums">
-              {engineScores.gemini}
-            </span>
-            <span className="text-[12px] md:text-[13px] text-neutral-500 pb-1">
-              /100
-            </span>
-          </div>
-          <div className="mt-2 w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-500 rounded-full transition-all"
-              style={{
-                width: `${Math.max(0, Math.min(100, engineScores.gemini))}%`,
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* 매트릭스: 질문 × 엔진 */}
-      <div className="rounded-2xl border border-neutral-200 bg-white overflow-hidden mb-5 md:mb-6">
-        <div className="p-4 md:p-5 border-b border-neutral-100">
-          <h4 className="text-[15px] md:text-[17px] font-bold text-neutral-900">
-            질문별 인용 결과
-          </h4>
-        </div>
-        <div className="divide-y divide-neutral-100">
-          {questions.map((q, idx) => {
-            const chatgptResult = findResult(q.question, "chatgpt");
-            const geminiResult = findResult(q.question, "gemini");
-            return (
-              <div key={idx} className="p-3 md:p-4">
-                <div className="mb-2">
-                  <span className="inline-block text-[10px] md:text-[11px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">
-                    Q{idx + 1} · {questionTypeLabel(q.type)}
-                  </span>
-                  <p className="text-[14px] md:text-[15px] text-neutral-900 font-semibold break-words leading-snug">
-                    {q.question}
-                  </p>
-                </div>
-                <div className="grid grid-cols-2 gap-2 md:gap-3">
-                  <div>
-                    <div className="flex items-center gap-1 mb-1 text-[11px] md:text-[12px] font-semibold text-neutral-500">
-                      <span>🤖</span>
-                      <span>ChatGPT</span>
-                    </div>
-                    <CitationCell
-                      cited={!!chatgptResult?.cited}
-                      rank={chatgptResult?.citationRank}
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-1 mb-1 text-[11px] md:text-[12px] font-semibold text-neutral-500">
-                      <span>✨</span>
-                      <span>Gemini</span>
-                    </div>
-                    <CitationCell
-                      cited={!!geminiResult?.cited}
-                      rank={geminiResult?.citationRank}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* 우선 액션 */}
-      {priorityActions && priorityActions.length > 0 && (
-        <div className="rounded-2xl border border-neutral-900 bg-neutral-900 text-white p-5 md:p-6">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-[18px]">💡</span>
-            <h4 className="text-[16px] md:text-[18px] font-extrabold">
-              AI 인용률 개선 액션
-            </h4>
-          </div>
-          <ol className="space-y-2">
-            {priorityActions.slice(0, 5).map((action, idx) => (
-              <li
-                key={idx}
-                className="flex items-start gap-3 text-[14px] md:text-[15px] leading-relaxed"
-              >
-                <span className="shrink-0 w-6 h-6 rounded-full bg-white text-neutral-900 font-bold flex items-center justify-center text-[13px] tabular-nums">
-                  {idx + 1}
-                </span>
-                <span className="break-words">{action}</span>
-              </li>
-            ))}
-          </ol>
-        </div>
-      )}
-    </section>
-  );
+      </details>)}
+    </div>
+    {!!citation.actionPlan?.length && <div className="mt-7"><h4 className="text-xl font-black">질문별 실행 과제</h4><p className="text-xs text-jm-gray mt-2">입력한 페이지와 관측 출처에 근거한 검토 제안입니다. 사실 정확도와 사이트 전체 콘텐츠 유무는 담당자가 확인해야 합니다.</p>
+      <div className="space-y-3 mt-4">{citation.actionPlan.map((a,i) => <details className="geo-detail rounded-xl border p-4" key={i}>
+        <summary className="cursor-pointer font-bold text-sm leading-6">{i+1}. {a.question}<span className="block text-jm-red text-xs">{actionLabels[a.action]}</span></summary>
+        <div className="pt-3 text-sm leading-7 space-y-2"><p>{a.evidence}</p>{a.targetUrl && safeHttpUrl(a.targetUrl) && <a className="block break-all underline text-blue-700" href={a.targetUrl} target="_blank" rel="noopener noreferrer">검토 페이지: {a.targetUrl}</a>}<p className="font-semibold">{a.nextStep}</p><p className="text-xs text-jm-gray">정확도: 검토 필요</p></div>
+      </details>)}</div>
+    </div>}
+  </section>;
 }
+export default memo(LlmCitationCard);

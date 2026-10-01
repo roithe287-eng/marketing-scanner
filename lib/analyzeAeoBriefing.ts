@@ -1,3 +1,4 @@
+import { blocksAllCrawling } from "./robotsRules";
 import { ExtractedWebsiteData } from "./extractWebsite";
 
 /**
@@ -60,7 +61,7 @@ async function checkRobotsTxt(url: string): Promise<{
     clearTimeout(timer);
     if (!res.ok) return { reachable: false, blocksAll: false, hasSitemap: false };
     const text = (await res.text()).toLowerCase();
-    const blocksAll = /user-agent:\s*\*[\s\S]*?disallow:\s*\//.test(text);
+    const blocksAll = blocksAllCrawling(text);
     const hasSitemap = /sitemap:\s*https?:/.test(text);
     return { reachable: true, blocksAll, hasSitemap };
   } catch {

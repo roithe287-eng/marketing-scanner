@@ -36,6 +36,10 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const rawUrl = body?.url;
+    const geoQuestions = body?.geoQuestions;
+    if (geoQuestions !== undefined && (!Array.isArray(geoQuestions) || geoQuestions.length > 5 || geoQuestions.some((q: unknown) => typeof q !== 'string' || q.trim().length < 5 || q.length > 250))) {
+      return NextResponse.json({message:'GEO 질문은 5~250자로 최대 5개까지 입력해주세요.'},{status:400});
+    }
 
     if (!rawUrl || typeof rawUrl !== "string") {
       return NextResponse.json(
@@ -78,7 +82,7 @@ export async function POST(req: NextRequest) {
           console.warn("[discoverability] 실패:", e?.message || e);
           return null;
         }),
-        analyzeCitation(websiteData).catch((e) => {
+        analyzeCitation(websiteData, geoQuestions?.map((q: string) => q.trim())).catch((e) => {
           console.warn("[citation] 실패:", e?.message || e);
           return null;
         }),
