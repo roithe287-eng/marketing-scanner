@@ -82,7 +82,10 @@ async function measure(engine:'chatgpt'|'gemini', q:Question, brand:string, targ
       responseSnippet:result.text.slice(0,600),durationMs:Date.now()-started};
   } catch (error) {
     const timeout = error instanceof Error && /timeout|abort/i.test(error.name+' '+error.message);
-    return {...base,status:timeout?'timeout':'error',errorMessage:timeout?'응답 시간이 초과되었습니다.':`측정에 실패했습니다${error instanceof Error && /^HTTP \d+$/.test(error.message) ? ` (${error.message})` : ''}.`,durationMs:Date.now()-started};
+    const message = timeout ? '응답 시간이 초과되었습니다.' : error instanceof Error && error.message === 'HTTP 429'
+      ? 'API 할당량 또는 요청 제한으로 측정하지 못했습니다 (HTTP 429). 계정의 사용량·결제 설정을 확인하세요.'
+      : `측정에 실패했습니다${error instanceof Error && /^HTTP \d+$/.test(error.message) ? ` (${error.message})` : ''}.`;
+    return {...base,status:timeout?'timeout':'error',errorMessage:message,durationMs:Date.now()-started};
   }
 }
 export async function analyzeCitation(data: ExtractedWebsiteData, custom?: string[]): Promise<LlmCitationTest|null> {

@@ -64,7 +64,8 @@ export async function exportReportPdf(report:MarketingReport,onProgress:(text:st
       footer.textContent=`진짜마케팅 · 마케팅스캐너     ${i+1} / ${pages.length}`;
       Object.assign(footer.style,{position:'absolute',bottom:'24px',left:`${PADDING}px`,right:`${PADDING}px`,fontSize:'11px',color:'#6b7280',borderTop:'1px solid #e5e7eb',paddingTop:'8px'});current.appendChild(footer);
       onProgress(`PDF 생성 중 ${i+1} / ${pages.length}페이지`);await nextPaint();
-      const canvas=await html2canvas(current,{scale:1.6,backgroundColor:'#ffffff',logging:false,width:PAGE_WIDTH,height:PAGE_HEIGHT,windowWidth:PAGE_WIDTH,scrollX:0,scrollY:0,useCORS:true,allowTaint:false});
+      const canvas=await html2canvas(current,{scale:1.6,backgroundColor:'#ffffff',logging:false,width:PAGE_WIDTH,height:PAGE_HEIGHT,windowWidth:PAGE_WIDTH,scrollX:0,scrollY:0,useCORS:true,allowTaint:false,
+        ignoreElements:(el:Element)=>el.tagName==='SCRIPT' || (el.parentElement===document.body && el!==host) || (el.parentElement===host && el!==current)});
       if(i>0)pdf.addPage();
       pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,210,297,undefined,'FAST');
       const box=current.getBoundingClientRect();
