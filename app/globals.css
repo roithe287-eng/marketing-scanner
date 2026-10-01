@@ -1,6 +1,3 @@
-/* Font imports must precede CSS rules so browsers can load Pretendard. */
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -18,6 +15,7 @@
 
 html,
 body {
+  font-family: var(--font-pretendard), "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
   background: var(--jm-white);
   color: var(--jm-black);
   -webkit-font-smoothing: antialiased;

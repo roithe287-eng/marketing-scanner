@@ -9,6 +9,7 @@ export async function exportReportPdf(report:MarketingReport,onProgress:(text:st
   onProgress('전체 상세 내용을 페이지별로 정리 중...');
   const {default:JsPDF}=await import('jspdf');
   await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]);
+  const fontFamily=getComputedStyle(document.body).fontFamily || PDF_FONT;
   const canvas=document.createElement('canvas');
   const scale=2;
   canvas.width=PDF_PAGE.width*scale;canvas.height=PDF_PAGE.height*scale;
@@ -16,7 +17,7 @@ export async function exportReportPdf(report:MarketingReport,onProgress:(text:st
   if(!ctx) throw new Error('PDF 렌더링을 시작할 수 없습니다.');
   let currentFont='';
   const setFont=(style:PdfTextStyle)=>{
-    const font=`${style.weight} ${style.size}px ${PDF_FONT}`;
+    const font=`${style.weight} ${style.size}px ${fontFamily}`;
     if(currentFont!==font) {ctx.font=font;currentFont=font;}
   };
   const pages=layoutPdfPages(buildReportDocument(report),(text,style)=>{setFont(style);return ctx.measureText(text).width;});
