@@ -431,6 +431,11 @@ export const MarketingReportSchema = z.object({
   technicalSeo: TechnicalSeoSchema.nullable().optional(),
   keywordFrequency: KeywordFrequencySchema.nullable().optional(),
 
+  competitorStatus: z.object({
+    status: z.enum(['pending', 'complete', 'empty', 'unavailable', 'timeout', 'error']),
+    message: z.string(),
+  }).nullable().optional(),
+
   competitorAnalysis: z
     .object({
       searchKeyword: z.string(),

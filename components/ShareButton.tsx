@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MarketingReport } from '@/lib/reportSchema';
 export default function ShareButton({report,competitorLoading=false,onShareCreated}:{report:MarketingReport;competitorLoading?:boolean;onShareCreated?:(id:string)=>void}) {
   const [loading,setLoading] = useState(false);
@@ -7,19 +7,27 @@ export default function ShareButton({report,competitorLoading=false,onShareCreat
   const [copied,setCopied] = useState(false);
   const [error,setError] = useState('');
   const busy = useRef(false);
+  const currentReport=useRef(report);
+  const savedReport=useRef<MarketingReport|null>(null);
+  currentReport.current=report;
+  useEffect(()=>{savedReport.current=null;setUrl('');setCopied(false);setError('');},[report]);
   async function share() {
     if (busy.current || competitorLoading) return;
     busy.current=true;setLoading(true);setError('');setCopied(false);
+    const snapshot=report;
     try {
-      let link=url;
+      let link=savedReport.current===snapshot?url:'';
       if (!link) {
         const response=await fetch('/api/share',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({report}),signal:AbortSignal.timeout(15000)});
         const data=await response.json();
         if (!response.ok || !data.id) throw new Error(data.message || '공유 링크를 생성하지 못했습니다.');
+        if(currentReport.current!==snapshot) return;
+        savedReport.current=snapshot;
         link=`${window.location.origin}/r/${data.id}`;setUrl(link);onShareCreated?.(data.id);
       }
-      try {await navigator.clipboard.writeText(link);setCopied(true);} catch { /* The selectable link below remains available. */ }
-    } catch {setError('공유 링크 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');}
+      if(currentReport.current!==snapshot) return;
+      try {await navigator.clipboard.writeText(link);if(currentReport.current===snapshot) setCopied(true);} catch { /* The selectable link below remains available. */ }
+    } catch {if(currentReport.current===snapshot) setError('공유 링크 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');}
     finally {busy.current=false;setLoading(false);}
   }
   return <div className="flex flex-col gap-2 max-w-md" data-hide-on-export>

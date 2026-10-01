@@ -7,6 +7,7 @@ import DiagnosisCard from "@/components/DiagnosisCard";
 import PriorityMatrix from "@/components/PriorityMatrix";
 import FinalCTA from "@/components/FinalCTA";
 import CompetitorComparison from "@/components/CompetitorComparison";
+import CompetitorStatusNotice from "@/components/CompetitorStatusNotice";
 import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
@@ -309,7 +310,8 @@ export default function SharedReportView({ report, shareId }: Props) {
           )}
 
           {/* v43: 경쟁사 데이터 없을 때 안내 (최종 실패 상태) */}
-          {!report.competitorAnalysis?.competitors?.length && (
+          <CompetitorStatusNotice report={report} />
+          {!report.competitorStatus && !report.competitorAnalysis?.competitors?.length && (
             <div className="mt-8 md:mt-10 bg-[#f8fafc] border border-dashed border-[#cbd5e1] rounded-2xl p-6 md:p-8 text-center">
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-white border border-[#e2e8f0] mb-3">
                 <span className="text-xl">🎯</span>
