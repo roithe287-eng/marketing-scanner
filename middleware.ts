@@ -84,21 +84,9 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // TEMP QA: user-authorized access to this preview branch only; expires automatically.
-  // Remove before merge. Production never enters this branch.
-  const temporaryPreview = process.env.VERCEL_ENV === "preview" &&
-    process.env.VERCEL_GIT_COMMIT_REF === "feat/geo-report-quality-20261001" &&
-    Date.now() < Date.parse("2026-10-01T03:00:00Z");
-
-  if (temporaryPreview && pathname === "/quality") {
-    const response = NextResponse.next();
-    response.headers.set("X-Frame-Options", "SAMEORIGIN");
-    return response;
-  }
-
   // 1) IP 화이트리스트 검증
   const allowedIps = getAllowedIps();
-  const ipGuardEnabled = allowedIps.length > 0 && !temporaryPreview;
+  const ipGuardEnabled = allowedIps.length > 0;
 
   let ipPassed = true;
   if (ipGuardEnabled) {
