@@ -11,6 +11,7 @@ import FinalCTA from "@/components/FinalCTA";
 import DownloadReportButton from "@/components/DownloadReportButton";
 import ShareButton from "@/components/ShareButton";
 import CompetitorComparison from "@/components/CompetitorComparison";
+import CompetitorStatusNotice from "@/components/CompetitorStatusNotice";
 import DiagnosisChecklist from "@/components/DiagnosisChecklist";
 import QuickWinsFlow from "@/components/QuickWinsFlow";
 import CopyImprovement from "@/components/CopyImprovement";
@@ -25,7 +26,7 @@ import AdWasteCalculator from "@/components/AdWasteCalculator";
 import KeywordRankCard from "@/components/KeywordRankCard";
 import IndustryBenchmarkCard from "@/components/IndustryBenchmarkCard";
 import Disclaimer from "@/components/Disclaimer";
-import { MarketingReport } from "@/lib/reportSchema";
+import { MarketingReport, MarketingReportSchema } from "@/lib/reportSchema";
 
 export default function HomePage() {
   const [report, setReport] = useState<MarketingReport | null>(null);
@@ -33,10 +34,14 @@ export default function HomePage() {
   const [competitorLoading, setCompetitorLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const analysisRun = useRef(0);
+  const competitorRequest=useRef<{url:string;hints:unknown;run:number}|null>(null);
 
   // v14: 백그라운드 경쟁사 분석 호출
   async function fetchCompetitor(url: string, hints: any, run: number) {
+    if(analysisRun.current!==run) return;
+    competitorRequest.current={url,hints,run};
     setCompetitorLoading(true);
+    setReport(prev=>prev?{...prev,competitorStatus:{status:'pending',message:'경쟁사 비교를 분석하고 있습니다.'}}:prev);
     try {
       const res = await fetch("/api/competitor", {
         method: "POST",
@@ -46,21 +51,23 @@ export default function HomePage() {
       });
       const contentType = res.headers.get("content-type") || "";
       if (!contentType.includes("application/json")) {
-        // 504 등 - 경쟁사 분석은 조용히 실패
-        console.warn("[경쟁사] 비JSON 응답:", res.status);
-        return;
+        throw new Error('경쟁사 분석 서버가 응답하지 않습니다.');
       }
       const data = await res.json();
-      if (analysisRun.current === run && data?.competitorAnalysis) {
+      if(!res.ok) throw new Error('경쟁사 분석에 실패했습니다.');
+      const parsed=MarketingReportSchema.shape.competitorAnalysis.safeParse(data?.competitorAnalysis);
+      if(!parsed.success || !parsed.data) throw new Error('경쟁사 비교 결과를 수집하지 못했습니다.');
+      const competitorAnalysis=parsed.data;
+      if (analysisRun.current === run) {
         // 기존 report에 경쟁사 데이터 병합
         setReport((prev) =>
-          prev ? { ...prev, competitorAnalysis: data.competitorAnalysis } : prev
+          prev ? { ...prev, competitorAnalysis,competitorStatus:{status:competitorAnalysis.competitors.length?'complete':'empty',message:competitorAnalysis.competitors.length?'경쟁사 비교를 완료했습니다.':'현재 검색 결과에서 비교할 경쟁사를 찾지 못했습니다.'} } : prev
         );
 
 
       }
     } catch (e: any) {
-      console.warn("[경쟁사] 호출 실패 (조용히 무시):", e?.message);
+      if(analysisRun.current===run) setReport(prev=>prev?{...prev,competitorStatus:{status:e?.name==='TimeoutError'?'timeout':'error',message:e?.name==='TimeoutError'?'응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.':'경쟁사 비교 결과를 수집하지 못했습니다. 잠시 후 다시 시도해주세요.'}}:prev);
     } finally {
       if (analysisRun.current === run) setCompetitorLoading(false);
     }
@@ -72,6 +79,7 @@ export default function HomePage() {
     setReport(null);
     setError(null);
     setCompetitorLoading(false);
+    competitorRequest.current=null;
     try {
       const res = await fetch("/api/analyze", {
         method: "POST",
@@ -104,7 +112,7 @@ export default function HomePage() {
         setError(data.message || "분석에 실패했습니다.");
         return;
       }
-      setReport(data);
+      setReport({...data,competitorStatus:{status:data?._hasCompetitor?'pending':'unavailable',message:data?._hasCompetitor?'경쟁사 비교를 분석하고 있습니다.':'현재 경쟁사 비교 결과를 제공할 수 없습니다.'}});
       // 결과로 부드럽게 스크롤
       setTimeout(() => {
         document
@@ -452,6 +460,11 @@ export default function HomePage() {
               )}
 
             {/* Final CTA */}
+            <CompetitorStatusNotice report={report} onRetry={competitorRequest.current?()=>{
+              const request=competitorRequest.current;
+              if(request && !competitorLoading) void fetchCompetitor(request.url,request.hints,request.run);
+            }:undefined} />
+
             <FinalCTA report={report} />
 
             {/* v23: 면책 안내 (PDF에도 포함) */}

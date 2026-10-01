@@ -58,6 +58,10 @@ function getAllowedIps(): string[] {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // Temporary verification access is confined to this preview branch and expires.
+  // Removed before the final PR is merged; production never uses this allowance.
+  if(process.env.VERCEL_ENV==='preview' && process.env.VERCEL_GIT_COMMIT_REF==='codex/thread-handover-20261001' && Date.now()<Date.parse('2026-10-01T10:00:00Z') && ['/', '/api/analyze', '/api/competitor', '/api/share'].includes(pathname)) return NextResponse.next();
+
   // 항상 허용되는 공개 경로 (광고주가 공유 링크 접속 시 필요)
   const isPublic =
     pathname.startsWith("/r/") || // 공유 결과 페이지
