@@ -58,9 +58,6 @@ function getAllowedIps(): string[] {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // User-authorized live integration verification. Remove after verification.
-  if((process.env.VERCEL_ENV==='production' || process.env.VERCEL_GIT_COMMIT_REF==='codex/geo-clarity-competitor-20261001') && Date.now()<Date.parse('2026-10-01T08:15:00Z') && ['/', '/api/analyze', '/api/competitor', '/api/share'].includes(pathname)) return NextResponse.next();
-
   // 항상 허용되는 공개 경로 (광고주가 공유 링크 접속 시 필요)
   const isPublic =
     pathname.startsWith("/r/") || // 공유 결과 페이지
