@@ -112,7 +112,8 @@ export default function HomePage() {
         setError(data.message || "분석에 실패했습니다.");
         return;
       }
-      setReport({...data,competitorStatus:{status:data?._hasCompetitor?'pending':'unavailable',message:data?._hasCompetitor?'경쟁사 비교를 분석하고 있습니다.':'현재 경쟁사 비교 결과를 제공할 수 없습니다.'}});
+      const canAnalyzeCompetitors=Boolean(data?._hasCompetitor && data?._websiteHints);
+      setReport({...data,competitorStatus:{status:canAnalyzeCompetitors?'pending':'unavailable',message:canAnalyzeCompetitors?'경쟁사 비교를 분석하고 있습니다.':'현재 경쟁사 비교 결과를 제공할 수 없습니다.'}});
       // 결과로 부드럽게 스크롤
       setTimeout(() => {
         document
@@ -121,7 +122,7 @@ export default function HomePage() {
       }, 150);
 
       // v14: 메인 결과 받자마자 백그라운드로 경쟁사 분석 호출
-      if (data?._hasCompetitor && data?._websiteHints) {
+      if (canAnalyzeCompetitors) {
         // await 안함 (백그라운드 실행)
         fetchCompetitor(data.url || url, data._websiteHints, run);
       }
@@ -459,12 +460,12 @@ export default function HomePage() {
                 />
               )}
 
-            {/* Final CTA */}
             <CompetitorStatusNotice report={report} onRetry={competitorRequest.current?()=>{
               const request=competitorRequest.current;
               if(request && !competitorLoading) void fetchCompetitor(request.url,request.hints,request.run);
             }:undefined} />
 
+            {/* Final CTA */}
             <FinalCTA report={report} />
 
             {/* v23: 면책 안내 (PDF에도 포함) */}
