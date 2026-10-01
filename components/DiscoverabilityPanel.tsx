@@ -174,7 +174,7 @@ export default function DiscoverabilityPanel({ discoverability }: Props) {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[20px] md:text-[22px]">🔍</span>
           <h3 className="text-[20px] md:text-[24px] lg:text-[26px] font-extrabold text-neutral-900 leading-tight">
-            콘텐츠 발견성 & AI 답변 대응력
+            GEO 준비도 · 콘텐츠 발견성과 AI 답변 대응력
           </h3>
         </div>
         <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
