@@ -1,6 +1,7 @@
 import type { MarketingReport } from './reportSchema';
 import { safeHttpUrl } from './citationMeasurement';
 import {GEO_TITLE,GEO_DESCRIPTION,GEO_METRICS} from './geoPresentation';
+import {buildGeoFocus} from './geoFocus';
 export type ReportBlock = {text:string;kind:'title'|'heading'|'subheading'|'body';href?:string};
 const labels:Record<string,string> = {
   engine:'AI 엔진',overallScore:'종합 점수',grade:'등급',summary:'요약',score:'점수',status:'상태',message:'안내',currentValue:'현재 상태',diagnosis:'진단',guide:'개선 가이드',evidence:'확인 근거',priorityActions:'우선 실행 과제',
@@ -16,6 +17,8 @@ const labels:Record<string,string> = {
   totalTokens:'전체 토큰 수',uniqueSingles:'단일 키워드 수',uniquePhrases:'구문 수',singles:'단일 키워드',phrases:'키워드 구문',count:'횟수',density:'빈도(%)',inTitle:'제목 포함',inMetaDescription:'설명 포함',searchKeyword:'검색 키워드',keywordSource:'키워드 생성 방식',competitors:'경쟁사',rank:'순위',link:'페이지 링크',description:'설명',domain:'도메인',metaTitle:'페이지 제목',metaDescription:'메타 설명',h1:'H1',ctaTexts:'CTA 문구',fetchError:'수집 오류',keyMessage:'핵심 메시지',differentiation:'차별점',overallComparison:'전체 비교',ourPositioning:'우리 포지셔닝',buttonText:'버튼 문구',url:'URL',
 };
 const values:Record<string,string> = {chatgpt:'OpenAI',gemini:'Gemini',true:'예',false:'아니오',ok:'정상',pending:'분석 중',complete:'완료',empty:'비교 대상 없음',error:'실패',timeout:'시간 초과',unavailable:'미설정',unverified:'검색·출처 확인 불가',own:'자사',external:'외부',unresolved:'대상 도메인 미확인',needs_review:'검토 필요',review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요',pass:'통과',warning:'주의',fail:'미충족',high:'높음',medium:'보통',low:'낮음',brand:'브랜드 확인',industry:'업종 비교',service:'서비스',local:'지역·특성'};
+Object.assign(labels, {filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
+Object.assign(values, {keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
 export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   const blocks:ReportBlock[] = [
     {kind:'title',text:`${report.meta?.siteName || report.meta?.domain || '웹사이트'} 마케팅 진단 리포트`},
@@ -79,6 +82,21 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     if (data === report.llmCitationTest) blocks.push({kind:'body',text:report.llmCitationTest?.measurementVersion === 2
       ? '정상 응답 기준 브랜드 언급과 검색 출처 기준 자사 인용을 분리했습니다. 실패·미설정·검색 또는 출처 미확인은 인용률 분모에서 제외합니다. API 관측은 일반 AI 화면이나 시장 전체 노출률과 다릅니다.'
       : '구버전의 브랜드 언급 기반 측정입니다. 실제 URL 인용률로 해석하지 마세요.'});
+    if (data === report.llmCitationTest) {
+      const focus = buildGeoFocus(report);
+      if (focus) {
+        blocks.push({kind:'subheading',text:'먼저 실행할 GEO 과제'},{kind:'body',text:'현재 관측 근거로 고른 최대 3가지입니다. 완료 기준은 수정·확인 작업이며 인용률 상승을 보장하는 조건은 아닙니다.'});
+        for (const [i,task] of focus.tasks.entries()) {
+          blocks.push({kind:'subheading',text:`우선 과제 ${i+1}. ${task.title}`},
+            {kind:'body',text:`근거: ${task.evidence}`},{kind:'body',text:`실행: ${task.nextStep}`},
+            {kind:'body',text:`완료 기준: ${task.completion}`});
+          if (task.targetUrl) blocks.push({kind:'body',text:`검토 페이지: ${task.targetUrl}`,href:task.targetUrl});
+        }
+        blocks.push({kind:'subheading',text:'재사용할 고객 질문'});
+        focus.questions.forEach(question => blocks.push({kind:'body',text:question}));
+      }
+    }
+    if (data === report.competitorAnalysis) blocks.push({kind:'body',text:'검색에서 찾은 비교 후보입니다. 검색어 관련 표현은 서비스 일치의 단서이며 직접 경쟁 관계를 보장하지 않습니다. 비교 순서는 재정렬한 목록 순서이며 검색 응답 순서와 구분합니다.'});
     walk(data);
   }
   return blocks;

@@ -23,6 +23,7 @@ import KeywordFrequencyCard from "@/components/KeywordFrequencyCard";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import LlmCitationCard from "@/components/LlmCitationCard";
 import GeoIntroduction from "@/components/GeoIntroduction";
+import GeoFocusPanel from "@/components/GeoFocusPanel";
 import AdWasteCalculator from "@/components/AdWasteCalculator";
 import KeywordRankCard from "@/components/KeywordRankCard";
 import IndustryBenchmarkCard from "@/components/IndustryBenchmarkCard";
@@ -287,6 +288,7 @@ export default function HomePage() {
             <ScoreRadar diagnosis={report.diagnosis} />
 
             {(report.discoverability || report.llmCitationTest) && <GeoIntroduction />}
+            <GeoFocusPanel key={report.llmCitationTest?.questionSetId || report.url} report={report} />
 
             {/* v44: 콘텐츠 발견성 & AI 답변 대응력 (ScoreRadar 바로 아래) */}
             {report.discoverability && (
@@ -455,7 +457,7 @@ export default function HomePage() {
               </div>
             )}
             {report.competitorAnalysis &&
-              report.competitorAnalysis.competitors.length > 0 && (
+              (report.competitorAnalysis.competitors.length > 0 || report.competitorAnalysis.filtering) && (
                 <CompetitorComparison
                   competitorAnalysis={report.competitorAnalysis}
                   ourUrl={report.url}

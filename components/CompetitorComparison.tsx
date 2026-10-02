@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { MarketingReport } from "@/lib/reportSchema";
 import CompetitorDeepDiveModal from "@/components/CompetitorDeepDiveModal";
 
@@ -182,12 +182,13 @@ const EVAL_ROWS: EvalRow[] = [
 ];
 
 const STATUS_BADGE: Record<
-  "pass" | "warning" | "fail",
+  "pass" | "warning" | "fail" | "unknown",
   { bg: string; text: string; icon: string }
 > = {
   pass: { bg: "bg-emerald-50 border-emerald-200", text: "text-emerald-700", icon: "✓" },
   warning: { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", icon: "!" },
   fail: { bg: "bg-rose-50 border-rose-200", text: "text-rose-700", icon: "✕" },
+  unknown: { bg: "bg-neutral-50 border-neutral-200", text: "text-neutral-500", icon: "?" },
 };
 
 // =====================================================================
@@ -285,7 +286,7 @@ export default function CompetitorComparison({
     return {
       domain: c.domain,
       rank: c.rank,
-      rows: EVAL_ROWS.map((r) => r.evaluator(text, c)),
+      rows: EVAL_ROWS.map((r) => c.fetchError ? 'unknown' as const : r.evaluator(text, c)),
     };
   });
 
@@ -299,11 +300,11 @@ export default function CompetitorComparison({
               COMPETITIVE LANDSCAPE
             </p>
             <span className="inline-flex items-center rounded-full bg-white/10 px-2.5 py-0.5 text-[10px] font-bold tracking-wider">
-              TOP {competitors.length}
+              비교 후보 {competitors.length}
             </span>
           </div>
           <h3 className="mt-2 text-2xl md:text-3xl font-black leading-tight">
-            동종업종 검색 상단 경쟁사 비교
+            검색에서 찾은 경쟁사 후보 비교
           </h3>
           <div className="mt-3 flex flex-wrap items-baseline gap-2">
             <span className="text-xs text-gray-400">검색 키워드</span>
@@ -314,12 +315,24 @@ export default function CompetitorComparison({
               · 대형몰·오픈마켓·SNS·틱톡 자동 제외
             </span>
           </div>
+          <p className="mt-3 text-xs leading-6 text-gray-300">검색어와 관련된 비교 후보입니다. 실제 경쟁 관계는 서비스 범위와 고객층을 함께 확인하세요. 번호는 비교 목록 순서입니다.</p>
         </div>
         <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-jm-red/10 blur-3xl" />
         <div className="absolute -left-8 -bottom-8 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
       </div>
 
       <div className="p-6 md:p-8 space-y-6">
+        {competitorAnalysis.filtering && <div className="rounded-xl border bg-neutral-50 p-4 text-sm">
+          <p className="font-bold">검색 응답 {competitorAnalysis.filtering.reviewedCount}건 검토 · 제외 {competitorAnalysis.filtering.excluded.length}건 · 상세 수집 {competitorAnalysis.filtering.metadataCheckedCount}개 시도</p>
+          <p className="mt-2 text-xs text-jm-gray leading-6">검색어 관련 신호를 확인한 후보를 먼저 표시합니다. 수집하지 못한 사이트의 항목은 미확인으로 처리합니다.</p>
+          {!!competitorAnalysis.filtering.excluded.length && <details className="mt-3">
+            <summary className="cursor-pointer font-bold">제외한 페이지와 이유 보기</summary>
+            <ul className="mt-3 space-y-2">{competitorAnalysis.filtering.excluded.map((item, i) => <li key={`${item.link}-${i}`} className="rounded-lg bg-white p-3 break-words">
+              <p className="font-semibold">{item.domain} · {item.title}</p><p className="mt-1 text-xs text-jm-gray">{item.reason}</p>
+            </li>)}</ul>
+          </details>}
+        </div>}
+        {competitors.length === 0 && <p className="text-sm text-jm-gray">이번 검색 결과에서는 비교 후보를 찾지 못했습니다. 제외된 페이지가 있다면 위 목록에서 이유를 확인할 수 있습니다.</p>}
         {/* ===== ② 포지셔닝 맵 (2D 산점도) v32: 카드 컨테이너 + 격자 강화 ===== */}
         {competitors.length > 0 && (
           <div className="rounded-2xl border-2 border-gray-300 bg-gradient-to-br from-white to-gray-50 p-5 md:p-7 shadow-lg">
@@ -462,7 +475,7 @@ export default function CompetitorComparison({
                         </div>
                         {/* 호버 툴팁 */}
                         <div className="opacity-0 group-hover:opacity-100 absolute left-1/2 -translate-x-1/2 -bottom-8 bg-[#0f172a] text-white text-[10px] sm:text-xs px-2.5 py-1 rounded-md whitespace-nowrap transition-opacity pointer-events-none shadow-lg z-30">
-                          {c.rank}위 · {c.domain}
+                          후보 {c.rank} · {c.domain}
                         </div>
                       </div>
                     );
@@ -476,7 +489,7 @@ export default function CompetitorComparison({
             <div className="mt-5 p-3 md:p-4 rounded-xl bg-gray-50 border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs md:text-sm font-black text-[#111] uppercase tracking-wider">
-                  📍 경쟁사 순위
+                  📍 비교 후보 목록
                 </span>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -514,7 +527,7 @@ export default function CompetitorComparison({
               })}
               </div>
               <p className="mt-2.5 text-[11px] md:text-xs text-gray-500 font-medium leading-relaxed">
-                💡 각 점은 상위 경쟁사의 포지셔닝입니다. 점 호버 시 순위 + 도메인이 표시됩니다.
+                💡 각 점은 비교 후보의 메시지 포지셔닝입니다. 점에 마우스를 올리면 비교 번호와 도메인이 표시됩니다.
               </p>
             </div>
           </div>
@@ -572,7 +585,7 @@ export default function CompetitorComparison({
                 <p className="text-xs leading-6">
                   <span className="font-black text-jm-red">💡 인사이트</span>
                   {" — "}
-                  업종 상위 사이트는{" "}
+                  이번 비교 후보는{" "}
                   <span className="font-black">{toneSorted[0].cat.label}</span>{" "}
                   메시지를 가장 많이 사용합니다.
                   {toneSorted[1] && toneSorted[1].count > 0 && (
@@ -604,7 +617,7 @@ export default function CompetitorComparison({
                 </p>
               </div>
               <span className="text-[10px] text-jm-gray">
-                ✓ 통과 · ! 보완 · ✕ 미흡
+                ✓ 통과 · ! 보완 · ✕ 미흡 · ? 미확인
               </span>
             </div>
 
@@ -642,15 +655,15 @@ export default function CompetitorComparison({
                 <tbody>
                   {EVAL_ROWS.map((row, i) => {
                     // 평균: pass=2, warning=1, fail=0
-                    const scores: number[] = evalResults.map((r) => {
+                    const scores: number[] = evalResults.filter(r => r.rows[i] !== 'unknown').map((r) => {
                       const s = r.rows[i];
                       return s === "pass" ? 2 : s === "warning" ? 1 : 0;
                     });
                     const avg =
                       scores.reduce((a: number, b: number) => a + b, 0) /
                       (scores.length || 1);
-                    const avgStatus: "pass" | "warning" | "fail" =
-                      avg >= 1.5 ? "pass" : avg >= 0.8 ? "warning" : "fail";
+                    const avgStatus: "pass" | "warning" | "fail" | "unknown" =
+                      !scores.length ? 'unknown' : avg >= 1.5 ? "pass" : avg >= 0.8 ? "warning" : "fail";
                     const avgBadge = STATUS_BADGE[avgStatus];
                     return (
                       <tr key={row.label} className="border-b border-jm-border last:border-b-0">
@@ -731,6 +744,11 @@ export default function CompetitorComparison({
                 <h4 className="mt-3 font-black text-base leading-snug line-clamp-2">
                   {comp.metaTitle || comp.title}
                 </h4>
+                {comp.relevance && <div className="mt-3 rounded-lg border bg-neutral-50 p-3">
+                  <p className="text-xs font-bold">{comp.relevance === 'keyword_match' ? '검색어 관련 신호 확인' : '서비스 일치 검토 필요'}</p>
+                  <p className="mt-1 text-xs text-jm-gray leading-6">{comp.selectionEvidence}</p>
+                  {comp.searchRank && <p className="mt-2 text-xs text-jm-gray">네이버 웹문서 검색 응답에서 {comp.searchRank}번째 항목</p>}
+                </div>}
                 {comp.metaDescription && (
                   <p className="mt-2 text-xs text-jm-gray leading-6 line-clamp-3">
                     {comp.metaDescription}

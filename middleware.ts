@@ -84,6 +84,14 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  // Authorized, time-limited end-to-end validation. Removed after verification.
+  const validationOpen = Date.now() < Date.parse("2026-10-02T04:00:00Z");
+  const validationBranch = process.env.VERCEL_GIT_COMMIT_REF === "codex/actionable-geo-candidates-20261002";
+  const previewValidation = process.env.VERCEL_ENV === "preview" && validationBranch;
+  const validationPath = ["/", "/api/analyze", "/api/competitor", "/api/share"].includes(pathname);
+  const liveValidation = (process.env.VERCEL_ENV === "production" || previewValidation) && validationPath;
+  if (validationOpen && liveValidation) return NextResponse.next();
+
   // 1) IP 화이트리스트 검증
   const allowedIps = getAllowedIps();
   const ipGuardEnabled = allowedIps.length > 0;

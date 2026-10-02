@@ -1,8 +1,9 @@
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 import { getOpenAI } from "./openaiClient";
+import {selectSearchCandidates, finalizeSearchCandidates, type SearchCandidate, type ExcludedCandidate} from "./competitorSelection";
 
-export type Competitor = {
+export type Competitor = SearchCandidate & {
   rank: number;
   title: string;
   link: string;
@@ -21,6 +22,7 @@ export type CompetitorAnalysisResult = {
   searchKeyword: string;
   keywordSource: "ai" | "fallback";
   competitors: Competitor[];
+  filtering: {policyVersion: 1; reviewedCount: number; metadataCheckedCount: number; excluded: ExcludedCandidate[]};
   ourSite: {
     domain: string;
     title: string;
@@ -66,135 +68,6 @@ async function searchNaverWeb(query: string, display = 15) {
     link: string;
     description: string;
   }>;
-}
-
-function stripHtml(html: string): string {
-  return html
-    .replace(/<[^>]*>/g, "")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replace(/&nbsp;/g, " ")
-    .trim();
-}
-
-/**
- * v27: 대형 종합몰 · 오픈마켓 · 가격비교 사이트 제외 리스트
- * - 동종업종 경쟁사로 볼 수 없는 일반 소상공인 광고주 관점 차단
- * - 도메인 설사도 포함 (예: m.coupang.com, mall.coupang.com 등)
- */
-const LARGE_MARKETPLACE_DOMAINS = [
-  // 오픈마켓
-  "coupang.com",
-  "gmarket.co.kr",
-  "auction.co.kr",
-  "11st.co.kr",
-  "tmon.co.kr",
-  "wemakeprice.com",
-  "interpark.com",
-  // 종합쇼핑몰
-  "ssg.com",
-  "lotteon.com",
-  "emart.com",
-  "hmall.com",
-  "hyundaihmall.com",
-  "akmall.com",
-  "galleria.co.kr",
-  "shinsegae.com",
-  // 가격비교
-  "enuri.com",
-  "danawa.com",
-  "bestkeyword.co.kr",
-  // 대형 전문몰
-  "oliveyoung.co.kr",
-  "musinsa.com",
-  "ablyrocks.com",
-  "zigzag.kr",
-  "a-bly.com",
-  "brandi.co.kr",
-  "kakaomakers.com",
-  "kakaomakers.co.kr",
-  "market.kakao.com",
-  // 해외직구
-  "aliexpress.com",
-  "amazon.com",
-  "amazon.co.jp",
-  "taobao.com",
-  "tmall.com",
-  // v27.1: SNS · 소셜커머스 · 영상플랫폼
-  "tiktok.com",
-  "tiktokshop.com",
-  "instagram.com",
-  "facebook.com",
-  "m.facebook.com",
-  "youtube.com",
-  "youtu.be",
-  "twitter.com",
-  "x.com",
-  "threads.net",
-  "pinterest.com",
-];
-
-function isLargeMarketplace(domain: string): boolean {
-  const d = domain.toLowerCase();
-  return LARGE_MARKETPLACE_DOMAINS.some((blocked) => {
-    // 정확 일치 또는 서브도메인 (e.g. m.coupang.com)
-    return d === blocked || d.endsWith(`.${blocked}`);
-  });
-}
-
-function pickCompetitors(
-  items: Array<{ title: string; link: string; description: string }>,
-  ourDomain: string,
-  limit: number
-): Competitor[] {
-  const seen = new Set<string>();
-  const result: Competitor[] = [];
-
-  for (const item of items) {
-    let domain = "";
-    try {
-      domain = new URL(item.link).hostname.replace(/^www\./, "");
-    } catch {
-      continue;
-    }
-
-    if (domain === ourDomain || domain.endsWith(`.${ourDomain}`)) continue;
-    if (ourDomain.endsWith(`.${domain}`)) continue;
-    if (seen.has(domain)) continue;
-
-    // v27: 광포털 · 검색엔진 · 백과사전 제외
-    if (
-      domain.includes("naver.com") ||
-      domain.includes("search.daum.net") ||
-      domain.includes("google.com") ||
-      domain.includes("blog.naver") ||
-      domain.includes("cafe.naver") ||
-      domain.includes("namu.wiki") ||
-      domain === "wikipedia.org" ||
-      domain.endsWith(".wikipedia.org")
-    ) {
-      continue;
-    }
-
-    // v27: 대형 종합몰 · 오픈마켓 · 가격비교 사이트 제외
-    if (isLargeMarketplace(domain)) continue;
-
-    seen.add(domain);
-    result.push({
-      rank: result.length + 1,
-      title: stripHtml(item.title),
-      link: item.link,
-      description: stripHtml(item.description),
-      domain,
-    });
-
-    if (result.length >= limit) break;
-  }
-
-  return result;
 }
 
 /**
@@ -360,7 +233,7 @@ JSON 형식으로만 응답하라:
       response_format: { type: "json_object" },
       temperature: 0.2,
       max_tokens: 100,
-    });
+    }, {timeout: 8000, maxRetries: 0});
 
     const text = response.choices[0]?.message?.content;
     if (!text) return null;
@@ -463,48 +336,28 @@ export async function analyzeCompetitors(siteData: {
       ourDomain = new URL(siteData.url).hostname.replace(/^www\./, "");
     } catch {}
 
-    // 2. 네이버 검색 (5개로 확장)
-    let items = await searchNaverWeb(keyword, 15);
-    let competitors = pickCompetitors(items, ourDomain, 5);
-
-    // 3. 결과 부족시 폴백 키워드로 재시도
-    if (competitors.length === 0 && keywordSource === "ai") {
-      const fallbackKeyword = extractKeywordFallback({
-        title: siteData.title,
-        ogTitle: siteData.ogTitle,
-        keywords: siteData.keywords,
-        h1: siteData.h1,
-      });
+    // Inspect more search items without increasing the eight-page collection budget.
+    let items = await searchNaverWeb(keyword, 30);
+    let selection = selectSearchCandidates(items, ourDomain, keyword, 8);
+    if (selection.candidates.length === 0 && keywordSource === "ai") {
+      const fallbackKeyword = extractKeywordFallback(siteData);
       if (fallbackKeyword && fallbackKeyword !== keyword) {
-        console.log(
-          `[경쟁사] 0개, 폴백 재시도: "${fallbackKeyword}"`
-        );
-        try {
-          items = await searchNaverWeb(fallbackKeyword, 15);
-          competitors = pickCompetitors(items, ourDomain, 5);
-          if (competitors.length > 0) {
-            keyword = fallbackKeyword;
-            keywordSource = "fallback";
-          }
-        } catch {}
+        items = await searchNaverWeb(fallbackKeyword, 30);
+        keyword = fallbackKeyword;
+        keywordSource = "fallback";
+        selection = selectSearchCandidates(items, ourDomain, keyword, 8);
       }
     }
-
-    if (competitors.length === 0) {
-      console.warn("[경쟁사] 최종 결과 0개");
-      return null;
-    }
-
-    // 4. 각 경쟁사 메타 + 콘텐츠 병렬 수집 (개별 8초, 전체 15초 상한)
-    await Promise.race([
-      Promise.all(competitors.map((c) => fetchCompetitorMeta(c))),
-      new Promise((resolve) => setTimeout(resolve, 15000)),
-    ]);
+    const candidates: Competitor[] = selection.candidates;
+    // Each fetch has its own eight-second timeout. Await all before taking a snapshot.
+    await Promise.all(candidates.map(candidate => fetchCompetitorMeta(candidate)));
+    const competitors = finalizeSearchCandidates(candidates, keyword, selection.excluded, 5);
 
     return {
       searchKeyword: keyword,
       keywordSource,
       competitors,
+      filtering: {policyVersion: 1, reviewedCount: selection.reviewedCount, metadataCheckedCount: candidates.length, excluded: selection.excluded},
       ourSite: {
         domain: ourDomain,
         title: siteData.title,
