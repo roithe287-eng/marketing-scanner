@@ -88,3 +88,22 @@ test('fresh fixed-question runs bypass stored observations and preserve measurem
     assert.notEqual(changed?.results[0].requestFingerprint,first?.results[0].requestFingerprint);
   } finally {globalThis.fetch=oldFetch;for(const k of keys) if(saved[k]===undefined)delete process.env[k];else process.env[k]=saved[k];}
 });
+
+test('analysis rejects changed baseline URL, changed questions and expired IDs before provider calls',async()=>{
+  const {POST}=await import('../app/api/analyze/route');const {NextRequest}=await import('next/server');
+  const keys=['UPSTASH_REDIS_REST_URL','UPSTASH_REDIS_REST_TOKEN'];const saved=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+  const original=globalThis.fetch;let missing=false,providerCalls=0;
+  process.env.UPSTASH_REDIS_REST_URL='https://baseline.upstash.io';process.env.UPSTASH_REDIS_REST_TOKEN='test';
+  globalThis.fetch=async(input,init)=>{
+    if (!String(input).startsWith('https://baseline.upstash.io/')) {providerCalls++;throw new Error('Unexpected provider request');}
+    return Response.json(JSON.parse(String(init?.body)).map(()=>({result:missing?null:Buffer.from(JSON.stringify(report())).toString('base64')})));
+  };
+  const submit=(body:object)=>POST(new NextRequest('https://www.mktscanner.com/api/analyze',{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}}));
+  try {
+    assert.equal((await submit({url:fixture.url,baselineId:'invalid-id'})).status,400);
+    assert.equal((await submit({url:'https://other.example',baselineId:'abc123'})).status,400);
+    assert.equal((await submit({url:fixture.url,baselineId:'abc123',geoQuestions:['기준과 다른 질문입니다.']})).status,400);
+    missing=true;assert.equal((await submit({url:fixture.url,baselineId:'abc123'})).status,422);
+    assert.equal(providerCalls,0);
+  } finally {globalThis.fetch=original;for (const k of keys) if(saved[k]===undefined) delete process.env[k];else process.env[k]=saved[k];}
+});
