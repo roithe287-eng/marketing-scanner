@@ -440,6 +440,12 @@ export const MarketingReportSchema = z.object({
     .object({
       searchKeyword: z.string(),
       keywordSource: z.enum(["ai", "fallback"]).optional(),
+      filtering: z.object({
+        policyVersion: z.literal(1),
+        reviewedCount: z.number().int().nonnegative(),
+        metadataCheckedCount: z.number().int().nonnegative(),
+        excluded: z.array(z.object({domain: z.string(), link: z.string(), title: z.string(), reason: z.string()})),
+      }).optional(),
       competitors: z.array(
         z.object({
           rank: z.number(),
@@ -447,6 +453,9 @@ export const MarketingReportSchema = z.object({
           link: z.string(),
           description: z.string(),
           domain: z.string(),
+          searchRank: z.number().int().positive().optional(),
+          relevance: z.enum(['keyword_match', 'needs_review']).optional(),
+          selectionEvidence: z.string().optional(),
           metaTitle: z.string().optional(),
           metaDescription: z.string().optional(),
           h1: z.string().optional(),
