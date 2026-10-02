@@ -1,55 +1,62 @@
 "use client";
 
-import { useState } from "react";
+import {useEffect, useRef, useState} from 'react';
+import {GeoBaselineSchema, type GeoBaseline} from '@/lib/reportSchema';
+import {baselineQuestions, comparisonTime, parseReportReference} from '@/lib/geoComparison';
 
-type Props = {
-  onSubmit: (url: string, geoQuestions?: string[]) => void;
-  loading: boolean;
-};
-
-export default function UrlForm({ onSubmit, loading }: Props) {
-  const [url, setUrl] = useState("");
-  const [questions, setQuestions] = useState("");
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!url.trim()) {
-      alert("분석할 URL을 입력해주세요.");
-      return;
-    }
-    const rows = questions.split("\n").map(s => s.trim()).filter(Boolean);
-    if (rows.length > 5 || rows.some(s => s.length < 5 || s.length > 250)) {
-      alert("질문은 한 줄에 하나씩 최대 5개, 각 5~250자로 입력해주세요."); return;
-    }
-    onSubmit(url.trim(), rows.length ? rows : undefined);
+type Props = {onSubmit:(url:string, geoQuestions?:string[], baselineId?:string)=>void;loading:boolean};
+export default function UrlForm({onSubmit,loading}:Props) {
+  const [url,setUrl]=useState('');
+  const [questions,setQuestions]=useState('');
+  const [reference,setReference]=useState('');
+  const [baseline,setBaseline]=useState<GeoBaseline|null>(null);
+  const [baselineLoading,setBaselineLoading]=useState(false);
+  const [message,setMessage]=useState('');
+  const active=useRef<AbortController|null>(null);
+  useEffect(()=>()=>active.current?.abort(),[]);
+  async function loadBaseline() {
+    active.current?.abort();
+    const id=parseReportReference(reference,window.location.origin);
+    if (!id) {setMessage('마케팅 스캐너의 공유 링크 또는 보고서 ID를 입력해 주세요.');return;}
+    const controller=new AbortController();active.current=controller;setBaselineLoading(true);setMessage('');
+    try {
+      const response=await fetch(`/api/share?id=${encodeURIComponent(id)}`,{cache:'no-store',signal:controller.signal});
+      const result=await response.json();
+      if (!response.ok) throw new Error(result.message || '보고서를 불러오지 못했습니다.');
+      const restored=GeoBaselineSchema.parse(result.baseline);
+      const fixed=baselineQuestions(restored);
+      if (controller.signal.aborted) return;
+      setBaseline(restored);setUrl(restored.url);setQuestions(fixed.map(q=>q.question).join('\n'));
+    } catch (error) {if (!controller.signal.aborted) setMessage(error instanceof Error?error.message:'보고서를 불러오지 못했습니다.');}
+    finally {if (!controller.signal.aborted) setBaselineLoading(false);}
   }
-
-  return (
-    <form
-      onSubmit={handleSubmit}
-      className="mx-auto max-w-3xl rounded-3xl border border-jm-border bg-white p-3 shadow-xl"
-    >
-      <div className="flex flex-col gap-3 md:flex-row"><input
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        placeholder="예: https://prorealmkt.com"
-        className="min-h-[56px] flex-1 rounded-full px-6 text-base outline-none placeholder:text-jm-gray"
-        disabled={loading}
-        inputMode="url"
-        autoComplete="off"
-      />
-      <button
-        type="submit"
-        disabled={loading}
-        className="jm-button min-h-[56px] px-8"
-      >
-        {loading ? "분석 중..." : "무료 진단하기"}
-      </button></div>
-      <details className="px-4 py-2 text-left text-sm">
-        <summary className="cursor-pointer text-jm-gray">GEO 고객 질문 직접 입력 (선택)</summary>
-        <label htmlFor="geo-questions" className="block my-2 text-xs text-jm-gray">한 줄에 질문 하나씩 최대 5개. 비워두면 사이트에 맞춰 생성합니다.</label>
-        <textarea id="geo-questions" value={questions} onChange={e => setQuestions(e.target.value)} disabled={loading} rows={4} maxLength={1254} className="w-full rounded-xl border p-3" placeholder="고객이 실제 상담에서 물어보는 질문을 입력하세요." />
-      </details>
-    </form>
-  );
+  function handleSubmit(e:React.FormEvent) {
+    e.preventDefault();if (loading||baselineLoading) return;
+    if (!url.trim()) {setMessage('분석할 URL을 입력해 주세요.');return;}
+    const rows=questions.split('\n').map(s=>s.trim()).filter(Boolean);
+    if (rows.length>5||rows.some(s=>s.length<5||s.length>250)) {setMessage('질문은 한 줄에 하나씩 최대 5개, 각 5~250자로 입력해 주세요.');return;}
+    setMessage('');onSubmit(url.trim(),rows.length?rows:undefined,baseline?.reportId);
+  }
+  return <form onSubmit={handleSubmit} className="mx-auto max-w-3xl rounded-3xl border border-jm-border bg-white p-3 shadow-xl">
+    <div className="flex flex-col gap-3 md:flex-row">
+      <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="예: https://prorealmkt.com" aria-label="분석할 웹사이트 URL" className="min-h-[56px] min-w-0 flex-1 rounded-full px-6 text-base outline-none placeholder:text-jm-gray" disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" autoComplete="off"/>
+      <button type="submit" disabled={loading||baselineLoading} className="jm-button min-h-[56px] px-6">{loading?'분석 중...':baseline?'같은 질문으로 새로 측정':'무료 진단하기'}</button>
+    </div>
+    <details className="px-4 py-3 text-left text-sm">
+      <summary className="cursor-pointer font-bold">이전 보고서와 GEO 비교하기</summary>
+      <p className="mt-3 text-xs leading-6 text-jm-gray">공유한 보고서의 질문과 URL을 불러와 새로 측정합니다. 이전 답변·출처도 새 공유 보고서와 PDF에 함께 보관됩니다.</p>
+      {!baseline ? <div className="mt-3 flex flex-col gap-2 sm:flex-row"><input aria-label="기준 보고서 공유 링크 또는 ID" value={reference} onChange={e=>{active.current?.abort();setBaselineLoading(false);setReference(e.target.value);setMessage('');}} disabled={loading} placeholder="https://www.mktscanner.com/r/..." className="min-w-0 flex-1 rounded-xl border p-3"/>
+        <button type="button" onClick={loadBaseline} disabled={loading||baselineLoading||!reference.trim()} className="rounded-xl border px-4 py-3 font-bold disabled:opacity-50">{baselineLoading?'불러오는 중...':'기준 보고서 불러오기'}</button></div> :
+        <div className="mt-3 rounded-xl border bg-neutral-50 p-4"><p className="font-bold">비교 기준을 불러왔습니다</p><p className="mt-2 break-all text-xs leading-6">{baseline.url}<br/>{comparisonTime(baseline.citation.measuredAt)} · 질문 {baselineQuestions(baseline).length}개 고정</p>
+          {!baseline.citation.measurementProtocol && <p className="mt-2 text-xs leading-6 text-amber-800">이전 보고서에는 요청 설정 기록이 없어 변화율을 계산하지 않습니다. 이번 결과부터 다음 비교의 기준으로 사용할 수 있습니다.</p>}
+          <button type="button" disabled={loading} onClick={()=>{setBaseline(null);setMessage('');}} className="mt-3 text-xs underline">비교 해제 · 질문 직접 편집</button></div>}
+    </details>
+    {baseline && <p role="status" className="px-4 pb-2 text-left text-xs text-jm-gray">기준 보고서 {baseline.reportId}의 URL과 질문을 유지합니다.</p>}
+    <details className="px-4 py-2 text-left text-sm">
+      <summary className="cursor-pointer text-jm-gray">{baseline?'비교할 고정 질문 보기':'GEO 고객 질문 직접 입력 (선택)'}</summary>
+      <label htmlFor="geo-questions" className="my-2 block text-xs text-jm-gray">{baseline?'기준 질문을 그대로 사용합니다. 편집하려면 비교를 해제해 주세요.':'한 줄에 질문 하나씩 최대 5개. 비워두면 사이트에 맞춰 생성합니다.'}</label>
+      <textarea id="geo-questions" value={questions} onChange={e=>setQuestions(e.target.value)} disabled={loading||baselineLoading} readOnly={!!baseline} rows={4} maxLength={1254} className="w-full rounded-xl border p-3" placeholder="고객이 실제 상담에서 물어보는 질문을 입력하세요."/>
+    </details>
+    {message && <p role="alert" className="px-4 py-2 text-left text-sm text-red-700">{message}</p>}
+  </form>;
 }

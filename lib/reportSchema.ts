@@ -61,6 +61,7 @@ export const LlmCitationQuestionResultSchema = z.object({
   branded: z.boolean().optional(),
   journey: z.string().optional(),
   model: z.string().optional(),
+  requestFingerprint: z.string().regex(/^[a-f0-9]{24}$/).optional(),
   measuredAt: z.string().optional(),
   durationMs: z.number().optional(),
   searchUsed: z.boolean().optional(),
@@ -70,6 +71,9 @@ export const LlmCitationQuestionResultSchema = z.object({
   errorMessage: z.string().optional(),
 });
 export const LlmCitationTestSchema = z.object({
+  measurementProtocol: z.literal("geo-compare-v1").optional(),
+  targetUrl: z.string().url().optional(),
+  brandName: z.string().optional(),
   measurementVersion: z.literal(2).optional(),
   measuredAt: z.string().optional(),
   questionSetId: z.string().optional(),
@@ -103,6 +107,13 @@ export const LlmCitationTestSchema = z.object({
   }),
   priorityActions: z.array(z.string()).optional(),
 });
+
+export const GeoBaselineSchema = z.object({
+  reportId: z.string().regex(/^[A-Za-z0-9]{4,12}$/),
+  url: z.string().url(),
+  citation: LlmCitationTestSchema,
+});
+export type GeoBaseline = z.infer<typeof GeoBaselineSchema>;
 
 // v45-W1: 광고비 낭비 시뮬레이션
 export const AdWasteScenarioSchema = z.object({
@@ -415,6 +426,7 @@ export const MarketingReportSchema = z.object({
 
   discoverability: DiscoverabilitySchema.nullable().optional(),
   llmCitationTest: LlmCitationTestSchema.nullable().optional(),
+  geoBaseline: GeoBaselineSchema.optional(),
   adWasteSimulation: AdWasteSimulationSchema.nullable().optional(),
   keywordRankTracking: KeywordRankTrackingSchema.nullable().optional(),
 

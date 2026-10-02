@@ -6,10 +6,11 @@ import { LlmCitationTestSchema, type LlmCitationTest, type LlmCitationQuestionRe
 import { getRedisClient } from './redisClient';
 import { aggregateCitation, brandMentioned, buildActionPlan, normalizeSources, parseGemini, parseOpenAI, safeHttpUrl } from './citationMeasurement';
 
-const VERSION = 'geo-v2.1';
+const VERSION = 'geo-v2.2';
 const TIMEOUT = 22_000;
 const QuestionSchema = z.object({question:z.string().min(5).max(250),type:z.enum(['brand','industry','service','local']),journey:z.string().max(40)});
-type Question = z.infer<typeof QuestionSchema>;
+export type CitationQuestion = z.infer<typeof QuestionSchema>;
+type Question = CitationQuestion;
 const digest = (input: string) => createHash('sha256').update(input).digest('hex').slice(0,24);
 const pending = new Map<string, Promise<LlmCitationTest>>();
 
@@ -51,12 +52,6 @@ async function resolveGoogleSource(url: string): Promise<string> {
 async function measure(engine:'chatgpt'|'gemini', q:Question, brand:string, target:string): Promise<LlmCitationQuestionResult> {
   const started = Date.now();
   const model = engine === 'chatgpt' ? process.env.OPENAI_CITATION_MODEL || 'gpt-4.1-mini' : process.env.GEMINI_CITATION_MODEL || 'gemini-3.5-flash-lite';
-  const base = {engine,question:q.question,questionType:q.type,journey:q.journey,model,
-    branded:brandMentioned(q.question,brand,target),measuredAt:new Date().toISOString(),cited:false,citationRank:null};
-  const key = engine === 'chatgpt' ? process.env.OPENAI_API_KEY : process.env.GEMINI_API_KEY;
-  if (!key) return {...base,status:'unavailable',errorMessage:'이 엔진의 API 키가 설정되지 않았습니다.',durationMs:0};
-  try {
-    const endpoint = engine === 'chatgpt' ? 'https://api.openai.com/v1/responses' : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
     const body = engine === 'chatgpt' ? {
       model,tools:[{type:'web_search_preview'}],tool_choice:'required',max_output_tokens:1400,
       input:q.question,instructions:'웹 검색을 사용해 한국어로 답변하고 근거 출처를 제공하세요. 질문에 직접 답하고 1200자 이내로 작성하세요.',
@@ -64,6 +59,12 @@ async function measure(engine:'chatgpt'|'gemini', q:Question, brand:string, targ
       contents:[{parts:[{text:`웹 검색을 사용해 다음 질문에 한국어로 1200자 이내로 답하고 근거를 제공하세요.\n${q.question}`}]}],
       tools:[{google_search:{}}],generationConfig:{maxOutputTokens:2200},
     };
+  const base = {engine,question:q.question,questionType:q.type,journey:q.journey,model,requestFingerprint:digest(JSON.stringify([model,body])),
+    branded:brandMentioned(q.question,brand,target),measuredAt:new Date().toISOString(),cited:false,citationRank:null};
+  const key = engine === 'chatgpt' ? process.env.OPENAI_API_KEY : process.env.GEMINI_API_KEY;
+  if (!key) return {...base,status:'unavailable',errorMessage:'이 엔진의 API 키가 설정되지 않았습니다.',durationMs:0};
+  try {
+    const endpoint = engine === 'chatgpt' ? 'https://api.openai.com/v1/responses' : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
     const response = await fetch(endpoint,{
       method:'POST',headers:{'Content-Type':'application/json',...(engine === 'chatgpt' ? {Authorization:`Bearer ${key}`} : {'x-goog-api-key':key})},
       body:JSON.stringify(body),signal:AbortSignal.timeout(TIMEOUT),
@@ -88,24 +89,25 @@ async function measure(engine:'chatgpt'|'gemini', q:Question, brand:string, targ
     return {...base,status:timeout?'timeout':'error',errorMessage:message,durationMs:Date.now()-started};
   }
 }
-export async function analyzeCitation(data: ExtractedWebsiteData, custom?: string[]): Promise<LlmCitationTest|null> {
+export async function analyzeCitation(data: ExtractedWebsiteData, custom?: string[], options: {fixedQuestions?: CitationQuestion[]; fresh?: boolean} = {}): Promise<LlmCitationTest|null> {
   if (process.env.ENABLE_LLM_CITATION === 'false') return null;
   const target = data.finalUrl || data.url;
   const brand = (data.ogSiteName || data.title.split(/[|–·]/)[0] || new URL(target).hostname).trim().slice(0,60);
-  const identity = digest(JSON.stringify([VERSION,target,data.title,data.description,data.bodyText.slice(0,1800),custom || [],process.env.OPENAI_CITATION_MODEL,process.env.GEMINI_CITATION_MODEL]));
+  const identity = digest(JSON.stringify([VERSION,target,data.title,data.description,data.bodyText.slice(0,1800),options.fixedQuestions || custom || [],process.env.OPENAI_CITATION_MODEL,process.env.GEMINI_CITATION_MODEL]));
   const redis = getRedisClient();
   const key = `ms:citation:${VERSION}:${identity}`;
-  if (redis) {
+  if (redis && !options.fresh) {
     try {
       const raw = await redis.get(key);
       const checked = LlmCitationTestSchema.safeParse(typeof raw === 'string' ? JSON.parse(raw) : raw);
       if (checked.success && checked.data.measurementVersion === 2) return {...checked.data,cacheHit:true};
     } catch { /* Cache availability must not stop measurement. */ }
   }
-  if (pending.has(key)) return pending.get(key)!;
+  const pendingKey = options.fresh ? `${key}:fresh` : key;
+  if (pending.has(pendingKey)) return pending.get(pendingKey)!;
   const task = (async ():Promise<LlmCitationTest> => {
-    let questions:Question[]|undefined;
-    if (redis && !custom?.length) {
+    let questions = options.fixedQuestions ? z.array(QuestionSchema).min(1).max(5).parse(options.fixedQuestions) : undefined;
+    if (redis && !questions && !custom?.length) {
       try { const raw = await redis.get(`${key}:questions`); questions = z.array(QuestionSchema).parse(typeof raw === 'string' ? JSON.parse(raw) : raw); } catch { /* generate */ }
     }
     questions ||= await questionsFor(data,brand,custom);
@@ -113,7 +115,7 @@ export async function analyzeCitation(data: ExtractedWebsiteData, custom?: strin
     const results = await Promise.all(questions.flatMap(q => [measure('chatgpt',q,brand,target),measure('gemini',q,brand,target)]));
     const metrics = aggregateCitation(results);
     const result:LlmCitationTest = {
-      ...metrics,measurementVersion:2,questionSetId:digest(JSON.stringify(questions)),measuredAt:new Date().toISOString(),cacheHit:false,results,
+      ...metrics,measurementVersion:2,measurementProtocol:'geo-compare-v1',targetUrl:target,brandName:brand,questionSetId:digest(JSON.stringify(questions)),measuredAt:new Date().toISOString(),cacheHit:false,results,
       summary:`${metrics.totalTests}건 중 정상 답변 ${metrics.validTests}건, 출처 판정 ${metrics.citationValidTests}건. 이 질문 세트와 측정 시점에 한정한 API 관측입니다.`,
       priorityActions:['질문별 출처를 열어 자사 정보의 정확성과 최신성을 확인하세요.','입력 페이지의 질문별 직접 답변과 근거를 보완한 뒤 같은 질문으로 비교하세요.'],
       actionPlan:buildActionPlan(results,target,data.bodyText.trim().length >= 120),
@@ -124,6 +126,6 @@ export async function analyzeCitation(data: ExtractedWebsiteData, custom?: strin
     }
     return LlmCitationTestSchema.parse(result);
   })();
-  pending.set(key,task);
-  try {return await task;} finally {pending.delete(key);}
+  pending.set(pendingKey,task);
+  try {return await task;} finally {pending.delete(pendingKey);}
 }

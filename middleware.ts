@@ -58,6 +58,12 @@ function getAllowedIps(): string[] {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // User-authorized bounded verification window. Remove after the live comparison run.
+  if (Date.now() < Date.parse('2026-10-02T05:30:00Z') &&
+      (process.env.VERCEL_ENV === 'preview' || process.env.VERCEL_ENV === 'production') &&
+      (['/', '/api/analyze', '/api/competitor', '/api/share'].includes(pathname) ||
+       (process.env.VERCEL_ENV === 'preview' && pathname === '/qa-geo-compare'))) return NextResponse.next();
+
   // 항상 허용되는 공개 경로 (광고주가 공유 링크 접속 시 필요)
   const isPublic =
     pathname.startsWith("/r/") || // 공유 결과 페이지

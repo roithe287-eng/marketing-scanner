@@ -1,3 +1,4 @@
+import {buildGeoComparison,changeLabels,comparisonRate,comparisonReasons,comparisonTime,GEO_COMPARISON_NOTE,GEO_COMPARISON_TITLE,observationLabel} from './geoComparison';
 import type { MarketingReport } from './reportSchema';
 import { safeHttpUrl } from './citationMeasurement';
 import {GEO_TITLE,GEO_DESCRIPTION,GEO_METRICS} from './geoPresentation';
@@ -17,7 +18,7 @@ const labels:Record<string,string> = {
   totalTokens:'전체 토큰 수',uniqueSingles:'단일 키워드 수',uniquePhrases:'구문 수',singles:'단일 키워드',phrases:'키워드 구문',count:'횟수',density:'빈도(%)',inTitle:'제목 포함',inMetaDescription:'설명 포함',searchKeyword:'검색 키워드',keywordSource:'키워드 생성 방식',competitors:'경쟁사',rank:'순위',link:'페이지 링크',description:'설명',domain:'도메인',metaTitle:'페이지 제목',metaDescription:'메타 설명',h1:'H1',ctaTexts:'CTA 문구',fetchError:'수집 오류',keyMessage:'핵심 메시지',differentiation:'차별점',overallComparison:'전체 비교',ourPositioning:'우리 포지셔닝',buttonText:'버튼 문구',url:'URL',
 };
 const values:Record<string,string> = {chatgpt:'OpenAI',gemini:'Gemini',true:'예',false:'아니오',ok:'정상',pending:'분석 중',complete:'완료',empty:'비교 대상 없음',error:'실패',timeout:'시간 초과',unavailable:'미설정',unverified:'검색·출처 확인 불가',own:'자사',external:'외부',unresolved:'대상 도메인 미확인',needs_review:'검토 필요',review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요',pass:'통과',warning:'주의',fail:'미충족',high:'높음',medium:'보통',low:'낮음',brand:'브랜드 확인',industry:'업종 비교',service:'서비스',local:'지역·특성'};
-Object.assign(labels, {filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
+Object.assign(labels, {measurementProtocol:'비교 측정 규칙',brandName:'브랜드 판정 기준',requestFingerprint:'요청 설정 식별자',filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
 Object.assign(values, {keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
 export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   const blocks:ReportBlock[] = [
@@ -60,6 +61,23 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
       const paragraphs=href ? [text] : text.split(/\n+/).filter(Boolean);
       paragraphs.forEach((paragraph,i) => blocks.push({kind:'body',text:key && i===0 ? `${labels[key] || key}: ${paragraph}` : paragraph,href}));
     }
+  }
+  const comparison=buildGeoComparison(report);
+  if (comparison) {
+    blocks.push({kind:'heading',text:GEO_COMPARISON_TITLE},{kind:'body',text:GEO_COMPARISON_NOTE},
+      {kind:'body',text:`기준 보고서 ID: ${comparison.baseline.reportId}`},
+      {kind:'body',text:`이전 ${comparisonTime(comparison.baseline.citation.measuredAt)} / 현재 ${comparisonTime(comparison.current?.measuredAt)}`},
+      {kind:'body',text:`자사 출처 인용률: ${comparisonRate(comparison.beforeRate)} → ${comparisonRate(comparison.afterRate)} · 같은 ${comparison.matched}쌍`},
+      {kind:'body',text:`브랜드 언급률: ${comparisonRate(comparison.beforeMention)} → ${comparisonRate(comparison.afterMention)} · 같은 ${comparison.mentionCount}쌍`},
+      {kind:'body',text:`${comparison.matched}쌍 비교 · ${comparison.excluded}쌍 제외`});
+    if (comparison.matched) blocks.push({kind:'body',text:`새로 인용 ${comparison.gained}건 · 이번에 미확인 ${comparison.lost}건 · 인용 유지 ${comparison.kept}건`});
+    for (const pair of comparison.pairs) {
+      blocks.push({kind:'subheading',text:`${pair.engine==='chatgpt'?'OpenAI':'Gemini'} · ${pair.question}`},
+        {kind:'body',text:pair.reason?`비교 제외 · ${comparisonReasons[pair.reason]}`:changeLabels[pair.change!]},
+        {kind:'body',text:`이전: ${observationLabel(pair.before)} / 현재: ${observationLabel(pair.after)}`});
+    }
+    blocks.push({kind:'heading',text:'비교 기준의 이전 답변·출처 원본'},{kind:'body',text:'기준 링크가 만료되어도 이 보고서에 저장된 이전 관측은 유지됩니다. 현재 답변은 다음 GEO 상세에 포함됩니다.'});
+    walk(comparison.baseline.citation);
   }
   const sections:[string,unknown][] = [
     ['영역별 점수',report.diagnosis],['GEO 질문·답변·출처·실행 과제',report.llmCitationTest],
