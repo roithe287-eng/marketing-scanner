@@ -26,11 +26,14 @@ export function stripSearchHtml(html: string): string {
 
 // Apply only to agency/service queries and explicit public advertising inventory pages.
 // A public domain alone never means that a page is irrelevant.
-export function nonProviderReason(title: string, query: string): string | undefined {
+export function nonProviderReason(title: string, query: string, description = ''): string | undefined {
   if (!/광고.*대행|대행.*광고|마케팅/.test(query)) return;
   if (/광고\s*(?:문의|입찰|게재|공간)|부대사업/.test(title)
       && /교통공사|도시철도|정보공개|공공시설/.test(title)) {
     return '대행 서비스가 아닌 공공기관의 광고 매체·시설 문의 페이지';
+  }
+  if (/\d+\s*화|시즌\s*\d|다시\s*보기/.test(title) && /TVING|티빙|드라마|예능|에피소드/i.test(`${title} ${description}`)) {
+    return '대행 서비스가 아닌 드라마·예능의 회차 시청 페이지';
   }
 }
 
@@ -48,7 +51,7 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
     let reason = own && (belongsTo(domain, own) || belongsTo(own, domain)) ? '자사 도메인' : undefined;
     if (!reason && seen.has(domain)) reason = '이미 수집한 도메인의 중복 페이지';
     if (!reason && excludedHosts.some(host => belongsTo(domain, host))) reason = '포털·대형몰·SNS·백과사전';
-    if (!reason) reason = nonProviderReason(title, query);
+    if (!reason) reason = nonProviderReason(title, query, stripSearchHtml(item.description));
     if (reason) { excluded.push({domain, link: item.link, title, reason}); return; }
     seen.add(domain);
     if (candidates.length < limit) candidates.push({rank: candidates.length + 1, searchRank: i + 1,
@@ -65,7 +68,7 @@ export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?
   const tokens = query.split(/\s+/).filter(t => t.length >= 2).map(normalize);
   for (const candidate of candidates) {
     const title = candidate.metaTitle || candidate.title;
-    const reason = nonProviderReason(`${candidate.title} ${title}`, query);
+    const reason = nonProviderReason(`${candidate.title} ${title}`, query, `${candidate.description} ${candidate.metaDescription || ''}`);
     if (reason) { excluded.push({domain: candidate.domain, link: candidate.link, title, reason}); continue; }
     const text = normalize([title, candidate.metaDescription, candidate.h1, candidate.description].join(' '));
     const matches = tokens.length > 0 && tokens.every(token => text.includes(token));
