@@ -38,6 +38,11 @@ test('cross-diagnostic backlog preserves each evidence source and document inclu
   const copy=contentBrief('질문 확인',null);assert.match(copy,/담당자 확인 필요/);assert.ok(!copy.includes('undefined'));const blocks=buildReportDocument(r);for(const title of ['AI 출처 검토함','경쟁사 메시지 비교 지도','키워드 연결 기회','통합 보완 목록 · 3개'])assert.ok(blocks.some(b=>b.text===title));assert.ok(blocks.some(b=>b.href==='https://other.example/service'));
   for(const Component of [SourceDirectory,ActionBacklog])assert.ok(renderToStaticMarkup(React.createElement(Component,{data:d})).length>500);
 });
+test('keyword opportunities remove common sentence words without rewriting original counts',()=>{
+  const singles=['없습니다','필요한','함께','현재','가능한','광고','컨설팅'].map((keyword,i)=>({keyword,count:20-i,density:2,inTitle:false,inMetaDescription:false}));
+  const r:MarketingReport={...fixture,keywordFrequency:{totalTokens:100,uniqueSingles:7,uniquePhrases:0,singles,phrases:[]}};
+  const d=buildReportInsights(r);assert.deepEqual(d.gaps.map(k=>k.keyword),['광고','컨설팅']);assert.equal(d.gaps[0].count,15);assert.equal(r.keywordFrequency!.singles.length,7);
+});
 test('new visual PDF pages fit variable labels, full competitor rows and keyword candidates',()=>{
   const measure=(s:string,style:PdfTextStyle)=>Array.from(s).reduce((sum,c)=>sum+(/[ -~]/.test(c)?.55:1)*style.size*(style.weight===700?1.06:1),0);
   const r:MarketingReport={...fixture,oneLineSummary:'긴 한국어 설명 '.repeat(50),meta:{ogTitle:'무료 상담 공식 전문 업체'},competitorAnalysis:{searchKeyword:'업체',competitors:Array.from({length:12},(_,i)=>({rank:i+1,title:'후보',description:'',link:`https://other${i}.example`,domain:'긴비교도메인문자열'.repeat(10),metaTitle:'무료 공식 전문 빠른 맞춤 상담'}))},keywordFrequency:{totalTokens:100,uniqueSingles:8,uniquePhrases:0,singles:Array.from({length:8},(_,i)=>({keyword:'긴키워드문자'.repeat(8)+i,count:30,density:5,inTitle:false,inMetaDescription:false})),phrases:[]}};
