@@ -1,11 +1,10 @@
+import {isGenericKeyword} from './keywordRewrite';
 import type {MarketingReport} from './reportSchema';
 import {safeHttpUrl,ownHost} from './citationMeasurement';
 import {buildObservationVisual,engineNames,engines,observationState,readinessItems} from './reportVisuals';
 
 export type FollowupTask={id:string;group:string;title:string;status:'fail'|'warning'|'review';evidence:string;action:string;source:string};
 export type SourceEntry={url:string;title:string;domain:string;ownership:'own'|'external'|'unresolved';questions:string[];observations:string[]};
-// Keep the original counts intact; suppress common sentence words only in the opportunity shortlist.
-const genericKeywordWords=new Set(['필요한','필요합니다','함께','없습니다','있습니다','현재','가능한','가능합니다','통해','통한','위한','위해','대한','대해','이러한','이런','있는','없는','하는','하여','그리고','또한','합니다','됩니다','입니다','모든','여러','다양한','보다','가장','더욱','바로']);
 export const messageThemes=[
   {label:'가격·혜택',pattern:/가격|비용|할인|무료|견적|수수료/},
   {label:'신뢰·사례',pattern:/후기|리뷰|인증|사례|공식|파트너/},
@@ -55,7 +54,7 @@ export function buildReportInsights(report:MarketingReport) {
     return ownMessage.available && !ownMessage.cells[i].match && present.length?[{label:theme.label,count:present.length,total:known.length}]:[];
   });
   const stages=[{label:'첫인상',key:'firstView' as const,action:'제안의 핵심과 첫 화면 문구 확인'},{label:'신뢰 형성',key:'trust' as const,action:'검증 가능한 사례·후기·근거 확인'},{label:'행동 유도',key:'cta' as const,action:'버튼 문구·위치·다음 행동 확인'},{label:'전환 흐름',key:'conversionFlow' as const,action:'문의·신청 과정의 마찰 확인'}].map(s=>({...s,score:report.diagnosis[s.key]}));
-  const gaps=(report.keywordFrequency?.singles||[]).slice(0,20).filter(k=>!genericKeywordWords.has(k.keyword.trim())&&(!k.inTitle||!k.inMetaDescription)).slice(0,8);
+  const gaps=(report.keywordFrequency?.singles||[]).slice(0,20).filter(k=>!isGenericKeyword(k.keyword)&&(!k.inTitle||!k.inMetaDescription)).slice(0,8);
   const tasks:FollowupTask[]=[];
   const push=(group:string,source:string,rows:{label:string;status:'pass'|'warning'|'fail';currentValue:string;guide:string}[])=>rows.filter(r=>r.status!=='pass').forEach((r,i)=>tasks.push({id:`${source}-${i}`,group,title:r.label,status:r.status as 'warning'|'fail',evidence:r.currentValue,action:r.guide,source}));
   report.criticalIssues.forEach((r,i)=>tasks.push({id:`critical-${i}`,group:'핵심 개선',title:r.title,status:r.priority==='high'?'fail':r.priority==='medium'?'warning':'review',evidence:r.problem,action:r.recommendation,source:'AI 진단'}));

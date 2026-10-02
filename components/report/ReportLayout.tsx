@@ -5,6 +5,7 @@ import {buildReportInsights} from '@/lib/reportInsights';
 import {safeHttpUrl} from '@/lib/citationMeasurement';
 import {CollectionCoverage,ConversionPath,AnswerPageMap,BrandReview,SourceDirectory,MessageMap,KeywordOpportunities,ActionBacklog} from './InsightPanels';
 import ScoreRadar from '@/components/ScoreRadar';
+import KeywordRewritePanel from './KeywordRewritePanel';
 import DiagnosisCard from '@/components/DiagnosisCard';
 import PriorityMatrix from '@/components/PriorityMatrix';
 import FinalCTA from '@/components/FinalCTA';
@@ -55,14 +56,14 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
   return <div className="report-v2" id="report-area">
     <header className="report-hero" id="report-top"><div className="report-hero-main"><p className="report-eyebrow">JINJJA MARKETING · DIAGNOSIS</p><h1>{site}<span>마케팅 진단 리포트</span></h1>{url&&<a className="report-domain" href={url} target="_blank" rel="noopener noreferrer">{report.url} ↗</a>}<p className="report-hero-summary">{report.oneLineSummary}</p><p className="report-note">공개 페이지 기반 자동 진단 · 실행 전 담당자 검토</p></div><div className="report-hero-score"><span>마케팅 종합 점수</span><div><strong>{report.overallScore}</strong><b>/ 100</b></div><p>페이지 구조·콘텐츠 진단</p><small>AI 인용률과는 다른 지표입니다.</small></div><div className="report-hero-bottom"><div className="report-hero-facts"><span><b>{data.tasks.length}</b> 보완 항목</span><span><b>{data.obs?data.questions.length:"—"}</b> 고객 질문</span><span><b>{data.competitorCount}</b> 비교 후보</span></div><div className="report-toolbar" data-hide-on-export>{actions}</div></div></header>
     <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} aria-current={active===id?'location':undefined} onClick={()=>setActive(id)}><span>0{i+1}</span>{label}</a>)}</nav>
-    <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="전체 상태를 확인하고, 점수가 낮은 단계부터 상세 근거를 살펴보세요."><ConversionPath data={data}/><CollectionCoverage data={data}/><Disclosure title="8개 영역 점수 상세" note="첫 화면·CTA·카피·신뢰·전환·광고·모바일·SEO"><ScoreRadar diagnosis={report.diagnosis}/></Disclosure></Chapter>
+    <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="전체 상태를 확인하고, 점수가 낮은 단계부터 상세 근거를 살펴보세요."><ScoreRadar diagnosis={report.diagnosis}/><ConversionPath data={data}/><CollectionCoverage data={data}/></Chapter>
     <Chapter id="geo" number="02" title="AI가 브랜드를 읽는 방식" note="페이지 준비도, 실제 답변, 출처를 각각 확인합니다.">
       {(report.discoverability||report.llmCitationTest)&&<GeoIntroduction/>}
       {report.discoverability&&<DiscoverabilityPanel discoverability={report.discoverability}/>}
       {report.llmCitationTest&&<LlmCitationCard citation={report.llmCitationTest}/>}
       <AnswerPageMap data={data}/><BrandReview data={data}/><SourceDirectory data={data}/><GeoComparisonPanel report={report}/>
     </Chapter>
-    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="저장된 페이지 표현과 기술 점검 결과를 함께 검토하세요."><KeywordOpportunities data={data}/>
+    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="저장된 페이지 표현과 기술 점검 결과를 함께 검토하세요."><KeywordRewritePanel report={report}/><KeywordOpportunities data={data}/>
       {report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}
       {report.technicalSeo&&<Disclosure title="페이지 기술 상태" note={`${report.technicalSeo.checks.length}개 점검의 실제 근거와 개선 가이드`}><TechnicalSeoCard technicalSeo={report.technicalSeo}/></Disclosure>}
       {report.naverBriefingReadiness&&<Disclosure title="네이버 AI 브리핑 준비도" note={`${report.naverBriefingReadiness.checks.length}개 기술·콘텐츠 항목`}><NaverBriefingReadiness readiness={report.naverBriefingReadiness}/></Disclosure>}

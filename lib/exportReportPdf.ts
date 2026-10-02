@@ -35,6 +35,7 @@ export async function exportReportPdf(report:MarketingReport,onProgress:(text:st
       ctx.textBaseline='top';ctx.textAlign='left';
       for(const shape of (pages[i] as Partial<VisualPdfPage>).shapes||[]) {
         if(shape.kind==='rect') {ctx.fillStyle=shape.color;ctx.beginPath();ctx.roundRect(shape.x,shape.y,shape.width,shape.height,shape.radius||0);ctx.fill();}
+        else if(shape.kind==='polygon') {ctx.beginPath();shape.points.forEach((p,j)=>{if(j===0)ctx.moveTo(shape.x+p.x,shape.y+p.y);else ctx.lineTo(shape.x+p.x,shape.y+p.y);});ctx.closePath();if(shape.fill){ctx.fillStyle=shape.fill;ctx.fill();}ctx.strokeStyle=shape.color;ctx.lineWidth=1.5;ctx.stroke();}
         else {const radius=shape.size/2-7,cx=shape.x+shape.size/2,cy=shape.y+shape.size/2;ctx.lineWidth=8;ctx.strokeStyle='#dfe4ec';ctx.beginPath();ctx.arc(cx,cy,radius,0,2*Math.PI);ctx.stroke();if(shape.value!==null&&shape.value>0){ctx.strokeStyle=shape.color;ctx.beginPath();ctx.arc(cx,cy,radius,-Math.PI/2,-Math.PI/2+2*Math.PI*shape.value/100);ctx.stroke();}}
       }
       for(const line of pages[i].lines) {

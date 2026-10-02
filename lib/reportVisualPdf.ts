@@ -5,7 +5,7 @@ import {buildGeoComparison,GEO_COMPARISON_NOTE} from './geoComparison';
 import {buildGeoFocus} from './geoFocus';
 import {PDF_PAGE,wrapPdfText,type PdfPage,type PdfTextStyle,type TextMeasurer} from './pdfLayout';
 
-export type PdfShape = {kind:'rect';x:number;y:number;width:number;height:number;color:string;radius?:number} | {kind:'ring';x:number;y:number;size:number;value:number|null;color:string};
+export type PdfShape = {kind:'polygon';x:number;y:number;width:number;height:number;points:{x:number;y:number}[];color:string;fill?:string} | {kind:'rect';x:number;y:number;width:number;height:number;color:string;radius?:number} | {kind:'ring';x:number;y:number;size:number;value:number|null;color:string};
 export type VisualPdfPage = PdfPage & {shapes:PdfShape[]};
 const gray='#667085',ink='#152033',blue='#3564a7',green='#087f72';
 const short=(s:string,n=110)=>s.length>n?s.slice(0,n)+'…':s;
