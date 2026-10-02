@@ -1,3 +1,4 @@
+import {buildVisualPdfPages,type VisualPdfPage} from './reportVisualPdf';
 import type { MarketingReport } from './reportSchema';
 import { buildReportDocument } from './reportDocument';
 import { layoutPdfPages, PDF_FONT, PDF_PAGE, type PdfTextStyle } from './pdfLayout';
@@ -20,7 +21,9 @@ export async function exportReportPdf(report:MarketingReport,onProgress:(text:st
     const font=`${style.weight} ${style.size}px ${fontFamily}`;
     if(currentFont!==font) {ctx.font=font;currentFont=font;}
   };
-  const pages=layoutPdfPages(buildReportDocument(report),(text,style)=>{setFont(style);return ctx.measureText(text).width;});
+  const measure=(text:string,style:PdfTextStyle)=>{setFont(style);return ctx.measureText(text).width;};
+  const visualPages=buildVisualPdfPages(report,measure);
+  const pages=[...visualPages,...layoutPdfPages(buildReportDocument(report),measure)];
   const pdf=new JsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   pdf.setProperties({title:`${report.meta?.siteName || 'Marketing Scanner'} report`,creator:'Marketing Scanner'});
   try {
@@ -30,6 +33,10 @@ export async function exportReportPdf(report:MarketingReport,onProgress:(text:st
       ctx.setTransform(scale,0,0,scale,0,0);
       ctx.fillStyle='#ffffff';ctx.fillRect(0,0,PDF_PAGE.width,PDF_PAGE.height);
       ctx.textBaseline='top';ctx.textAlign='left';
+      for(const shape of (pages[i] as Partial<VisualPdfPage>).shapes||[]) {
+        if(shape.kind==='rect') {ctx.fillStyle=shape.color;ctx.beginPath();ctx.roundRect(shape.x,shape.y,shape.width,shape.height,shape.radius||0);ctx.fill();}
+        else {const radius=shape.size/2-7,cx=shape.x+shape.size/2,cy=shape.y+shape.size/2;ctx.lineWidth=8;ctx.strokeStyle='#dfe4ec';ctx.beginPath();ctx.arc(cx,cy,radius,0,2*Math.PI);ctx.stroke();if(shape.value!==null&&shape.value>0){ctx.strokeStyle=shape.color;ctx.beginPath();ctx.arc(cx,cy,radius,-Math.PI/2,-Math.PI/2+2*Math.PI*shape.value/100);ctx.stroke();}}
+      }
       for(const line of pages[i].lines) {
         setFont(line);ctx.fillStyle=line.color;
         const top=line.y+(line.lineHeight-line.size)/2;

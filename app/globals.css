@@ -86,3 +86,12 @@ body {
     display: none !important;
   }
 }
+
+/* Interactive report diagrams remain keyboard-visible and respect reduced motion. */
+button:focus-visible, summary:focus-visible, a:focus-visible {
+  outline: 3px solid #3564a7;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}
