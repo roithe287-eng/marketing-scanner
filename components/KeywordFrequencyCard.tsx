@@ -8,7 +8,7 @@
  */
 
 import { useState } from "react";
-import type { KeywordFrequency } from "../lib/reportSchema";
+import type { KeywordFrequency, KeywordFreqItem } from "../lib/reportSchema";
 
 type Props = {
   frequency?: KeywordFrequency | null;
@@ -16,12 +16,12 @@ type Props = {
 
 function IncludeDot({ on }: { on: boolean }) {
   return on ? (
-    <span
+    <span role="img" aria-label="포함"
       className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"
       title="포함됨"
     />
   ) : (
-    <span
+    <span role="img" aria-label="미포함"
       className="inline-block w-2.5 h-2.5 rounded-full bg-neutral-200"
       title="없음"
     />
@@ -32,7 +32,7 @@ function FreqTable({
   items,
   totalLabel,
 }: {
-  items: any[];
+  items: KeywordFreqItem[];
   totalLabel: string;
 }) {
   if (!items || items.length === 0) {
@@ -117,8 +117,6 @@ export default function KeywordFrequencyCard({ frequency }: Props) {
   const { totalTokens, uniqueSingles, uniquePhrases, singles, phrases } =
     frequency;
 
-  const titleMissing = singles.filter((k) => !k.inTitle).slice(0, 5);
-  const metaMissing = singles.filter((k) => !k.inMetaDescription).slice(0, 5);
 
   return (
     <section className="jm-card p-5 md:p-7 lg:p-8">
@@ -132,8 +130,8 @@ export default function KeywordFrequencyCard({ frequency }: Props) {
         </div>
         <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
           이 페이지가 실제로 어떤 말을 반복해서 말하고 있는지 집계했습니다.
-          자주 나오는 표현이 제목·요약문에도 담겨 있어야 검색엔진이 페이지
-          주제를 정확히 짚어냅니다.
+          제목·설명·헤딩·본문을 합친 집계이며, 비중만으로 과잉 반복이나 검색 성과를 판단하지 않습니다.
+          수정 방향은 위의 반복 표현 TO-BE 제안에서 확인하세요.
         </p>
       </div>
 
@@ -165,39 +163,12 @@ export default function KeywordFrequencyCard({ frequency }: Props) {
         </div>
       </div>
 
-      {/* 인사이트 */}
-      {(titleMissing.length > 0 || metaMissing.length > 0) && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3.5 md:p-4 mb-5 md:mb-6">
-          <p className="text-[13px] md:text-[14px] font-bold text-amber-800 mb-1">
-            💬 자주 말하는데 제목엔 없는 표현이 있습니다
-          </p>
-          <p className="text-[12px] md:text-[13px] text-amber-700 leading-relaxed break-words">
-            {titleMissing.length > 0 && (
-              <>
-                본문엔 반복되는데 제목엔 없음:{" "}
-                <strong>{titleMissing.map((k) => k.keyword).join(", ")}</strong>
-                {" · "}
-              </>
-            )}
-            {metaMissing.length > 0 && (
-              <>
-                요약문에도 없음:{" "}
-                <strong>{metaMissing.map((k) => k.keyword).join(", ")}</strong>
-              </>
-            )}
-          </p>
-          <p className="text-[11px] md:text-[12px] text-amber-600 mt-1 leading-relaxed">
-            위 표현 중 사업의 핵심인 것을 골라 제목과 요약문에 자연스럽게
-            녹여보세요. 본문 주제와 검색 노출 키워드가 일치해집니다.
-          </p>
-        </div>
-      )}
-
       {/* Tabs */}
       <div className="flex gap-2 mb-3 md:mb-4">
         <button
           type="button"
           onClick={() => setTab("singles")}
+          aria-pressed={tab === "singles"}
           className={`px-4 py-2 rounded-full text-[13px] md:text-[14px] font-bold border transition-colors ${
             tab === "singles"
               ? "bg-neutral-900 text-white border-neutral-900"
@@ -209,6 +180,7 @@ export default function KeywordFrequencyCard({ frequency }: Props) {
         <button
           type="button"
           onClick={() => setTab("phrases")}
+          aria-pressed={tab === "phrases"}
           className={`px-4 py-2 rounded-full text-[13px] md:text-[14px] font-bold border transition-colors ${
             tab === "phrases"
               ? "bg-neutral-900 text-white border-neutral-900"
