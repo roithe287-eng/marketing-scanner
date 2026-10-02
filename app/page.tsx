@@ -1,34 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import ReportLayout from '@/components/report/ReportLayout';
 import BrandHeader from "@/components/BrandHeader";
 import UrlForm from "@/components/UrlForm";
 import LivePreviewCard from "../components/LivePreviewCard";
-import ScoreRadar from "@/components/ScoreRadar";
-import DiagnosisCard from "@/components/DiagnosisCard";
-import PriorityMatrix from "@/components/PriorityMatrix";
-import FinalCTA from "@/components/FinalCTA";
 import DownloadReportButton from "@/components/DownloadReportButton";
 import ShareButton from "@/components/ShareButton";
-import CompetitorComparison from "@/components/CompetitorComparison";
-import CompetitorStatusNotice from "@/components/CompetitorStatusNotice";
-import DiagnosisChecklist from "@/components/DiagnosisChecklist";
-import QuickWinsFlow from "@/components/QuickWinsFlow";
-import CopyImprovement from "@/components/CopyImprovement";
-import NaverAiReadiness from "@/components/NaverAiReadiness";
-import NaverBriefingReadinessCard from "@/components/NaverBriefingReadiness";
-import NaverEcosystemReadinessCard from "@/components/NaverEcosystemReadiness";
-import TechnicalSeoCard from "@/components/TechnicalSeoCard";
-import KeywordFrequencyCard from "@/components/KeywordFrequencyCard";
-import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
-import LlmCitationCard from "@/components/LlmCitationCard";
-import GeoIntroduction from "@/components/GeoIntroduction";
-import GeoComparisonPanel from "@/components/GeoComparisonPanel";
-import GeoFocusPanel from "@/components/GeoFocusPanel";
-import AdWasteCalculator from "@/components/AdWasteCalculator";
-import KeywordRankCard from "@/components/KeywordRankCard";
-import IndustryBenchmarkCard from "@/components/IndustryBenchmarkCard";
-import Disclaimer from "@/components/Disclaimer";
 import { MarketingReport, MarketingReportSchema } from "@/lib/reportSchema";
 
 export default function HomePage() {
@@ -137,7 +115,7 @@ export default function HomePage() {
   }
 
   return (
-    <main>
+    <main className={report && !loading ? "report-page" : undefined}>
       <BrandHeader />
 
       {/* v35: Hero — Split Layout (좌 45% 카피 / 우 55% LivePreviewCard) */}
@@ -255,228 +233,13 @@ export default function HomePage() {
       {report && !loading && (
         <section className="jm-container pb-24">
           <div
-            id="report-area"
-            className="scroll-mt-24 bg-white p-0 md:p-4 rounded-3xl"
+            className="report-page-content"
           >
-            {/* 헤더 */}
-            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-              <div>
-                <p className="text-xs font-black tracking-wider text-jm-red">
-                  DIAGNOSIS REPORT
-                </p>
-                <h2 className="mt-2 text-3xl font-black">마케팅 진단 결과</h2>
-                <p className="mt-2 text-sm text-jm-gray break-all">
-                  분석 URL: {report.url}
-                </p>
-                <p className="mt-3 text-jm-charcoal text-base leading-7 max-w-2xl">
-                  {report.oneLineSummary}
-                </p>
-              </div>
-              <div data-hide-on-export className="flex flex-col gap-2 md:items-end">
-                <DownloadReportButton
-                  targetId="report-area"
-                  report={report}
-                  pending={competitorLoading}
-                />
-                <ShareButton
-                  report={report}
-                  competitorLoading={competitorLoading}
-                />
-              </div>
-            </div>
-
-            {/* v34: 영역별 점수 분석 (최상단 이동) */}
-            <ScoreRadar diagnosis={report.diagnosis} />
-
-            {(report.discoverability || report.llmCitationTest) && <GeoIntroduction />}
-            <GeoComparisonPanel report={report} />
-            <GeoFocusPanel key={report.llmCitationTest?.questionSetId || report.url} report={report} />
-
-            {/* v44: 콘텐츠 발견성 & AI 답변 대응력 (ScoreRadar 바로 아래) */}
-            {report.discoverability && (
-              <div className="mt-6 md:mt-8">
-                <DiscoverabilityPanel discoverability={report.discoverability} />
-              </div>
-            )}
-
-            {/* v45-W1: AI 인용 시뮬레이션 (ChatGPT + Gemini) */}
-            {report.llmCitationTest && (
-              <div className="mt-6 md:mt-8">
-                <LlmCitationCard citation={report.llmCitationTest} />
-              </div>
-            )}
-
-            {/* v45-W1: 광고비 낭비 시뮬레이터 (인터랙티브 슬라이더) */}
-            {report.diagnosis && (
-              <div className="mt-6 md:mt-8">
-                <AdWasteCalculator
-                  diagnosis={report.diagnosis}
-                  defaultSimulation={report.adWasteSimulation}
-                />
-              </div>
-            )}
-
-            {/* v45-W2: 네이버 키워드 순위 트래킹 */}
-            {report.keywordRankTracking && (
-              <div className="mt-6 md:mt-8">
-                <KeywordRankCard tracking={report.keywordRankTracking} />
-              </div>
-            )}
-
-            {/* v45-W3: 업종별 벤치마크 */}
-            {report.industryBenchmark && (
-              <div className="mt-6 md:mt-8">
-                <IndustryBenchmarkCard benchmark={report.industryBenchmark} />
-              </div>
-            )}
-
-            {/* 종합 점수 + 핵심 이슈 */}
-            <div className="mt-8 grid gap-4 md:gap-6 md:grid-cols-[360px_1fr]">
-              <div className="jm-card p-8">
-                <p className="text-xs font-bold tracking-wider text-jm-gray">
-                  종합 점수
-                </p>
-                <div className="mt-3 flex items-end gap-2">
-                  <span className="text-6xl font-black text-jm-red">
-                    {report.overallScore}
-                  </span>
-                  <span className="mb-2 text-xl font-bold text-jm-gray">
-                    / 100
-                  </span>
-                </div>
-                <div className="mt-2 text-xs text-jm-gray">
-                  마케팅/전환 관점 종합 점수
-                </div>
-                <p className="mt-6 text-xs text-jm-gray leading-relaxed">
-                  위 <span className="font-bold text-jm-charcoal">영역별 점수 분석</span>에서
-                  8개 핵심 영역의 세부 점수를 확인했다면,
-                  아래에서는 가장 긴급한 개선 이슈와 구체적 조치를 알아보세요.
-                </p>
-              </div>
-
-              <div className="grid gap-4">
-                {report.criticalIssues?.map((issue, index) => (
-                  <DiagnosisCard key={index} issue={issue} index={index} />
-                ))}
-              </div>
-            </div>
-
-            {/* 12가지 진단 체크리스트 */}
-            {report.checklist && report.checklist.length > 0 && (
-              <DiagnosisChecklist checklist={report.checklist} />
-            )}
-
-            {/* Quick Wins (단계별 플로우 형태) */}
-            {report.quickWinsDetailed && report.quickWinsDetailed.length > 0 ? (
-              <QuickWinsFlow quickWins={report.quickWinsDetailed} />
-            ) : (
-              // 프롤백: 이전 형식 quickWins가 있으면 보여주기
-              report.quickWins &&
-              report.quickWins.length > 0 && (
-                <div className="jm-card mt-8 p-8">
-                  <p className="text-xs font-black tracking-wider text-jm-red">
-                    QUICK WINS
-                  </p>
-                  <h3 className="mt-2 text-2xl font-black">
-                    오늘 바로 적용 가능한 개선
-                  </h3>
-                  <ul className="mt-6 grid gap-3 md:grid-cols-2">
-                    {report.quickWins.map((w, i) => (
-                      <li
-                        key={i}
-                        className="flex gap-3 rounded-2xl bg-jm-light-gray p-4 text-sm leading-7"
-                      >
-                        <span className="shrink-0 inline-flex h-6 w-6 items-center justify-center rounded-full bg-jm-black text-white text-xs font-bold">
-                          {i + 1}
-                        </span>
-                        <span>{w}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )
-            )}
-
-            {/* v26: 네이버 AI 광고 준비도 점검 (2026.7 정식 오픈) */}
-            {report.naverAiReadiness && (
-              <NaverAiReadiness readiness={report.naverAiReadiness} />
-            )}
-
-            {/* v45-W4: 네이버 AI 브리핑(ADVoost AEO) 준비도 */}
-            {(report as any).naverBriefingReadiness && (
-              <div className="mt-6 md:mt-8">
-                <NaverBriefingReadinessCard
-                  readiness={(report as any).naverBriefingReadiness}
-                />
-              </div>
-            )}
-
-            {/* v46-W1: 네이버 생태계 연동 진단 (플레이스 + 서치어드바이저) */}
-            {(report as any).naverEcosystemReadiness && (
-              <div className="mt-6 md:mt-8">
-                <NaverEcosystemReadinessCard
-                  readiness={(report as any).naverEcosystemReadiness}
-                />
-              </div>
-            )}
-
-            {/* v46-W2: 수집·색인 기술 진단 + 키워드 빈도 분석 */}
-            {report.technicalSeo && (
-              <div className="mt-6 md:mt-8">
-                <TechnicalSeoCard technicalSeo={report.technicalSeo} />
-              </div>
-            )}
-            {report.keywordFrequency && (
-              <div className="mt-6 md:mt-8">
-                <KeywordFrequencyCard frequency={report.keywordFrequency} />
-              </div>
-            )}
-
-            {/* 개선 우선순위 로드맵 (도식화) */}
-            <PriorityMatrix roadmap={report.priorityRoadmap} />
-
-            {/* 카피 개선 비교 (현재 vs 우리 제안 vs 경쟁사) */}
-            <CopyImprovement
-              exampleCopy={report.exampleCopy}
-              competitorAnalysis={report.competitorAnalysis}
-            />
-
-            {/* 경쟁사 비교 (v14: 백그라운드 로딩 상태 + 결과 표시) */}
-            {competitorLoading && !report.competitorAnalysis && (
-              <div className="jm-card mt-8 p-8 text-center" data-hide-on-export>
-                <div className="inline-flex h-10 w-10 items-center justify-center">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-jm-light-gray border-t-jm-red" />
-                </div>
-                <p className="mt-3 text-sm font-black tracking-wider text-jm-red">
-                  COMPETITIVE LANDSCAPE
-                </p>
-                <p className="mt-2 text-lg font-black">
-                  동종업종 경쟁사를 추가 분석하고 있습니다
-                </p>
-                <p className="mt-2 text-sm text-jm-gray">
-                  네이버 검색에서 같은 업종 상위 5개 사이트를 가져와 비교 중입니다 (약 15~25초).
-                </p>
-              </div>
-            )}
-            {report.competitorAnalysis &&
-              (report.competitorAnalysis.competitors.length > 0 || report.competitorAnalysis.filtering) && (
-                <CompetitorComparison
-                  competitorAnalysis={report.competitorAnalysis}
-                  ourUrl={report.url}
-                  ourTitle={report.meta?.siteName || report.meta?.ogTitle}
-                />
-              )}
-
-            <CompetitorStatusNotice report={report} onRetry={competitorRequest.current?()=>{
+            <ReportLayout report={report} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
               const request=competitorRequest.current;
               if(request && !competitorLoading) void fetchCompetitor(request.url,request.hints,request.run);
-            }:undefined} />
+            }:undefined} actions={<><DownloadReportButton targetId="report-area" report={report} pending={competitorLoading}/><ShareButton report={report} competitorLoading={competitorLoading}/></>}/>
 
-            {/* Final CTA */}
-            <FinalCTA report={report} />
-
-            {/* v23: 면책 안내 (PDF에도 포함) */}
-            <Disclaimer />
           </div>
         </section>
       )}
