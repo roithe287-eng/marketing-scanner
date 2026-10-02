@@ -38,7 +38,7 @@ test('an agency-themed drama episode is excluded by page role while an actual se
   assert.deepEqual(selection.candidates.map(c=>c.domain),['agency.test']);
   assert.match(selection.excluded[0].reason,/회차 시청/);
   assert.equal(nonProviderReason('창업편 1화 | TVING','창업 드라마',episode.description),undefined);
-  const metadataOnly = finalizeSearchCandidates([{...agency,metaTitle:episode.title,metaDescription:episode.description}],query,[]);
+  const metadataOnly = finalizeSearchCandidates([{...selection.candidates[0],metaTitle:episode.title,metaDescription:episode.description}],query,[]);
   assert.equal(metadataOnly.length,0);
 });
 
