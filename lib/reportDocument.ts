@@ -1,3 +1,4 @@
+import {buildInsightsDocument} from './reportInsightsDocument';
 import {buildGeoComparison,changeLabels,comparisonRate,comparisonReasons,comparisonTime,GEO_COMPARISON_NOTE,GEO_COMPARISON_TITLE,observationLabel} from './geoComparison';
 import type { MarketingReport } from './reportSchema';
 import { safeHttpUrl } from './citationMeasurement';
@@ -28,6 +29,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     {kind:'body',text:report.oneLineSummary},
     {kind:'body',text:'전체 상세 내용이 포함된 결과 스냅샷입니다. AI 진단과 시뮬레이션은 검토를 위한 참고 자료이며 성과를 보장하지 않습니다.'},
   ];
+  blocks.push(...buildInsightsDocument(report));
   function walk(value:unknown,key='',depth=0) {
     if (value === undefined) return;
     if (value === null) {blocks.push({kind:'body',text:`${labels[key] || key}: 측정 불가 / 데이터 없음`});return;}
