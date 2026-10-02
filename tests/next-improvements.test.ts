@@ -31,6 +31,17 @@ test('metadata can exclude an inventory page; selection order and original respo
   assert.equal(final[1].relevance,'needs_review'); assert.equal(selection.excluded[0].domain,'busan.test');
 });
 
+test('an agency-themed drama episode is excluded by page role while an actual service page and entertainment query remain eligible', () => {
+  const episode = {...item('tving.com','종합광고대행사 찌찌: 창업편 1화 | TVING'),description:'종합광고대행사로 새롭게 태어나는 본격 코믹 창업 드라마.'};
+  const agency = item('agency.test','드라마 영상 제작·광고대행 서비스');
+  const selection = selectSearchCandidates([episode,agency],'example.com',query);
+  assert.deepEqual(selection.candidates.map(c=>c.domain),['agency.test']);
+  assert.match(selection.excluded[0].reason,/회차 시청/);
+  assert.equal(nonProviderReason('창업편 1화 | TVING','창업 드라마',episode.description),undefined);
+  const metadataOnly = finalizeSearchCandidates([{...agency,metaTitle:episode.title,metaDescription:episode.description}],query,[]);
+  assert.equal(metadataOnly.length,0);
+});
+
 test('live analysis contract preserves zero results and enriches only eight pages before saving selection evidence', async () => {
   const saved = {fetch:globalThis.fetch, id:process.env.NAVER_CLIENT_ID, secret:process.env.NAVER_CLIENT_SECRET, openai:process.env.OPENAI_API_KEY};
   process.env.NAVER_CLIENT_ID='test';process.env.NAVER_CLIENT_SECRET='test';delete process.env.OPENAI_API_KEY;
