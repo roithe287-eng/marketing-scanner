@@ -6,10 +6,23 @@ import {
   updateSharedReportCompetitor,
 } from "@/lib/shareStore";
 
+import {baselineQuestions} from "@/lib/geoComparison";
 import { MarketingReportSchema } from "@/lib/reportSchema";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
+
+export async function GET(req: NextRequest) {
+  const id = req.nextUrl.searchParams.get("id") || "";
+  if (!/^[A-Za-z0-9]{4,12}$/.test(id)) return NextResponse.json({message:"올바른 공유 링크 또는 ID를 입력해 주세요."},{status:400});
+  if (!isShareStoreAvailable()) return NextResponse.json({message:"기준 보고서를 불러올 수 없습니다."},{status:503});
+  const report = await getSharedReport(id);
+  if (!report) return NextResponse.json({message:"공유 보고서가 만료되었거나 찾을 수 없습니다."},{status:404});
+  if (!report.llmCitationTest) return NextResponse.json({message:"GEO 관측이 포함된 보고서를 사용해 주세요."},{status:422});
+  const baseline = {reportId:id,url:report.url,citation:report.llmCitationTest};
+  try {baselineQuestions(baseline);} catch (error) {return NextResponse.json({message:error instanceof Error?error.message:"질문을 불러올 수 없습니다."},{status:422});}
+  return NextResponse.json({baseline},{headers:{"Cache-Control":"no-store"}});
+}
 
 export async function POST(req: NextRequest) {
   try {

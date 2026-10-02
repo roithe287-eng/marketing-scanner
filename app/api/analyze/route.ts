@@ -1,3 +1,6 @@
+import {getSharedReport} from "@/lib/shareStore";
+import {baselineQuestions, canonicalPage} from "@/lib/geoComparison";
+import type {GeoBaseline} from "@/lib/reportSchema";
 import { NextRequest, NextResponse } from "next/server";
 import { extractWebsite } from "@/lib/extractWebsite";
 import { analyzeMarketing } from "@/lib/analyzeMarketing";
@@ -56,6 +59,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let geoBaseline: GeoBaseline | undefined;
+    let fixedQuestions: ReturnType<typeof baselineQuestions> | undefined;
+    if (body.baselineId !== undefined) {
+      if (typeof body.baselineId !== 'string' || !/^[A-Za-z0-9]{4,12}$/.test(body.baselineId)) return NextResponse.json({message:'기준 보고서 ID가 올바르지 않습니다.'},{status:400});
+      const previous = await getSharedReport(body.baselineId);
+      if (!previous?.llmCitationTest) return NextResponse.json({message:'기준 보고서가 만료되었거나 GEO 관측이 없습니다. 다른 기준 보고서를 선택해 주세요.'},{status:422});
+      if (!canonicalPage(url) || canonicalPage(previous.url) !== canonicalPage(url)) return NextResponse.json({message:'기준 보고서와 같은 URL로만 비교할 수 있습니다.'},{status:400});
+      geoBaseline = {reportId:body.baselineId,url:previous.url,citation:previous.llmCitationTest};
+      try {fixedQuestions = baselineQuestions(geoBaseline);} catch (error) {return NextResponse.json({message:error instanceof Error?error.message:'기준 질문을 확인할 수 없습니다.'},{status:422});}
+      if (geoQuestions !== undefined && JSON.stringify(geoQuestions.map((q:string)=>q.trim())) !== JSON.stringify(fixedQuestions.map(q=>q.question))) return NextResponse.json({message:'비교 모드에서는 기준 보고서의 질문을 그대로 사용합니다.'},{status:400});
+    }
+
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { message: "OPENAI_API_KEY가 설정되지 않았습니다." },
@@ -82,7 +97,7 @@ export async function POST(req: NextRequest) {
           console.warn("[discoverability] 실패:", e?.message || e);
           return null;
         }),
-        analyzeCitation(websiteData, geoQuestions?.map((q: string) => q.trim())).catch((e) => {
+        analyzeCitation(websiteData, geoQuestions?.map((q: string) => q.trim()), {fixedQuestions, fresh:!!geoBaseline}).catch((e) => {
           console.warn("[citation] 실패:", e?.message || e);
           return null;
         }),
@@ -97,6 +112,7 @@ export async function POST(req: NextRequest) {
     report.competitorAnalysis = null;
     report.discoverability = discoverability;
     report.llmCitationTest = llmCitation;
+    if (geoBaseline) report.geoBaseline = geoBaseline;
     report.keywordRankTracking = keywordRank;
 
     // v45-W1: 광고비 낭비 시뮬레이션

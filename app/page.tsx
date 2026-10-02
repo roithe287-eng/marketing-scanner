@@ -23,6 +23,7 @@ import KeywordFrequencyCard from "@/components/KeywordFrequencyCard";
 import DiscoverabilityPanel from "@/components/DiscoverabilityPanel";
 import LlmCitationCard from "@/components/LlmCitationCard";
 import GeoIntroduction from "@/components/GeoIntroduction";
+import GeoComparisonPanel from "@/components/GeoComparisonPanel";
 import GeoFocusPanel from "@/components/GeoFocusPanel";
 import AdWasteCalculator from "@/components/AdWasteCalculator";
 import KeywordRankCard from "@/components/KeywordRankCard";
@@ -75,7 +76,7 @@ export default function HomePage() {
     }
   }
 
-  async function handleAnalyze(url: string, geoQuestions?: string[]) {
+  async function handleAnalyze(url: string, geoQuestions?: string[], baselineId?: string) {
     const run = ++analysisRun.current;
     setLoading(true);
     setReport(null);
@@ -86,7 +87,7 @@ export default function HomePage() {
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, geoQuestions }),
+        body: JSON.stringify({ url, geoQuestions, baselineId }),
         signal: AbortSignal.timeout(90000),
       });
       
@@ -288,6 +289,7 @@ export default function HomePage() {
             <ScoreRadar diagnosis={report.diagnosis} />
 
             {(report.discoverability || report.llmCitationTest) && <GeoIntroduction />}
+            <GeoComparisonPanel report={report} />
             <GeoFocusPanel key={report.llmCitationTest?.questionSetId || report.url} report={report} />
 
             {/* v44: 콘텐츠 발견성 & AI 답변 대응력 (ScoreRadar 바로 아래) */}
