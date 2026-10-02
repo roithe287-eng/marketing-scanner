@@ -22,7 +22,7 @@ export default function GeoFocusPanel({report}: {report: MarketingReport}) {
         {copyState === 'copied' ? '질문 세트를 복사했습니다' : '같은 질문 세트 복사'}
       </button>}
     </div>
-    <ol className="mt-5 grid gap-3 md:grid-cols-3">{focus.tasks.map((task, i) => <li key={task.id} className="rounded-xl border bg-neutral-50 p-4 min-w-0">
+    <ol className={`mt-5 grid gap-3 ${focus.tasks.length === 3 ? 'md:grid-cols-3' : focus.tasks.length === 2 ? 'md:grid-cols-2' : ''}`}>{focus.tasks.map((task, i) => <li key={task.id} className="rounded-xl border bg-neutral-50 p-4 min-w-0">
       <p className="text-xs font-bold text-jm-red">우선 과제 {i + 1}</p><h3 className="mt-2 font-bold leading-6">{task.title}</h3>
       <p className="mt-3 text-xs text-jm-gray leading-6 break-words">근거: {task.evidence}</p>
       <p className="mt-3 text-sm leading-7 break-words">{task.nextStep}</p>

@@ -89,9 +89,8 @@ export function middleware(req: NextRequest) {
   const validationBranch = process.env.VERCEL_GIT_COMMIT_REF === "codex/actionable-geo-candidates-20261002";
   const previewValidation = process.env.VERCEL_ENV === "preview" && validationBranch;
   const validationPath = ["/", "/api/analyze", "/api/competitor", "/api/share"].includes(pathname);
-  const previewQa = previewValidation && pathname === "/qa-next";
   const liveValidation = (process.env.VERCEL_ENV === "production" || previewValidation) && validationPath;
-  if (validationOpen && (liveValidation || previewQa)) return NextResponse.next();
+  if (validationOpen && liveValidation) return NextResponse.next();
 
   // 1) IP 화이트리스트 검증
   const allowedIps = getAllowedIps();
