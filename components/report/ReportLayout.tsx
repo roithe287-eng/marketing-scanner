@@ -32,7 +32,25 @@ function Chapter({id,number,title,note,children}:{id:string;number:string;title:
 function Disclosure({title,note,children}:{title:string;note:string;children:React.ReactNode}) {return <details className="report-disclosure"><summary><span><strong>{title}</strong><small>{note}</small></span><b aria-hidden="true">+</b></summary><div className="report-legacy">{children}</div></details>;}
 export default function ReportLayout({report,actions,competitorLoading=false,onRetry}:{report:MarketingReport;actions?:React.ReactNode;competitorLoading?:boolean;onRetry?:()=>void}) {
   const data=useMemo(()=>buildReportInsights(report),[report]);const [active,setActive]=useState('overview');
-  useEffect(()=>{const observer=new IntersectionObserver(entries=>{const visible=entries.filter(e=>e.isIntersecting).sort((a,b)=>a.boundingClientRect.top-b.boundingClientRect.top);if(visible[0])setActive(visible[0].target.id.replace('report-',''));},{rootMargin:'-150px 0px -55% 0px'});for(const [id] of chapters){const el=document.getElementById(`report-${id}`);if(el)observer.observe(el);}return()=>observer.disconnect();},[]);
+  useEffect(()=>{
+    let frame=0;
+    const update=()=>{
+      frame=0;
+      const nav=document.querySelector('.report-nav');
+      const threshold=(nav?.getBoundingClientRect().bottom??150)+80;
+      let current:string='overview';
+      for(const [id] of chapters){
+        const section=document.getElementById(`report-${id}`);
+        if(section&&section.getBoundingClientRect().top<=threshold)current=id;
+      }
+      setActive(current);
+    };
+    const schedule=()=>{if(!frame)frame=window.requestAnimationFrame(update);};
+    update();
+    window.addEventListener('scroll',schedule,{passive:true});
+    window.addEventListener('resize',schedule);
+    return()=>{window.removeEventListener('scroll',schedule);window.removeEventListener('resize',schedule);if(frame)window.cancelAnimationFrame(frame);};
+  },[]);
   const site=report.meta?.siteName||report.meta?.domain||report.url.replace(/^https?:\/\//,'').replace(/\/$/,'');const url=safeHttpUrl(report.url);
   return <div className="report-v2" id="report-area">
     <header className="report-hero" id="report-top"><div className="report-hero-main"><p className="report-eyebrow">JINJJA MARKETING · DIAGNOSIS</p><h1>{site}<span>마케팅 진단 리포트</span></h1>{url&&<a className="report-domain" href={url} target="_blank" rel="noopener noreferrer">{report.url} ↗</a>}<p className="report-hero-summary">{report.oneLineSummary}</p><p className="report-note">공개 페이지 기반 자동 진단 · 실행 전 담당자 검토</p></div><div className="report-hero-score"><span>마케팅 종합 점수</span><div><strong>{report.overallScore}</strong><b>/ 100</b></div><p>페이지 구조·콘텐츠 진단</p><small>AI 인용률과는 다른 지표입니다.</small></div><div className="report-hero-bottom"><div className="report-hero-facts"><span><b>{data.tasks.length}</b> 보완 항목</span><span><b>{data.obs?data.questions.length:"—"}</b> 고객 질문</span><span><b>{data.competitorCount}</b> 비교 후보</span></div><div className="report-toolbar" data-hide-on-export>{actions}</div></div></header>
