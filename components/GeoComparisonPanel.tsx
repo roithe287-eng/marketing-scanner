@@ -1,6 +1,7 @@
 import React from 'react';
+import {PairedBars,ComparisonCoverage} from './visuals/ComparisonVisuals';
 import type {LlmCitationQuestionResult, MarketingReport} from '@/lib/reportSchema';
-import {buildGeoComparison,changeLabels,comparisonRate,comparisonReasons,comparisonTime,GEO_COMPARISON_NOTE,GEO_COMPARISON_TITLE,observationLabel} from '@/lib/geoComparison';
+import {buildGeoComparison,changeLabels,comparisonReasons,comparisonTime,GEO_COMPARISON_NOTE,GEO_COMPARISON_TITLE,observationLabel} from '@/lib/geoComparison';
 
 function Evidence({row,label}:{row?:LlmCitationQuestionResult;label:string}) {
   return <div className="min-w-0 rounded-xl bg-neutral-50 p-4">
@@ -17,10 +18,10 @@ export default function GeoComparisonPanel({report}:{report:MarketingReport}) {
     <p className="text-xs font-bold text-jm-red">GEO COMPARISON</p><h2 className="mt-2 text-xl font-black md:text-2xl">{GEO_COMPARISON_TITLE}</h2>
     <p className="mt-3 text-sm leading-7 text-jm-gray">{GEO_COMPARISON_NOTE}</p>
     <p className="mt-3 text-xs leading-6 text-jm-gray">이전 {comparisonTime(result.baseline.citation.measuredAt)}<br/>현재 {comparisonTime(result.current?.measuredAt)}</p>
-    <div className="mt-5 grid gap-3 sm:grid-cols-3">
-      <div className="rounded-xl border p-4"><p className="text-xs text-jm-gray">자사 출처 인용률 · 같은 {result.matched}쌍</p><p className="mt-2 text-lg font-black">{result.matched?`${comparisonRate(result.beforeRate)} → ${comparisonRate(result.afterRate)}`:'비교 불가'}</p></div>
-      <div className="rounded-xl border p-4"><p className="text-xs text-jm-gray">브랜드 언급률 · 같은 {result.mentionCount}쌍</p><p className="mt-2 text-lg font-black">{result.mentionCount?`${comparisonRate(result.beforeMention)} → ${comparisonRate(result.afterMention)}`:'비교 불가'}</p></div>
-      <div className="rounded-xl border p-4"><p className="text-xs text-jm-gray">비교에 사용한 질문·엔진 쌍</p><p className="mt-2 text-lg font-black">{result.matched}쌍 비교 · {result.excluded}쌍 제외</p></div>
+    <div className="mt-5 grid gap-3 lg:grid-cols-3">
+      <PairedBars label="자사 출처 인용률" before={result.beforeRate} after={result.afterRate} count={result.matched}/>
+      <PairedBars label="브랜드 언급률" before={result.beforeMention} after={result.afterMention} count={result.mentionCount}/>
+      <ComparisonCoverage matched={result.matched} excluded={result.excluded}/>
     </div>
     {result.matched>0 ? <p className="mt-4 text-sm leading-6">새로 인용 {result.gained}건 · 이번에 미확인 {result.lost}건 · 인용 유지 {result.kept}건</p> : <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm leading-7">비교 가능한 관측이 없습니다. 제외 이유를 확인하고, 이번 결과를 공유해 다음 측정의 기준으로 사용할 수 있습니다.</p>}
     <div className="mt-5 space-y-3">{result.pairs.map(pair=><details key={pair.key} className="rounded-xl border p-4">
