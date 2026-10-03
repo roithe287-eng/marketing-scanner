@@ -133,7 +133,7 @@ test('legacy grades and misleading API conclusions are suppressed in UI, tasks a
   assert.doesNotMatch(text,/OLD_UNSUPPORTED|OLD_FALSE/);assert.match(text,/구버전 오류 구분 없음/);
   assert.ok(!buildReportInsights(report).tasks.some(t=>t.title==='OLD_UNSUPPORTED_TASK'));
   const markup=renderToStaticMarkup(React.createElement(NaverOptimizationPanel,{targetUrl:report.url}));
-  assert.match(markup,/현재 진단 결과가 아닙니다/);assert.match(markup,/공식 문서 19개/);
+  assert.match(markup,/현재 진단 결과가 아닙니다/);assert.match(markup,/공식 문서 19개/);assert.match(markup,/작업 지시서 보기/);assert.match(markup,/readonly=""/i);
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(KeywordRankCard,{tracking:report.keywordRankTracking})),/15위 밖|미노출<|OLD_FALSE/);
 });
 test('new report PDF contains URL-specific steps, completion and clickable official sources',async(t)=>{

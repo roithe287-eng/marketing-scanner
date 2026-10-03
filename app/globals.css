@@ -735,3 +735,7 @@ button:focus-visible, summary:focus-visible, a:focus-visible {
 }
 @media(prefers-reduced-motion:reduce) {.naver-categories button,.naver-expand {transition:none;}}
 .naver-workbench button:focus-visible,.naver-workbench summary:focus-visible {outline:2px solid #b8262f;outline-offset:3px;}
+
+.naver-copy-preview {margin-top:14px;font-size:11px;}
+.naver-copy-preview summary {min-height:44px;display:flex;align-items:center;cursor:pointer;color:#536176;text-decoration:underline;text-underline-offset:3px;}
+.naver-copy-preview textarea {display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:14px;border:1px solid #cdd4df;border-radius:8px;background:white;color:#303843;font-family:inherit;font-size:13px;line-height:1.8;resize:vertical;min-height:180px;user-select:text;}
