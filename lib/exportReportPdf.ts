@@ -5,13 +5,11 @@ import { layoutPdfPages, PDF_FONT, PDF_PAGE, type PdfTextStyle } from './pdfLayo
 
 const yieldToBrowser=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 
-/** Draw the complete snapshot directly, without cloning or capturing the app DOM. */
-export async function exportReportPdf(report:MarketingReport,onProgress:(text:string)=>void) {
+/** Prepare a browser-independent PDF result; saving is an explicit user action. */
+export async function renderReportPdf(report:MarketingReport,onProgress:(text:string)=>void,canvas:HTMLCanvasElement,fontFamily=PDF_FONT,signal?:AbortSignal) {
+  signal?.throwIfAborted();
   onProgress('전체 상세 내용을 페이지별로 정리 중...');
   const {default:JsPDF}=await import('jspdf');
-  await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]);
-  const fontFamily=getComputedStyle(document.body).fontFamily || PDF_FONT;
-  const canvas=document.createElement('canvas');
   const scale=2;
   canvas.width=PDF_PAGE.width*scale;canvas.height=PDF_PAGE.height*scale;
   const ctx=canvas.getContext('2d');
@@ -30,6 +28,7 @@ export async function exportReportPdf(report:MarketingReport,onProgress:(text:st
     for(let i=0;i<pages.length;i++) {
       onProgress(`PDF 생성 중 ${i+1} / ${pages.length}페이지`);
       await yieldToBrowser();
+      signal?.throwIfAborted();
       ctx.setTransform(scale,0,0,scale,0,0);
       ctx.fillStyle='#ffffff';ctx.fillRect(0,0,PDF_PAGE.width,PDF_PAGE.height);
       ctx.textBaseline='top';ctx.textAlign='left';
@@ -59,7 +58,14 @@ export async function exportReportPdf(report:MarketingReport,onProgress:(text:st
     }
     let domain='website';
     try {domain=new URL(report.url).hostname.replace(/[^a-zA-Z0-9-]/g,'_');} catch { /* Older snapshots may contain a bare domain. */ }
-    await pdf.save(`마케팅스캐너_${domain}_${new Date().toISOString().slice(0,10)}.pdf`,{returnPromise:true});
-    return {pages:pages.length};
+    signal?.throwIfAborted();
+    return {pages:pages.length,blob:pdf.output('blob'),filename:`마케팅스캐너_${domain}_${new Date().toISOString().slice(0,10)}.pdf`};
   } finally {canvas.width=1;canvas.height=1;}
+}
+
+/** Draw the complete snapshot directly, without cloning or capturing the app DOM. */
+export async function exportReportPdf(report:MarketingReport,onProgress:(text:string)=>void,signal?:AbortSignal) {
+  await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]);
+  signal?.throwIfAborted();
+  return renderReportPdf(report,onProgress,document.createElement('canvas'),getComputedStyle(document.body).fontFamily||PDF_FONT,signal);
 }

@@ -381,3 +381,18 @@ button:focus-visible, summary:focus-visible, a:focus-visible {
 }
 @media(max-width:359px) { .report-rewrite-kinds { grid-template-columns:repeat(2,minmax(0,1fr)); } .report-nav a { font-size:10px; } }
 @media(max-width:767px) { .report-radar-label { font-size:20px; } .report-radar-value { font-size:24px; } }
+
+/* Keep generated files reachable through a direct tap, including mobile browsers. */
+.report-download { min-width:0; width:100%; }
+.report-pdf-ready { border:1px solid #dfe4eb; border-radius:12px; padding:14px; background:white; }
+.report-pdf-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.report-pdf-actions a { flex:1; min-height:44px; min-width:0; font-size:13px; text-align:center; }
+.report-pdf-ready p { font-size:12px; line-height:1.7; color:#606875; margin-top:10px; }
+@media(max-width:767px) {
+  .report-toolbar>* { max-width:100%; width:100%; }
+  .report-backlog-controls input { font-size:16px; min-height:44px; }
+  .report-nav a,.report-secondary-button { min-height:44px; }
+  .report-chapter-heading>a { width:44px; height:44px; }
+  .report-inline-details>summary { min-height:44px; display:flex; align-items:center; }
+}
+@media(max-width:359px) { .report-pdf-actions { flex-direction:column; } }
