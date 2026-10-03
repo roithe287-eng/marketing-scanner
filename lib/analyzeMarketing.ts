@@ -47,11 +47,6 @@ const buildPrompt = (
   const ogDesc = compressText(data.ogDescription || "", 130);
   const kw = compressText(data.keywords || "(없음)", 100);
 
-  // v26: 네이버 AI 광고 준비도 점검용 데이터
-  const schemaTypes = (data as any).schemaTypes || [];
-  const jsonLdCount = ((data as any).jsonLdSchemas || []).length;
-  const trackingScripts = (data as any).trackingScripts || [];
-
   return `[사이트 정보]
 URL: ${data.url}
 title: ${title}
@@ -71,40 +66,23 @@ H2(${data.h2.length}): ${JSON.stringify(data.h2.slice(0, l.h2).map((s) => s.slic
 CTA감지: ${JSON.stringify(data.ctaButtons.slice(0, 4).map((s) => s.slice(0, 30)))}
 폼:${data.hasForm ? "Y" : "N"} 연락처:${data.hasContactInfo ? "Y" : "N"}
 
-[이미지] 총${data.imageCount}개/alt없음${data.imageWithoutAlt}개
+[이미지] 총${data.imageCount}개/alt속성누락${data.imageWithoutAlt}개/빈alt${data.seoEvidence?.imagesEmptyAlt ?? "미확인"}개
 alt: ${JSON.stringify(data.imageAlts.slice(0, l.alt).map((s) => s.slice(0, 25)))}
 
 [신뢰] 후기:${data.hasReviewKeyword ? "Y" : "N"} 가격:${data.hasPriceKeyword ? "Y" : "N"} 인증:${data.hasTrustKeyword ? "Y" : "N"}
-
-[네이버 AI 광고 준비도 원천 데이터]
-JSON-LD 스키마 개수: ${jsonLdCount}
-schema @type 목록: ${JSON.stringify(schemaTypes.slice(0, 6))}
-schema name 존재: ${(data as any).schemaHasName ? "Y" : "N"}
-schema description 존재: ${(data as any).schemaHasDescription ? "Y" : "N"}
-schema price 존재: ${(data as any).schemaHasPrice ? "Y" : "N"}
-schema aggregateRating 존재: ${(data as any).schemaHasRating ? "Y" : "N"}
-전환 추적 스크립트: ${JSON.stringify(trackingScripts)}
-네이버 전환스크립트(wcs): ${(data as any).hasNaverConversionScript ? "Y" : "N"}
-GTM: ${(data as any).hasGTM ? "Y" : "N"}
-GA: ${(data as any).hasGA ? "Y" : "N"}
 
 [본문]
 ${body}
 
 ---
 위 데이터를 인용해서 JSON만 응답하라. 점수는 차등 평가. checklist 12개 모두 포함.
-naverAiReadiness는 네이버 AI 광고(2026.7 정식 오픈, ads.naver.com/notice/31888) 준비도 점검이다.
-- 5개 카테고리와 각 가중치: schema(40점), tracking(20점), site_name(15점), content(15점), mobile(10점)
-- schema 점수: @type존재 + name + description + price(Product일때) + aggregateRating 각 부분점수 합산
-- tracking: 네이버전환(wcs) 존재시 만점, GTM/GA도 가점
-- site_name: og:site_name이 명확한 한국어 업체명이면 만점, 영문으로만 되어있으면 감점
-- content: meta description 풍부함, H1의 명확성, 셌링포인트 포함 여부
-- mobile: viewport 메타, 모바일 대응
-- grade: A(85+), B(70-84), C(50-69), D(30-49), F(0-29)
-- checks 배열에 아래 8개 id 모두 포함:
-  schema_jsonld, schema_type, schema_name_desc, schema_price_rating, naver_conversion, other_tracking, site_name_readable, mobile_viewport
+네이버 SEO·ADVoost·API의 공식 상태 판정은 별도 규칙 엔진이 담당한다. naverAiReadiness는 생성하지 않는다.
+HTML 신호만으로 네이버 계정 연동·색인·실제 전환 수신·AI 브리핑 노출을 확정하거나 확률·공식 합격 점수를 만들지 않는다.
+제목의 고정 글자 수, 반복 단어 비율, 스키마 타입 개수, 영문 브랜드명만으로 네이버 패널티를 단정하지 않는다.
+빈 alt는 장식 이미지일 수 있다. alt 속성 누락과 빈 alt를 구분하고 이미지 역할은 검토 대상으로 둔다.
+viewport 존재만으로 모바일 동작·성능을 확인했다고 하지 않는다.
 
-{"url":"${data.url}","overallScore":<0-100>,"oneLineSummary":"<직설 한줄>","diagnosis":{"firstView":<0-100>,"cta":<0-100>,"copywriting":<0-100>,"trust":<0-100>,"conversionFlow":<0-100>,"adLanding":<0-100>,"mobileUx":<0-100>,"seo":<0-100>},"checklist":[{"id":"title","category":"seo","label":"title 태그","status":"pass|warning|fail","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"meta_description","category":"seo","label":"Meta Description","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"og_tags","category":"seo","label":"Open Graph","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"h1","category":"content","label":"H1","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"image_alt","category":"content","label":"이미지 ALT","status":"...","currentValue":"<N중 M누락>","diagnosis":"...","guide":"..."},{"id":"viewport","category":"seo","label":"모바일 viewport","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"cta_clarity","category":"conversion","label":"CTA 명확도","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"cta_repeat","category":"conversion","label":"CTA 반복","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"contact_info","category":"conversion","label":"연락처","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"trust_review","category":"trust","label":"후기/리뷰","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"trust_certification","category":"trust","label":"인증","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"price_info","category":"conversion","label":"가격/견적","status":"...","currentValue":"...","diagnosis":"...","guide":"..."}],"criticalIssues":[{"title":"...","problem":"...","reason":"...","recommendation":"...","priority":"high|medium|low","badExample":"<실제 예>","goodExample":"<개선 예>","exampleNote":"<한줄>"}],"quickWinsDetailed":[{"title":"...","steps":["Step 1...","Step 2..."],"beforeExample":"...","afterExample":"..."}],"priorityRoadmap":{"immediately":["..."],"thisWeek":["..."],"thisMonth":["..."]},"exampleCopy":{"currentHeroHeadline":"<실제 h1/title>","currentCtaText":"<감지 CTA 또는 '(없음)'>","heroHeadline":"<개선>","subHeadline":"<서브>","ctaText":"<6~12자>"},"finalCta":{"title":"<상담을 권하는 짧고 강력한 헤드라인. '유도' '권유' 단어 금지>","description":"<2-3문장. 사이트 구체 이슈 언급>","buttonText":"진짜마케팅 무료 상담 신청"},"naverAiReadiness":{"overallScore":<0-100>,"grade":"A|B|C|D|F","summary":"<네이버 AI 광고 준비 상태 한줄 요약>","checks":[{"id":"schema_jsonld","label":"JSON-LD schema.org 이용 여부","category":"schema","status":"pass|warning|fail","weight":10,"currentValue":"<개수 또는 '없음'>","diagnosis":"<한 줄>","guide":"<한 줄 개선 가이드>"},{"id":"schema_type","label":"schema @type 적절성(Product/LocalBusiness)","category":"schema","status":"...","weight":10,"currentValue":"<감지된 @type 목록 또는 '없음'>","diagnosis":"...","guide":"..."},{"id":"schema_name_desc","label":"schema name + description 필드","category":"schema","status":"...","weight":10,"currentValue":"...","diagnosis":"...","guide":"..."},{"id":"schema_price_rating","label":"schema price + aggregateRating","category":"schema","status":"...","weight":10,"currentValue":"...","diagnosis":"...","guide":"..."},{"id":"naver_conversion","label":"네이버 전환스크립트(wcs) 설치","category":"tracking","status":"...","weight":15,"currentValue":"<설치/미설치>","diagnosis":"...","guide":"<wcs.js 설치 방법 안내>"},{"id":"other_tracking","label":"추가 전환 추적(GTM/GA 등)","category":"tracking","status":"...","weight":5,"currentValue":"...","diagnosis":"...","guide":"..."},{"id":"site_name_readable","label":"가독성 좋은 사이트 이름(비즈채널)","category":"site_name","status":"...","weight":15,"currentValue":"<og:site_name 또는 title>","diagnosis":"...","guide":"<한국어 명칭 권장>"},{"id":"mobile_viewport","label":"모바일 viewport 메타","category":"mobile","status":"...","weight":10,"currentValue":"<설정 여부>","diagnosis":"...","guide":"..."}],"notes":["<의료 광고 제외 등 특이사항 필요시 추가, 없으면 빈 배열>"]}}`;
+{"url":"${data.url}","overallScore":<0-100>,"oneLineSummary":"<직설 한줄>","diagnosis":{"firstView":<0-100>,"cta":<0-100>,"copywriting":<0-100>,"trust":<0-100>,"conversionFlow":<0-100>,"adLanding":<0-100>,"mobileUx":<0-100>,"seo":<0-100>},"checklist":[{"id":"title","category":"seo","label":"title 태그","status":"pass|warning|fail","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"meta_description","category":"seo","label":"Meta Description","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"og_tags","category":"seo","label":"Open Graph","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"h1","category":"content","label":"H1","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"image_alt","category":"content","label":"이미지 ALT","status":"...","currentValue":"<N중 M누락>","diagnosis":"...","guide":"..."},{"id":"viewport","category":"seo","label":"모바일 viewport","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"cta_clarity","category":"conversion","label":"CTA 명확도","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"cta_repeat","category":"conversion","label":"CTA 반복","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"contact_info","category":"conversion","label":"연락처","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"trust_review","category":"trust","label":"후기/리뷰","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"trust_certification","category":"trust","label":"인증","status":"...","currentValue":"...","diagnosis":"...","guide":"..."},{"id":"price_info","category":"conversion","label":"가격/견적","status":"...","currentValue":"...","diagnosis":"...","guide":"..."}],"criticalIssues":[{"title":"...","problem":"...","reason":"...","recommendation":"...","priority":"high|medium|low","badExample":"<실제 예>","goodExample":"<개선 예>","exampleNote":"<한줄>"}],"quickWinsDetailed":[{"title":"...","steps":["Step 1...","Step 2..."],"beforeExample":"...","afterExample":"..."}],"priorityRoadmap":{"immediately":["..."],"thisWeek":["..."],"thisMonth":["..."]},"exampleCopy":{"currentHeroHeadline":"<실제 h1/title>","currentCtaText":"<감지 CTA 또는 '(없음)'>","heroHeadline":"<개선>","subHeadline":"<서브>","ctaText":"<6~12자>"},"finalCta":{"title":"<상담을 권하는 짧고 강력한 헤드라인. '유도' '권유' 단어 금지>","description":"<2-3문장. 사이트 구체 이슈 언급>","buttonText":"진짜마케팅 무료 상담 신청"}}`;
 };
 
 async function callOpenAI(

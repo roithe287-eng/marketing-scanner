@@ -1,3 +1,4 @@
+import {NAVER_CATEGORIES,naverCounts} from './naverKnowledge';
 import {isGenericKeyword} from './keywordRewrite';
 import type {MarketingReport} from './reportSchema';
 import {safeHttpUrl,ownHost} from './citationMeasurement';
@@ -60,16 +61,15 @@ export function buildReportInsights(report:MarketingReport) {
   report.criticalIssues.forEach((r,i)=>tasks.push({id:`critical-${i}`,group:'핵심 개선',title:r.title,status:r.priority==='high'?'fail':r.priority==='medium'?'warning':'review',evidence:r.problem,action:r.recommendation,source:'AI 진단'}));
   push('기본 진단','기본 체크리스트',report.checklist||[]);
   push('GEO 준비도','GEO 준비도',readinessItems(report.discoverability));
-  push('기술 점검','페이지 기술 점검',report.technicalSeo?.checks||[]);
-  push('네이버','네이버 AI 광고',report.naverAiReadiness?.checks||[]);
-  push('네이버','네이버 AI 브리핑',report.naverBriefingReadiness?.checks||[]);
-  push('네이버','네이버 생태계',report.naverEcosystemReadiness?.checks||[]);
+  for(const check of report.naverOptimization?.mode==='diagnosis'?report.naverOptimization.checks:[]) {
+    if(check.status==='action'||(check.status==='manual'&&check.priority==='high'))tasks.push({id:`naver-${check.id}`,group:'네이버',title:check.title,status:check.status==='manual'?'review':check.priority==='high'?'fail':'warning',evidence:check.evidence,action:`${check.steps.join(' → ')} / 완료 확인: ${check.completion}`,source:NAVER_CATEGORIES[check.category]});
+  }
   reviews.forEach((r,i)=>tasks.push({id:`brand-review-${i}`,group:'AI 답변',title:`${r.engine} 브랜드 답변 대조`,status:'review',evidence:r.question,action:'답변의 서비스 설명·업체명과 연결된 출처를 대조하세요. 오인식 여부는 확인 후 판단하세요.',source:'AI 답변 관측'}));
   const rank={fail:0,warning:1,review:2};tasks.sort((a,b)=>rank[a.status]-rank[b.status]);
   const metadataCount=competitors.filter(c=>!c.fetchError&&!!(c.metaTitle||c.metaDescription||c.h1||c.ctaTexts?.length)).length;
   const coverage=[
     {label:'페이지 진단',value:`${(report.checklist||[]).length}개 체크`,state:'저장됨',detail:'입력 페이지 기반 진단'},
-    {label:'기술 점검',value:report.technicalSeo?`${report.technicalSeo.checks.length}개 체크`:'—',state:report.technicalSeo?'저장됨':'미포함',detail:'페이지 기술 정보 기반'},
+    {label:'네이버 최적화',value:report.naverOptimization?.mode==='diagnosis'?`${report.naverOptimization.checks.length}개 점검`:'재진단 필요',state:report.naverOptimization?.mode==='diagnosis'?'관측·수동 분리':'기준 업데이트',detail:report.naverOptimization?.mode==='diagnosis'?`관측 확인 ${naverCounts(report.naverOptimization.checks).observed}개 · 계정·적용 범위 별도 확인`:'구버전 점수는 표시하지 않음'},
     {label:'AI 출처 판정',value:obs?`${obs.sourceTotal} / ${obs.total}건`:'—',state:!obs?'미확인':obs.sourceTotal===obs.total&&obs.total?'판정 완료':obs.sourceTotal?'일부 판정':'판정 불가',detail:'분모는 저장된 전체 관측'},
     {label:'경쟁사 수집',value:`${metadataCount} / ${competitors.length}개`,state:report.competitorStatus?.status==='pending'?'진행 중':competitors.length?(metadataCount===competitors.length?'저장됨':'일부 미확인'):'미확인',detail:'후보 중 상세 항목이 있는 사이트'},
   ];

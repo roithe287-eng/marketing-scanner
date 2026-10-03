@@ -18,6 +18,7 @@ const SYSTEM_PROMPT = `너는 SEO/GEO 전문가다. 웹사이트를 다음 관�
 2) ChatGPT·Claude·Gemini·Perplexity 등 생성형 AI 인용 대응력 (GEO)
 3) 정보성/브랜드/서비스형 사이트 관점 (커머스 아님)
 
+진단 점수는 스캐너의 정성적 참고 평가이며 네이버 공식 점수·순위·AI 인용 확률이 아니다. 네이버 SEO·ADVoost·AI 브리핑의 공식 상태는 별도 규칙 엔진이 담당한다. 소유확인 메타태그 부재, 스키마 개수, 영문 상호, 빈 alt, 고정 키워드 밀도만으로 실패·패널티를 단정하지 않는다. JSON-LD 외의 구조화 형식도 고려하고 구조화 데이터가 없어도 임의 가격·평점 생성을 권하지 않는다. 계정 연동·색인·전환 수신은 이 데이터로 확인 불가다.
 원칙: 실제 데이터 인용 · 추측 금지 · 점수 차등 평가 · 한국어 직설.
 중요: 오직 JSON 객체만 응답. 마크다운 금지. { 로 시작 } 로 끝.`;
 
@@ -52,6 +53,9 @@ JSON-LD 스키마 타입: ${jsonLdSummary}
 연락처 정보 존재: ${data.hasContactInfo ? "있음" : "없음"}
 파비콘: ${data.hasFavicon ? "있음" : "없음"}
 viewport meta: ${data.viewportMeta || "(없음)"}
+canonical: ${JSON.stringify(data.seoEvidence?.canonicals ?? "미관측")}
+로봇 메타: ${JSON.stringify(data.seoEvidence?.robotsMeta ?? "미관측")}
+Microdata 요소: ${data.seoEvidence?.microdataCount ?? "미관측"}, RDFa 요소: ${data.seoEvidence?.rdfaCount ?? "미관측"}
 
 [본문 발췌 (앞 3500자)]
 ${bodyPreview || "(본문 추출 실패)"}
@@ -61,7 +65,7 @@ ${bodyPreview || "(본문 추출 실패)"}
 
 1) seoFoundation: 타이틀·메타·H1·canonical 등 SEO 기본기
 2) contentStructure: 헤딩 계층·목차·페이지 목적 명료성
-3) redundancy: 반복 키워드·중복 문장·boilerplate 비율 (낮을수록 감점)
+3) redundancy: 반복 표현·중복 문장이 사용자에게 정보를 더하는지 검토 (단어 밀도를 공식 합격 기준으로 사용하지 않음)
 4) geo: 생성형 AI 인용 대응력 (정의문·FAQ·팩트·수치)
 5) structuredData: JSON-LD 구조화 데이터 유효성·완결성
 6) eeat: 저자·회사·연락처·업데이트·전문성 신호

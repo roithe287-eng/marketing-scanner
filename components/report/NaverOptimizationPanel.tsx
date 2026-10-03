@@ -1,0 +1,34 @@
+"use client";
+import React,{useMemo,useState} from 'react';
+import type {NaverOptimization,NaverCheck} from '@/lib/naverSchema';
+import {analyzeNaverOptimization} from '@/lib/analyzeNaverOptimization';
+import {NAVER_CATEGORIES,NAVER_OWNERS,NAVER_STATUS,NAVER_SCOPE,naverCounts,naverExecutionBrief} from '@/lib/naverKnowledge';
+import {safeHttpUrl} from '@/lib/citationMeasurement';
+
+const categoryNotes={search:['Yeti','공개 페이지 → 수집·색인 검토'],ads:['Ads-Naver','광고 URL → 계정 진단'],shopping:['상품·전환','상품 연동 → 판매 정보 대조'],developers:['검색 API','요청·응답 → 관측 해석']} as const;
+function CategoryIcon({kind}:{kind:keyof typeof NAVER_CATEGORIES}) {
+  return <svg viewBox="0 0 32 32" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">{kind==='search'?<><circle cx="13" cy="13" r="8"/><path d="m19 19 8 8M9 11h8M9 15h5"/></>:kind==='ads'?<><rect x="4" y="6" width="24" height="20" rx="4"/><path d="M4 12h24m-18 9 5-5 4 3 5-5"/></>:kind==='shopping'?<><path d="M6 11h20l-2 17H8L6 11Zm6 0V8a4 4 0 0 1 8 0v3"/><path d="m12 19 3 3 6-6"/></>:<><path d="m11 9-7 7 7 7m10-14 7 7-7 7M18 6l-4 20"/></>}</svg>;
+}
+export default function NaverOptimizationPanel({optimization,targetUrl}:{optimization?:NaverOptimization|null;targetUrl:string}) {
+  const report=useMemo(()=>optimization||analyzeNaverOptimization(null,targetUrl),[optimization,targetUrl]);
+  const [category,setCategory]=useState<keyof typeof NAVER_CATEGORIES>('search');
+  const [filter,setFilter]=useState<'all'|'action'|'manual'>('all');
+  const [copyState,setCopyState]=useState<{id:string;message:string}|null>(null);
+  const counts=naverCounts(report.checks);const guide=report.mode==='guide';
+  const rows=report.checks.filter(c=>c.category===category&&(filter==='all'||c.status===filter));
+  const priorities=report.checks.filter(c=>c.status==='action').sort((a,b)=>Number(b.priority==='high')-Number(a.priority==='high')).slice(0,3);
+  async function copy(check:NaverCheck) {
+    try {await navigator.clipboard.writeText(naverExecutionBrief(report,check));setCopyState({id:check.id,message:'실행 가이드를 복사했습니다.'});}
+    catch {setCopyState({id:check.id,message:'복사 권한이 없습니다. 아래 실행 순서를 선택해 복사해 주세요.'});}
+  }
+  return <section className="report-card naver-workbench" id="naver-optimization" aria-labelledby="naver-optimization-title">
+    <div className="report-card-heading naver-heading"><div><p className="report-eyebrow">NAVER · OPTIMIZATION WORKBENCH</p><h3 id="naver-optimization-title">네이버 최적화, 근거에서 실행까지</h3><p className="report-note">검색·광고·상품·API를 구분해, 이 URL에서 확인할 일과 계정에서 확인할 일을 연결합니다.</p></div><span className="naver-reviewed">공식 문서 확인<br/><strong>{report.rulesReviewedAt}</strong></span></div>
+    {guide?<div className="naver-legacy"><strong>이전 보고서 · 새 기준으로 재진단해 주세요</strong><p>구버전의 네이버 준비도·기술 점수와 자동 생성 과제는 표시하지 않습니다. 아래는 검증한 기준의 안내이며, 이 URL의 현재 진단 결과가 아닙니다.</p></div>:<><div className="naver-counts">{(Object.keys(NAVER_STATUS) as (keyof typeof NAVER_STATUS)[]).map(status=><div key={status} data-state={status}><span>{NAVER_STATUS[status]}</span><strong>{counts[status]}<small>개</small></strong></div>)}</div><div className="naver-status-bar" aria-hidden="true">{(Object.keys(counts) as (keyof typeof counts)[]).map(status=><span key={status} data-state={status} style={{flex:counts[status]}}/>)}</div></>}
+    <p className="report-note naver-scope">{NAVER_SCOPE}{report.observedAt&&<> 관측: <time dateTime={report.observedAt}>{new Date(report.observedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} KST</time></>}</p>
+    {!guide&&priorities.length>0&&<div className="naver-priorities"><span>먼저 볼 근거</span>{priorities.map((check,i)=><button key={check.id} type="button" onClick={()=>{setCategory(check.category);setFilter('action');}}><b>0{i+1}</b><span>{check.title}<small>{NAVER_CATEGORIES[check.category]}</small></span><span aria-hidden="true">↗</span></button>)}</div>}
+    <div className="naver-categories" aria-label="최적화 분야 선택">{(Object.keys(NAVER_CATEGORIES) as (keyof typeof NAVER_CATEGORIES)[]).map(key=><button key={key} type="button" aria-pressed={category===key} onClick={()=>{setCategory(key);setFilter('all');}}><CategoryIcon kind={key}/><span className="naver-category-label">{NAVER_CATEGORIES[key]}</span><strong>{categoryNotes[key][0]}</strong><small>{categoryNotes[key][1]}</small></button>)}</div>
+    <div className="naver-filter" aria-label="점검 상태 필터"><h4>{NAVER_CATEGORIES[category]}</h4>{(['all','action','manual'] as const).map(value=><button type="button" key={value} aria-pressed={filter===value} onClick={()=>setFilter(value)}>{value==='all'?'전체':NAVER_STATUS[value]}</button>)}<span aria-live="polite">{rows.length}개 항목</span></div>
+    <div className="naver-checks">{rows.length?rows.map(check=><details key={check.id} className="naver-check" data-state={check.status}><summary><span className="naver-check-marker" aria-hidden="true">{check.status==='observed'?'✓':check.status==='action'?'!':check.status==='not_applicable'?'−':'?'}</span><span className="naver-check-main"><strong>{check.title}</strong><small>{check.evidence}</small></span><span className="naver-badge">{NAVER_STATUS[check.status]}</span><span className="naver-expand" aria-hidden="true">+</span></summary><div className="naver-check-body"><div className="naver-check-meta"><span>{NAVER_OWNERS[check.owner]}</span><span>{check.basis==='official'?'공식 안내 기반':'스캐너 관측·운영 제안'}</span></div><p>{check.interpretation}</p><div className="naver-execution"><h5>이렇게 진행하세요</h5><ol>{check.steps.map((step,i)=><li key={i}><span aria-hidden="true">{i+1}</span><p>{step}</p></li>)}</ol><div className="naver-completion"><strong>완료 확인</strong><p>{check.completion}</p></div></div><div className="naver-check-footer"><div className="naver-sources">{report.sources.filter(source=>check.sourceIds.includes(source.id)).map(source=>{const url=safeHttpUrl(source.url);return url&&<a key={source.id} href={url} target="_blank" rel="noopener noreferrer">{source.title} ↗</a>;})}</div><button type="button" className="naver-copy" onClick={()=>copy(check)}>실행 가이드 복사</button></div>{copyState?.id===check.id&&<p role="status" className="report-note">{copyState.message}</p>}</div></details>):<p className="report-empty">선택한 조건에 해당하는 항목이 없습니다.</p>}</div>
+    <details className="naver-document-list"><summary>공식 문서 {report.sources.length}개 · 확인일과 개정일 보기</summary><p className="report-note">문서 내용은 확인일 기준입니다. 공개 페이지에서 확인한 개정일만 별도로 표시하며 이후 변경은 자동 반영되지 않습니다.</p><ul>{report.sources.map(source=>{const url=safeHttpUrl(source.url);return <li key={source.id}>{url?<a href={url} target="_blank" rel="noopener noreferrer">{source.title} ↗</a>:source.title}<small>확인 {source.reviewedAt}{source.updatedAt?` · 문서 개정 ${source.updatedAt}`:''}</small></li>;})}</ul></details>
+  </section>;
+}

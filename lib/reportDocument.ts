@@ -1,3 +1,4 @@
+import {buildNaverReportDocument} from './naverReportDocument';
 import {REPORT_NOTICE_TITLE,REPORT_NOTICE_LEAD,REPORT_NOTICE_ITEMS,REPORT_NOTICE_END} from './reportNotice';
 import {buildInsightsDocument} from './reportInsightsDocument';
 import {buildGeoComparison,changeLabels,comparisonRate,comparisonReasons,comparisonTime,GEO_COMPARISON_NOTE,GEO_COMPARISON_TITLE,observationLabel} from './geoComparison';
@@ -87,9 +88,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     ['콘텐츠 발견성 및 AI 답변 대응',report.discoverability],['핵심 개선 이슈',report.criticalIssues],
     ['진단 체크리스트',report.checklist],['빠른 개선 과제',report.quickWinsDetailed || report.quickWins],
     ['우선순위 로드맵',report.priorityRoadmap],['카피 개선',report.exampleCopy],
-    ['수집·색인 기술 진단',report.technicalSeo],['키워드 빈도',report.keywordFrequency],
-    ['네이버 AI 준비도',report.naverAiReadiness],['네이버 AI 브리핑 준비도',report.naverBriefingReadiness],
-    ['네이버 생태계 연동',report.naverEcosystemReadiness],['키워드 순위',report.keywordRankTracking],
+    ['키워드 빈도',report.keywordFrequency],
     ['업종 벤치마크',report.industryBenchmark],['광고비 낭비 시뮬레이션 (추정)',report.adWasteSimulation],
     ['경쟁사 분석 상태',report.competitorStatus],['경쟁사 분석',report.competitorAnalysis],['다음 단계',report.finalCta],
   ];
@@ -120,6 +119,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     if (data === report.competitorAnalysis) blocks.push({kind:'body',text:'검색에서 찾은 비교 후보입니다. 검색어 관련 표현은 서비스 일치의 단서이며 직접 경쟁 관계를 보장하지 않습니다. 비교 순서는 재정렬한 목록 순서이며 검색 응답 순서와 구분합니다.'});
     walk(data);
   }
+  blocks.push(...buildNaverReportDocument(report));
   blocks.push({kind:'heading',text:REPORT_NOTICE_TITLE},{kind:'body',text:REPORT_NOTICE_LEAD});
   for(const item of REPORT_NOTICE_ITEMS) blocks.push({kind:'subheading',text:item.title},{kind:'body',text:item.text});
   blocks.push({kind:'body',text:REPORT_NOTICE_END});

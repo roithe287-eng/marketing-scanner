@@ -31,11 +31,11 @@ test('competitor collection failures remain unknown and cannot create message ga
   const d=buildReportInsights(r);assert.equal(d.metadataCount,0);assert.equal(d.messageOpportunities.length,0);assert.ok(d.messageRows.slice(1).every(r=>r.cells.every(c=>c.match===undefined)));
   const html=renderToStaticMarkup(React.createElement(MessageMap,{data:d}));assert.match(html,/수집 미확인/);assert.ok(!html.includes('검색용 제목 무료'));
 });
-test('cross-diagnostic backlog preserves each evidence source and document includes all new actionable sections',()=>{
+test('backlog retains supported evidence, omits retired technical grades, and exports actionable sections',()=>{
   const check={id:'h1',label:'H1 제목',status:'fail' as const,currentValue:'없음',diagnosis:'진단',guide:'대표 제목 추가'};
   const r:MarketingReport={...report([row()]),checklist:[{...check,category:'seo'},{...check,id:'pass',category:'seo',label:'통과 항목',status:'pass'}],technicalSeo:{overallScore:50,grade:'C',summary:'요약',counts:{pass:0,warning:0,fail:1},checks:[{...check,group:'index'}],priorityActions:[]}};
-  const d=buildReportInsights(r);assert.equal(d.tasks.length,3);assert.equal(new Set(d.tasks.map(t=>t.id)).size,3);assert.ok(d.tasks.every(t=>t.title!=='통과 항목'));assert.equal(d.stages[0].score,r.diagnosis.firstView);
-  const copy=contentBrief('질문 확인',null);assert.match(copy,/담당자 확인 필요/);assert.ok(!copy.includes('undefined'));const blocks=buildReportDocument(r);for(const title of ['AI 출처 검토함','경쟁사 메시지 비교 지도','키워드 연결 기회','통합 보완 목록 · 3개'])assert.ok(blocks.some(b=>b.text===title));assert.ok(blocks.some(b=>b.href==='https://other.example/service'));
+  const d=buildReportInsights(r);assert.equal(d.tasks.length,2);assert.equal(new Set(d.tasks.map(t=>t.id)).size,2);assert.ok(d.tasks.every(t=>t.title!=='통과 항목'));assert.equal(d.stages[0].score,r.diagnosis.firstView);
+  const copy=contentBrief('질문 확인',null);assert.match(copy,/담당자 확인 필요/);assert.ok(!copy.includes('undefined'));const blocks=buildReportDocument(r);for(const title of ['AI 출처 검토함','경쟁사 메시지 비교 지도','키워드 연결 기회','통합 보완 목록 · 2개'])assert.ok(blocks.some(b=>b.text===title));assert.ok(blocks.some(b=>b.href==='https://other.example/service'));
   for(const Component of [SourceDirectory,ActionBacklog])assert.ok(renderToStaticMarkup(React.createElement(Component,{data:d})).length>500);
 });
 test('keyword opportunities remove common sentence words without rewriting original counts',()=>{

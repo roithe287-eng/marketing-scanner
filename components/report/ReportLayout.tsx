@@ -14,10 +14,6 @@ import CompetitorStatusNotice from '@/components/CompetitorStatusNotice';
 import DiagnosisChecklist from '@/components/DiagnosisChecklist';
 import QuickWinsFlow from '@/components/QuickWinsFlow';
 import CopyImprovement from '@/components/CopyImprovement';
-import NaverAiReadiness from '@/components/NaverAiReadiness';
-import NaverBriefingReadiness from '@/components/NaverBriefingReadiness';
-import NaverEcosystemReadiness from '@/components/NaverEcosystemReadiness';
-import TechnicalSeoCard from '@/components/TechnicalSeoCard';
 import KeywordFrequencyCard from '@/components/KeywordFrequencyCard';
 import DiscoverabilityPanel from '@/components/DiscoverabilityPanel';
 import LlmCitationCard from '@/components/LlmCitationCard';
@@ -25,6 +21,7 @@ import GeoIntroduction from '@/components/GeoIntroduction';
 import GeoComparisonPanel from '@/components/GeoComparisonPanel';
 import GeoFocusPanel from '@/components/GeoFocusPanel';
 import AdWasteCalculator from '@/components/AdWasteCalculator';
+import NaverOptimizationPanel from './NaverOptimizationPanel';
 import KeywordRankCard from '@/components/KeywordRankCard';
 import IndustryBenchmarkCard from '@/components/IndustryBenchmarkCard';
 import Disclaimer from '@/components/Disclaimer';
@@ -75,10 +72,7 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
     </Chapter>
     <Chapter id="search" number="03" title="검색과 페이지의 연결" note="저장된 페이지 표현과 기술 점검 결과를 함께 검토하세요."><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/><KeywordOpportunities data={data}/>
       {report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}
-      {report.technicalSeo&&<Disclosure title="페이지 기술 상태" note={`${report.technicalSeo.checks.length}개 점검의 실제 근거와 개선 가이드`}><TechnicalSeoCard technicalSeo={report.technicalSeo}/></Disclosure>}
-      {report.naverBriefingReadiness&&<Disclosure title="네이버 AI 브리핑 준비도" note={`${report.naverBriefingReadiness.checks.length}개 기술·콘텐츠 항목`}><NaverBriefingReadiness readiness={report.naverBriefingReadiness}/></Disclosure>}
-      {report.naverEcosystemReadiness&&<Disclosure title="네이버 생태계 연결" note="플레이스·서치어드바이저 관련 공개 신호"><NaverEcosystemReadiness readiness={report.naverEcosystemReadiness}/></Disclosure>}
-      {report.naverAiReadiness&&<Disclosure title="네이버 AI 광고 준비도" note="구조화 데이터·추적·모바일 점검"><NaverAiReadiness readiness={report.naverAiReadiness}/></Disclosure>}
+      <NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>
       {report.keywordFrequency&&<Disclosure title="전체 키워드 빈도" note="단어·연속어구의 원래 집계"><KeywordFrequencyCard frequency={report.keywordFrequency}/></Disclosure>}
       {!!report.checklist?.length&&<Disclosure title="기본 진단 체크리스트" note={`${report.checklist.length}개 항목의 통과·보완·미충족 근거`}><DiagnosisChecklist checklist={report.checklist}/></Disclosure>}
     </Chapter>

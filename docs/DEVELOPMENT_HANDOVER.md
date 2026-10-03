@@ -70,7 +70,7 @@ npm run dev -- --hostname 127.0.0.1
 | 수집·인코딩·robots | `lib/extractWebsite.ts` |
 | AI 진단 및 클라이언트 | `lib/analyzeMarketing.ts`, `lib/openaiClient.ts` |
 | 데이터 구조 | `lib/reportSchema.ts` |
-| 기술 SEO·키워드 빈도 | `lib/analyzeTechnicalSeo.ts`, `lib/analyzeKeywordFreq.ts` |
+| 기술 SEO·키워드 빈도 | `lib/analyzeNaverOptimization.ts`, `lib/analyzeKeywordFreq.ts` |
 | Redis 공통 설정 | `lib/redisClient.ts` |
 | 공유 저장·공개 화면 | `lib/shareStore.ts`, `app/api/share/route.ts`, `app/r/[id]/page.tsx` |
 | 도메인·수집기 연락처 | `lib/siteConfig.ts` |
