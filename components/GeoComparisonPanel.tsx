@@ -14,7 +14,7 @@ function Evidence({row,label}:{row?:LlmCitationQuestionResult;label:string}) {
 }
 export default function GeoComparisonPanel({report}:{report:MarketingReport}) {
   const result=buildGeoComparison(report);if (!result) return null;
-  return <section aria-label={GEO_COMPARISON_TITLE} className="jm-card mt-6 p-5 md:p-7">
+  return <section aria-label={GEO_COMPARISON_TITLE} className="report-geo-comparison jm-card mt-6 p-5 md:p-7">
     <p className="text-xs font-bold text-jm-red">GEO COMPARISON</p><h2 className="mt-2 text-xl font-black md:text-2xl">{GEO_COMPARISON_TITLE}</h2>
     <p className="mt-3 text-sm leading-7 text-jm-gray">{GEO_COMPARISON_NOTE}</p>
     <p className="mt-3 text-xs leading-6 text-jm-gray">이전 {comparisonTime(result.baseline.citation.measuredAt)}<br/>현재 {comparisonTime(result.current?.measuredAt)}</p>

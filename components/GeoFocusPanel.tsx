@@ -12,7 +12,7 @@ export default function GeoFocusPanel({report}: {report: MarketingReport}) {
     try {await navigator.clipboard.writeText(questionText); setCopyState('copied');}
     catch {setCopyState('manual');}
   }
-  return <section aria-label="GEO 우선 실행 과제" className="jm-card mt-6 p-5 md:p-7">
+  return <section aria-label="GEO 우선 실행 과제" className="report-geo-focus jm-card mt-6 p-5 md:p-7">
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div><p className="text-xs font-bold text-jm-red">GEO ACTION PLAN</p>
         <h2 className="mt-2 text-xl md:text-2xl font-black">먼저 실행할 GEO 과제</h2>

@@ -9,8 +9,9 @@ export type TextMeasurer = (text:string, style:PdfTextStyle) => number;
 export type WrappedLine = { text:string; newlineAfter:boolean };
 
 function styleFor(block:ReportBlock):PdfTextStyle {
-  const size=block.kind==='title'?27:block.kind==='heading'?22:block.kind==='subheading'?18:16;
-  return {size,weight:block.kind==='body'?400:700,color:block.kind==='heading'?'#c51620':block.href?'#1d4ed8':'#111827',lineHeight:size*1.65};
+  const size=block.kind==='title'?32:block.kind==='heading'?26:block.kind==='subheading'?21:16;
+  const weight=block.kind==='body'?400:block.kind==='subheading'?700:800;
+  return {size,weight,color:block.kind==='heading'?'#c51620':block.href?'#1d4ed8':'#111827',lineHeight:size*(block.kind==='body'?1.65:1.5)};
 }
 
 /** Retain whitespace, surrogate pairs and combined emoji at every line boundary. */
@@ -49,7 +50,7 @@ export function wrapPdfText(text:string,style:PdfTextStyle,measure:TextMeasurer,
 export function layoutPdfPages(blocks:ReportBlock[],measure:TextMeasurer):PdfPage[] {
   const prepared=blocks.map(block=>{
     const style=styleFor(block);
-    return {block,style,lines:wrapPdfText(block.text,style,measure),before:block.kind==='heading'?14:block.kind==='subheading'?7:0};
+    return {block,style,lines:wrapPdfText(block.text,style,measure),before:block.kind==='heading'?22:block.kind==='subheading'?12:0};
   });
   const pages:PdfPage[]=[{lines:[]}];
   let page=pages[0],y=PDF_PAGE.padding;

@@ -168,8 +168,8 @@ button:focus-visible, summary:focus-visible, a:focus-visible {
 .report-disclosure { background:white; border:1px solid var(--report-line); border-radius:14px; min-width:0; }
 .report-disclosure>summary { display:flex; justify-content:space-between; align-items:center; gap:15px; cursor:pointer; padding:20px 24px; list-style:none; }
 .report-disclosure>summary::-webkit-details-marker { display:none; }
-.report-disclosure strong { font-size:15px; font-weight:700; }
-.report-disclosure small { display:block; margin-top:4px; font-size:12px; color:var(--report-muted); }
+.report-disclosure>summary>span>strong { font-size:15px; font-weight:700; }
+.report-disclosure>summary>span>small { display:block; margin-top:4px; font-size:12px; color:var(--report-muted); }
 .report-disclosure>summary>b { font-size:23px; font-weight:400; color:#717b88; }
 .report-disclosure[open]>summary { border-bottom:1px solid var(--report-line); }
 .report-disclosure[open]>summary>b { transform:rotate(45deg); }
@@ -1223,4 +1223,125 @@ button,input,textarea,select { font-family:inherit; }
   .naver-categories { grid-template-columns:minmax(0,1fr); }
   .report-v2 .report-axis-title { font-size:14px; }
   .report-axis-grid,.report-readiness-grid { grid-template-columns:minmax(0,1fr); }
+}
+
+/* Reading hierarchy: chapter > panel > item > field label > full-size body.
+   Keep this role-based scale after the long-form rules; never size all strong descendants. */
+:root {
+  --type-chapter:32px;
+  --type-panel:28px;
+  --type-item:23px;
+  --type-subsection:20px;
+  --type-label:18px;
+}
+.report-v2 :is(h1,h2,h3,h4,h5,dt),.report-modal :is(h3,h4) {
+  overflow-wrap:anywhere;
+  word-break:keep-all;
+}
+.report-v2 .report-hero h1 { font-size:38px; font-weight:850; line-height:1.3; letter-spacing:-.04em; }
+.report-v2 .report-hero h1>span { display:block; margin-top:12px; font-size:20px; font-weight:600; line-height:1.6; letter-spacing:-.015em; }
+.report-v2 .report-chapter-heading h2 { font-size:var(--type-chapter); font-weight:850; line-height:1.4; letter-spacing:-.035em; }
+.report-v2 .report-chapter-heading p { margin-top:10px; font-size:16px; line-height:1.8; font-weight:400; }
+.report-v2 :is(.report-card-heading h3,.report-disclosure>summary>span>strong,
+  .report-geo-intro h2,.report-geo-focus h2,.report-geo-comparison h2,
+  .report-geo-observations>h3,.report-readiness h3,.report-benchmark h3,.competitor-report h3,.report-simulation h3) {
+  font-size:var(--type-panel);
+  font-weight:800;
+  line-height:1.45;
+  letter-spacing:-.03em;
+}
+.report-v2 .report-card-heading { margin-bottom:28px; }
+.report-v2 .report-card-heading h3 { margin-top:8px; }
+.report-v2 .report-card-heading .report-note { margin-top:12px; }
+.report-v2 .report-disclosure>summary { padding:26px 28px; gap:20px; align-items:flex-start; }
+.report-v2 .report-disclosure>summary>span { min-width:0; }
+.report-v2 .report-disclosure>summary>span>strong { display:block; color:#202936; }
+.report-v2 .report-disclosure>summary>span>small { margin-top:10px; font-size:15px; line-height:1.8; font-weight:400; }
+.report-v2 .report-disclosure>summary>b { flex-shrink:0; margin-top:4px; }
+.report-v2 .report-disclosure[open]>summary { background:#fafbfc; border-radius:14px 14px 0 0; }
+.report-v2 :is(.report-issue-heading h3,.report-checklist-rows h4,.report-copy-item>h4,
+  .report-roadmap-grid header h4,.report-quickwin-grid h4,.report-rewrite-card h4,
+  .report-readiness article>h4,.report-geo-focus h3,.report-competitor-subtitle,.competitor-card h4) {
+  font-size:var(--type-item);
+  font-weight:800;
+  line-height:1.5;
+  letter-spacing:-.025em;
+}
+.report-v2 .report-issue-heading { align-items:start; padding-bottom:20px; border-bottom:1px solid var(--report-line); }
+.report-v2 .report-issue-heading h3 { color:#182231; }
+.report-v2 .report-issue-heading :is(.report-index,.report-pill) { margin-top:4px; }
+.report-v2 .report-issue>.report-evidence-flow { margin-top:24px; }
+.report-v2 .report-checklist-rows header { align-items:start; }
+.report-v2 .report-copy-item>h4 { margin-bottom:20px; }
+.report-v2 :is(.report-source-item h4,.report-source-item h4 a,.report-placement-heading h4,
+  .report-execution-guide>summary strong,.report-execution-guide h5,.naver-filter h4,
+  .naver-check-main strong,.naver-api-list article h4,.report-benchmark h4,
+  .report-geo-observations h4,.report-geo-comparison h4,.report-message-mobile h4,.report-simulation h4,
+  .report-journey h4,.report-priority-trio strong) {
+  font-size:var(--type-subsection);
+  font-weight:750;
+  line-height:1.6;
+  letter-spacing:-.018em;
+}
+.report-v2 :is(.report-evidence-flow dt,.report-copy-pair h4,.report-copy-pair h5,
+  .report-check-current>strong,.report-rewrite-template>span,.report-rewrite-fields label>span,
+  .report-placement-copy h5,.report-placement-example>span,.report-callout>strong,
+  .report-geo-intro dt,.report-geo-focus details li>p:first-of-type,
+  .report-summary-title,.report-axis-title,.report-stat h4,.naver-category-label,
+  .naver-execution h5,.naver-completion strong) {
+  font-size:var(--type-label);
+  font-weight:800;
+  line-height:1.65;
+  letter-spacing:-.015em;
+}
+.report-v2 .report-evidence-flow dt { align-items:flex-start; margin-bottom:16px; }
+.report-v2 .report-evidence-flow dt>span { margin-top:1px; font-weight:600; }
+.report-v2 .report-evidence-flow[data-layout="stacked"] dt { margin-bottom:0; }
+.report-v2 .report-copy-pair :is(h4,h5) { margin-bottom:14px; }
+.report-v2 .report-check-current>strong { display:block; margin-bottom:8px; color:#39475b; }
+.report-v2 .report-rewrite-comparison .report-eyebrow { font-size:var(--type-label); font-weight:800; line-height:1.65; margin-bottom:14px; }
+.report-v2 .report-rewrite-template>span { display:block; margin-bottom:12px; }
+.report-v2 .report-geo-intro dt { margin-bottom:12px; }
+.report-v2 .report-geo-focus h3 { margin-bottom:12px; }
+.report-v2 .report-readiness-grid>button>span:first-child { font-size:var(--type-label); font-weight:750; line-height:1.6; }
+.report-v2 .report-question-row>span:first-child>span:last-child { font-size:var(--type-label); font-weight:750; line-height:1.65; }
+.report-v2 .geo-detail>summary { font-size:var(--type-label); font-weight:750; line-height:1.7; }
+.report-v2 .geo-detail>summary>span:last-child { font-size:15px; line-height:1.8; margin-top:10px; }
+.report-v2 .report-metric-ring>div:last-child>p:first-child { font-size:var(--type-label); font-weight:750; line-height:1.65; }
+.report-v2 .naver-check-main strong { display:block; margin-bottom:8px; }
+.report-v2 .naver-category-label { min-height:58px; }
+.report-v2 .naver-execution h5 { margin-bottom:12px; }
+.report-v2 .naver-completion strong { display:block; margin-bottom:8px; }
+.report-v2 .report-callout>strong { display:block; margin-bottom:8px; }
+.report-v2 .report-evidence-flow dd { color:#374151; font-weight:400; }
+.report-v2 .report-eyebrow { font-weight:700; letter-spacing:.075em; }
+.report-modal h3 { font-size:var(--type-panel); font-weight:800; line-height:1.45; letter-spacing:-.025em; }
+.report-modal h4 { font-size:var(--type-subsection); font-weight:800; line-height:1.6; margin-bottom:12px; }
+.report-notice-heading h2 { font-size:var(--type-panel); font-weight:800; line-height:1.5; letter-spacing:-.025em; }
+.report-notice-items h3 { font-size:var(--type-label); font-weight:800; line-height:1.6; margin-bottom:12px; }
+.scanner-preview-heading h2 { font-size:24px; font-weight:800; line-height:1.5; letter-spacing:-.025em; }
+.scanner-outcomes h2 { font-size:21px; font-weight:800; line-height:1.55; margin:4px 0 12px; letter-spacing:-.02em; }
+.scanner-preview-heading p { font-size:14px; line-height:1.7; }
+.scanner-url-form>label { font-size:18px; font-weight:750; line-height:1.6; }
+@media(min-width:1024px) {
+  .report-v2 .report-evidence-flow[data-layout="stacked"]>div { grid-template-columns:160px minmax(0,1fr); }
+}
+@media(max-width:767px) {
+  :root {
+    --type-chapter:28px;
+    --type-panel:24px;
+    --type-item:21px;
+    --type-subsection:19px;
+    --type-label:18px;
+  }
+  .report-v2 .report-hero h1 { font-size:30px; }
+  .report-v2 .report-hero h1>span { font-size:18px; }
+  .report-v2 .report-disclosure>summary { padding:22px 18px; gap:14px; }
+  .report-v2 .report-card-heading { margin-bottom:22px; }
+  .report-v2 .report-issue-heading { padding-bottom:18px; }
+  .report-v2 .report-issue>.report-evidence-flow { margin-top:20px; }
+  .report-v2 .report-evidence-flow dt { margin-bottom:12px; }
+  .report-v2 .naver-category-label { min-height:0; }
+  .scanner-preview-heading h2 { font-size:22px; }
+  .scanner-outcomes h2 { font-size:20px; }
 }
