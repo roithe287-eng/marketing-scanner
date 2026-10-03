@@ -1,3 +1,4 @@
+import {REPORT_NOTICE_TITLE,REPORT_NOTICE_LEAD,REPORT_NOTICE_ITEMS,REPORT_NOTICE_END} from './reportNotice';
 import {buildInsightsDocument} from './reportInsightsDocument';
 import {buildGeoComparison,changeLabels,comparisonRate,comparisonReasons,comparisonTime,GEO_COMPARISON_NOTE,GEO_COMPARISON_TITLE,observationLabel} from './geoComparison';
 import type { MarketingReport } from './reportSchema';
@@ -119,5 +120,8 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     if (data === report.competitorAnalysis) blocks.push({kind:'body',text:'검색에서 찾은 비교 후보입니다. 검색어 관련 표현은 서비스 일치의 단서이며 직접 경쟁 관계를 보장하지 않습니다. 비교 순서는 재정렬한 목록 순서이며 검색 응답 순서와 구분합니다.'});
     walk(data);
   }
+  blocks.push({kind:'heading',text:REPORT_NOTICE_TITLE},{kind:'body',text:REPORT_NOTICE_LEAD});
+  for(const item of REPORT_NOTICE_ITEMS) blocks.push({kind:'subheading',text:item.title},{kind:'body',text:item.text});
+  blocks.push({kind:'body',text:REPORT_NOTICE_END});
   return blocks;
 }

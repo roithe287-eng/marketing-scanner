@@ -37,11 +37,15 @@ export default function UrlForm({onSubmit,loading}:Props) {
     if (rows.length>5||rows.some(s=>s.length<5||s.length>250)) {setMessage('질문은 한 줄에 하나씩 최대 5개, 각 5~250자로 입력해 주세요.');return;}
     setMessage('');onSubmit(url.trim(),rows.length?rows:undefined,baseline?.reportId);
   }
-  return <form onSubmit={handleSubmit} className="mx-auto max-w-3xl rounded-3xl border border-jm-border bg-white p-3 shadow-xl">
-    <div className="flex flex-col gap-3 md:flex-row">
-      <input value={url} onChange={e=>setUrl(e.target.value)} placeholder="예: https://prorealmkt.com" aria-label="분석할 웹사이트 URL" className="min-h-[56px] min-w-0 flex-1 rounded-full px-6 text-base outline-none placeholder:text-jm-gray" disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" autoComplete="off"/>
-      <button type="submit" disabled={loading||baselineLoading} className="jm-button min-h-[56px] px-6">{loading?'분석 중...':baseline?'같은 질문으로 새로 측정':'무료 진단하기'}</button>
+  return <form onSubmit={handleSubmit} className="scanner-url-form">
+    <label htmlFor="scanner-url" className="scanner-url-label">진단할 웹사이트 URL</label>
+    <div className="scanner-url-row">
+      <input id="scanner-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="예: https://prorealmkt.com" aria-label="분석할 웹사이트 URL" className="scanner-url-input" disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby="scanner-url-help"/>
+      <button type="submit" disabled={loading||baselineLoading} className="jm-button scanner-submit">{loading?'분석 중...':baseline?'같은 질문으로 새로 측정':'내 사이트 무료 진단'}</button>
     </div>
+    <p id="scanner-url-help" className="scanner-url-help">홈페이지·서비스 소개·광고 랜딩 URL을 입력해 주세요.</p>
+    <details className="scanner-advanced">
+      <summary>GEO 질문·이전 보고서 비교 <span>(선택)</span></summary>
     <details className="px-4 py-3 text-left text-sm">
       <summary className="cursor-pointer font-bold">이전 보고서와 GEO 비교하기</summary>
       <p className="mt-3 text-xs leading-6 text-jm-gray">공유한 보고서의 질문과 URL을 불러와 새로 측정합니다. 이전 답변·출처도 새 공유 보고서와 PDF에 함께 보관됩니다.</p>
@@ -56,6 +60,7 @@ export default function UrlForm({onSubmit,loading}:Props) {
       <summary className="cursor-pointer text-jm-gray">{baseline?'비교할 고정 질문 보기':'GEO 고객 질문 직접 입력 (선택)'}</summary>
       <label htmlFor="geo-questions" className="my-2 block text-xs text-jm-gray">{baseline?'기준 질문을 그대로 사용합니다. 편집하려면 비교를 해제해 주세요.':'한 줄에 질문 하나씩 최대 5개. 비워두면 사이트에 맞춰 생성합니다.'}</label>
       <textarea id="geo-questions" value={questions} onChange={e=>setQuestions(e.target.value)} disabled={loading||baselineLoading} readOnly={!!baseline} rows={4} maxLength={1254} className="w-full rounded-xl border p-3" placeholder="고객이 실제 상담에서 물어보는 질문을 입력하세요."/>
+    </details>
     </details>
     {message && <p role="alert" className="px-4 py-2 text-left text-sm text-red-700">{message}</p>}
   </form>;

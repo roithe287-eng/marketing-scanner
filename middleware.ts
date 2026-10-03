@@ -60,6 +60,7 @@ export function middleware(req: NextRequest) {
 
   // 항상 허용되는 공개 경로 (광고주가 공유 링크 접속 시 필요)
   const isPublic =
+    pathname === "/notice" || // 공유·요약 PDF에서 연결되는 공개 이용 안내
     pathname.startsWith("/r/") || // 공유 결과 페이지
     pathname.startsWith("/restricted") || // 접근 제한 안내
     pathname.startsWith("/api/login") || // 로그인 처리

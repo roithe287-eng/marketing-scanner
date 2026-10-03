@@ -69,6 +69,8 @@ test("IP and cookie protection both apply; shared reports remain public", () => 
   assert.equal(middleware(request("/api/analyze", "::ffff:203.0.113.10", "ms_internal=local-test-access")).headers.get("x-middleware-next"), "1");
   assert.equal(middleware(request("/", "203.0.113.11")).headers.get("location"), "https://scanner.example/restricted");
   assert.equal(middleware(request("/r/abc123", "203.0.113.11")).headers.get("x-middleware-next"), "1");
+  assert.equal(middleware(request("/notice", "203.0.113.11")).headers.get("x-middleware-next"), "1");
+  assert.equal(middleware(request("/notice-private", "203.0.113.11")).headers.get("location"), "https://scanner.example/restricted");
 });
 
 test("jsPDF supports the report's image, multi-page, and footer operations", async () => {
