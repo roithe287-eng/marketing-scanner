@@ -3,8 +3,7 @@
 import { useRef, useState } from "react";
 import ReportLayout from '@/components/report/ReportLayout';
 import BrandHeader from "@/components/BrandHeader";
-import UrlForm from "@/components/UrlForm";
-import LivePreviewCard from "../components/LivePreviewCard";
+import LandingHero from "@/components/LandingHero";
 import DownloadReportButton from "@/components/DownloadReportButton";
 import ShareButton from "@/components/ShareButton";
 import { MarketingReport, MarketingReportSchema } from "@/lib/reportSchema";
@@ -118,89 +117,7 @@ export default function HomePage() {
     <main className={report && !loading ? "report-page" : undefined}>
       <BrandHeader />
 
-      {/* v35: Hero — Split Layout (좌 45% 카피 / 우 55% LivePreviewCard) */}
-      <section className="relative overflow-hidden">
-        {/* 백그라운드 그래픽 (1개만) — 좌상단 막대차트 라인아트 */}
-        <svg
-          className="pointer-events-none absolute -top-8 -left-12 w-[420px] h-[420px] opacity-[0.06] z-0"
-          viewBox="0 0 200 200"
-          fill="none"
-          aria-hidden
-        >
-          {/* X축 베이스라인 */}
-          <line x1="20" y1="170" x2="180" y2="170" stroke="#0f172a" strokeWidth="1.5" />
-          {/* Y축 */}
-          <line x1="20" y1="170" x2="20" y2="30" stroke="#0f172a" strokeWidth="1.5" />
-          {/* 막대 5개 (점점 높아짐) */}
-          <rect x="35" y="130" width="20" height="40" stroke="#0f172a" strokeWidth="1.5" fill="none" />
-          <rect x="63" y="110" width="20" height="60" stroke="#0f172a" strokeWidth="1.5" fill="none" />
-          <rect x="91" y="85" width="20" height="85" stroke="#0f172a" strokeWidth="1.5" fill="none" />
-          <rect x="119" y="60" width="20" height="110" stroke="#0f172a" strokeWidth="1.5" fill="none" />
-          <rect x="147" y="35" width="20" height="135" stroke="#0f172a" strokeWidth="1.5" fill="none" />
-          {/* 상승 애로우 */}
-          <path d="M 30 155 L 160 30 M 160 30 L 150 38 M 160 30 L 152 22" stroke="#e31b23" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-
-        <div className="jm-container relative z-10 py-6 md:py-10 lg:py-14">
-          {/* 상단 라이브 상태바 */}
-          <div className="mb-4 md:mb-6 flex items-center gap-2 text-[11px] md:text-xs text-[#64748b] font-medium">
-            <span className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse" />
-              <span className="font-bold text-[#10b981]">Live</span>
-            </span>
-            <span className="text-[#cbd5e1]">·</span>
-            <span>14,237 sites diagnosed</span>
-            <span className="text-[#cbd5e1]">·</span>
-            <span className="font-mono">v3.4</span>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,_45fr)_minmax(0,_55fr)] gap-8 md:gap-10 lg:gap-12 items-center">
-            {/* 좌측 — 카피 영역 */}
-            <div className="order-1">
-              <p className="mb-2.5 md:mb-3 text-[11px] md:text-xs font-black tracking-widest text-[#e31b23]">
-                JINJJA MARKETING SCANNER · v3.4
-              </p>
-              <h1 className="text-[26px] sm:text-[32px] md:text-[40px] lg:text-[42px] xl:text-[48px] font-black leading-[1.35] md:leading-[1.3] tracking-tight text-[#0f172a]">
-                URL 하나로, <span className="whitespace-nowrap">13개 진단 항목</span><br />
-                <span className="whitespace-nowrap">경쟁사 분석까지</span>{" "}
-                <span className="text-[#e31b23] whitespace-nowrap">30초 안에</span><br />
-                끝냅니다
-              </h1>
-              <p className="mt-4 md:mt-5 text-sm md:text-base leading-relaxed text-[#64748b] font-medium">
-                네이버 AI 광고 적합도 · 경쟁사 포지셔닝 맵 · 퀵윈 액션 플랜
-                <br className="hidden md:block" />
-                진짜마케팅 시니어 컨설턴트가 검수한 자동 진단 시스템
-              </p>
-
-              <div className="mt-6 md:mt-7">
-                <UrlForm onSubmit={handleAnalyze} loading={loading} />
-              </div>
-
-              {/* 신뢰 배지 */}
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#e2e8f0] bg-white text-[11px] md:text-xs font-bold text-[#0f172a]">
-                  <span className="text-[#10b981]">✓</span> 13개 진단 항목
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#e2e8f0] bg-white text-[11px] md:text-xs font-bold text-[#0f172a]">
-                  <span className="text-[#10b981]">✓</span> 카톡 URL 공유
-                </span>
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border border-[#e2e8f0] bg-white text-[11px] md:text-xs font-bold text-[#0f172a]">
-                  <span className="text-[#10b981]">✓</span> 네이버 AI 광고 적합도
-                </span>
-              </div>
-
-              <p className="mt-3 text-[11px] md:text-xs text-[#94a3b8] leading-relaxed">
-                · 분석은 보통 20~40초 소요되며, SPA(React/Vue) 사이트는 일부 콘텐츠가 분석되지 않을 수 있습니다.
-              </p>
-            </div>
-
-            {/* 우측 — LivePreviewCard */}
-            <div className="order-2 relative">
-              <LivePreviewCard />
-            </div>
-          </div>
-        </div>
-      </section>
+      <LandingHero onSubmit={handleAnalyze} loading={loading}/>
 
       {/* Loading */}
       {loading && (
@@ -213,7 +130,7 @@ export default function HomePage() {
             <p className="mt-3 text-jm-gray text-sm">
               페이지의 마케팅 요소를 수집하고 진단 리포트를 생성하고 있습니다.
               <br />
-              평균 20~40초가 소요됩니다.
+              사이트와 외부 서비스의 응답에 따라 시간이 달라질 수 있습니다.
             </p>
           </div>
         </section>
@@ -253,7 +170,8 @@ export default function HomePage() {
           <div>
             © {new Date().getFullYear()} 진짜마케팅 · 마케팅스캐너 (MVP)
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
+            <a href="/notice" className="hover:text-jm-black">진단 이용 안내</a>
             <a
               href={process.env.NEXT_PUBLIC_BRAND_URL || "https://prorealmkt.com"}
               target="_blank"

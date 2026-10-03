@@ -1,3 +1,4 @@
+import {REPORT_NOTICE_SUMMARY,REPORT_NOTICE_URL} from './reportNotice';
 import {diagnosisScores,radarPoint} from './diagnosisVisuals';
 import {buildKeywordRewrites,type KeywordRewrite} from './keywordRewrite';
 import {wrapPdfText,type PdfTextStyle,type TextMeasurer} from './pdfLayout';
@@ -43,8 +44,10 @@ export function buildReportSummaryPage(report:MarketingReport,measure:TextMeasur
   const chosen:KeywordRewrite[]=[];
   for(const kind of ['구체화','정리','배치','유지','문맥 검토']){const plan=all.find(p=>p.kind===kind);if(plan&&chosen.length<3)chosen.push(plan);}
   for(const plan of all){if(chosen.length===3)break;if(!chosen.includes(plan))chosen.push(plan);}
-  chosen.forEach((p,i)=>{const y=602+i*128;rect(48,y,694,116);text(`${p.item.keyword} · ${p.kind}`,64,y+10,662,13,700,ink,1);text(`방향  ${p.action}`,64,y+34,662,11,400,muted,2);text(`작성 틀  ${p.template}`,64,y+71,662,11,600,red,2);});
+  chosen.forEach((p,i)=>{const y=602+i*124;rect(48,y,694,116);text(`${p.item.keyword} · ${p.kind}`,64,y+10,662,13,700,ink,1);text(`방향  ${p.action}`,64,y+34,662,11,400,muted,2);text(`작성 틀  ${p.template}`,64,y+71,662,11,600,red,2);});
   if(!chosen.length){rect(48,602,694,116);text('저장된 반복 표현 제안이 없습니다.',64,620,662,14,700);text('단어 빈도 데이터가 수집된 보고서에서 대표 TO-BE를 표시합니다.',64,654,662,12,400,muted);}
-  text('공개 페이지 기반 자동 진단 · 실행 전 담당자 검토. 대표 항목만 담았습니다. 전체 근거와 원문은 상세 보고서에서 확인하세요.',48,1004,694,10,400,muted,2);
+  text(REPORT_NOTICE_SUMMARY,48,982,694,9.5,400,muted,3);
+  text('대표 항목 요약 · 전체 근거는 상세 PDF / 진단 이용 안내: '+REPORT_NOTICE_URL,48,1026,694,8,400,muted,1);
+  page.lines[page.lines.length-1].href=REPORT_NOTICE_URL;
   return page;
 }
