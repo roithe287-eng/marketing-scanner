@@ -25,6 +25,8 @@ import NaverOptimizationPanel from './NaverOptimizationPanel';
 import KeywordRankCard from '@/components/KeywordRankCard';
 import IndustryBenchmarkCard from '@/components/IndustryBenchmarkCard';
 import Disclaimer from '@/components/Disclaimer';
+import GrowthPlanPanel from './GrowthPlanPanel';
+import GrowthKpiPanel from './GrowthKpiPanel';
 const chapters=[['overview','핵심 요약'],['geo','AI·GEO'],['search','검색·페이지'],['competition','경쟁사'],['actions','실행 과제']] as const;
 function Chapter({id,number,title,note,children}:{id:string;number:string;title:string;note:string;children:React.ReactNode}) {return <section id={`report-${id}`} className="report-chapter" aria-labelledby={`report-title-${id}`}><div className="report-chapter-heading"><span>{number}</span><div><h2 id={`report-title-${id}`}>{title}</h2><p>{note}</p></div><a href="#report-top" aria-label={`${title}에서 보고서 처음으로`}>↑</a></div><div className="report-stack">{children}</div></section>;}
 function Disclosure({title,note,children}:{title:string;note:string;children:React.ReactNode}) {return <details className="report-disclosure"><summary><span><strong>{title}</strong><small>{note}</small></span><b aria-hidden="true">+</b></summary><div className="report-legacy">{children}</div></details>;}
@@ -70,7 +72,7 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
       {report.llmCitationTest&&<LlmCitationCard citation={report.llmCitationTest}/>}
       <AnswerPageMap data={data}/><BrandReview data={data}/><SourceDirectory data={data}/><GeoComparisonPanel report={report}/>
     </Chapter>
-    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="저장된 페이지 표현과 기술 점검 결과를 함께 검토하세요."><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/><KeywordOpportunities data={data}/>
+    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="SEO·GEO·AEO의 근거를 확인하고, 해당 URL에서 실행할 작업을 정하세요."><GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/><KeywordOpportunities data={data}/>
       {report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}
       <NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>
       {report.keywordFrequency&&<Disclosure title="전체 키워드 빈도" note="단어·연속어구의 원래 집계"><KeywordFrequencyCard frequency={report.keywordFrequency}/></Disclosure>}
@@ -82,7 +84,7 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
       {report.competitorAnalysis&&(data.competitorCount>0||report.competitorAnalysis.filtering)&&<Disclosure title="경쟁사 수집 기록과 상세 비교" note={`${data.competitorCount}개 후보 · 상세 항목 확인 ${data.metadataCount}개 · 포지셔닝·메시지·원문`}><CompetitorComparison competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/></Disclosure>}
       {report.industryBenchmark&&<Disclosure title="업종별 벤치마크" note="표본 규모와 비교 가능한 지표 확인"><IndustryBenchmarkCard benchmark={report.industryBenchmark}/></Disclosure>}
     </Chapter>
-    <Chapter id="actions" number="05" title="확인한 내용을 실행으로" note="보완 목록을 검색하고, 원인과 실행안을 펼쳐 작업 범위를 정하세요."><ActionBacklog data={data}/><GeoFocusPanel key={report.llmCitationTest?.questionSetId||report.url} report={report}/>
+    <Chapter id="actions" number="05" title="확인한 내용을 실행으로" note="목표 KPI와 확인 방법을 정하고, 보완 목록에서 작업 범위를 구체화하세요."><GrowthKpiPanel key={`kpi:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} targetUrl={report.url}/><ActionBacklog data={data}/><GeoFocusPanel key={report.llmCitationTest?.questionSetId||report.url} report={report}/>
       <Disclosure title="핵심 이슈와 개선 예시" note={`${report.criticalIssues.length}개 이슈 · 문제·원인·조치·예시 전체`}><div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} key={`${issue.title}-${index}`}/>)}</div></Disclosure>
       <Disclosure title="실행 일정과 빠른 개선" note="즉시·이번 주·이번 달의 제안 일정"><PriorityMatrix roadmap={report.priorityRoadmap}/>{report.quickWinsDetailed?.length?<QuickWinsFlow quickWins={report.quickWinsDetailed}/>:<ul>{report.quickWins?.map((w,i)=><li key={i}>{w}</li>)}</ul>}</Disclosure>
       <Disclosure title="카피 개선 제안" note="현재 문구와 제안 문구를 비교하고 사실 여부 확인"><CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis}/></Disclosure>

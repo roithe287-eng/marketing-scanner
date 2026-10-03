@@ -385,7 +385,7 @@ export async function extractWebsite(
   const titleCount = $("title").length;
   const descriptionCount = $('meta[name="description" i]').length;
   const canonicals = $('link[rel~="canonical" i]').map((_, el) => $(el).attr("href") || "").get();
-  const robotsMeta = $("head meta[name]").map((_,el) => ({agent:($(el).attr("name") || "").toLowerCase(),content:$(el).attr("content") || ""})).get().filter(m=>["robots","yeti","ads-naver"].includes(m.agent));
+  const robotsMeta = $("head meta[name]").map((_,el) => ({agent:($(el).attr("name") || "").toLowerCase(),content:$(el).attr("content") || ""})).get().filter(m=>["robots","googlebot","yeti","ads-naver"].includes(m.agent));
   const microdataCount = $("[itemscope]").length;
   const rdfaCount = $("[typeof]").length;
 

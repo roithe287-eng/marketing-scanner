@@ -24,7 +24,7 @@ type Rule={allow:boolean;path:string};
  * Ads-Naver intentionally ignores the general wildcard group (NAVER advertising FAQ).
  * Unsupported percent-encoded rules are left for manual inspection rather than guessed.
  */
-export function evaluateRobots(text:string,agent:'Yeti'|'Ads-Naver',path:string):{allowed:boolean|null;rule:string;explicit:boolean} {
+export function evaluateRobots(text:string,agent:'Yeti'|'Ads-Naver'|'Googlebot'|'OAI-SearchBot',path:string):{allowed:boolean|null;rule:string;explicit:boolean} {
   const groups:{agents:string[];rules:Rule[]}[]=[];
   let group:{agents:string[];rules:Rule[]}|undefined;
   let directives=false;
@@ -55,7 +55,7 @@ export async function observeRobots(url:string,userAgent:string):Promise<RobotsO
   try {
     const response=await fetch(target,{headers:{'User-Agent':userAgent},signal:AbortSignal.timeout(5000),cache:'no-store'});
     const httpStatus=response.status;
-    if(httpStatus>=400&&httpStatus<500)return {...base,httpStatus,status:'missing'};
+    if(httpStatus>=400&&httpStatus<500&&httpStatus!==429)return {...base,httpStatus,status:'missing'};
     if(!response.ok)return {...base,httpStatus,status:'http_error'};
     const contentType=response.headers.get('content-type')||'';
     if(/html/i.test(contentType))return {...base,httpStatus,status:'non_text'};

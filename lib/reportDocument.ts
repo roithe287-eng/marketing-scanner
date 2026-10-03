@@ -6,6 +6,7 @@ import type { MarketingReport } from './reportSchema';
 import { safeHttpUrl } from './citationMeasurement';
 import {GEO_TITLE,GEO_DESCRIPTION,GEO_METRICS} from './geoPresentation';
 import {buildGeoFocus} from './geoFocus';
+import {buildGrowthDocument} from './growthDocument';
 export type ReportBlock = {text:string;kind:'title'|'heading'|'subheading'|'body';href?:string};
 const labels:Record<string,string> = {
   engine:'AI 엔진',overallScore:'종합 점수',grade:'등급',summary:'요약',score:'점수',status:'상태',message:'안내',currentValue:'현재 상태',diagnosis:'진단',guide:'개선 가이드',evidence:'확인 근거',priorityActions:'우선 실행 과제',
@@ -32,6 +33,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     {kind:'body',text:'전체 상세 내용이 포함된 결과 스냅샷입니다. AI 진단과 시뮬레이션은 검토를 위한 참고 자료이며 성과를 보장하지 않습니다.'},
   ];
   blocks.push(...buildInsightsDocument(report));
+  blocks.push(...buildGrowthDocument(report));
   function walk(value:unknown,key='',depth=0) {
     if (value === undefined) return;
     if (value === null) {blocks.push({kind:'body',text:`${labels[key] || key}: 측정 불가 / 데이터 없음`});return;}
