@@ -1,4 +1,5 @@
 import {buildInsightsPdfPages} from './reportInsightsPdf';
+import {buildNaverVisualPage} from './naverVisualPdf';
 import type {MarketingReport} from './reportSchema';
 import {buildObservationVisual,engineNames,engines,observationStates,readinessItems,readinessColors,readinessLabels,percentageChange} from './reportVisuals';
 import {buildGeoComparison,GEO_COMPARISON_NOTE} from './geoComparison';
@@ -31,12 +32,12 @@ export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer)
     if(ready.length) {
       y=text(`페이지 준비도  ${report.discoverability!.overallScore} / 100`,48,y,694,17,ink,700)+12;
       for(let i=0;i<ready.length;i++) {
-        const item=ready[i],x=48+(i%4)*177,top=y+Math.floor(i/4)*140;
-        rect(x,top,163,128,'#f3f5f8');text(short(item.label,24),x+12,top+12,139,12,ink,700);
-        text(`${item.score}점 · ${readinessLabels[item.status]}`,x+12,top+76,139,15,readinessColors[item.status],700);
-        rect(x+12,top+116,139,5,'#dfe4ec',2);if(item.score)rect(x+12,top+116,139*item.score/100,5,readinessColors[item.status],2);
+        const item=ready[i],x=48+(i%4)*177,top=y+Math.floor(i/4)*152;
+        rect(x,top,163,140,'#f3f5f8');text(short(item.label,24),x+12,top+12,139,12,ink,700);
+        text(`${item.score}점 · ${readinessLabels[item.status]}`,x+12,top+87,139,14,readinessColors[item.status],700);
+        rect(x+12,top+128,139,5,'#dfe4ec',2);if(item.score)rect(x+12,top+128,139*item.score/100,5,readinessColors[item.status],2);
       }
-      y+=Math.ceil(ready.length/4)*140+12;
+      y+=Math.ceil(ready.length/4)*152+12;
     }
     if(obs) {
       ensure(410,'GEO AI 답변 관측','실패와 판정 불가는 인용률의 0점으로 처리하지 않습니다.');
@@ -93,5 +94,5 @@ export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer)
       steps.forEach(([label,value],j)=>{const x=64+j*225;rect(x,top,26,24,j===2?green:blue,6);text(`${j+1}`,x+8,top+3,20,11,'#ffffff',700);text(label,x+35,top+3,165,12,ink,700);text(short(value,95),x,top+36,194,12,gray);if(j<2)text('→',x+205,top+4,20,13,gray,700);});y+=height+18;
     }
   }
-  return [...buildInsightsPdfPages(report,measure),...pages];
+  return [...buildInsightsPdfPages(report,measure),...pages,buildNaverVisualPage(report,measure)];
 }

@@ -27,7 +27,7 @@ export default function BrandHeader({ lockHome = false }: Props) {
 
   return (
     <header
-      className="border-b border-jm-border bg-white sticky top-0 z-30"
+      className="scanner-brand-header border-b border-jm-border bg-white sticky top-0 z-30"
       style={{ paddingTop: "env(safe-area-inset-top)" }}
     >
       <div className="jm-container flex h-16 md:h-20 items-center justify-between gap-3">

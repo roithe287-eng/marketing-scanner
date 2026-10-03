@@ -8,7 +8,7 @@
  * - 반응형 (모바일: 풀스크린, 데스크탑: 중앙 모달)
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CompetitorDeepDive } from "../lib/reportSchema";
 
 type Props = {
@@ -31,6 +31,23 @@ export default function CompetitorDeepDiveModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<CompetitorDeepDive | null>(null);
+
+  const dialogRef=useRef<HTMLDivElement>(null);
+  useEffect(()=>{
+    if(!open)return;
+    const previous=document.activeElement instanceof HTMLElement?document.activeElement:null;
+    dialogRef.current?.querySelector<HTMLButtonElement>('button[aria-label="닫기"]')?.focus();
+    const trap=(event:KeyboardEvent)=>{
+      if(event.key!=='Tab')return;
+      const elements=Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('a[href],button:not([disabled]),input:not([disabled]),textarea:not([disabled]),summary,[tabindex="0"]')||[]).filter(el=>el.getClientRects().length>0);
+      const first=elements[0],last=elements[elements.length-1];
+      if(!first){event.preventDefault();return;}
+      if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}
+      else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
+    };
+    document.addEventListener('keydown',trap);
+    return()=>{document.removeEventListener('keydown',trap);if(previous?.isConnected)previous.focus();};
+  },[open]);
 
   // ESC 키로 닫기
   useEffect(() => {
@@ -84,7 +101,7 @@ export default function CompetitorDeepDiveModal({
       onClick={onClose}
     >
       <div
-        className="w-full md:w-[min(920px,92vw)] max-h-[92vh] md:max-h-[88vh] bg-white rounded-t-2xl md:rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+        ref={dialogRef} role="dialog" aria-modal="true" aria-label="경쟁사 딥다이브" className="report-modal w-full md:w-[min(920px,92vw)] max-h-[92vh] md:max-h-[88vh] bg-white rounded-t-2xl md:rounded-2xl overflow-hidden shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

@@ -35,8 +35,8 @@ export function buildReportSummaryPage(report:MarketingReport,measure:TextMeasur
   const scores=diagnosisScores(report.diagnosis),ordered=[...scores].sort((a,b)=>a.score-b.score);
   for(const level of [100,80,60,40,20])page.shapes.push({kind:'polygon',x:48,y:210,width:342,height:310,points:scores.map((_,i)=>radarPoint(i,level,171,150,100)),color:'#dfe4eb',...(level===100?{fill:'#f8fafc'}:{})});
   page.shapes.push({kind:'polygon',x:48,y:210,width:342,height:310,points:scores.map((s,i)=>radarPoint(i,s.score,171,150,100)),color:red,fill:'#f8e1e4'});
-  scores.forEach((s,i)=>{const p=radarPoint(i,100,219,360,137);rect(p.x-33,p.y-23,66,45,'#ffffff',6);text(s.short,p.x-26,p.y-21,54,10,600,muted,1);text(`${s.score}점`,p.x-26,p.y-4,54,13,700,s.color,1);});
-  rect(185,335,68,52,'#ffffff',24);text(String(Math.round(scores.reduce((n,s)=>n+s.score,0)/8)),201,335,46,23,700,ink,1);text('8영역 평균',191,368,59,10,400,muted,1);
+  scores.forEach((s,i)=>{const p=radarPoint(i,100,219,360,137);rect(p.x-33,p.y-23,66,45,'#ffffff',6);text(s.short,p.x-measure(s.short,{size:10,weight:600,color:muted,lineHeight:15})/2,p.y-21,60,10,600,muted,1);text(`${s.score}점`,p.x-measure(`${s.score}점`,{size:13,weight:700,color:s.color,lineHeight:19.5})/2,p.y-4,60,13,700,s.color,1);});
+  const average=String(Math.round(scores.reduce((n,s)=>n+s.score,0)/8));rect(185,335,68,52,'#ffffff',24);text(average,219-measure(average,{size:23,weight:700,color:ink,lineHeight:34.5})/2,335,60,23,700,ink,1);text('8영역 평균',219-measure('8영역 평균',{size:10,weight:400,color:muted,lineHeight:15})/2,368,68,10,400,muted,1);
   ordered.slice(0,3).forEach((s,i)=>{const y=211+i*104;rect(422,y,320,94);rect(422,y+14,3,22,s.color,1);text(`0${i+1}  ${s.label} · ${s.score}점`,438,y+10,288,14,700,ink,1);text(s.action,438,y+37,288,11,400,muted,2);});
   text('점수가 낮은 순 · 동점은 차트 표시 순서',422,529,320,10,400,muted,1);
   text('03  대표 TO-BE · 사실을 채워 사용할 작성 틀',48,565,694,16,700,ink,1);

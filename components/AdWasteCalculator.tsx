@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * v45-W1: 광고비 낭비 시뮬레이터 (인터랙티브 슬라이더)
+ * v45-W1: 광고비 개선 시뮬레이션 (인터랙티브 슬라이더)
  * - 사용자가 월 광고비 조절 시 실시간 계산
  * - 3개 시나리오 (CTA만 / +카피 / 종합)별 절감액
  * - 컨설팅 CTA 연결
@@ -173,25 +173,24 @@ export default function AdWasteCalculator({
   const annualBestSaving = bestSaving * 12;
 
   return (
-    <section className="jm-card p-5 md:p-7 lg:p-8">
+    <section className="report-simulation jm-card p-5 md:p-7 lg:p-8">
       {/* Header */}
       <div className="mb-5 md:mb-6">
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[20px] md:text-[22px]">💰</span>
           <h3 className="text-[20px] md:text-[24px] lg:text-[26px] font-extrabold text-neutral-900 leading-tight">
-            광고비 낭비 시뮬레이터
+            광고비 개선 시뮬레이션
           </h3>
         </div>
         <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
-          현재 사이트 상태로 광고 집행 시 예상 낭비 금액과 개선 시나리오별 절감액을
-          실시간 계산합니다. (지표 기반 추정치)
+          진단 점수에 임의의 가중치를 적용한 가정 계산입니다. 실제 지출·손실·절감액을 측정하거나 예측한 결과가 아닙니다.
         </p>
       </div>
 
       {/* Budget Slider */}
       <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 md:p-6 mb-5 md:mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <label className="text-[13px] md:text-[14px] font-bold text-neutral-700">
+        <div className="report-simulation-budget flex items-center justify-between mb-3">
+          <label htmlFor="simulation-budget" className="text-[13px] md:text-[14px] font-bold text-neutral-700">
             월 광고비 조정
           </label>
           <div className="text-[22px] md:text-[26px] font-extrabold text-neutral-900 tabular-nums">
@@ -199,6 +198,7 @@ export default function AdWasteCalculator({
           </div>
         </div>
         <input
+          id="simulation-budget"
           type="range"
           min={BUDGET_MIN}
           max={BUDGET_MAX}
@@ -219,16 +219,16 @@ export default function AdWasteCalculator({
 
       {/* Current Waste 표시 */}
       <div className="rounded-2xl border-2 border-rose-200 bg-rose-50 p-5 md:p-6 mb-5 md:mb-6">
-        <div className="flex items-start justify-between gap-3">
+        <div className="report-simulation-total flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[18px]">⚠️</span>
               <div className="text-[13px] md:text-[14px] font-bold uppercase tracking-wide text-rose-700">
-                현재 예상 낭비액
+                가정한 비효율 금액
               </div>
             </div>
             <p className="text-[12px] md:text-[13px] text-rose-600/80 leading-relaxed">
-              CTA · 첫화면 · 신뢰 · 모바일UX 지표 기반 낭비율 산출
+              CTA · 첫화면 · 신뢰 · 모바일UX 진단 점수 기반 가중치 계산
             </p>
           </div>
           <div className="text-right shrink-0">
@@ -236,7 +236,7 @@ export default function AdWasteCalculator({
               {formatKRW(calc.currentWaste)}
             </div>
             <div className="text-[12px] md:text-[13px] font-semibold text-rose-600 mt-1">
-              월 · 낭비율 {calc.currentRate}%
+              월 · 가정 비율 {calc.currentRate}%
             </div>
           </div>
         </div>
@@ -262,7 +262,7 @@ export default function AdWasteCalculator({
                 </span>
                 {isBest && (
                   <span className="text-[10px] md:text-[11px] font-bold text-neutral-900 bg-yellow-100 border border-yellow-300 rounded-full px-2 py-0.5">
-                    최대 절감
+                    최대 계산값
                   </span>
                 )}
               </div>
@@ -270,11 +270,11 @@ export default function AdWasteCalculator({
                 {meta.label}
               </h4>
               <p className="text-[11px] md:text-[12px] text-neutral-500 mb-3">
-                예상 기간: {meta.duration}
+                제안 일정: {meta.duration}
               </p>
               <div className="mb-3">
                 <div className="text-[11px] md:text-[12px] font-semibold text-neutral-500 uppercase tracking-wide mb-0.5">
-                  월 절감액
+                  가정한 월 차이
                 </div>
                 <div className={`text-[24px] md:text-[28px] font-extrabold ${c.text} tabular-nums leading-none`}>
                   △{formatKRW(amount)}
@@ -306,12 +306,12 @@ export default function AdWasteCalculator({
             <div className="flex items-center gap-2 mb-2">
               <span className="text-[18px]">🎯</span>
               <h4 className="text-[16px] md:text-[18px] font-extrabold">
-                최대 절감 가능액
+                시나리오 내 최대 계산값
               </h4>
             </div>
             <p className="text-[14px] md:text-[15px] text-neutral-300 leading-relaxed break-words">
-              종합 최적화 시 <span className="text-white font-bold">월 {formatKRW(bestSaving)}</span>,
-              연간 <span className="text-white font-bold">{formatKRW(annualBestSaving)}</span> 절감
+              종합 최적화 가정에서 <span className="text-white font-bold">월 {formatKRW(bestSaving)}</span>,
+              연간 <span className="text-white font-bold">{formatKRW(annualBestSaving)}</span> 차이
             </p>
           </div>
           <a
@@ -324,7 +324,7 @@ export default function AdWasteCalculator({
           </a>
         </div>
         <p className="text-[11px] md:text-[12px] text-neutral-400 mt-3 leading-relaxed">
-          * 낭비율 추정치는 진단 점수 가중치 산식(CTA 35% · 첫화면 28% · 신뢰 20% · 모바일UX 17%)
+          * 계산 비율은 진단 점수 가중치 산식(CTA 35% · 첫화면 28% · 신뢰 20% · 모바일UX 17%)
           기반이며, 실제 광고 성과는 업종·채널·소재 등에 따라 달라질 수 있습니다.
         </p>
       </div>

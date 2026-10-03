@@ -13,7 +13,7 @@ function RewriteCard({plan,values,onChange}:{plan:ExecutableRewrite;values:Rewri
     <div className="report-rewrite-template"><span>작성 틀 · 괄호 안을 확인된 사실로 교체</span><p>{plan.template.split(/(\[[^\]\n]+\])/g).map((part,i)=>part.startsWith('[')&&part.endsWith(']')?<mark key={i}>{part}</mark>:part)}</p></div>
     <p className="report-rewrite-placement"><strong>권장 위치</strong> {plan.placement}</p>
     <RewriteExecutionGuide plan={plan} values={values} onChange={onChange}/>
-    <div className="report-copy"><button type="button" className="report-secondary-button" onClick={async()=>{try{await navigator.clipboard.writeText(rewriteInstruction(plan,values));setMessage('URL 근거와 단계별 실행 가이드를 복사했습니다.');}catch{setMessage('복사하지 못했습니다. 아래 내용을 직접 선택해 주세요.');}}} aria-label={`${plan.item.keyword} TO-BE 복사`}>TO-BE 복사</button><span role="status">{message}</span></div>
+    <div className="report-copy"><button type="button" className="report-secondary-button" onClick={async()=>{try{await navigator.clipboard.writeText(rewriteInstruction(plan,values));setMessage('URL 근거와 단계별 실행 가이드를 복사했습니다.');}catch{setMessage('복사하지 못했습니다. 아래 작업 지시서를 펼쳐 직접 선택해 주세요.');}}} aria-label={`${plan.item.keyword} TO-BE 복사`}>TO-BE 복사</button><span role="status">{message}</span></div><details className="report-copy-fallback"><summary>작업 지시서 보기 · 직접 선택해 복사</summary><textarea readOnly rows={8} aria-label={`${plan.item.keyword} TO-BE 작업 지시서`} value={rewriteInstruction(plan,values)} onFocus={event=>event.currentTarget.select()}/></details>
   </article>;
 }
 export default function KeywordRewritePanel({report}:{report:MarketingReport}) {
