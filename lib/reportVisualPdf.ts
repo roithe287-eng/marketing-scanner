@@ -1,5 +1,6 @@
 import {buildInsightsPdfPages} from './reportInsightsPdf';
 import {buildNaverVisualPage} from './naverVisualPdf';
+import {buildCompetitorVisualPage} from './competitorVisualPdf';
 import type {MarketingReport} from './reportSchema';
 import {buildObservationVisual,engineNames,engines,observationStates,readinessItems,readinessColors,readinessLabels,percentageChange} from './reportVisuals';
 import {buildGeoComparison,GEO_COMPARISON_NOTE} from './geoComparison';
@@ -94,5 +95,6 @@ export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer)
       steps.forEach(([label,value],j)=>{const x=64+j*225;rect(x,top,26,24,j===2?green:blue,6);text(`${j+1}`,x+8,top+3,20,11,'#ffffff',700);text(label,x+35,top+3,165,12,ink,700);text(short(value,95),x,top+36,194,12,gray);if(j<2)text('→',x+205,top+4,20,13,gray,700);});y+=height+18;
     }
   }
-  return [...buildInsightsPdfPages(report,measure),...pages,buildNaverVisualPage(report,measure)];
+  const competitorPage=buildCompetitorVisualPage(report,measure);
+  return [...buildInsightsPdfPages(report,measure),...(competitorPage?[competitorPage]:[]),...pages,buildNaverVisualPage(report,measure)];
 }

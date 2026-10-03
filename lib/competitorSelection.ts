@@ -5,6 +5,8 @@ export type SearchCandidate = SearchItem & {
   searchRank: number;
   relevance?: 'keyword_match' | 'needs_review';
   selectionEvidence?: string;
+  matchedTerms?: string[];
+  relevanceBasis?: 'page_metadata' | 'search_snippet';
 };
 export type ExcludedCandidate = { domain: string; link: string; title: string; reason: string };
 
@@ -42,6 +44,7 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
   const excluded: ExcludedCandidate[] = [];
   const seen = new Set<string>();
   const own = ourDomain.toLowerCase().replace(/^www\./, '');
+  let eligibleCount=0;
   items.forEach((item, i) => {
     let url: URL;
     try { url = new URL(item.link); } catch { return; }
@@ -54,10 +57,11 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
     if (!reason) reason = nonProviderReason(title, query, stripSearchHtml(item.description));
     if (reason) { excluded.push({domain, link: item.link, title, reason}); return; }
     seen.add(domain);
+    eligibleCount++;
     if (candidates.length < limit) candidates.push({rank: candidates.length + 1, searchRank: i + 1,
       title, link: item.link, description: stripSearchHtml(item.description), domain});
   });
-  return {candidates, excluded, reviewedCount: items.length};
+  return {candidates, excluded, reviewedCount: items.length,eligibleCount,budgetDeferredCount:Math.max(0,eligibleCount-candidates.length)};
 }
 
 export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?: string; metaDescription?: string; h1?: string; fetchError?: string}>(
@@ -70,11 +74,14 @@ export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?
     const title = candidate.metaTitle || candidate.title;
     const reason = nonProviderReason(`${candidate.title} ${title}`, query, `${candidate.description} ${candidate.metaDescription || ''}`);
     if (reason) { excluded.push({domain: candidate.domain, link: candidate.link, title, reason}); continue; }
-    const text = normalize([title, candidate.metaDescription, candidate.h1, candidate.description].join(' '));
-    const matches = tokens.length > 0 && tokens.every(token => text.includes(token));
-    kept.push({...candidate, relevance: matches && !candidate.fetchError ? 'keyword_match' : 'needs_review',
-      selectionEvidence: matches ? `제목·설명에서 검색어 “${query}” 관련 표현 확인. 실제 서비스 범위는 검토 필요.`
-        : `검색 결과로 수집했으나 “${query}”와의 서비스 일치는 추가 검토 필요.`});
+    const hasPage=!candidate.fetchError&&!!(candidate.metaTitle||candidate.metaDescription||candidate.h1);
+    const text = normalize((hasPage?[candidate.metaTitle,candidate.metaDescription,candidate.h1]:[candidate.title,candidate.description]).join(' '));
+    const matchedTerms=tokens.filter(token=>text.includes(token));
+    const matches = tokens.length > 0 && matchedTerms.length===tokens.length;
+    kept.push({...candidate, relevance: matches && hasPage ? 'keyword_match' : 'needs_review',
+      matchedTerms,relevanceBasis:hasPage?'page_metadata':'search_snippet',
+      selectionEvidence: matches ? `${hasPage?'페이지 제목·설명·H1':'검색 결과 요약'}에서 검색어 “${query}” 관련 표현 확인. 실제 상품·서비스·지역·고객층의 일치는 별도 확인 필요.`
+        : `검색 결과로 수집했으나 “${query}”와의 상품·서비스 일치는 추가 검토 필요.`});
   }
   return kept.sort((a, b) => Number(b.relevance === 'keyword_match') - Number(a.relevance === 'keyword_match') || a.searchRank - b.searchRank)
     .slice(0, limit).map((candidate, i) => ({...candidate, rank: i + 1}));

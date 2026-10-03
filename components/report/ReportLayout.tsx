@@ -1,4 +1,5 @@
 "use client";
+import CompetitorLandscape from './CompetitorLandscape';
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {buildReportInsights} from '@/lib/reportInsights';
@@ -80,8 +81,8 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
     </Chapter>
     <Chapter id="competition" number="04" title="비교 후보에서 찾는 차이" note="검색 결과의 후보입니다. 실제 경쟁 관계는 서비스 범위와 고객층을 확인해 판단하세요.">
       {(competitorLoading||report.competitorStatus?.status==='pending')&&<p className="report-empty" role="status">경쟁사 정보를 수집 중입니다. 완료된 다른 진단은 먼저 확인할 수 있습니다.</p>}
-      <CompetitorStatusNotice report={report} onRetry={onRetry}/><MessageMap data={data}/>
-      {report.competitorAnalysis&&(data.competitorCount>0||report.competitorAnalysis.filtering)&&<Disclosure title="경쟁사 수집 기록과 상세 비교" note={`${data.competitorCount}개 후보 · 상세 항목 확인 ${data.metadataCount}개 · 포지셔닝·메시지·원문`}><CompetitorComparison competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/></Disclosure>}
+      <CompetitorStatusNotice report={report} onRetry={onRetry}/><CompetitorLandscape report={report}/><MessageMap data={data}/>
+      {report.competitorAnalysis&&(data.competitorCount>0||report.competitorAnalysis.filtering)&&<Disclosure title="경쟁사 페이지 원문과 상세 분석" note={`${data.competitorCount}개 후보 · 상세 항목 확인 ${data.metadataCount}개 · 선정 근거·메시지·원문`}><CompetitorComparison competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/></Disclosure>}
       {report.industryBenchmark&&<Disclosure title="업종별 벤치마크" note="표본 규모와 비교 가능한 지표 확인"><IndustryBenchmarkCard benchmark={report.industryBenchmark}/></Disclosure>}
     </Chapter>
     <Chapter id="actions" number="05" title="확인한 내용을 실행으로" note="목표 KPI와 확인 방법을 정하고, 보완 목록에서 작업 범위를 구체화하세요."><GrowthKpiPanel key={`kpi:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} targetUrl={report.url}/><ActionBacklog data={data}/><GeoFocusPanel key={report.llmCitationTest?.questionSetId||report.url} report={report}/>
