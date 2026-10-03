@@ -1,3 +1,5 @@
+import {buildReportSummaryPage} from './reportSummaryPdf';
+export type PdfScope='full'|'summary';
 import {buildVisualPdfPages,type VisualPdfPage} from './reportVisualPdf';
 import type { MarketingReport } from './reportSchema';
 import { buildReportDocument } from './reportDocument';
@@ -6,9 +8,9 @@ import { layoutPdfPages, PDF_FONT, PDF_PAGE, type PdfTextStyle } from './pdfLayo
 const yieldToBrowser=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 
 /** Prepare a browser-independent PDF result; saving is an explicit user action. */
-export async function renderReportPdf(report:MarketingReport,onProgress:(text:string)=>void,canvas:HTMLCanvasElement,fontFamily=PDF_FONT,signal?:AbortSignal) {
+export async function renderReportPdf(report:MarketingReport,onProgress:(text:string)=>void,canvas:HTMLCanvasElement,fontFamily=PDF_FONT,signal?:AbortSignal,scope:PdfScope='full') {
   signal?.throwIfAborted();
-  onProgress('전체 상세 내용을 페이지별로 정리 중...');
+  onProgress(scope==='summary'?'한 장 요약을 정리 중...':'전체 상세 내용을 페이지별로 정리 중...');
   const {default:JsPDF}=await import('jspdf');
   const scale=2;
   canvas.width=PDF_PAGE.width*scale;canvas.height=PDF_PAGE.height*scale;
@@ -20,8 +22,8 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
     if(currentFont!==font) {ctx.font=font;currentFont=font;}
   };
   const measure=(text:string,style:PdfTextStyle)=>{setFont(style);return ctx.measureText(text).width;};
-  const visualPages=buildVisualPdfPages(report,measure);
-  const pages=[...visualPages,...layoutPdfPages(buildReportDocument(report),measure)];
+  const summary=buildReportSummaryPage(report,measure);
+  const pages=scope==='summary'?[summary]:[summary,...buildVisualPdfPages(report,measure),...layoutPdfPages(buildReportDocument(report),measure)];
   const pdf=new JsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   pdf.setProperties({title:`${report.meta?.siteName || 'Marketing Scanner'} report`,creator:'Marketing Scanner'});
   try {
@@ -59,13 +61,13 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
     let domain='website';
     try {domain=new URL(report.url).hostname.replace(/[^a-zA-Z0-9-]/g,'_');} catch { /* Older snapshots may contain a bare domain. */ }
     signal?.throwIfAborted();
-    return {pages:pages.length,blob:pdf.output('blob'),filename:`마케팅스캐너_${domain}_${new Date().toISOString().slice(0,10)}.pdf`};
+    return {pages:pages.length,blob:pdf.output('blob'),filename:`마케팅스캐너_${scope==='summary'?'한장요약_':''}${domain}_${new Date().toISOString().slice(0,10)}.pdf`};
   } finally {canvas.width=1;canvas.height=1;}
 }
 
 /** Draw the complete snapshot directly, without cloning or capturing the app DOM. */
-export async function exportReportPdf(report:MarketingReport,onProgress:(text:string)=>void,signal?:AbortSignal) {
+export async function exportReportPdf(report:MarketingReport,onProgress:(text:string)=>void,signal?:AbortSignal,scope:PdfScope='full') {
   await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]);
   signal?.throwIfAborted();
-  return renderReportPdf(report,onProgress,document.createElement('canvas'),getComputedStyle(document.body).fontFamily||PDF_FONT,signal);
+  return renderReportPdf(report,onProgress,document.createElement('canvas'),getComputedStyle(document.body).fontFamily||PDF_FONT,signal,scope);
 }
