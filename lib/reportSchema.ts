@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {NaverOptimizationSchema} from './naverSchema';
 
 // 12가지 마케팅 진단 체크리스트
 export const ChecklistItemSchema = z.object({
@@ -144,8 +145,18 @@ export const KeywordRankItemSchema = z.object({
   totalResults: z.number().optional(),
   status: z.enum(["top", "mid", "low", "none"]),
   competitorAtTop: z.string().optional(),
+  observationStatus:z.enum(['found','not_found','error','unavailable']).optional(),
+  returnedCount:z.number().optional(),
+  requestedCount:z.number().optional(),
+  apiStart:z.number().optional(),
+  matchedUrl:z.string().optional(),
+  observedAt:z.string().optional(),
+  errorMessage:z.string().optional(),
 });
 export const KeywordRankTrackingSchema = z.object({
+  measurementVersion:z.literal(2).optional(),
+  failedCount:z.number().optional(),
+  validCount:z.number().optional(),
   totalKeywords: z.number(),
   averageRank: z.number().nullable(),
   visibleCount: z.number(),
@@ -445,6 +456,7 @@ export const MarketingReportSchema = z.object({
   geoBaseline: GeoBaselineSchema.optional(),
   adWasteSimulation: AdWasteSimulationSchema.nullable().optional(),
   keywordRankTracking: KeywordRankTrackingSchema.nullable().optional(),
+  naverOptimization:NaverOptimizationSchema.nullable().optional(),
 
   // v45-W3: 업종별 벤치마크
   industryBenchmark: IndustryBenchmarkSchema.nullable().optional(),

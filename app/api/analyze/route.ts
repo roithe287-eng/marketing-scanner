@@ -9,10 +9,8 @@ import { analyzeCitation } from "@/lib/analyzeCitation";
 import { analyzeAdWaste } from "@/lib/analyzeAdWaste";
 import { analyzeKeywordRank } from "@/lib/analyzeKeywordRank";
 import { analyzeBenchmark } from "@/lib/analyzeBenchmark";
-import { analyzeAeoBriefing } from "@/lib/analyzeAeoBriefing";
-import { analyzePlaceAdvisor } from "@/lib/analyzePlaceAdvisor";
-import { analyzeTechnicalSeo } from "@/lib/analyzeTechnicalSeo";
 import { analyzeKeywordFrequency } from "@/lib/analyzeKeywordFreq";
+import {analyzeNaverOptimization} from "@/lib/analyzeNaverOptimization";
 import {capturePageEvidence} from '@/lib/pageEvidence';
 
 export const runtime = "nodejs";
@@ -126,45 +124,17 @@ export async function POST(req: NextRequest) {
       report.adWasteSimulation = null;
     }
 
-    // v45-W3: 업종별 벤치마크 (메인 분석 이후 · 우리 점수 필요)
-    // v45-W4: 네이버 AI 브리핑 준비도 (규칙 기반 · AI 호출 없음 · 병렬 가능)
-    // v46-W1: 네이버 생태계 연동 진단 (플레이스 + 서치어드바이저 · 규칙 기반)
-    // v46-W2: 수집·색인 기술 진단 + 키워드 빈도 분석 (규칙 기반 · AI 호출 없음)
-    try {
-      const [bench, briefing, ecosystem] = await Promise.all([
-        analyzeBenchmark(websiteData, report.diagnosis).catch((e) => {
-          console.warn("[benchmark] 실패:", e);
-          return null;
-        }),
-        analyzeAeoBriefing(websiteData).catch((e) => {
-          console.warn("[briefing] 실패:", e);
-          return null;
-        }),
-        analyzePlaceAdvisor(websiteData).catch((e) => {
-          console.warn("[ecosystem] 실패:", e);
-          return null;
-        }),
-      ]);
-      report.industryBenchmark = bench;
-      (report as any).naverBriefingReadiness = briefing;
-      (report as any).naverEcosystemReadiness = ecosystem;
-      // v46-W2: 순수 동기 규칙 분석 — 실패해도 리포트를 막지 않음
-      try {
-        report.technicalSeo = analyzeTechnicalSeo(websiteData);
-        report.keywordFrequency = analyzeKeywordFrequency(websiteData);
-      } catch (e) {
-        console.warn("[technical-seo/keyword-freq] 실패:", e);
-        report.technicalSeo = null;
-        report.keywordFrequency = null;
-      }
-    } catch (e) {
-      console.warn("[benchmark/briefing/ecosystem] 실패:", e);
-      report.industryBenchmark = null;
-      (report as any).naverBriefingReadiness = null;
-      (report as any).naverEcosystemReadiness = null;
-      report.technicalSeo = null;
-      report.keywordFrequency = null;
-    }
+    // Versioned, source-backed observations; account-only checks stay unverified.
+    report.naverOptimization = analyzeNaverOptimization(websiteData);
+    report.naverAiReadiness = null;
+    report.naverBriefingReadiness = null;
+    report.naverEcosystemReadiness = null;
+    report.technicalSeo = null; // Replaced by scoped observations in naverOptimization.
+    report.keywordFrequency = analyzeKeywordFrequency(websiteData);
+    report.industryBenchmark = await analyzeBenchmark(websiteData, report.diagnosis).catch(error => {
+      console.warn("[benchmark] 실패:", error);
+      return null;
+    });
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 

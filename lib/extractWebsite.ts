@@ -1,9 +1,15 @@
-import { blocksAllCrawling } from "./robotsRules";
+import { blocksAllCrawling, observeRobots, type RobotsObservation } from "./robotsRules";
 import { getScannerContactUrl } from "./siteConfig";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 
 export type ExtractedWebsiteData = {
+  seoEvidence?: {
+    capturedAt:string; titleCount:number; descriptionCount:number; canonicals:string[];
+    robotsMeta:{agent:string;content:string}[]; xRobotsTag:string; htmlLang:string;
+    jsonLdErrors:number; microdataCount:number; rdfaCount:number;
+    imagesMissingAlt:number; imagesEmptyAlt:number; robots:RobotsObservation; httpStatus:number;
+  };
   url: string;
   finalUrl: string;
   detectedEncoding: string;
@@ -112,31 +118,11 @@ const CTA_KEYWORDS = [
   "subscribe",
 ];
 
-// v45-W5: robots.txt 준수 가드 — 'Disallow: /' (전체 차단) 사이트는 추출 거부
-// robots 파싱은 경량 정규식 기반 (완전한 robots 파서 도입 대신 최소 규칙)
-async function isBlockedByRobots(url: string): Promise<boolean> {
-  try {
-    const u = new URL(url);
-    const robotsUrl = `${u.protocol}//${u.host}/robots.txt`;
-    const res = await fetch(robotsUrl, {
-      headers: { "User-Agent": SCANNER_UA },
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!res.ok) return false; // robots.txt 없음/오류 → 차단 규칙 없음으로 간주
-    const text = (await res.text()).toLowerCase();
-    // User-agent: * 아래의 Disallow: / (루트 전체 차단) 탐지
-    return blocksAllCrawling(text);
-  } catch {
-    return false; // 확인 실패 시 추출 허용 (서비스 중단 방지)
-  }
-}
-
 // v45-W5: 식별 가능한 봇 UA — 크롤러 정체성을 명시 (법적 투명성)
 // 환경변수 SCANNER_CONTACT_URL 로 연락처 URL 지정 가능 (미설정 시 서비스 URL)
 const SCANNER_UA = `JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
 
-// 실제 Chrome 브라우저처럼 보이는 헤더 (봇 차단 우회)
-// v45-W5: User-Agent만 식별 가능한 값으로 교체, 나머지 브라우저 헤더 유지
+// HTML 응답 협상을 위한 헤더. User-Agent는 서비스 크롤러임을 명시합니다.
 const BROWSER_HEADERS = {
   "User-Agent": SCANNER_UA,
   Accept:
@@ -156,6 +142,7 @@ const BROWSER_HEADERS = {
 };
 
 type FetchAttempt = {
+  finalUrl: string;
   res: Response;
   redirectChain: string[];
   selfRedirect: boolean;
@@ -183,6 +170,7 @@ async function tryFetch(startUrl: string): Promise<FetchAttempt> {
     if (!isRedirect || !loc) {
       return {
         res,
+        finalUrl: current,
         redirectChain: chain,
         selfRedirect,
         durationMs: Date.now() - t0,
@@ -195,6 +183,7 @@ async function tryFetch(startUrl: string): Promise<FetchAttempt> {
     } catch {
       return {
         res,
+        finalUrl: current,
         redirectChain: chain,
         selfRedirect,
         durationMs: Date.now() - t0,
@@ -217,7 +206,7 @@ async function tryFetch(startUrl: string): Promise<FetchAttempt> {
     redirect: "manual",
     signal: AbortSignal.timeout(20000),
   });
-  return { res, redirectChain: chain, selfRedirect, durationMs: Date.now() - t0 };
+  return { res, finalUrl:current, redirectChain: chain, selfRedirect, durationMs: Date.now() - t0 };
 }
 
 /**
@@ -274,7 +263,8 @@ export async function extractWebsite(
   url: string
 ): Promise<ExtractedWebsiteData> {
   // v45-W5: robots.txt 전체 차단 사이트는 추출 거부 (법적 준수)
-  const blocked = await isBlockedByRobots(url);
+  const initialRobots = await observeRobots(url, SCANNER_UA);
+  const blocked = initialRobots.status === "ok" && blocksAllCrawling(initialRobots.text || "");
   if (blocked) {
     throw new Error(
       "해당 사이트는 robots.txt에서 크롤링을 전면 차단하고 있어 진단할 수 없습니다."
@@ -287,6 +277,7 @@ export async function extractWebsite(
   let redirectChain: string[] = [];
   let selfRedirect = false;
   let fetchMs = 0;
+  let fetchedUrl = url;
 
   // v46-W2: TS 제어 흐름 분석 대응 — attempt는 반환만 하고, res 할당은 외부 스코프에서 직접 수행
   async function attempt(u: string): Promise<FetchAttempt | null> {
@@ -302,6 +293,7 @@ export async function extractWebsite(
   let a = await attempt(url);
   if (a) {
     res = a.res;
+    fetchedUrl = a.finalUrl;
     if (a.res.ok) {
       redirectChain = a.redirectChain;
       selfRedirect = a.selfRedirect;
@@ -318,6 +310,7 @@ export async function extractWebsite(
         a = await attempt(wwwUrl);
         if (a) {
           res = a.res;
+    fetchedUrl = a.finalUrl;
           if (a.res.ok) {
             redirectChain = a.redirectChain;
             selfRedirect = a.selfRedirect;
@@ -338,6 +331,7 @@ export async function extractWebsite(
         a = await attempt(httpUrl);
         if (a) {
           res = a.res;
+    fetchedUrl = a.finalUrl;
           if (a.res.ok) {
             redirectChain = a.redirectChain;
             selfRedirect = a.selfRedirect;
@@ -365,7 +359,7 @@ export async function extractWebsite(
   }
 
   // 인코딩 자동 감지하여 디코딩 (EUC-KR/CP949/UTF-8 지원)
-  // v46-W2: 다운로드 소요 시간(네이버 기준 3초)·페이지 크기(4MB)·Content-Type 판정
+  // 요청 시작부터 HTML 수신까지의 단일 관측. TTFB·브라우저 로딩 시간과 다릅니다.
   const tBuf = Date.now();
   const buffer = await res.arrayBuffer();
   const responseTimeMs = fetchMs + (Date.now() - tBuf);
@@ -385,7 +379,15 @@ export async function extractWebsite(
     );
   }
 
+  const finalUrl = res.url || fetchedUrl;
+  const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
+  const titleCount = $("title").length;
+  const descriptionCount = $('meta[name="description" i]').length;
+  const canonicals = $('link[rel~="canonical" i]').map((_, el) => $(el).attr("href") || "").get();
+  const robotsMeta = $("head meta[name]").map((_,el) => ({agent:($(el).attr("name") || "").toLowerCase(),content:$(el).attr("content") || ""})).get().filter(m=>["robots","yeti","ads-naver"].includes(m.agent));
+  const microdataCount = $("[itemscope]").length;
+  const rdfaCount = $("[typeof]").length;
 
   // v46-W2: 렌더 차단 리소스 추출 — script 제거 전 원본에서 수집
   const headSyncScripts = $("head script[src]")
@@ -407,7 +409,7 @@ export async function extractWebsite(
 
   const title = $("title").first().text().trim();
   const description =
-    $('meta[name="description"]').attr("content")?.trim() || "";
+    $('meta[name="description" i]').attr("content")?.trim() || "";
   const ogTitle = $('meta[property="og:title"]').attr("content")?.trim() || "";
   const ogDescription =
     $('meta[property="og:description"]').attr("content")?.trim() || "";
@@ -425,7 +427,7 @@ export async function extractWebsite(
 
   // 상대경로 → 절대경로 변환 (url 매개변수 사용)
   try {
-    const base = new URL(url);
+    const base = new URL(finalUrl);
     if (ogImage && !ogImage.startsWith("http")) {
       ogImage = new URL(ogImage, base).toString();
     }
@@ -444,25 +446,22 @@ export async function extractWebsite(
 
   // 1. JSON-LD schema.org 파싱
   const jsonLdSchemas: any[] = [];
+  let jsonLdErrors = 0;
+  function collectSchema(value:unknown,depth=0):void {
+    if(depth>20 || jsonLdSchemas.length>=2000 || !value || typeof value!=="object") return;
+    if(Array.isArray(value)){value.forEach(v=>collectSchema(v,depth+1));return;}
+    const obj=value as Record<string,unknown>;
+    if(obj["@type"])jsonLdSchemas.push(obj);
+    Object.values(obj).forEach(v=>collectSchema(v,depth+1));
+  }
   $('script[type="application/ld+json"]').each((_, el) => {
     const raw = $(el).contents().text().trim();
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
-      // 배열이면 그대로, 단일 객체면 하나씩 추가
-      if (Array.isArray(parsed)) {
-        for (const item of parsed) jsonLdSchemas.push(item);
-      } else if (parsed && typeof parsed === "object") {
-        // @graph 필드 처리
-        if (Array.isArray(parsed["@graph"])) {
-          for (const item of parsed["@graph"]) jsonLdSchemas.push(item);
-        } else {
-          jsonLdSchemas.push(parsed);
-        }
-      }
-    } catch {
-      // JSON 파싱 실패 시 조용히 무시
-    }
+      if(!parsed || typeof parsed !== "object") {jsonLdErrors++;return;}
+      collectSchema(parsed);
+    } catch { jsonLdErrors++; }
   });
 
   // 2. @type 목록 추출
@@ -496,11 +495,12 @@ export async function extractWebsite(
 
   // 3. 전환 추적 스크립트 감지 (HTML 전체 문자열에서)
   const lowerHtml = html.toLowerCase();
-  const hasNaverConversionScript =
-    lowerHtml.includes("wcs.js") ||
-    lowerHtml.includes("wcs_do") ||
-    lowerHtml.includes("wcslog") ||
-    lowerHtml.includes("siteanalytics.naver");
+  const hasNaverConversionScript = $("script").toArray().some(el=>{
+    const script=$(el);const src=script.attr("src")||"";
+    let officialSource=false;
+    try {const u=new URL(src,finalUrl);officialSource=u.hostname==="wcs.naver.net" && /\/wcslog\.js$/i.test(u.pathname);} catch {}
+    return officialSource || /\bwcs_do\s*\(|\bwcs\.trans\s*\(/.test(script.html()||"");
+  });
   const hasGTM =
     lowerHtml.includes("googletagmanager.com/gtm.js") ||
     /gtm-[a-z0-9]+/i.test(html);
@@ -522,13 +522,13 @@ export async function extractWebsite(
   // ===== v26 끝 =====
 
   const viewportMeta =
-    $('meta[name="viewport"]').attr("content")?.trim() || "";
+    $('meta[name="viewport" i]').attr("content")?.trim() || "";
   const hasFavicon =
     $('link[rel="icon"], link[rel="shortcut icon"]').length > 0;
 
   // v46-W1: 네이버 서치어드바이저 소유 확인 메타태그
   const naverSiteVerification =
-    $('meta[name="naver-site-verification"]').length > 0;
+    $('meta[name="naver-site-verification" i]').length > 0;
 
   // v46-W1: RSS 피드 링크
   const rssLink =
@@ -551,14 +551,10 @@ export async function extractWebsite(
   // v46-W1: 네이버 플레이스 링크 감지
   let hasNaverPlaceLink = false;
   $("a[href]").each((_, el) => {
-    const href = ($(el).attr("href") || "").toLowerCase();
-    if (
-      href.includes("place.naver.com") ||
-      href.includes("map.naver.com") ||
-      href.includes("pcmap.place.naver.com")
-    ) {
-      hasNaverPlaceLink = true;
-    }
+    try {
+      const u=new URL($(el).attr("href")||"",finalUrl);
+      if((u.hostname==="place.naver.com" || u.hostname.endsWith(".place.naver.com")) && /\/\d+(?:\/|$)/.test(u.pathname)) hasNaverPlaceLink=true;
+    } catch { /* invalid link */ }
   });
 
   // 구조화 데이터와 지도 임베드를 읽은 뒤, 본문 텍스트 분석에서만 제외합니다.
@@ -651,8 +647,10 @@ export async function extractWebsite(
   const imageCount = $("img").length;
   const imageWithoutAlt = $("img").filter((_, el) => {
     const alt = $(el).attr("alt");
-    return !alt || alt.trim().length === 0;
+    return alt === undefined;
   }).length;
+
+  const imagesEmptyAlt = $("img[alt]").filter((_,el)=>!($(el).attr("alt")||"").trim()).length;
 
   const hasForm = $("form, input, textarea, select").length > 0;
 
@@ -683,7 +681,8 @@ export async function extractWebsite(
 
   return {
     url,
-    finalUrl: res.url || url,
+    finalUrl,
+    seoEvidence: {capturedAt:new Date().toISOString(),titleCount,descriptionCount,canonicals,robotsMeta,xRobotsTag:res.headers.get("x-robots-tag")||"",htmlLang:$("html").attr("lang")||"",jsonLdErrors,microdataCount,rdfaCount,imagesMissingAlt:imageWithoutAlt,imagesEmptyAlt,robots,httpStatus:res.status},
     detectedEncoding,
     title,
     description,
