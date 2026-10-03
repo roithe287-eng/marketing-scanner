@@ -237,7 +237,7 @@ export default function ContentProtection() {
           content: "본 리포트는 인쇄 출력이 제한됩니다. PDF 다운로드 버튼을 이용해 주세요.";
           display: block;
           padding: 40px;
-          font-family: system-ui;
+          font-family: var(--font-pretendard), Pretendard, sans-serif;
           font-size: 14px;
         }
       }

@@ -519,7 +519,7 @@ export default function CompetitorComparison({
                       alt=""
                       className="h-4 w-4 rounded"
                     />
-                    <span className="text-xs md:text-sm font-bold text-jm-charcoal truncate max-w-[140px]">
+                    <span className="text-xs md:text-sm font-bold text-jm-charcoal break-words max-w-[180px]">
                       {c.domain}
                     </span>
                   </span>
@@ -641,7 +641,7 @@ export default function CompetitorComparison({
                             alt=""
                             className="h-4 w-4 rounded"
                           />
-                          <span className="text-[10px] text-jm-charcoal truncate max-w-[80px]">
+                          <span className="text-[10px] text-jm-charcoal whitespace-normal break-all max-w-[120px]">
                             {r.domain}
                           </span>
                         </div>
@@ -709,12 +709,12 @@ export default function CompetitorComparison({
           <p className="text-xs font-black tracking-wider text-jm-red mb-3">
             ⑤ COMPETITOR CARDS
           </p>
-          {/* v29: 모바일 1컬럼 → 태블릿 2컬럼 → 데스크톱 3컬럼 */}
-          <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+          {/* Give the complete saved titles and descriptions enough reading width. */}
+          <div className="competitor-cards grid gap-4 grid-cols-1 lg:grid-cols-2 items-start">
             {competitors.map((comp) => (
               <div
                 key={comp.rank}
-                className="group rounded-2xl border-2 border-jm-border bg-white p-5 flex flex-col hover:border-jm-red transition-colors"
+                className="competitor-card group rounded-2xl border border-jm-border bg-white p-5 flex flex-col hover:border-jm-red transition-colors min-w-0"
               >
                 <div className="flex items-center gap-2">
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-jm-black text-white text-xs font-black shrink-0">
@@ -735,13 +735,13 @@ export default function CompetitorComparison({
                     href={comp.link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs text-jm-gray hover:text-jm-red truncate flex-1 min-w-0"
+                    className="text-xs text-jm-gray hover:text-jm-red break-all flex-1 min-w-0"
                     title={comp.domain}
                   >
                     {comp.domain} ↗
                   </a>
                 </div>
-                <h4 className="mt-3 font-black text-base leading-snug line-clamp-2">
+                <h4 className="mt-3 font-black text-base leading-snug">
                   {comp.metaTitle || comp.title}
                 </h4>
                 {comp.relevance && <div className="mt-3 rounded-lg border bg-neutral-50 p-3">
@@ -750,7 +750,7 @@ export default function CompetitorComparison({
                   {comp.searchRank && <p className="mt-2 text-xs text-jm-gray">네이버 웹문서 검색 응답에서 {comp.searchRank}번째 항목</p>}
                 </div>}
                 {comp.metaDescription && (
-                  <p className="mt-2 text-xs text-jm-gray leading-6 line-clamp-3">
+                  <p className="mt-2 text-xs text-jm-gray leading-6">
                     {comp.metaDescription}
                   </p>
                 )}
@@ -759,7 +759,7 @@ export default function CompetitorComparison({
                     <p className="text-[10px] font-black tracking-wider text-jm-gray">
                       H1
                     </p>
-                    <p className="mt-0.5 text-xs leading-5 font-medium line-clamp-2">
+                    <p className="mt-0.5 text-xs leading-5 font-medium">
                       {comp.h1}
                     </p>
                   </div>
@@ -790,7 +790,7 @@ export default function CompetitorComparison({
                       🎯 CTA 버튼
                     </p>
                     <div className="mt-2 flex flex-wrap gap-1">
-                      {comp.ctaTexts.slice(0, 6).map((cta, i) => (
+                      {comp.ctaTexts.map((cta, i) => (
                         <span
                           key={i}
                           className="inline-block rounded-full bg-jm-black px-2 py-0.5 text-[10px] font-bold text-white"

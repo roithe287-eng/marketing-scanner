@@ -14,6 +14,10 @@ import CopyImprovement from '../components/CopyImprovement';
 import PriorityMatrix from '../components/PriorityMatrix';
 import QuickWinsFlow from '../components/QuickWinsFlow';
 import ReportLayout from '../components/report/ReportLayout';
+import EvidenceFlow from '../components/report/EvidenceFlow';
+import CompetitorComparison from '../components/CompetitorComparison';
+import {buildReportDocument} from '../lib/reportDocument';
+import {layoutPdfPages,PDF_PAGE} from '../lib/pdfLayout';
 const measure=(s:string,t:PdfTextStyle)=>Array.from(s).reduce((n,c)=>n+(/[ -~]/.test(c)?.55:1)*t.size*(t.weight>=600?1.06:1),0);
 const long='문장이 길어져도 줄바꿈 과정에서 원문이나 작업 순서가 사라지지 않아야 합니다. '.repeat(12);
 const issue={title:'긴 제목 '+long,priority:'high' as const,problem:long+'문제',reason:long+'원인',recommendation:long+'조치',badExample:'현재 문구 <script>alert(1)</script>',goodExample:'제안 문구 '+long,exampleNote:'사실 확인 필요'};
@@ -60,4 +64,34 @@ test('Naver visual text stays in page bounds and separate text boxes do not coll
     const overlapX=Math.min(a.x+a.width,b.x+b.width)-Math.max(a.x,b.x),overlapY=Math.min(a.y+a.lineHeight,b.y+b.lineHeight)-Math.max(a.y,b.y);
     assert.ok(overlapX<=.01||overlapY<=.01,`${a.text} overlaps ${b.text}`);
   }
+});
+
+test('long explanations and multi-step paragraphs get a wide reading layout without losing a character',()=>{
+  const explanations=[long+'마지막 문장도 남아야 합니다.','첫 단계\n두 번째 단계\n세 번째 단계\n네 번째 단계'];
+  for(const explanation of explanations){
+    const $=load(renderToStaticMarkup(React.createElement(EvidenceFlow,{items:[{label:'확인 근거',content:'관측값'},{label:'상세 실행',content:explanation}]})));
+    assert.equal($('dd').last().text(),explanation);
+    assert.equal($('dl').attr('data-layout'),'stacked');
+  }
+  const $=load(renderToStaticMarkup(React.createElement(EvidenceFlow,{items:[{label:'근거',content:'짧은 근거'},{label:'조치',content:'짧은 조치'}]})));
+  assert.equal($('dl').attr('data-layout'),'columns');
+});
+
+test('competitor cards expose complete saved descriptions, headings and every CTA',()=>{
+  const competitor={rank:1,title:'제목',link:'https://example.org',domain:'example.org',description:'검색 설명',metaTitle:long+'제목 끝',metaDescription:long+'설명 끝',h1:long+'H1 끝',ctaTexts:Array.from({length:15},(_,i)=>`저장된 CTA ${i+1}`),keyMessage:long+'메시지 끝',differentiation:long+'차이 끝'};
+  const $=load(renderToStaticMarkup(React.createElement(CompetitorComparison,{ourUrl:fixture.url,competitorAnalysis:{searchKeyword:'검증',competitors:[competitor]}})));
+  const card=$('.competitor-card');
+  for(const value of [competitor.metaTitle,competitor.metaDescription,competitor.h1,competitor.keyMessage,competitor.differentiation,...competitor.ctaTexts])assert.ok(card.text().includes(value),value);
+  assert.equal(card.find('[class*="line-clamp"],[class~="truncate"]').length,0);
+});
+
+test('larger detailed PDF text flows to more pages while preserving the entire explanation',()=>{
+  const report={...fixture,criticalIssues:[issue]},blocks=buildReportDocument(report),before=JSON.stringify(report);
+  const pages=layoutPdfPages(blocks,measure),lines=pages.flatMap(page=>page.lines);
+  const compact=(s:string)=>s.replace(/\n/g,'');
+  assert.equal(compact(lines.map(line=>line.text).join('')),compact(blocks.map(block=>block.text).join('')));
+  assert.ok(lines.every(line=>line.size>=16));
+  assert.ok(pages.length>2);
+  for(const line of lines){assert.ok(line.x+line.width<=742.01);assert.ok(line.y+line.lineHeight<=PDF_PAGE.contentBottom+.01);}
+  assert.equal(JSON.stringify(report),before);
 });

@@ -269,7 +269,7 @@ export default function CompetitorDeepDiveModal({
                       CTA 문구
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {data.ctaStyle.ctaTexts.slice(0, 12).map((t, i) => (
+                      {data.ctaStyle.ctaTexts.map((t, i) => (
                         <span
                           key={i}
                           className="inline-block px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-100 text-[12px] md:text-[13px] font-semibold"
@@ -331,10 +331,10 @@ export default function CompetitorDeepDiveModal({
                     <div className="text-[11px] md:text-[12px] font-semibold text-neutral-500 uppercase mb-1">
                       스키마 타입
                     </div>
-                    <div className="text-[12px] md:text-[13px] font-semibold text-neutral-700 truncate">
+                    <div className="text-[12px] md:text-[13px] font-semibold text-neutral-700 break-words">
                       {data.performance.schemaTypes &&
                       data.performance.schemaTypes.length > 0
-                        ? data.performance.schemaTypes.slice(0, 2).join(", ")
+                        ? data.performance.schemaTypes.join(", ")
                         : "(없음)"}
                     </div>
                   </div>
@@ -406,8 +406,8 @@ export default function CompetitorDeepDiveModal({
         </div>
 
         {/* Footer */}
-        <div className="border-t border-neutral-100 p-4 md:p-5 flex items-center justify-between gap-3 bg-neutral-50">
-          <p className="text-[11px] md:text-[12px] text-neutral-500 truncate">
+        <div className="border-t border-neutral-100 p-4 md:p-5 flex flex-wrap items-center justify-between gap-3 bg-neutral-50">
+          <p className="text-[11px] md:text-[12px] text-neutral-500 break-words">
             {data?.fetchedAt
               ? `분석 시각: ${new Date(data.fetchedAt).toLocaleString("ko-KR")}`
               : ""}

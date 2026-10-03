@@ -9,7 +9,7 @@ export type TextMeasurer = (text:string, style:PdfTextStyle) => number;
 export type WrappedLine = { text:string; newlineAfter:boolean };
 
 function styleFor(block:ReportBlock):PdfTextStyle {
-  const size=block.kind==='title'?27:block.kind==='heading'?21:block.kind==='subheading'?15:14;
+  const size=block.kind==='title'?27:block.kind==='heading'?22:block.kind==='subheading'?18:16;
   return {size,weight:block.kind==='body'?400:700,color:block.kind==='heading'?'#c51620':block.href?'#1d4ed8':'#111827',lineHeight:size*1.65};
 }
 
