@@ -14,6 +14,8 @@ import { useEffect } from "react";
  */
 export default function ContentProtection() {
   useEffect(() => {
+    // User-entered form values must remain editable; report content stays protected.
+    const isTextEntry=(target:EventTarget|null)=>target instanceof HTMLInputElement||target instanceof HTMLTextAreaElement;
     // ===== 1. 콘솔 경고 + 무력화 =====
     try {
       const warningStyle =
@@ -54,6 +56,7 @@ export default function ContentProtection() {
 
     // ===== 2. 우클릭 차단 =====
     const handleContextMenu = (e: MouseEvent) => {
+      if(isTextEntry(e.target))return;
       e.preventDefault();
       return false;
     };
@@ -89,7 +92,7 @@ export default function ContentProtection() {
         return false;
       }
       // Ctrl/Cmd + A (전체 선택 차단)
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a" && !isTextEntry(e.target)) {
         e.preventDefault();
         return false;
       }
@@ -101,10 +104,12 @@ export default function ContentProtection() {
       return false;
     };
     const handleCopy = (e: ClipboardEvent) => {
+      if(isTextEntry(e.target))return;
       e.preventDefault();
       return false;
     };
     const handleCut = (e: ClipboardEvent) => {
+      if(isTextEntry(e.target))return;
       e.preventDefault();
       return false;
     };

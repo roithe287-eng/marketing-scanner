@@ -1,7 +1,7 @@
 import type {KeywordFreqItem,KeywordFrequency,MarketingReport} from './reportSchema';
 export const rewriteKinds=['유지','구체화','정리','배치','문맥 검토'] as const;
 export type RewriteKind=typeof rewriteKinds[number];
-export const KEYWORD_REWRITE_NOTE='저장된 빈도와 제목·설명을 바탕으로 만든 검토 제안입니다. 반복 횟수만으로 과잉이나 적정 밀도를 판정하지 않습니다. 문장 원문이 없는 항목은 작성 틀을 제안하며, 괄호 안을 사실로 채워 사용하세요.';
+export const KEYWORD_REWRITE_NOTE='저장된 빈도와 URL의 제목·설명·본문 근거를 연결한 검토 제안입니다. 반복 횟수만으로 과잉이나 적정 밀도를 판정하지 않습니다. 문장 원문이 없는 항목은 작성 틀을 제안하며, 괄호 안을 사실로 채워 사용하세요.';
 const common=new Set(['필요한','필요합니다','함께','없습니다','있습니다','현재','가능한','가능합니다','통해','통한','위한','위해','대한','대해','이러한','이런','있는','없는','하는','하여','그리고','또한','합니다','됩니다','입니다','모든','여러','다양한','보다','가장','더욱','바로','않습니다','따라','실제','먼저','다시','이를','경우','이후','이전']);
 export function isGenericKeyword(word:string){return common.has(word.trim())||/^(?:the|and|with|this|that|from|your|our)$/i.test(word.trim());}
 const concreteTemplates:Record<string,string>={

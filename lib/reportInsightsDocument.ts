@@ -1,4 +1,5 @@
-import {buildKeywordRewrites,KEYWORD_REWRITE_NOTE} from './keywordRewrite';
+import {buildExecutableRewrites,rewriteInstruction} from './keywordExecution';
+import {KEYWORD_REWRITE_NOTE} from './keywordRewrite';
 import {diagnosisScores} from './diagnosisVisuals';
 import type {MarketingReport} from './reportSchema';
 import type {ReportBlock} from './reportDocument';
@@ -22,11 +23,11 @@ export function buildInsightsDocument(report:MarketingReport):ReportBlock[] {
   add('heading','경쟁사 메시지 비교 지도');add('body',insightNotes.messages);
   d.messageRows.forEach(r=>{add('subheading',r.name);add('body',r.available?`수집된 필드 ${r.fieldCount}/2 · ${r.evidence}`:'제목·메타 설명 수집 미확인');if(r.url)add('body',r.url,r.url);add('body',r.cells.map(c=>`${c.label}: ${c.match===undefined?'미확인':c.match||'미탐지'}`).join(' · '));});
   if(d.messageOpportunities.length)add('body','자사 문구 검토 후보: '+d.messageOpportunities.map(o=>`${o.label} (${o.total}개 수집 후보 중 ${o.count}개 탐지)`).join(' · '));
-  const rewrites=buildKeywordRewrites(report.keywordFrequency,report.meta);
+  const rewrites=buildExecutableRewrites(report);
   add('heading','반복 표현 TO-BE 제안');add('body',KEYWORD_REWRITE_NOTE);
   for(const [label,plans] of [['단어',rewrites.singles],['연속어구',rewrites.phrases]] as const){
     add('subheading',`${label} · ${plans.length}개 제안`);
-    plans.forEach(p=>{add('subheading',`${p.item.keyword} · ${p.kind} · ${p.item.count}회`);add('body',`AS-IS: ${p.reason}`);add('body',`${p.sourceLabel}: ${p.source||'실제 문장 원문이 없어 작성 틀을 제안합니다.'}`);add('body',`TO-BE: ${p.action}`);add('body',`작성 틀 (사실 확인 후 사용): ${p.template}`);add('body',`권장 위치: ${p.placement}`);add('body',`완료 확인: ${p.check}`);});
+    plans.forEach(p=>{add('subheading',`${p.item.keyword} · ${p.kind} · ${p.item.count}회`);add('body',`AS-IS: ${p.reason}`);add('body',`TO-BE: ${p.action}`);if(p.guide.url)add('body',p.guide.url,p.guide.url);add('body',rewriteInstruction(p));});
   }
   add('heading','키워드 연결 기회');add('body','제목·설명·헤딩·본문을 합친 빈도 상위 20개 표현에서 제목·설명에 없는 최대 8개 후보입니다. 검색량이 아니며, 사업과 무관한 일반어는 제외하고 검토하세요.');
   if(!d.gaps.length)add('body','연결 후보가 없거나 빈도 데이터가 없습니다.');

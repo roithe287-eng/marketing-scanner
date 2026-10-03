@@ -73,7 +73,7 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
       {report.llmCitationTest&&<LlmCitationCard citation={report.llmCitationTest}/>}
       <AnswerPageMap data={data}/><BrandReview data={data}/><SourceDirectory data={data}/><GeoComparisonPanel report={report}/>
     </Chapter>
-    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="저장된 페이지 표현과 기술 점검 결과를 함께 검토하세요."><KeywordRewritePanel report={report}/><KeywordOpportunities data={data}/>
+    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="저장된 페이지 표현과 기술 점검 결과를 함께 검토하세요."><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/><KeywordOpportunities data={data}/>
       {report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}
       {report.technicalSeo&&<Disclosure title="페이지 기술 상태" note={`${report.technicalSeo.checks.length}개 점검의 실제 근거와 개선 가이드`}><TechnicalSeoCard technicalSeo={report.technicalSeo}/></Disclosure>}
       {report.naverBriefingReadiness&&<Disclosure title="네이버 AI 브리핑 준비도" note={`${report.naverBriefingReadiness.checks.length}개 기술·콘텐츠 항목`}><NaverBriefingReadiness readiness={report.naverBriefingReadiness}/></Disclosure>}

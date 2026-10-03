@@ -4,6 +4,8 @@ import iconv from "iconv-lite";
 import { extractWebsite } from "../lib/extractWebsite";
 import { analyzeTechnicalSeo } from "../lib/analyzeTechnicalSeo";
 import { analyzeKeywordFrequency } from "../lib/analyzeKeywordFreq";
+import {capturePageEvidence} from '../lib/pageEvidence';
+import {PageEvidenceSchema} from '../lib/reportSchema';
 
 const html = `<!doctype html><html><head>
   <title>진짜마케팅 광고 분석과 상담 서비스</title>
@@ -39,6 +41,12 @@ for (const encoding of ["utf-8", "euc-kr"]) {
     assert.equal(technical.checks.find(check => check.id === "h1Count")?.status, "pass");
     const frequency = analyzeKeywordFrequency(data);
     assert.ok(frequency.singles.find(item => item.keyword === "마케팅" && item.count > 2));
+    const saved=PageEvidenceSchema.parse(capturePageEvidence(data));
+    assert.equal(saved.title,data.title);
+    assert.deepEqual(saved.h1,data.h1);
+    assert.ok(saved.bodyText.includes('마케팅 분석 결과와 상담을 제공합니다.'));
+    const bounded=PageEvidenceSchema.parse(capturePageEvidence({...data,title:'제목'.repeat(500),bodyText:'운영'.repeat(8000),bodyTextLength:16000,h2:Array(30).fill('서비스')}));
+    assert.equal(bounded.bodyText.length,12000);assert.equal(bounded.title.length,600);assert.equal(bounded.h2.length,12);assert.equal(bounded.bodyTruncated,true);
   });
 }
 

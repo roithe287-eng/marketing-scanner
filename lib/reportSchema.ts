@@ -322,8 +322,24 @@ export const IndustryBenchmarkSchema = z.object({
   priorityActions: z.array(z.string()).optional(),
 });
 
+export const PageEvidenceSchema=z.object({
+  version:z.literal(1),
+  requestedUrl:z.string().max(4000),
+  finalUrl:z.string().max(4000),
+  capturedAt:z.string().datetime(),
+  title:z.string().max(600),
+  description:z.string().max(1600),
+  h1:z.array(z.string().max(500)).max(6),
+  h2:z.array(z.string().max(500)).max(12),
+  ctaButtons:z.array(z.string().max(200)).max(12),
+  bodyText:z.string().max(12000),
+  bodyTruncated:z.boolean(),
+});
+export type PageEvidence=z.infer<typeof PageEvidenceSchema>;
+
 export const MarketingReportSchema = z.object({
   url: z.string(),
+  pageEvidence:PageEvidenceSchema.optional(),
   overallScore: z.number().min(0).max(100),
   oneLineSummary: z.string(),
   meta: z

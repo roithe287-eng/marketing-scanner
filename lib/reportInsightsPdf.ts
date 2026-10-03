@@ -1,5 +1,6 @@
+import {buildExecutableRewrites} from './keywordExecution';
 import {diagnosisScores,radarPoint} from './diagnosisVisuals';
-import {buildKeywordRewrites,rewriteKinds} from './keywordRewrite';
+import {rewriteKinds} from './keywordRewrite';
 import type {MarketingReport} from './reportSchema';
 import {buildReportInsights,insightNotes,messageThemes} from './reportInsights';
 import {wrapPdfText,PDF_PAGE,type TextMeasurer,type PdfTextStyle} from './pdfLayout';
@@ -44,9 +45,9 @@ export function buildInsightsPdfPages(report:MarketingReport,measure:TextMeasure
   if(d.gaps.length){if(y+275>PDF_PAGE.contentBottom)next('키워드 연결 기회','수집 텍스트의 빈도 상위 표현에서 연결 후보를 고릅니다. 검색량·검색 수요를 뜻하지 않습니다.');y=text('본문 → 제목·설명 연결 후보',48,y,694,17,ink,700)+12;
     for(const [i,k] of d.gaps.entries()){const x=48+(i%2)*354,top=y+Math.floor(i/2)*53;rect(x,top,340,45);text(short(k.keyword,13),x+12,top+5,134,12,ink,700);text(`${k.count}회 · 제목 ${k.inTitle?'포함':'미포함'} / 설명 ${k.inMetaDescription?'포함':'미포함'}`,x+148,top+12,180,10,gray);}
   }
-  const rewrites=buildKeywordRewrites(report.keywordFrequency,report.meta),plans=rewrites.singles;
+  const rewrites=buildExecutableRewrites(report),plans=rewrites.singles;
   if(plans.length||rewrites.phrases.length){
-    next('반복 표현 · TO-BE 실행 가이드','빈도만으로 과잉을 판정하지 않습니다. 아래는 사실을 채워 사용할 작성 틀이며 전체 항목은 상세 보고서에 담았습니다.');
+    next('반복 표현 · TO-BE 실행 가이드','빈도만으로 과잉을 판정하지 않습니다. 아래는 대표 작성 틀이며 URL별 원문·4단계 실행·작성 도움말은 상세 보고서에 담았습니다.');
     rewriteKinds.forEach((kind,i)=>{const x=48+i*140;rect(x,y,132,80);text(kind,x+12,y+10,108,13,ink,700);text(`${plans.filter(p=>p.kind===kind).length}개`,x+12,y+36,108,22,red,700);});y+=103;
     for(const plan of [...plans,...rewrites.phrases].slice(0,3)){
       const title=`${short(plan.item.keyword,22)} · ${plan.kind} · ${plan.item.count}회`;
