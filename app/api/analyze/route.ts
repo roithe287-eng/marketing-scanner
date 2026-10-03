@@ -13,6 +13,7 @@ import { analyzeAeoBriefing } from "@/lib/analyzeAeoBriefing";
 import { analyzePlaceAdvisor } from "@/lib/analyzePlaceAdvisor";
 import { analyzeTechnicalSeo } from "@/lib/analyzeTechnicalSeo";
 import { analyzeKeywordFrequency } from "@/lib/analyzeKeywordFreq";
+import {capturePageEvidence} from '@/lib/pageEvidence';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -82,6 +83,7 @@ export async function POST(req: NextRequest) {
 
     // 1. 사이트 추출
     const websiteData = await extractWebsite(url);
+    const pageEvidence=capturePageEvidence(websiteData);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
     // 2. v45-W3: 4가지 병렬 분석
@@ -109,6 +111,7 @@ export async function POST(req: NextRequest) {
     console.log(`[타이밍] AI 병렬 분석: ${Date.now() - t1}ms`);
 
     report.url = url;
+    report.pageEvidence=pageEvidence;
     report.competitorAnalysis = null;
     report.discoverability = discoverability;
     report.llmCitationTest = llmCitation;
