@@ -678,7 +678,7 @@ button:focus-visible, summary:focus-visible, a:focus-visible {
 .naver-check[data-state=action] .naver-check-marker {background:#fcecee;color:#ae1c28;}
 .naver-check-main {min-width:0;flex:1;}
 .naver-check-main strong {display:block;font-size:14px;font-weight:750;line-height:1.6;}
-.naver-check-main small {display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;color:var(--report-muted);font-size:11px;line-height:1.7;margin-top:4px;}
+.naver-check-main small {display:block;overflow-wrap:anywhere;color:var(--report-muted);font-size:11px;line-height:1.7;margin-top:4px;}
 .naver-check[open] .naver-check-main small {display:block;overflow:visible;}
 .naver-badge {font-size:10px;font-weight:650;white-space:nowrap;padding:4px 7px;border-radius:6px;background:#f2f4f7;color:#546072;}
 .naver-check[data-state=action] .naver-badge {color:#ae1c28;background:#fdf0f1;}
@@ -1101,4 +1101,126 @@ button:focus-visible, summary:focus-visible, a:focus-visible {
 @media(max-width:767px) {
   .report-simulation-total>div:last-child { margin-left:0; text-align:left; width:100%; padding-top:12px; border-top:1px solid #eed1d5; }
   .report-simulation input[type="range"] { min-height:32px; }
+}
+
+/* Long-form reading: keep complete explanations, grow the boxes and keep text legible. */
+:root {
+  --reading-blue:#f0f6fc; --reading-blue-line:#d6e3f2; --reading-blue-ink:#335c86;
+  --reading-lavender:#f5f2fb; --reading-lavender-line:#e1d9f0; --reading-lavender-ink:#655184;
+  --reading-mint:#edf7f2; --reading-mint-line:#cfe6d8; --reading-mint-ink:#2b6550;
+  --reading-peach:#fff4e9; --reading-peach-line:#f1dec7; --reading-peach-ink:#795523;
+}
+button,input,textarea,select { font-family:inherit; }
+.report-v2 { font-size:16px; line-height:1.85; }
+.report-v2 :is(.text-xs,[class~="text-[9px]"],[class~="text-[10px]"],[class~="text-[11px]"],[class~="text-[12px]"]),
+.report-modal :is(.text-xs,[class~="text-[10px]"],[class~="text-[11px]"],[class~="text-[12px]"]) { font-size:14px; line-height:1.8; }
+.report-v2 .text-sm,.report-modal :is(.text-sm,[class~="text-[14px]"]) { font-size:16px; line-height:1.85; }
+.report-v2 :is(.report-note,.report-stat p,.report-disclosure small,.report-source-item details,.report-source-link,
+  .report-priority-trio p,.report-message-table,.report-message-mobile dl,.report-callout,.report-empty,
+  .report-rewrite-placement,.report-rewrite-fields small,.naver-check-main small,.naver-legacy p,
+  .naver-document-list li,.naver-api-list p,.naver-api-evidence a) { font-size:15px; line-height:1.85; }
+.report-v2 :is(.report-detail-body,.report-evidence-flow dd,.report-copy-pair p,.report-numbered-list p,
+  .report-axis-detail p,.report-journey p,.report-geo-intro dd,.report-answer,
+  .report-rewrite-comparison p,.report-rewrite-template p,.report-execution-content p,.report-execution-content li,
+  .report-placement-guide p,.naver-check-body,.naver-completion p) { font-size:16px; line-height:1.9; }
+.report-v2 :is(.report-evidence-flow dt,.report-copy-pair h4,.report-copy-pair h5,.report-rewrite-template>span,
+  .report-summary-title,.report-axis-title,.report-stat h4,.report-priority-trio strong,.naver-category-label,
+  .naver-check-main strong,.naver-execution h5,.report-rewrite-fields label>span) { font-size:15px; line-height:1.7; }
+.report-v2 :is(.report-eyebrow,.report-pill,.report-source-name,.report-source-meta,.report-message-legend,
+  .report-axis small,.report-index,.report-roadmap-grid header p,.report-check-category,.report-phase-number,
+  .report-checklist-stats small,.report-backlog-distribution small,.report-copy [role="status"],
+  .naver-badge,.naver-reviewed,.naver-reviewed strong,.naver-check-meta,.naver-sources a,.naver-source-link,
+  .naver-document-list small,.naver-api-evidence time,.naver-completion strong,.naver-counts small,
+  .naver-priorities small,.report-rewrite-card header>span,.report-rewrite-kinds small,
+  .report-rewrite-step,.report-placement-guide li>span,.report-execution-source blockquote>span,
+  .report-rewrite-fields small,.report-priority-heading>span) { font-size:13px; line-height:1.8; }
+.report-v2 :is(.report-secondary-button,.report-filter-row>button,.report-filter-row>span,
+  .report-backlog-distribution button>span:first-child,.report-checklist-stats>div>span,
+  .report-check-current,.report-rewrite-result,.report-copy-fallback,.report-execution-guide summary small,
+  .naver-categories small,.naver-copy,.naver-copy-preview,.naver-filter button,.naver-filter>span,
+  .naver-counts span,.naver-priorities button>span:first-of-type,.report-axis-grade,
+  .report-axis-detail strong,.report-axis-detail>div>span:last-child) { font-size:14px; line-height:1.8; }
+.report-v2 :is(.report-copy-fallback textarea,.naver-copy-preview textarea,.report-rewrite-fields input,
+  .report-backlog-controls input,.report-rewrite-tools input) { font-size:16px; line-height:1.85; }
+.report-v2 :is(.report-detail-body>p,.report-evidence-flow dd,.report-copy-pair p,.report-numbered-list p,
+  .report-rewrite-comparison p,.report-execution-content p,.report-check-current,.naver-check-main small,
+  .naver-check-body p,.competitor-card p) { white-space:pre-wrap; overflow-wrap:anywhere; }
+.report-v2 .report-check-current { font-size:16px; line-height:1.9; }
+.report-v2 :is(.report-execution-guide h5,.report-execution-guide>summary strong) { font-size:16px; line-height:1.7; }
+.report-v2 :is(.report-draft-preview strong,.report-execution-source>a,.report-brief-grid strong,.report-footer,
+  .report-hero-facts,.report-score span,.report-inline-details) { font-size:14px; line-height:1.8; }
+.report-v2 :is(.report-draft-preview span,.report-execution-steps>li>span,.report-brief-grid span,
+  .report-step-top>b,.report-message-table small,.report-message-mobile h4 span,.report-hero-score small) { font-size:13px; line-height:1.8; }
+.report-v2 .report-readiness-grid>button>span:first-child { font-size:15px; line-height:1.7; }
+.report-v2 .competitor-card p { font-size:16px; line-height:1.85; }
+.report-v2 .competitor-card h4 { font-size:18px; line-height:1.7; }
+.competitor-card :where(p,h4,a,span) { overflow-wrap:anywhere; }
+.report-v2 .report-nav a { font-size:14px; }
+.report-v2 .report-nav a span { font-size:13px; }
+.report-v2 .report-evidence-flow dt>span { width:30px; height:30px; font-size:12px; }
+.report-v2 .report-numbered-list>li>span { width:26px; height:26px; font-size:13px; }
+.report-evidence-flow>div { background:var(--reading-blue); border-color:var(--reading-blue-line); }
+.report-evidence-flow>div:nth-child(2) { background:var(--reading-lavender); border-color:var(--reading-lavender-line); }
+.report-evidence-flow>div:last-child { background:var(--reading-mint); border-color:var(--reading-mint-line); }
+.report-evidence-flow>div:first-child dt { color:var(--reading-blue-ink); }
+.report-evidence-flow>div:nth-child(2) dt { color:var(--reading-lavender-ink); }
+.report-evidence-flow>div:last-child dt { color:var(--reading-mint-ink); }
+.report-evidence-flow[data-layout="stacked"] { grid-template-columns:minmax(0,1fr); }
+.report-evidence-flow[data-layout="stacked"]>div { display:grid; grid-template-columns:140px minmax(0,1fr); gap:24px; align-items:start; padding:22px; }
+.report-evidence-flow[data-layout="stacked"] dt { margin:0; }
+.report-copy-pair>div { background:var(--reading-blue); border-color:var(--reading-blue-line); }
+.report-copy-pair>[data-variant="after"] { background:var(--reading-mint); border-color:var(--reading-mint-line); }
+.report-copy-pair>div :is(h4,h5) { color:var(--reading-blue-ink); }
+.report-copy-pair>[data-variant="after"] :is(h4,h5) { color:var(--reading-mint-ink); }
+.report-rewrite-comparison>div { background:var(--reading-blue); border-color:var(--reading-blue-line); }
+.report-rewrite-comparison>div:last-child { background:var(--reading-mint); border-color:#83b39b; }
+.report-rewrite-template { background:var(--reading-lavender); }
+.report-roadmap-grid>li:nth-child(1) header { background:var(--reading-peach); border-top-color:#b68a53; }
+.report-roadmap-grid>li:nth-child(2) header { background:var(--reading-blue); border-top-color:#6b92be; }
+.report-roadmap-grid>li:nth-child(3) header { background:var(--reading-lavender); border-top-color:#9780b6; }
+.report-checklist-stats>div { background:var(--check-bg); }
+.naver-categories button[data-category="search"] { --category-bg:var(--reading-blue); --category-line:var(--reading-blue-line); --category-ink:var(--reading-blue-ink); }
+.naver-categories button[data-category="ads"] { --category-bg:var(--reading-peach); --category-line:var(--reading-peach-line); --category-ink:var(--reading-peach-ink); }
+.naver-categories button[data-category="shopping"] { --category-bg:var(--reading-mint); --category-line:var(--reading-mint-line); --category-ink:var(--reading-mint-ink); }
+.naver-categories button[data-category="developers"] { --category-bg:var(--reading-lavender); --category-line:var(--reading-lavender-line); --category-ink:var(--reading-lavender-ink); }
+.naver-categories button { background:var(--category-bg); border-color:var(--category-line); }
+.naver-categories button svg { color:var(--category-ink); }
+.naver-categories button[aria-pressed="true"] { background:var(--category-bg); border-color:var(--category-ink); box-shadow:inset 0 3px var(--category-ink); }
+.naver-categories button[aria-pressed="true"] svg { color:var(--category-ink); }
+.naver-completion { background:var(--reading-mint); border-color:#83b39b; }
+.report-notice-items p { font-size:15px; line-height:1.9; }
+.report-notice-items h3 { font-size:16px; }
+.report-notice-items h3 span,.report-notice-end { font-size:14px; }
+.scanner-hero-description { font-size:17px; }
+.scanner-url-help,.scanner-before-notice,.scanner-preview-insight p,.scanner-preview-footer,
+.scanner-outcomes article>div>p:last-child { font-size:15px; line-height:1.85; }
+.scanner-capabilities span,.scanner-demo-label,.scanner-demo-note,.scanner-preview-tabs button,
+.scanner-preview-insight span,.scanner-preview-footer small,.scanner-scope-note,.scanner-advanced>summary { font-size:13px; line-height:1.8; }
+@media(max-width:1023px) {
+  .report-evidence-flow { grid-template-columns:minmax(0,1fr); }
+  .report-evidence-flow[data-columns="2"] { grid-template-columns:minmax(0,1fr); }
+  .report-evidence-flow[data-layout="stacked"]>div { grid-template-columns:minmax(0,1fr); gap:12px; }
+  .report-rewrite-grid,.report-quickwin-grid { grid-template-columns:minmax(0,1fr); }
+}
+@media(max-width:767px) {
+  .report-v2 { font-size:16px; }
+  .report-v2 .report-nav a { font-size:13px; line-height:1.6; }
+  .report-v2 .report-nav a span { font-size:12px; }
+  .report-evidence-flow[data-layout="stacked"]>div { padding:18px 16px; }
+  .report-v2 .naver-category-label { font-size:14px; }
+  .naver-categories button { gap:10px; }
+  .naver-heading { flex-wrap:wrap; }
+  .naver-reviewed { text-align:left; }
+  .report-v2 .report-source-item h4 a { font-size:16px; }
+  .report-copy-pair>div { padding:18px 16px; }
+  .report-checklist-stats { grid-template-columns:minmax(0,1fr); }
+  .report-checklist-stats>div { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:10px 16px; padding:16px; }
+  .report-checklist-stats strong { margin:0; }
+  .report-checklist-stats .report-meter { grid-column:1/-1; }
+  .scanner-hero-description { font-size:16px; }
+}
+@media(max-width:389px) {
+  .naver-categories { grid-template-columns:minmax(0,1fr); }
+  .report-v2 .report-axis-title { font-size:14px; }
+  .report-axis-grid,.report-readiness-grid { grid-template-columns:minmax(0,1fr); }
 }
