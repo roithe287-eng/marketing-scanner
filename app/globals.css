@@ -398,6 +398,7 @@ button:focus-visible, summary:focus-visible, a:focus-visible {
 @media(max-width:359px) { .report-pdf-actions { flex-direction:column; } }
 
 /* Quiet visual hierarchy: one icon family, meaningful state and brief transitions. */
+.report-axis { grid-template-columns:34px minmax(0,1fr); }
 .report-axis-icon { display:flex; align-items:center; justify-content:center; width:34px; height:34px; border:1px solid #e6e9ee; border-radius:10px; background:#fff; }
 .report-line-icon { width:23px; height:23px; flex-shrink:0; }
 .report-axis[aria-pressed="true"] .report-axis-icon { border-color:currentColor; }
@@ -459,6 +460,7 @@ button:focus-visible, summary:focus-visible, a:focus-visible {
   .report-placement-layout { grid-template-columns:minmax(0,1fr); gap:22px; }
   .report-wirepage { max-width:420px; width:100%; margin:auto; }
   .report-placement-copy h5 { font-size:18px; }
+  .report-axis { grid-template-columns:30px minmax(0,1fr); }
   .report-axis-icon { width:30px; height:30px; border-radius:8px; }
   .report-line-icon { width:20px; height:20px; }
   .report-pdf-scope button { min-height:44px; }
