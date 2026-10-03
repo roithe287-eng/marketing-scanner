@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {load} from 'cheerio';
-import {scorePosition,positionGroups,buildCompetitorPositioning,positioningBrief} from '../lib/competitorPositioning';
+import {scorePosition,positionGroups,buildCompetitorPositioning,positioningBrief,positionCoordinates,positionDiameter} from '../lib/competitorPositioning';
 import {keywordCandidates,keywordEvidence} from '../lib/competitorResearch';
 import {selectSearchCandidates,finalizeSearchCandidates} from '../lib/competitorSelection';
 import {MarketingReportSchema} from '../lib/reportSchema';
@@ -16,10 +16,11 @@ const input={id:'own',name:'자사',url:fixture.url,own:true,title:'메타 광�
 const competitor={rank:1,searchRank:3,title:'검색 결과 제목',description:'검색 요약',domain:'agency.test',link:'https://agency.test',metaTitle:input.title,metaDescription:input.description};
 const report=MarketingReportSchema.parse({...fixture,competitorAnalysis:{searchKeyword:'메타 광고 대행',competitors:[competitor],ourSite:{url:fixture.url,domain:'example.com',title:input.title,metaDescription:input.description,h1:''}}});
 test('coordinates are reproducible, independent of repeated words and never measure price or quality',()=>{
-  const row=scorePosition(input,'메타 광고 대행');assert.equal(row.x,100);assert.equal(row.y,100);
-  const repeated=scorePosition({...input,description:input.description.repeat(30)},'메타 광고 대행');assert.equal(repeated.x,row.x);assert.equal(repeated.y,row.y);
+  const row=scorePosition(input,'메타 광고 대행');assert.equal(row.x,67);assert.equal(row.y,100);
+  assert.equal(scorePosition({...input,description:'메타 광고 대행'},'메타 광고 대행').x,100);
+  const repeated=scorePosition({...input,description:input.description.repeat(30)},'메타 광고 대행');assert.equal(repeated.x,row.x);assert.equal(repeated.y,row.y);assert.equal(repeated.signalCount,row.signalCount);
   const noPrice=scorePosition({...input,title:'원하는 광고',description:'원하는 내용을 적었습니다'},'광고');assert.equal(noPrice.checks[0].found,false);assert.equal(noPrice.y,0);
-  assert.equal(scorePosition({...input,title:'메타 광고',description:'일반 안내'},'메타 광고 대행').x,67);
+  assert.equal(scorePosition({...input,title:'메타 광고',description:'일반 안내'},'메타 광고 대행').x,33);
   assert.equal(scorePosition({...input,title:'메타 광고',description:'후기 없음, 인증 미보유, 상담 불가'},'광고').y,0);
 });
 test('failed or missing evidence is unplaced while complete zero-signal evidence remains real zero',()=>{
@@ -73,5 +74,23 @@ test('PDF chart uses the same coordinates, keeps all candidate labels, and stays
   const measure=(s:string,t:{size:number})=>[...s].reduce((n,c)=>n+(/[ -~]/.test(c)?.55:1)*t.size,0);const page=buildCompetitorVisualPage(r,measure)!;
   for(const line of page.lines){assert.ok(line.x>=48&&line.x+line.width<=742.01,line.text);assert.ok(line.y>=46&&line.y+line.lineHeight<=1039,line.text);}
   for(const name of ['자사','agency0.test','agency4.test'])assert.ok(page.lines.some(l=>l.text.includes(name)));
-  const groups=buildCompetitorPositioning(r)!.groups;assert.equal(page.shapes.filter(s=>s.kind==='rect'&&s.radius===18).length,groups.length);
+  const groups=buildCompetitorPositioning(r)!.groups;assert.equal(page.shapes.filter(s=>s.kind==='rect'&&['#b91825','#315d88'].includes(s.color)).length,groups.length);
+});
+
+test('bubble area reflects capped distinct information and group size never rewards duplicate companies',()=>{
+  const sparse=scorePosition({...input,title:'광고',description:'사례 상담'},'광고');
+  const rich=scorePosition({...input,title:'광고',description:'사례 후기 인증 특허 상담 문의 예약'},'광고');
+  assert.equal(sparse.y,rich.y);assert.equal(sparse.signalCount,2);assert.equal(rich.signalCount,4);
+  assert.equal(rich.checks[2].signals.length,4);assert.equal(rich.checks[2].signalCount,2);
+  const repeated=scorePosition({...input,title:'광고 사례 상담',description:'사례 상담 사례 상담'},'광고');assert.equal(repeated.signalCount,2);
+  const group=positionGroups([sparse,{...sparse,id:'candidate-2'},rich])[0];assert.equal(group.signalCount,8/3);
+  assert.ok(positionDiameter(rich.signalCount!)>positionDiameter(sparse.signalCount!));
+  assert.ok(Math.abs((positionDiameter(0)**2+positionDiameter(8)**2)/2-positionDiameter(4)**2)<.001);
+  assert.equal(positionDiameter(0),44);assert.equal(positionDiameter(8,true),64);
+});
+test('extreme coordinates stay inside the diagram and remain monotonic without random displacement',()=>{
+  const low=positionCoordinates(0,0),high=positionCoordinates(100,100),middle=positionCoordinates(50,50);
+  assert.ok(low.left>10&&low.top<90);assert.ok(high.left<90&&high.top>10);assert.deepEqual(middle,{left:50,top:50});
+  assert.ok(positionCoordinates(33,50).left<positionCoordinates(67,50).left);
+  for(const score of [0,25,50,75,100]){const p=positionCoordinates(score,score);const radius=positionDiameter(8,true)/2;assert.ok(p.left*2.4-radius>0&&p.left*2.4+radius<240);assert.ok(p.top*4.1-radius>0&&p.top*4.1+radius<410);}
 });
