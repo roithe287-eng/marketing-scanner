@@ -1,5 +1,6 @@
 import { z } from "zod";
 import {NaverOptimizationSchema} from './naverSchema';
+import {SearchSignalsSchema} from './growthSchema';
 
 // 12가지 마케팅 진단 체크리스트
 export const ChecklistItemSchema = z.object({
@@ -345,6 +346,7 @@ export const PageEvidenceSchema=z.object({
   ctaButtons:z.array(z.string().max(200)).max(12),
   bodyText:z.string().max(12000),
   bodyTruncated:z.boolean(),
+  searchSignals:SearchSignalsSchema.optional(),
 });
 export type PageEvidence=z.infer<typeof PageEvidenceSchema>;
 

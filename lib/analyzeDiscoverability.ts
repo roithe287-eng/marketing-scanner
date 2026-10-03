@@ -20,6 +20,7 @@ const SYSTEM_PROMPT = `너는 SEO/GEO 전문가다. 웹사이트를 다음 관�
 
 진단 점수는 스캐너의 정성적 참고 평가이며 네이버 공식 점수·순위·AI 인용 확률이 아니다. 네이버 SEO·ADVoost·AI 브리핑의 공식 상태는 별도 규칙 엔진이 담당한다. 소유확인 메타태그 부재, 스키마 개수, 영문 상호, 빈 alt, 고정 키워드 밀도만으로 실패·패널티를 단정하지 않는다. JSON-LD 외의 구조화 형식도 고려하고 구조화 데이터가 없어도 임의 가격·평점 생성을 권하지 않는다. 계정 연동·색인·전환 수신은 이 데이터로 확인 불가다.
 원칙: 실제 데이터 인용 · 추측 금지 · 점수 차등 평가 · 한국어 직설.
+2026-10-03 공식 가이드 검토: SEO·GEO·AEO는 연결된 사용자 중심 개선 관점이다. Google AI 검색을 위한 특수 스키마·llms.txt·고정 답변 길이·고정 키워드 밀도를 필수로 제시하지 않는다. FAQ 문답은 고객에게 유용할 때 권하되 Google FAQ 리치 결과는 2026-05-07 종료되어 FAQPage로 특수 노출을 얻는다고 제안하지 않는다. H1 개수만으로 패널티를 단정하지 말고 대표 제목의 명료성을 검토한다. 구조화 데이터는 현재 지원되는 콘텐츠 유형·실제 보이는 정보 일치를 검토한다. Google Search generative AI 참여 설정과 실제 노출은 Search Console에서 확인할 대상으로 남긴다. API Gemini 답변은 Google AI Overviews/AI Mode 노출 실적이 아니다. 실행 후 기대하는 사용자 경험 변화와 확인할 지표를 제안하되 상승률·매출·달성 기간을 꾸며내지 않는다.
 중요: 오직 JSON 객체만 응답. 마크다운 금지. { 로 시작 } 로 끝.`;
 
 function compressText(text: string, maxLen: number): string {
@@ -67,7 +68,7 @@ ${bodyPreview || "(본문 추출 실패)"}
 2) contentStructure: 헤딩 계층·목차·페이지 목적 명료성
 3) redundancy: 반복 표현·중복 문장이 사용자에게 정보를 더하는지 검토 (단어 밀도를 공식 합격 기준으로 사용하지 않음)
 4) geo: 생성형 AI 인용 대응력 (정의문·FAQ·팩트·수치)
-5) structuredData: JSON-LD 구조화 데이터 유효성·완결성
+5) structuredData: JSON-LD·Microdata·RDFa의 콘텐츠 적합성·관측된 오류 (미감지를 무조건 실패로 판정하지 않음)
 6) eeat: 저자·회사·연락처·업데이트·전문성 신호
 7) localBrand: 브랜드명 명확성·지역 키워드·NAP·상호 일관성
 8) aiAnswerability: "OO은 무엇인가", "OO 특징", "OO 어디" 등에 답할 수 있는 문장 존재 여부
