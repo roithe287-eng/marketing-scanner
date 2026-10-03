@@ -54,3 +54,9 @@ test('full PDF keeps URL source, every step, fill-in guidance and completion che
  const measure=(s:string,t:PdfTextStyle)=>Array.from(s).reduce((n,c)=>n+(/[ -~]/.test(c)?.55:1)*t.size,0);
  for(const page of layoutPdfPages(blocks,measure))for(const line of page.lines){assert.ok(line.x+line.width<=742.01);assert.ok(line.y+line.lineHeight<=1039);}
 });
+test('completed Korean fields choose natural particles without altering copulas or missing values',()=>{
+ assert.equal(fillRewriteTemplate('[결과]으로 안내합니다. [항목]을 제공합니다.',{'[결과]':'결과물','[항목]':'서비스'}),'결과물로 안내합니다. 서비스를 제공합니다.');
+ assert.equal(fillRewriteTemplate('[브랜드]은(는) [대상]과 진행합니다.',{'[브랜드]':'진짜마케팅','[대상]':'고객사'}),'진짜마케팅은 고객사와 진행합니다.');
+ assert.equal(fillRewriteTemplate('[대상]이 준비합니다.',{'[대상]':'담당자'}),'담당자가 준비합니다.');
+ assert.equal(fillRewriteTemplate('[항목]입니다. [빈칸]을 채우세요.',{'[항목]':'서비스'}),'서비스입니다. [빈칸]을 채우세요.');
+});

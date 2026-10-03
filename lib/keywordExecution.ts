@@ -24,7 +24,18 @@ export function rewriteFields(template:string):RewriteField[] {
   });
 }
 export function fillRewriteTemplate(template:string,values:RewriteValues):string {
-  return template.replace(/\[[^\]\n]+\]/g,token=>values[token]?.trim()||token);
+  return template.replace(/(\[[^\]\n]+\])((?:은\(는\)|으로|로|은|는|이|가|을|를|와|과)(?=\s|[.,!?]|$))?/g,(original,token:string,particle:string|undefined)=>{
+    const value=values[token]?.trim();if(!value)return original;
+    if(!particle)return value;
+    const last=value.charCodeAt(value.length-1),hangul=last>=0xac00&&last<=0xd7a3;
+    if(!hangul)return value+particle;
+    const final=(last-0xac00)%28;
+    const ending=particle==='으로'||particle==='로'?(final!==0&&final!==8?'으로':'로'):
+      particle==='을'||particle==='를'?(final?'을':'를'):
+      particle==='이'||particle==='가'?(final?'이':'가'):
+      particle==='와'||particle==='과'?(final?'과':'와'):(final?'은':'는');
+    return value+ending;
+  });
 }
 function excerpt(text:string,word:string,max=300) {
   if(text.length<=max)return text;
