@@ -127,7 +127,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
   // 표본 부족 시 안내 카드
   if (!hasSufficientSample) {
     return (
-      <section className="jm-card p-5 md:p-7 lg:p-8">
+      <section className="report-benchmark jm-card p-5 md:p-7 lg:p-8">
         <div className="mb-3 md:mb-4">
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[20px] md:text-[22px]">🏆</span>
@@ -161,7 +161,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
   }
 
   return (
-    <section className="jm-card p-5 md:p-7 lg:p-8">
+    <section className="report-benchmark jm-card p-5 md:p-7 lg:p-8">
       {/* Header */}
       <div className="mb-5 md:mb-6">
         <div className="flex items-center gap-2 mb-2">

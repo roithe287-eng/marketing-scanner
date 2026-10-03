@@ -346,9 +346,9 @@ export default function CompetitorComparison({
                   <p className="text-[10px] md:text-xs font-black tracking-widest text-[#e31b23]">
                     ② POSITIONING MAP
                   </p>
-                  <p className="mt-0.5 text-lg md:text-xl font-black text-[#111]">
+                  <h4 className="report-competitor-subtitle mt-0.5 text-lg md:text-xl font-black text-[#111]">
                     업종 포지셔닝 맵
-                  </p>
+                  </h4>
                 </div>
               </div>
               <span className="text-[11px] md:text-xs text-gray-500 font-medium bg-gray-100 px-2.5 py-1 rounded-full">
@@ -541,9 +541,9 @@ export default function CompetitorComparison({
                 <p className="text-xs font-black tracking-wider text-jm-red">
                   ③ MESSAGE CLUSTER
                 </p>
-                <p className="mt-1 text-base md:text-lg font-black">
-                  경쟁사 메시지 클러스터
-                </p>
+                <h4 className="report-competitor-subtitle mt-1 text-base md:text-lg font-black">
+                    경쟁사 메시지 클러스터
+                  </h4>
               </div>
               <span className="text-[10px] text-jm-gray">
                 6개 카테고리 자동 분류
@@ -612,9 +612,9 @@ export default function CompetitorComparison({
                 <p className="text-xs font-black tracking-wider text-jm-red">
                   ④ STRENGTH × WEAKNESS
                 </p>
-                <p className="mt-1 text-base md:text-lg font-black">
-                  강약점 비교표
-                </p>
+                <h4 className="report-competitor-subtitle mt-1 text-base md:text-lg font-black">
+                    강약점 비교표
+                  </h4>
               </div>
               <span className="text-[10px] text-jm-gray">
                 ✓ 통과 · ! 보완 · ✕ 미흡 · ? 미확인
@@ -832,9 +832,9 @@ export default function CompetitorComparison({
                 <p className="text-xs font-black tracking-wider text-jm-red">
                   ⑥ TOP KEYWORDS
                 </p>
-                <p className="mt-1 text-base md:text-lg font-black">
-                  경쟁사 빈출 키워드 TOP {topKeywords.length}
-                </p>
+                <h4 className="report-competitor-subtitle mt-1 text-base md:text-lg font-black">
+                    경쟁사 빈출 키워드 TOP {topKeywords.length}
+                  </h4>
               </div>
               <span className="text-[10px] text-jm-gray text-right">
                 title · description · H1 · CTA 종합
