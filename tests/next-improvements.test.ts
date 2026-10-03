@@ -89,10 +89,10 @@ test('valid own source and failed provider coexist without failure being treated
   assert.equal(buildGeoFocus(legacy),null);
 });
 
-test('failed competitor fetch is unknown rather than failed in every comparison cell and in the average', () => {
+test('failed competitor fetch retains search provenance without invented strengths or average', () => {
   const html=renderToStaticMarkup(React.createElement(CompetitorComparison,{ourUrl:'https://example.com',competitorAnalysis:{searchKeyword:query,competitors:[{...item('agency.test'),rank:1,domain:'agency.test',fetchError:'HTTP 403'}]}}));
-  assert.match(html,/미확인/);assert.ok(!html.includes('>✕</span>'));
-  assert.equal((html.match(/>\?<\/span>/g)||[]).length,10);
+  assert.match(html,/페이지 수집 미완료/);assert.match(html,/검색 요약/);
+  assert.doesNotMatch(html,/강약점|>평균<|>✕<|calculatePosition/);
 });
 
 test('candidate exclusions, evidence and response order survive shared schema and the PDF', () => {

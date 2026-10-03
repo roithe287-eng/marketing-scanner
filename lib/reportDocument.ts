@@ -7,6 +7,7 @@ import { safeHttpUrl } from './citationMeasurement';
 import {GEO_TITLE,GEO_DESCRIPTION,GEO_METRICS} from './geoPresentation';
 import {buildGeoFocus} from './geoFocus';
 import {buildGrowthDocument} from './growthDocument';
+import {buildCompetitorDocument} from './competitorDocument';
 export type ReportBlock = {text:string;kind:'title'|'heading'|'subheading'|'body';href?:string};
 const labels:Record<string,string> = {
   engine:'AI 엔진',overallScore:'종합 점수',grade:'등급',summary:'요약',score:'점수',status:'상태',message:'안내',currentValue:'현재 상태',diagnosis:'진단',guide:'개선 가이드',evidence:'확인 근거',priorityActions:'우선 실행 과제',
@@ -118,7 +119,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
         focus.questions.forEach(question => blocks.push({kind:'body',text:question}));
       }
     }
-    if (data === report.competitorAnalysis) blocks.push({kind:'body',text:'검색에서 찾은 비교 후보입니다. 검색어 관련 표현은 서비스 일치의 단서이며 직접 경쟁 관계를 보장하지 않습니다. 비교 순서는 재정렬한 목록 순서이며 검색 응답 순서와 구분합니다.'});
+    if (data === report.competitorAnalysis) {blocks.push(...buildCompetitorDocument(report));continue;}
     walk(data);
   }
   blocks.push(...buildNaverReportDocument(report));

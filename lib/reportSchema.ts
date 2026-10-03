@@ -1,6 +1,7 @@
 import { z } from "zod";
 import {NaverOptimizationSchema} from './naverSchema';
 import {SearchSignalsSchema} from './growthSchema';
+import {CompetitorResearchSchema,CompetitorOwnSiteSchema} from './competitorSchema';
 
 // 12가지 마케팅 진단 체크리스트
 export const ChecklistItemSchema = z.object({
@@ -482,6 +483,8 @@ export const MarketingReportSchema = z.object({
     .object({
       searchKeyword: z.string(),
       keywordSource: z.enum(["ai", "fallback"]).optional(),
+      research:CompetitorResearchSchema.optional(),
+      ourSite:CompetitorOwnSiteSchema.optional(),
       filtering: z.object({
         policyVersion: z.literal(1),
         reviewedCount: z.number().int().nonnegative(),
@@ -498,6 +501,8 @@ export const MarketingReportSchema = z.object({
           searchRank: z.number().int().positive().optional(),
           relevance: z.enum(['keyword_match', 'needs_review']).optional(),
           selectionEvidence: z.string().optional(),
+          matchedTerms:z.array(z.string()).optional(),
+          relevanceBasis:z.enum(['page_metadata','search_snippet']).optional(),
           metaTitle: z.string().optional(),
           metaDescription: z.string().optional(),
           h1: z.string().optional(),
