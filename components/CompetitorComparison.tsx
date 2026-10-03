@@ -291,7 +291,7 @@ export default function CompetitorComparison({
   });
 
   return (
-    <div className="jm-card mt-8 overflow-hidden">
+    <div className="competitor-report jm-card mt-8 overflow-hidden">
       {/* ===== ① 헤더 ===== */}
       <div className="relative overflow-hidden bg-gradient-to-br from-jm-black via-jm-charcoal to-jm-black p-6 md:p-8 text-white">
         <div className="relative z-10">
@@ -321,7 +321,7 @@ export default function CompetitorComparison({
         <div className="absolute -left-8 -bottom-8 h-32 w-32 rounded-full bg-white/5 blur-2xl" />
       </div>
 
-      <div className="p-6 md:p-8 space-y-6">
+      <div className="competitor-report-body p-6 md:p-8 space-y-6">
         {competitorAnalysis.filtering && <div className="rounded-xl border bg-neutral-50 p-4 text-sm">
           <p className="font-bold">검색 응답 {competitorAnalysis.filtering.reviewedCount}건 검토 · 제외 {competitorAnalysis.filtering.excluded.length}건 · 상세 수집 {competitorAnalysis.filtering.metadataCheckedCount}개 시도</p>
           <p className="mt-2 text-xs text-jm-gray leading-6">검색어 관련 신호를 확인한 후보를 먼저 표시합니다. 수집하지 못한 사이트의 항목은 미확인으로 처리합니다.</p>

@@ -24,12 +24,12 @@ export default function LivePreviewCard() {
           {diagnosisAxes.map((axis,i)=>{const p=radarPoint(i,scores[i],230,214,128),label=radarPoint(i,100,230,214,179);return <g key={axis.key}>
             <circle cx={p.x} cy={p.y} r="4" fill="white" stroke={axis.color} strokeWidth="2"/>
             <rect x={label.x-34} y={label.y-25} width="68" height="50" rx="9" fill="white" stroke="#e1e5ea"/>
-            <text x={label.x} y={label.y-5} textAnchor="middle" fontSize="12" fill="#606875">{axis.short}</text>
-            <text x={label.x} y={label.y+16} textAnchor="middle" fontSize="17" fontWeight="800" fill={axis.color}>{scores[i]}</text>
+            <text x={label.x} y={label.y-5} textAnchor="middle" fontSize="16" fill="#606875">{axis.short}</text>
+            <text x={label.x} y={label.y+16} textAnchor="middle" fontSize="21" fontWeight="800" fill={axis.color}>{scores[i]}</text>
           </g>;})}
           <circle cx="230" cy="214" r="35" fill="white" stroke="#e1e5ea"/>
           <text x="230" y="215" textAnchor="middle" fontSize="28" fontWeight="800" fill="#202329">64</text>
-          <text x="230" y="232" textAnchor="middle" fontSize="10" fill="#606875">8영역 평균</text>
+          <text x="230" y="232" textAnchor="middle" fontSize="12" fill="#606875">8영역 평균</text>
         </svg>
         <div className="scanner-preview-insight"><span>예시 · 먼저 검토할 곳</span><p><strong>신뢰 요소</strong> 주장 옆에 확인 가능한 근거가 있나요?</p></div>
       </>:<div className="scanner-copy-demo">
