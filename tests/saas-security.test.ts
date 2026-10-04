@@ -44,22 +44,22 @@ test("registered IPs fail closed when missing, malformed or supplied outside Ver
     "x-forwarded-for": "203.0.113.10",
     "x-real-ip": "203.0.113.10",
   });
-  assert.equal(isInternal(h, { ALLOWED_IPS: "203.0.113.10" }), false);
-  assert.equal(isInternal(h, { VERCEL: "1" }), false);
+  assert.equal(isInternal(h, { NODE_ENV: "test", ALLOWED_IPS: "203.0.113.10" }), false);
+  assert.equal(isInternal(h, { NODE_ENV: "test", VERCEL: "1" }), false);
   assert.equal(
-    isInternal(h, { VERCEL: "1", ALLOWED_IPS: "203.0.113.10" }),
+    isInternal(h, { NODE_ENV: "test", VERCEL: "1", ALLOWED_IPS: "203.0.113.10" }),
     true,
   );
   h.set("x-vercel-forwarded-for", "203.0.113.11");
   assert.equal(
-    isInternal(h, { VERCEL: "1", ALLOWED_IPS: "203.0.113.10" }),
+    isInternal(h, { NODE_ENV: "test", VERCEL: "1", ALLOWED_IPS: "203.0.113.10" }),
     false,
   );
   h.set("x-vercel-forwarded-for", "203.0.113.10, 203.0.113.11");
-  assert.equal(clientIp(h, { VERCEL: "1" }), "");
+  assert.equal(clientIp(h, { NODE_ENV: "test", VERCEL: "1" }), "");
   h.set("x-vercel-forwarded-for", "::ffff:203.0.113.10");
   assert.equal(
-    isInternal(h, { VERCEL: "1", ALLOWED_IPS: "203.0.113.10" }),
+    isInternal(h, { NODE_ENV: "test", VERCEL: "1", ALLOWED_IPS: "203.0.113.10" }),
     true,
   );
 });
@@ -160,7 +160,7 @@ test("private, local, link-local, mapped, transition and reserved destinations a
     "file:///etc/passwd",
     "https://example.com@127.0.0.1",
   ])
-    assert.throws(() => publicUrl(url), undefined, url);
+    assert.throws(() => publicUrl(url), url);
   assert.equal(publicAddress("8.8.8.8"), true);
   assert.equal(publicAddress("2606:4700:4700::1111"), true);
   await assert.rejects(

@@ -19,9 +19,7 @@ export default function BrandHeader({ lockHome = false }: Props) {
         height={400}
         className="h-9 md:h-10 w-9 md:w-10 shrink-0 object-contain"
       />
-      <span className="ml-1 hidden md:inline-flex items-center rounded-full bg-jm-light-gray px-2.5 py-1 text-[10px] font-black tracking-wider text-jm-gray">
-        MARKETING SCANNER
-      </span>
+      <span className="scanner-brand-name">마케팅스캐너<small>by 진짜마케팅</small></span>
     </div>
   );
 
