@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import "./access.css";
 import "./visual-theme.css";
+import "./landing-preview.css";
 
 const pretendard = localFont({
   src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
