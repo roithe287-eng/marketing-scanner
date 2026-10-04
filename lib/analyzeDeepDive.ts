@@ -1,3 +1,4 @@
+import {websiteHttp} from './security/safeFetch';
 import { getOpenAI } from "./openaiClient";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
@@ -43,7 +44,7 @@ async function fetchAndParse(targetUrl: string) {
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
   try {
-    const res = await fetch(targetUrl, {
+    const res = await websiteHttp.fetch(targetUrl, {
       headers: {
         "User-Agent": UA,
         Accept: "text/html,application/xhtml+xml",

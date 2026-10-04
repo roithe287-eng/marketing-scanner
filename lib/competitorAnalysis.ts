@@ -1,3 +1,4 @@
+import {websiteHttp} from './security/safeFetch';
 import {keywordCandidates,keywordEvidence,type QuerySite} from "./competitorResearch";
 import type {z} from "zod";
 import type {CompetitorResearchSchema} from "./competitorSchema";
@@ -81,7 +82,7 @@ async function searchNaverWeb(query: string, display = 15) {
  */
 async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
   try {
-    const res = await fetch(competitor.link, {
+    const res = await websiteHttp.fetch(competitor.link, {
       headers: BROWSER_HEADERS,
       cache: "no-store",
       redirect: "follow",

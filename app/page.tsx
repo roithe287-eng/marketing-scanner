@@ -1,6 +1,8 @@
 "use client";
 
 import { useRef, useState } from "react";
+import {useAccess} from '@/components/access/useAccess';
+import AccessBar from '@/components/access/AccessBar';
 import ReportLayout from '@/components/report/ReportLayout';
 import BrandHeader from "@/components/BrandHeader";
 import LandingHero from "@/components/LandingHero";
@@ -9,6 +11,8 @@ import ShareButton from "@/components/ShareButton";
 import { MarketingReport, MarketingReportSchema } from "@/lib/reportSchema";
 
 export default function HomePage() {
+  const {access,refresh}=useAccess();
+  const allowed=access.kind==='internal'||access.kind==='account';
   const [report, setReport] = useState<MarketingReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [competitorLoading, setCompetitorLoading] = useState(false);
@@ -54,6 +58,7 @@ export default function HomePage() {
   }
 
   async function handleAnalyze(url: string, geoQuestions?: string[], baselineId?: string) {
+    if(!allowed){window.location.assign('/inquiry');return;}
     const run = ++analysisRun.current;
     setLoading(true);
     setReport(null);
@@ -110,14 +115,17 @@ export default function HomePage() {
       setError(e?.message || "네트워크 오류가 발생했습니다.");
     } finally {
       setLoading(false);
+      void refresh();
     }
   }
 
   return (
     <main className={report && !loading ? "report-page" : undefined}>
       <BrandHeader />
+      <AccessBar access={access}/>
 
-      <LandingHero onSubmit={handleAnalyze} loading={loading}/>
+      <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'}/>
+      {access.kind==='error'&&<p role="alert" className="jm-container access-error">{access.message}</p>}
 
       {/* Loading */}
       {loading && (
@@ -155,7 +163,7 @@ export default function HomePage() {
             <ReportLayout report={report} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
               const request=competitorRequest.current;
               if(request && !competitorLoading) void fetchCompetitor(request.url,request.hints,request.run);
-            }:undefined} actions={<><DownloadReportButton targetId="report-area" report={report} pending={competitorLoading}/><ShareButton report={report} competitorLoading={competitorLoading}/></>}/>
+            }:undefined} actions={<><DownloadReportButton targetId="report-area" report={report} pending={competitorLoading} direct/>{(access.kind==='internal'||access.account?.features.reports)&&<ShareButton report={report} competitorLoading={competitorLoading}/>}</>}/>
 
           </div>
         </section>
@@ -168,7 +176,7 @@ export default function HomePage() {
       >
         <div className="jm-container flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-jm-gray">
           <div>
-            © {new Date().getFullYear()} 진짜마케팅 · 마케팅스캐너 (MVP)
+            © {new Date().getFullYear()} 진짜마케팅 · 마케팅스캐너
           </div>
           <div className="flex flex-wrap gap-4">
             <a href="/notice" className="hover:text-jm-black">진단 이용 안내</a>

@@ -91,14 +91,14 @@ test('fresh fixed-question runs bypass stored observations and preserve measurem
 
 test('analysis rejects changed baseline URL, changed questions and expired IDs before provider calls',async()=>{
   const {POST}=await import('../app/api/analyze/route');const {NextRequest}=await import('next/server');
-  const keys=['UPSTASH_REDIS_REST_URL','UPSTASH_REDIS_REST_TOKEN'];const saved=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
+  const keys=['UPSTASH_REDIS_REST_URL','UPSTASH_REDIS_REST_TOKEN','VERCEL','ALLOWED_IPS'];const saved=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
   const original=globalThis.fetch;let missing=false,providerCalls=0;
-  process.env.UPSTASH_REDIS_REST_URL='https://baseline.upstash.io';process.env.UPSTASH_REDIS_REST_TOKEN='test';
+  process.env.VERCEL='1';process.env.ALLOWED_IPS='203.0.113.10';process.env.UPSTASH_REDIS_REST_URL='https://baseline.upstash.io';process.env.UPSTASH_REDIS_REST_TOKEN='test';
   globalThis.fetch=async(input,init)=>{
     if (!String(input).startsWith('https://baseline.upstash.io/')) {providerCalls++;throw new Error('Unexpected provider request');}
-    return Response.json(JSON.parse(String(init?.body)).map(()=>({result:missing?null:Buffer.from(JSON.stringify(report())).toString('base64')})));
+    return Response.json(JSON.parse(String(init?.body)).map((command:string[])=>({result:command[0].toLowerCase()==='eval'?1:missing?null:Buffer.from(JSON.stringify(report())).toString('base64')})));
   };
-  const submit=(body:object)=>POST(new NextRequest('https://www.mktscanner.com/api/analyze',{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json'}}));
+  const submit=(body:object)=>POST(new NextRequest('https://www.mktscanner.com/api/analyze',{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json','origin':'https://www.mktscanner.com','x-vercel-forwarded-for':'203.0.113.10'}}));
   try {
     assert.equal((await submit({url:fixture.url,baselineId:'invalid-id'})).status,400);
     assert.equal((await submit({url:'https://other.example',baselineId:'abc123'})).status,400);

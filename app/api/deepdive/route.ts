@@ -1,3 +1,8 @@
+import {z} from 'zod';
+import {requirePrincipal} from '@/lib/saas/auth';
+import {reserve} from '@/lib/saas/store';
+import {readJson,failure} from '@/lib/security/request';
+import {publicUrl} from '@/lib/security/safeFetch';
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeDeepDive } from "@/lib/analyzeDeepDive";
 
@@ -32,8 +37,10 @@ function isValidUrl(url: string) {
 }
 
 export async function POST(req: NextRequest) {
+  let finish:((refund?:boolean)=>Promise<void>)|undefined;
   try {
-    const body = await req.json();
+    const principal=await requirePrincipal(req,true);
+    const body = z.object({targetUrl:z.string().min(1).max(2048),ourDomain:z.string().max(253).optional(),ourTitle:z.string().max(600).optional()}).parse(await readJson(req));
     const rawTarget = body?.targetUrl;
     const ourDomain = body?.ourDomain || "";
     const ourTitle = body?.ourTitle || "";
@@ -55,16 +62,19 @@ export async function POST(req: NextRequest) {
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { message: "OPENAI_API_KEY 미설정" },
+        { message: "분석 서비스를 일시적으로 사용할 수 없습니다." },
         { status: 500 }
       );
     }
 
+    publicUrl(targetUrl);
+    finish=await reserve(principal,'deepdive');
     const result = await analyzeDeepDive(targetUrl, {
       domain: ourDomain,
       title: ourTitle,
     });
 
+    await finish(!result);
     if (!result) {
       return NextResponse.json(
         { message: "딥다이브 분석에 실패했습니다. 잠시 후 재시도해주세요." },
@@ -73,15 +83,8 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(result);
-  } catch (error: any) {
-    console.error("[/api/deepdive] error:", error);
-    return NextResponse.json(
-      {
-        message:
-          error?.message ||
-          "딥다이브 분석 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.",
-      },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if(finish)await finish(true).catch(()=>{});
+    return failure(error);
   }
 }

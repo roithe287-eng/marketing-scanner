@@ -2,13 +2,13 @@ import UrlForm from '@/components/UrlForm';
 import LivePreviewCard from '@/components/LivePreviewCard';
 import DiagnosisIcon from '@/components/report/DiagnosisIcon';
 
-type Props={onSubmit:(url:string,questions?:string[],baselineId?:string)=>void;loading:boolean};
+type Props={onSubmit:(url:string,questions?:string[],baselineId?:string)=>void;loading:boolean;allowed?:boolean;checking?:boolean};
 const steps=[
   {axis:'seo' as const,title:'무엇이 보이는지',text:'검색·AI 답변과 공개 페이지의 확인 근거를 살펴봅니다.'},
   {axis:'conversionFlow' as const,title:'무엇부터 바꿀지',text:'8개 핵심 영역과 비교 후보를 바탕으로 우선순위를 정합니다.'},
   {axis:'copywriting' as const,title:'어떻게 고칠지',text:'TO-BE 문구와 실행 순서로 실제 수정할 일을 구체화합니다.'},
 ];
-export default function LandingHero({onSubmit,loading}:Props) {
+export default function LandingHero({onSubmit,loading,allowed=false,checking=false}:Props) {
   return <section className="scanner-landing" aria-labelledby="scanner-heading">
     <div className="jm-container">
       <div className="scanner-hero-grid">
@@ -17,7 +17,7 @@ export default function LandingHero({onSubmit,loading}:Props) {
           <h1 id="scanner-heading">우리 사이트,<br/><em>어디부터</em> 바꿔야 할까요?</h1>
           <p className="scanner-hero-description">검색·AI 답변 노출(GEO)부터 문의로 이어지는 흐름까지.<br className="hidden sm:block"/> URL 하나로 점검하고, 바꿀 문장과 실행 순서를 확인하세요.</p>
           <div className="scanner-capabilities" aria-label="주요 진단 기능"><span>검색·SEO</span><span>AI·GEO</span><span>전환 흐름</span><span>TO-BE 실행안</span></div>
-          <UrlForm onSubmit={onSubmit} loading={loading}/>
+          {allowed?<UrlForm onSubmit={onSubmit} loading={loading}/>:<div className="scanner-url-form scanner-gated-form"><p className="scanner-url-label">우리 사이트에 맞는 진단, 상담 후 시작하세요</p><div className="scanner-url-row"><a href="/inquiry" className="scanner-url-input scanner-gated-input" aria-label="URL 입력 전 이용 문의하기"><span aria-hidden="true">↗</span> 진단할 웹사이트 URL</a><a href="/inquiry" className="jm-button scanner-submit">{checking?'이용 상태 확인 중…':'진단 이용 문의'}</a></div><p className="scanner-url-help">문의 → 이용 조건 확인 → 승인된 계정으로 진단 시작</p><p className="access-muted">이미 승인받으셨나요? <a href="/login">로그인하기</a></p></div>}
           <p className="scanner-before-notice">공개 정보 기반 참고용 분석으로 실제와 다를 수 있으며, 정확성·성과를 보장하지 않습니다. <a href="/notice" target="_blank" rel="noopener noreferrer">이용 안내 ↗</a></p>
         </div>
         <LivePreviewCard/>

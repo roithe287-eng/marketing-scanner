@@ -1,35 +1,61 @@
 import { NextRequest, NextResponse } from "next/server";
-import { COOKIE_NAME, COOKIE_MAX_AGE, getInternalKey } from "@/lib/internalAuth";
-
+import { z } from "zod";
+import {
+  requireSameOrigin,
+  readJson,
+  failure,
+  privateJson,
+  AccessError,
+  digest,
+  isInternal,
+} from "@/lib/security/request";
+import { emailSchema } from "@/lib/saas/validation";
+import {
+  db,
+  emailKey,
+  getAccount,
+  verifyPassword,
+  createSession,
+  deleteSession,
+  rateLimit,
+  limitRequest,
+} from "@/lib/saas/store";
+import { SESSION_COOKIE, setSession } from "@/lib/saas/auth";
+import { isActive } from "@/lib/saas/types";
 export const runtime = "nodejs";
-
-/**
- * GET /api/login?key=<INTERNAL_ACCESS_KEY>
- * 쿠키 발급 후 / 로 리다이렉트
- */
 export async function GET(req: NextRequest) {
-  const url = new URL(req.url);
-  const provided = url.searchParams.get("key") || "";
-  const expected = getInternalKey();
-
-  // 환경변수 미설정 → 차단 기능 비활성화 상태
-  if (!expected) {
-    return NextResponse.redirect(new URL("/", req.url));
+  return NextResponse.redirect(new URL("/login", req.url));
+}
+export async function POST(req: NextRequest) {
+  try {
+    requireSameOrigin(req);
+    await limitRequest(req.headers, "login", 12, 900);
+    const body = z
+      .object({ email: emailSchema, password: z.string().min(1).max(128) })
+      .parse(await readJson(req));
+    await rateLimit("login-email:" + digest(body.email), 8, 900);
+    const id = await db().get<string>(emailKey(body.email));
+    const account = id ? await getAccount(id) : null;
+    const valid = await verifyPassword(
+      body.password,
+      account?.passwordHash || null,
+    );
+    if (
+      !account ||
+      !valid ||
+      !isActive(account) ||
+      (account.role === "admin" && !isInternal(req.headers))
+    )
+      throw new AccessError(
+        401,
+        "이메일·비밀번호 또는 계정 이용 상태를 확인해 주세요.",
+      );
+    await deleteSession(req.cookies.get(SESSION_COOKIE)?.value);
+    return setSession(
+      privateJson({ ok: true, admin: account.role === "admin" }),
+      await createSession(account),
+    );
+  } catch (error) {
+    return failure(error);
   }
-
-  if (provided !== expected) {
-    return NextResponse.redirect(new URL("/restricted", req.url));
-  }
-
-  const res = NextResponse.redirect(new URL("/", req.url));
-  res.cookies.set({
-    name: COOKIE_NAME,
-    value: expected,
-    httpOnly: true,
-    secure: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: COOKIE_MAX_AGE,
-  });
-  return res;
 }
