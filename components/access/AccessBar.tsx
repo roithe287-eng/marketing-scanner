@@ -19,7 +19,7 @@ export default function AccessBar({ access }: { access: AccessState }) {
               ? `${access.account?.name}님 · 승인된 계정`
               : access.kind === "loading"
                 ? "이용 상태 확인 중…"
-                : "상담 후 시작하는 우리 사이트 맞춤 진단"}
+                : "사이트의 다음 변화를 찾으세요"}
         </span>
         <nav aria-label="계정 메뉴">
           {access.admin && <a href="/manage">이용 관리</a>}

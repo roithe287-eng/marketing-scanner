@@ -48,7 +48,7 @@ export default function FinalCTA({ report }: Props) {
   );
 
   return (
-    <div className="mt-10 overflow-hidden rounded-[32px] bg-jm-black text-white">
+    <div className="scanner-final-cta mt-10 overflow-hidden rounded-[32px] bg-jm-black text-white">
       <div className="grid gap-8 p-8 md:grid-cols-[1.2fr_0.8fr] md:p-12">
         <div>
           <p className="text-xs font-black tracking-wider text-jm-red">

@@ -1,6 +1,6 @@
-import {beforeEach as transportSetup} from 'node:test';
+import {beforeEach as transportSetup,type TestContext} from 'node:test';
 import {websiteHttp} from '../lib/security/safeFetch';
-transportSetup(t=>{t.mock.method(websiteHttp,'fetch',(input:string|URL,init?:RequestInit)=>globalThis.fetch(input,init));});
+transportSetup(t=>{(t as TestContext).mock.method(websiteHttp,'fetch',(input:string|URL,init?:RequestInit)=>globalThis.fetch(input,init));});
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';

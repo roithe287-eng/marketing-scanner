@@ -1,4 +1,4 @@
-/* SaaS access: inherit Pretendard and the existing red / neutral identity. */
+/* SaaS access layout. Product colors are finalized in visual-theme.css. */
 .access-bar {
   border-bottom: 1px solid #ece8e6;
   background: #faf8f6;
@@ -233,7 +233,7 @@
   align-items: center;
   gap: 12px;
   text-decoration: none !important;
-  color: #877d77 !important;
+  color: #56637c;
   min-height: 56px;
 }
 .scanner-gated-form .access-muted {
