@@ -1,6 +1,6 @@
 # Marketing Scanner access and operations
 
-The existing `ALLOWED_IPS` list is unchanged. On Vercel, only the overwritten forwarding header is used, normalized as an exact IPv4/IPv6 address. Missing/malformed configuration never creates a public diagnosis bypass. Self-hosted deployments do not trust forwarded IP headers by default.
+The existing `ALLOWED_IPS` list is unchanged. Vercel project `autoExposeSystemEnvs` must remain enabled so `VERCEL` and `VERCEL_ENV` are available at build and runtime. This setting is explicitly enabled for the deployed project. On Vercel, only the overwritten forwarding header is used, normalized as an exact IPv4/IPv6 address. Missing/malformed configuration never creates a public diagnosis bypass. Self-hosted deployments do not trust forwarded IP headers by default.
 
 ## Access rules
 
