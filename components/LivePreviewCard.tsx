@@ -1,32 +1,20 @@
 "use client";
-import {useId, useState, type CSSProperties} from 'react';
-import {diagnosisAxes, radarPoint} from '@/lib/diagnosisVisuals';
+import {useId, useState} from 'react';
+import DiagnosisIcon from '@/components/report/DiagnosisIcon';
 
-const scores = [60, 70, 60, 50, 65, 60, 80, 65];
-const views = [{key:'overview',label:'8개 진단'}, {key:'ai',label:'AI 노출'}, {key:'competition',label:'경쟁사'}, {key:'rewrite',label:'TO-BE'}] as const;
+const views = [{key:'overview',label:'결과 한눈에'}, {key:'ai',label:'검색·AI'}, {key:'competition',label:'경쟁사'}, {key:'rewrite',label:'수정·실행'}] as const;
 type PreviewView = typeof views[number]['key'];
-const points = (values:readonly number[]) => values.map((v,i) => {
-  const p = radarPoint(i,v,200,200,153);
-  return `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
-}).join(' ');
 
-function RadarPreview() {
-  const gradientId = useId();
-  return <>
-    <div className="scanner-radar-stage" role="img" aria-label="8개 진단 예시: 첫인상 60, CTA 70, 카피 60, 신뢰 50, 전환 65, 광고 60, 모바일 80, SEO 65점. 평균 64점. 100점 기준으로 바깥쪽일수록 높습니다.">
-      <svg viewBox="0 0 400 400" aria-hidden="true">
-        <defs><linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#1745d1" stopOpacity=".34"/><stop offset="1" stopColor="#47bdd5" stopOpacity=".12"/></linearGradient></defs>
-        {[100,75,50,25].map(level => <polygon key={level} points={points(Array(8).fill(level))} fill={level===100?'#edf5fc':'none'} stroke="#b0c3dc" strokeWidth={level===100?'1.5':'1'}/>)}
-        {diagnosisAxes.map((axis,i) => {const p=radarPoint(i,100,200,200,153);return <line key={axis.key} x1="200" y1="200" x2={p.x} y2={p.y} stroke="#b0c3dc"/>;})}
-        <polygon points={points(scores)} fill={`url(#${gradientId})`} stroke="#1745d1" strokeWidth="3" strokeLinejoin="round"/>
-        {diagnosisAxes.map((axis,i) => {const p=radarPoint(i,scores[i],200,200,153);return <circle key={axis.key} cx={p.x} cy={p.y} r="5" fill={axis.color} stroke="white" strokeWidth="2"/>;})}
-      </svg>
-      {diagnosisAxes.map((axis,i) => <div key={axis.key} className="scanner-radar-label" data-axis={i} style={{'--axis-color':axis.color,'--axis-surface':axis.surface} as CSSProperties} aria-hidden="true"><span>{axis.short}</span><strong>{scores[i]}</strong></div>)}
-      <div className="scanner-radar-average" aria-hidden="true"><strong>64<small>/100</small></strong><span>8영역 평균</span></div>
+function ReportPreview() {
+  return <div className="scanner-report-preview">
+    <div className="scanner-story-grid">
+      <article className="scanner-story" data-tone="blue"><div className="scanner-story-top"><span>01 · 발견</span><DiagnosisIcon axis="seo"/></div><h3>검색·AI 노출</h3><div className="scanner-story-search" aria-hidden="true"><span>SEO</span><span>GEO</span><span>AEO</span></div><p>페이지 준비도 · 답변 언급 · 출처</p></article>
+      <article className="scanner-story" data-tone="purple"><div className="scanner-story-top"><span>02 · 비교</span><DiagnosisIcon axis="trust"/></div><h3>경쟁사 속 우리</h3><div className="scanner-story-compare" aria-hidden="true"><span/><span/><span/></div><p>검색어 연결 · 메시지 · 선택 정보</p></article>
+      <article className="scanner-story" data-tone="green"><div className="scanner-story-top"><span>03 · 수정</span><DiagnosisIcon axis="copywriting"/></div><h3>바꿀 문구와 근거</h3><div className="scanner-story-rewrite" aria-hidden="true"><span>원문</span><b>→</b><strong>TO-BE</strong></div><p>반복 표현 · 수정 위치 · 작성 틀</p></article>
+      <article className="scanner-story" data-tone="orange"><div className="scanner-story-top"><span>04 · 실행</span><DiagnosisIcon axis="conversionFlow"/></div><h3>실행 순서와 KPI</h3><div className="scanner-story-action" aria-hidden="true"><span>먼저</span><i/><span>다음</span><i/><span>KPI</span></div><p>우선순위 · 실행 일정 · 재측정</p></article>
     </div>
-    <p className="scanner-radar-key">바깥쪽일수록 높은 점수 <span>· 100점 기준</span></p>
-    <div className="scanner-preview-insight"><span>예시 · 먼저 검토할 곳</span><p><strong>신뢰 요소</strong> 실제 사례·후기를 핵심 주장 가까이에.</p></div>
-  </>;
+    <div className="scanner-preview-output"><span>보고서에 담기는 것</span><p><strong>확인한 근거</strong><b aria-hidden="true">→</b><strong>구체적인 개선안</strong><b aria-hidden="true">→</b><strong>다음 행동</strong></p></div>
+  </div>;
 }
 
 function AiPreview() {
@@ -76,16 +64,13 @@ export default function LivePreviewCard() {
   const [view,setView] = useState<PreviewView>('overview');
   const panelId = useId();
   return <aside className="scanner-preview" aria-label="진단 결과 미리보기 · 예시 데이터">
-    <div className="scanner-preview-heading"><div><p>YOUR NEXT MOVE</p><h2>우리 사이트의 다음 한 수</h2></div><span>예시 데이터</span></div>
+    <div className="scanner-preview-heading"><div><p>EXPLORE YOUR REPORT</p><h2>이런 결과를 만나게 됩니다</h2></div><span>미리보기</span></div>
     <div className="scanner-preview-tabs" role="group" aria-label="결과 미리보기 선택">
       {views.map(item => <button key={item.key} type="button" aria-pressed={view===item.key} aria-controls={panelId} onClick={() => setView(item.key)}>{item.label}</button>)}
     </div>
     <div className="scanner-preview-content" id={panelId} aria-label={`${views.find(item=>item.key===view)?.label} 미리보기`}>
-      <div className="scanner-preview-panel" inert={view!=='overview'} data-active={view==='overview'}><RadarPreview/></div>
-      <div className="scanner-preview-panel" inert={view!=='ai'} data-active={view==='ai'}><AiPreview/></div>
-      <div className="scanner-preview-panel" inert={view!=='competition'} data-active={view==='competition'}><CompetitionPreview/></div>
-      <div className="scanner-preview-panel" inert={view!=='rewrite'} data-active={view==='rewrite'}><RewritePreview/></div>
+      {view==='overview'?<ReportPreview/>:view==='ai'?<AiPreview/>:view==='competition'?<CompetitionPreview/>:<RewritePreview/>}
     </div>
-    <div className="scanner-preview-footer"><span>결과 미리보기 · 4가지 보기</span><small>실제 분석 결과가 아닌 예시입니다.</small></div>
+    <div className="scanner-preview-footer"><small>실제 분석 결과가 아닌 구성·데이터 예시입니다.</small></div>
   </aside>;
 }

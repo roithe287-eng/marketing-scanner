@@ -2,12 +2,12 @@ import {diagnosisAxes} from '@/lib/diagnosisVisuals';
 import DiagnosisIcon from '@/components/report/DiagnosisIcon';
 
 const features = [
-  {kind:'diagnosis',eyebrow:'01 / DIAGNOSIS',title:'8개 영역, 강점과 개선점',description:'첫인상·CTA·카피·신뢰부터 전환·광고·모바일·SEO까지 짚습니다.',detail:'영역별 점수 · 개선 우선순위'},
-  {kind:'search',eyebrow:'02 / SEARCH & AI',title:'검색과 AI가 읽는 구조',description:'네이버·구글 검색과 AI 답변에 필요한 페이지 구조와 정보 근거를 점검합니다.',detail:'SEO · GEO · AEO 준비도'},
-  {kind:'citation',eyebrow:'03 / BRAND VISIBILITY',title:'AI 답변에 등장하는 방식',description:'브랜드 이름의 언급과 우리 사이트의 출처 인용을 나누어 확인합니다.',detail:'질문별 관측 · 출처 확인'},
-  {kind:'competition',eyebrow:'04 / COMPETITION',title:'경쟁사와 다른 우리의 위치',description:'같은 검색어의 비교 후보를 살펴보고, 부족한 선택 정보를 찾습니다.',detail:'포지셔닝 · 메시지 비교'},
-  {kind:'rewrite',eyebrow:'05 / BEFORE → AFTER',title:'원문 옆, 따라 할 개선안',description:'반복 표현과 추상적인 문구를 어떻게 바꿀지, 수정 위치와 순서까지 제안합니다.',detail:'URL 근거 · TO-BE 작성 틀'},
-  {kind:'action',eyebrow:'06 / NEXT ACTION',title:'실행 순서와 확인할 KPI',description:'먼저 할 일과 다음 할 일을 정하고, 적용 후 확인할 지표를 연결합니다.',detail:'실행 로드맵 · 목표 설정 · 재측정'},
+  {kind:'search',eyebrow:'01 / SEARCH & AI',title:'어디서 발견될 수 있을까?',description:'네이버·구글 검색과 AI 답변에 필요한 페이지 구조, 키워드 연결과 콘텐츠 준비도를 살펴봅니다.',detail:'SEO · GEO · AEO · 네이버 최적화'},
+  {kind:'citation',eyebrow:'02 / BRAND VISIBILITY',title:'AI는 우리를 어떻게 말할까?',description:'브랜드 언급과 출처 인용을 구분하고, 고객 질문별 답변과 연결된 페이지를 대조합니다.',detail:'질문별 관측 · 답변 검토 · 출처 목록'},
+  {kind:'competition',eyebrow:'03 / COMPETITION',title:'비교할 때 무엇이 다를까?',description:'같은 검색어에서 찾은 후보의 위치와 메시지를 비교하고, 자사에 보완할 정보를 찾습니다.',detail:'포지셔닝 · 원문 비교 · 선택 정보'},
+  {kind:'rewrite',eyebrow:'04 / BEFORE → AFTER',title:'어떤 문장을 바꾸면 좋을까?',description:'반복 표현과 추상적인 주장을 실제 URL의 근거에 맞춰 다듬습니다. 수정 위치와 실행 방법도 함께 확인합니다.',detail:'반복어 조정 · TO-BE · 수정 가이드'},
+  {kind:'action',eyebrow:'05 / NEXT ACTION',title:'오늘 시작할 일은 무엇일까?',description:'우선순위·실행 일정을 정하고, 적용 후 확인할 KPI와 재진단 결과를 연결합니다.',detail:'실행 목록 · 목표 설정 · 이전 관측 비교'},
+  {kind:'diagnosis',eyebrow:'06 / SITE EXPERIENCE',title:'고객은 어디에서 망설일까?',description:'첫인상·CTA·카피·신뢰·전환·광고·모바일·SEO의 8개 기본 영역을 함께 점검합니다.',detail:'8개 기본 진단 · 전환 흐름 · 체크리스트'},
 ] as const;
 
 function FeatureGraphic({kind}:{kind:typeof features[number]['kind']}) {
@@ -21,7 +21,7 @@ function FeatureGraphic({kind}:{kind:typeof features[number]['kind']}) {
 
 export default function LandingReportFeatures() {
   return <section id="scanner-report-features" className="scanner-report-features" aria-labelledby="scanner-features-heading">
-    <div className="scanner-features-heading"><div><p>BEYOND THE SCORE</p><h2 id="scanner-features-heading">점수 다음에, <em>바꿀 방법까지.</em></h2></div><p>8개 진단은 시작입니다.<br/>발견부터 비교, 수정과 실행까지 이어집니다.</p></div>
+    <div className="scanner-features-heading"><div><p>FROM SIGNALS TO ACTION</p><h2 id="scanner-features-heading">우리 사이트를 읽는 <em>더 넓은 시선.</em></h2></div><p>한 번의 진단에서 만나는 여러 관점.<br/>각 결과를 실제로 바꿀 일에 연결합니다.</p></div>
     <div className="scanner-feature-grid">{features.map(feature=><article key={feature.kind} className="scanner-feature-card" data-kind={feature.kind}>
       <FeatureGraphic kind={feature.kind}/>
       <p className="scanner-feature-eyebrow">{feature.eyebrow}</p><h3>{feature.title}</h3><p className="scanner-feature-description">{feature.description}</p><p className="scanner-feature-detail">{feature.detail}</p>
