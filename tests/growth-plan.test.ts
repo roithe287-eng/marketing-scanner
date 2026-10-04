@@ -1,3 +1,6 @@
+import {beforeEach as transportSetup} from 'node:test';
+import {websiteHttp} from '../lib/security/safeFetch';
+transportSetup(t=>{t.mock.method(websiteHttp,'fetch',(input:string|URL,init?:RequestInit)=>globalThis.fetch(input,init));});
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
@@ -9,7 +12,8 @@ import {googleDirectives} from '../lib/growthEvidence';
 import {buildGrowthPlan,growthBrief} from '../lib/growthPlan';
 import {calculateGrowthKpi,EMPTY_KPI,DEMO_KPI} from '../lib/growthKpi';
 import {MarketingReportSchema,type PageEvidence} from '../lib/reportSchema';
-import {observeRobots,evaluateRobots} from '../lib/robotsRules';
+import {evaluateRobots} from '../lib/robotsRules';
+import {observeRobots} from '../lib/observeRobots';
 import {buildGrowthDocument} from '../lib/growthDocument';
 import GrowthPlanPanel from '../components/report/GrowthPlanPanel';
 import GrowthKpiPanel from '../components/report/GrowthKpiPanel';

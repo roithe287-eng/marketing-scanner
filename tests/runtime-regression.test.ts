@@ -58,19 +58,13 @@ test("shared metadata and scanner contact have valid URL fallbacks", () => {
   assert.equal(getSiteUrl(), "https://www.mktscanner.com");
 });
 
-test("IP and cookie protection both apply; shared reports remain public", () => {
-  process.env.ALLOWED_IPS = "203.0.113.10";
-  process.env.INTERNAL_ACCESS_KEY = "local-test-access";
-  const request = (path: string, ip: string, cookie = "") => new NextRequest(`https://scanner.example${path}`, {
-    headers: { "x-forwarded-for": ip, cookie },
-  });
-  assert.equal(middleware(request("/api/analyze", "203.0.113.11", "ms_internal=local-test-access")).status, 401);
-  assert.equal(middleware(request("/api/analyze", "203.0.113.10")).status, 401);
-  assert.equal(middleware(request("/api/analyze", "::ffff:203.0.113.10", "ms_internal=local-test-access")).headers.get("x-middleware-next"), "1");
-  assert.equal(middleware(request("/", "203.0.113.11")).headers.get("location"), "https://scanner.example/restricted");
-  assert.equal(middleware(request("/r/abc123", "203.0.113.11")).headers.get("x-middleware-next"), "1");
-  assert.equal(middleware(request("/notice", "203.0.113.11")).headers.get("x-middleware-next"), "1");
-  assert.equal(middleware(request("/notice-private", "203.0.113.11")).headers.get("location"), "https://scanner.example/restricted");
+test("private routes are never CDN cached, including filename-like paths", () => {
+  for(const path of ['/api/analyze','/api/analyze.png','/r/abc123','/account','/manage','/setup']) {
+    const response=middleware(new NextRequest('https://scanner.example'+path));
+    assert.match(response.headers.get('Cache-Control')||'', /no-store/);
+    assert.equal(response.headers.get('Vercel-CDN-Cache-Control'),'no-store');
+    assert.match(response.headers.get('X-Robots-Tag')||'', /noindex/);
+  }
 });
 
 test("jsPDF supports the report's image, multi-page, and footer operations", async () => {

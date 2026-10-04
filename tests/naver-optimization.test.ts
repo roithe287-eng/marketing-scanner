@@ -1,10 +1,14 @@
+import {beforeEach as transportSetup} from 'node:test';
+import {websiteHttp} from '../lib/security/safeFetch';
+transportSetup(t=>{t.mock.method(websiteHttp,'fetch',(input:string|URL,init?:RequestInit)=>globalThis.fetch(input,init));});
 import assert from 'node:assert/strict';
 import {test,type TestContext} from 'node:test';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {extractWebsite,type ExtractedWebsiteData} from '../lib/extractWebsite';
 import {analyzeNaverOptimization,naverDirectives} from '../lib/analyzeNaverOptimization';
-import {evaluateRobots,observeRobots} from '../lib/robotsRules';
+import {evaluateRobots} from '../lib/robotsRules';
+import {observeRobots} from '../lib/observeRobots';
 import {MarketingReportSchema} from '../lib/reportSchema';
 import {naverCounts,naverExecutionBrief} from '../lib/naverKnowledge';
 import {aggregateKeywordObservations,keywordObservation,matchesNaverTarget,searchNaverWeb,type NaverSearchResponse} from '../lib/analyzeKeywordRank';

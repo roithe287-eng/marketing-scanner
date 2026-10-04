@@ -1,3 +1,8 @@
+import {z} from 'zod';
+import {requirePrincipal} from '@/lib/saas/auth';
+import {reserve} from '@/lib/saas/store';
+import {readJson,failure} from '@/lib/security/request';
+import {publicUrl} from '@/lib/security/safeFetch';
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeCompetitors } from "@/lib/competitorAnalysis";
 
@@ -5,8 +10,11 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  let finish:((refund?:boolean)=>Promise<void>)|undefined;
   try {
-    const body = await req.json();
+    const principal=await requirePrincipal(req,true);
+    const hint=z.string().max(2000);
+    const body = z.object({url:z.string().min(1).max(2048),hints:z.object({title:hint.optional(),ogTitle:hint.optional(),ogDescription:hint.optional(),description:hint.optional(),h1:z.array(hint).max(50).optional(),h2:z.array(hint).max(100).optional(),keywords:hint.optional()})}).parse(await readJson(req,32_768));
     const { url, hints } = body || {};
 
     if (!url || typeof url !== "string") {
@@ -33,6 +41,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    publicUrl(url);
+    finish=await reserve(principal,'competitor');
     const t0 = Date.now();
 
     const result = await analyzeCompetitors({
@@ -48,19 +58,12 @@ export async function POST(req: NextRequest) {
 
     console.log(`[타이밍] 경쟁사 분석 (단독): ${Date.now() - t0}ms`);
 
+    await finish(!result);
     return NextResponse.json({
       competitorAnalysis: result,
     });
-  } catch (error: any) {
-    console.error("[/api/competitor] error:", error);
-    return NextResponse.json(
-      {
-        message:
-          error?.message ||
-          "경쟁사 분석 중 문제가 발생했습니다.",
-        competitorAnalysis: null,
-      },
-      { status: 200 } // 200 - 메인 결과에 영향 X
-    );
+  } catch (error: unknown) {
+    if(finish)await finish(true).catch(()=>{});
+    return failure(error);
   }
 }

@@ -8,12 +8,14 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
-    "test": "node --import tsx --test tests/*.test.ts"
+    "test": "node --import tsx --test tests/*.test.ts",
+    "test:security": "node --import tsx --test tests/security-redis.integration.ts"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
     "cheerio": "^1.0.0",
     "iconv-lite": "^0.6.3",
+    "ipaddr.js": "^2.2.0",
     "jspdf": "4.2.1",
     "next": "15.5.26",
     "openai": "^4.67.0",

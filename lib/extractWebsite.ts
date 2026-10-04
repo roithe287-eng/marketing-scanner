@@ -1,4 +1,6 @@
-import { blocksAllCrawling, observeRobots, type RobotsObservation } from "./robotsRules";
+import {websiteHttp} from './security/safeFetch';
+import { blocksAllCrawling, type RobotsObservation } from "./robotsRules";
+import {observeRobots} from "./observeRobots";
 import { getScannerContactUrl } from "./siteConfig";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
@@ -158,7 +160,7 @@ async function tryFetch(startUrl: string): Promise<FetchAttempt> {
   let current = startUrl;
 
   for (let hop = 0; hop <= 6; hop++) {
-    const res = await fetch(current, {
+    const res = await websiteHttp.fetch(current, {
       headers: BROWSER_HEADERS,
       cache: "no-store",
       redirect: "manual",
@@ -200,7 +202,7 @@ async function tryFetch(startUrl: string): Promise<FetchAttempt> {
   }
 
   // 6회 초과: 마지막 리다이렉트 응답을 그대로 반환 (호출부에서 !res.ok 처리)
-  const res = await fetch(current, {
+  const res = await websiteHttp.fetch(current, {
     headers: BROWSER_HEADERS,
     cache: "no-store",
     redirect: "manual",

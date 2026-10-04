@@ -1,3 +1,7 @@
+import {requirePrincipal} from '@/lib/saas/auth';
+import {reserve} from '@/lib/saas/store';
+import {readJson,failure} from '@/lib/security/request';
+import {publicUrl} from '@/lib/security/safeFetch';
 import {getSharedReport} from "@/lib/shareStore";
 import {baselineQuestions, canonicalPage} from "@/lib/geoComparison";
 import type {GeoBaseline} from "@/lib/reportSchema";
@@ -35,8 +39,10 @@ function isValidUrl(url: string) {
 }
 
 export async function POST(req: NextRequest) {
+  let finish:((refund?:boolean)=>Promise<void>)|undefined;
   try {
-    const body = await req.json();
+    const principal=await requirePrincipal(req,true);
+    const body = await readJson(req);
     const rawUrl = body?.url;
     const geoQuestions = body?.geoQuestions;
     if (geoQuestions !== undefined && (!Array.isArray(geoQuestions) || geoQuestions.length > 5 || geoQuestions.some((q: unknown) => typeof q !== 'string' || q.trim().length < 5 || q.length > 250))) {
@@ -62,7 +68,7 @@ export async function POST(req: NextRequest) {
     let fixedQuestions: ReturnType<typeof baselineQuestions> | undefined;
     if (body.baselineId !== undefined) {
       if (typeof body.baselineId !== 'string' || !/^[A-Za-z0-9]{4,12}$/.test(body.baselineId)) return NextResponse.json({message:'기준 보고서 ID가 올바르지 않습니다.'},{status:400});
-      const previous = await getSharedReport(body.baselineId);
+      const previous = await getSharedReport(body.baselineId,principal);
       if (!previous?.llmCitationTest) return NextResponse.json({message:'기준 보고서가 만료되었거나 GEO 관측이 없습니다. 다른 기준 보고서를 선택해 주세요.'},{status:422});
       if (!canonicalPage(url) || canonicalPage(previous.url) !== canonicalPage(url)) return NextResponse.json({message:'기준 보고서와 같은 URL로만 비교할 수 있습니다.'},{status:400});
       geoBaseline = {reportId:body.baselineId,url:previous.url,citation:previous.llmCitationTest};
@@ -72,11 +78,13 @@ export async function POST(req: NextRequest) {
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
-        { message: "OPENAI_API_KEY가 설정되지 않았습니다." },
+        { message: "분석 서비스 준비 중입니다. 잠시 후 다시 시도해 주세요." },
         { status: 500 }
       );
     }
 
+    publicUrl(url);
+    finish=await reserve(principal,'analyze');
     const t0 = Date.now();
 
     // 1. 사이트 추출
@@ -138,10 +146,11 @@ export async function POST(req: NextRequest) {
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
+    await finish();
     return NextResponse.json({
       ...report,
       _hasCompetitor: !!(
-        process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET
+        process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET && (principal.kind==='internal'||principal.account.features.competitor)
       ),
       _websiteHints: {
         title: websiteData.title,
@@ -153,15 +162,8 @@ export async function POST(req: NextRequest) {
         keywords: websiteData.keywords,
       },
     });
-  } catch (error: any) {
-    console.error("[/api/analyze] error:", error);
-    return NextResponse.json(
-      {
-        message:
-          error?.message ||
-          "분석 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요.",
-      },
-      { status: 500 }
-    );
+  } catch (error: unknown) {
+    if(finish)await finish(true).catch(()=>{});
+    return failure(error);
   }
 }

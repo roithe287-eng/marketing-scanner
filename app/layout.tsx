@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import "./access.css";
 
 const pretendard = localFont({
   src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",
@@ -12,7 +13,7 @@ const pretendard = localFont({
 export const metadata: Metadata = {
   title: "마케팅스캐너 | URL 하나로 확인하는 우리 사이트의 마케팅 약점",
   description:
-    "진짜마케팅이 만든 무료 웹사이트 마케팅 진단 도구. URL만 넣으면 첫 화면, CTA, 카피, 신뢰 요소, 광고 랜딩 적합도까지 AI가 자동으로 분석합니다.",
+    "진짜마케팅의 웹사이트 마케팅 진단 서비스. 승인된 계정으로 URL을 진단하면 첫 화면, CTA, 카피, 신뢰 요소, 광고 랜딩 적합도까지 AI가 자동으로 분석합니다.",
   openGraph: {
     title: "마케팅스캐너 | 진짜마케팅",
     description: "URL 하나로 확인하는 우리 사이트의 마케팅 약점",
