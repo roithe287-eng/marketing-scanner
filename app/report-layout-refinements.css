@@ -1,0 +1,27 @@
+/* Keep explanatory text and axis furniture outside data geometry. */
+.report-radar-chart svg { overflow:visible; }
+.report-axis-title { min-height:3.4em; display:flex; align-items:center; }
+.report-journey li:not(:last-child)::after { display:none; }
+.position-chart-grid { display:grid; grid-template-columns:34px minmax(0,1fr); grid-template-rows:auto 26px; gap:10px 8px; }
+.position-chart-grid .position-plot { grid-column:2; grid-row:1; min-width:0; }
+.position-y-scale { grid-column:1; grid-row:1; position:relative; font-size:14px; color:#526174; }
+.position-y-scale span { position:absolute; right:0; transform:translateY(-50%); line-height:1.4; }
+.position-y-scale span:nth-child(1) { top:22%; }
+.position-y-scale span:nth-child(2) { top:50%; }
+.position-y-scale span:nth-child(3) { top:78%; }
+.position-x-scale { grid-column:2; grid-row:2; position:relative; color:#526174; font-size:14px; }
+.position-x-scale span { position:absolute; transform:translateX(-50%); top:0; line-height:1.4; }
+.position-x-scale span:nth-child(1) { left:22%; }
+.position-x-scale span:nth-child(2) { left:50%; }
+.position-x-scale span:nth-child(3) { left:78%; }
+.position-quadrant-key { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:18px; }
+.position-quadrant-key>span { padding:10px 12px; font-size:13px; line-height:1.7; font-weight:650; background:#e9ddfa; color:#4d3872; border:1px solid #cbb7e4; border-radius:9px; }
+.position-quadrant-key>span:nth-child(2) { background:#e6efce; color:#3d5628; border-color:#c1d194; }
+.position-quadrant-key>span:nth-child(3) { background:#fff0d4; color:#795421; border-color:#e6ce9d; }
+.position-quadrant-key>span:nth-child(4) { background:#dfebfc; color:#315380; border-color:#bbceed; }
+@media(max-width:767px) {
+ .position-chart-grid { grid-template-columns:27px minmax(0,1fr); column-gap:5px; }
+ .position-quadrant-key { grid-template-columns:minmax(0,1fr); gap:7px; }
+ .position-quadrant-key>span { padding:9px 12px; }
+}
+@media(max-width:359px) { .report-axis-title { min-height:0; } }

@@ -4,6 +4,7 @@ import "./globals.css";
 import "./access.css";
 import "./visual-theme.css";
 import "./landing-preview.css";
+import "./report-layout-refinements.css";
 
 const pretendard = localFont({
   src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",

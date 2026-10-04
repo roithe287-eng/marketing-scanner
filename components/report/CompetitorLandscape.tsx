@@ -37,15 +37,17 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
     <div className="position-axis-cards"><article><span>X축 · 오른쪽으로 갈수록</span><h5>검색어와 설명이 잘 연결됩니다</h5><p>대표 키워드의 구성 단어가 제목과 설명에 각각 있는지 봅니다. 모든 구성 단어가 한 곳에만 있으면 50점, 두 곳 모두에 있으면 100점입니다. 여러 단어는 포함 비율을 계산합니다.</p><strong>제목 포함 비율 × 50 + 설명 포함 비율 × 50</strong></article><article><span>Y축 · 위로 갈수록</span><h5>선택에 필요한 정보 종류가 많습니다</h5><p>가격·조건, 대상·범위, 사례·근거, 진행·지원 중 관련 표현이 있는 종류를 셉니다. 표현의 사실성은 별도 확인합니다.</p><strong>탐지한 정보 종류 수 ÷ 4 × 100</strong></article></div>
     <div className="position-size-guide"><div><span className="report-eyebrow">BUBBLE SIZE</span><h5>클수록 선택 정보 단서가 풍부합니다</h5><p>{POSITION_SIZE_NOTE}</p></div><div className="position-size-samples" aria-label="버블 크기 예시">{[0,4,8].map(n=><div key={n}><i aria-hidden="true" style={{'--bubble-size':`${positionDiameter(n)}px`,'--bubble-mobile-size':`${positionDiameter(n,true)}px`} as CSSProperties}/><span>{n}개{n===8?' 이상':''}</span></div>)}</div></div>
     <figure className="position-figure"><div className="position-y-caption"><strong>Y · {POSITION_AXES.y}</strong><span>상단: 4종류 / 하단: 0종류</span></div>
+      <div className="position-chart-grid">
+      <div className="position-y-scale" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
       <div className="position-plot" aria-label="검색 메시지 비교 도표">
         <div className="position-quadrants" aria-hidden="true"><div/><div/><div/><div/></div>
         <div className="position-grid-lines" aria-hidden="true"/>
-        <span className="position-corner top-left">검색어 연결 검토</span><span className="position-corner top-right">연결·정보 함께 탐지</span><span className="position-corner bottom-left">주제·정보 함께 검토</span><span className="position-corner bottom-right">선택 정보 보완 검토</span>
-        <div className="position-y-ticks" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
         {groups.map(g=>{const point=positionCoordinates(g.x,g.y);return <button type="button" key={`${g.x}:${g.y}`} className={`position-dot ${g.rows.some(r=>r.own)?'is-own':''} ${g.rows.some(r=>r.id===active.id)?'is-active':''}`} style={{left:`${point.left}%`,top:`${point.top}%`,'--bubble-size':`${positionDiameter(g.signalCount)}px`,'--bubble-mobile-size':`${positionDiameter(g.signalCount,true)}px`} as CSSProperties} aria-pressed={g.rows.some(r=>r.id===active.id)} aria-controls={`${id}-evidence`} aria-label={`${g.rows.map(r=>r.own?'자사':r.name).join(', ')} · X ${g.x} · Y ${g.y} · 선택 정보 단서 ${g.signalCount.toFixed(1)}개${g.rows.length>1?' · 같은 위치, 아래 목록에서 개별 선택':''}`} onClick={()=>choose(g.rows[0].id)}>{g.rows.length>1?`${g.rows.length}곳`:g.rows[0].own?'자사':g.rows[0].id.split('-')[1]}</button>;})}
         {!groups.length&&<p className="position-empty">두 필드를 확보한 사이트가 없어<br/>좌표를 표시하지 않습니다.</p>}
-        <div className="position-x-ticks" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
+      </div>
+      <div className="position-x-scale" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
       </div><div className="position-x-caption"><strong>X · {POSITION_AXES.x}</strong><span>오른쪽: 구성 단어가 더 많이 포함됨</span></div>
+      <div className="position-quadrant-key" aria-label="도표의 영역 안내"><span>왼쪽 위 · 검색어 연결 검토</span><span>오른쪽 위 · 연결·정보 함께 탐지</span><span>왼쪽 아래 · 주제·정보 함께 검토</span><span>오른쪽 아래 · 선택 정보 보완 검토</span></div>
       <figcaption>버블 또는 업체를 선택해 위치와 크기의 근거를 확인하세요. 0·100도 도표 안쪽에 여백을 두어 배치합니다. 같은 좌표는 묶고 크기는 해당 업체들의 평균 단서 수를 사용합니다. 50은 안내선이며 합격 기준·업종 평균이 아닙니다.</figcaption>
     </figure>
     <div className="position-site-list" role="group" aria-label="포지셔닝 근거를 볼 사이트 선택">{rows.map((r,i)=><button type="button" key={r.id} aria-pressed={active.id===r.id} aria-controls={`${id}-evidence`} onClick={()=>choose(r.id)}><span className={r.own?'is-own':''}>{r.own?'자사':i}</span><strong>{r.name}</strong><small>{r.x===null?'판정 보류':`X ${r.x} · Y ${r.y} · 단서 ${r.signalCount}`}</small></button>)}</div>
