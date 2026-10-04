@@ -1,19 +1,47 @@
 "use client";
-import {useId, useState} from 'react';
+import {useId, useState, type CSSProperties} from 'react';
 import DiagnosisIcon from '@/components/report/DiagnosisIcon';
+import {diagnosisAxes, radarPoint} from '@/lib/diagnosisVisuals';
 
-const views = [{key:'overview',label:'결과 한눈에'}, {key:'ai',label:'검색·AI'}, {key:'competition',label:'경쟁사'}, {key:'rewrite',label:'수정·실행'}] as const;
+const views = [{key:'overview',label:'진단 그래프'}, {key:'ai',label:'검색·AI'}, {key:'competition',label:'경쟁사'}, {key:'rewrite',label:'수정·실행'}] as const;
 type PreviewView = typeof views[number]['key'];
 
+const exampleScores = [78,48,64,84,52,61,88,70];
+const exampleAverage = Math.round(exampleScores.reduce((sum, score) => sum + score, 0) / exampleScores.length);
+const previewPoint = (index:number, value:number) => radarPoint(index,value,240,150,103);
+const previewPolygon = (level?:number) => diagnosisAxes.map((_,i) => {
+  const point = previewPoint(i,level ?? exampleScores[i]);
+  return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
+}).join(' ');
+const labelPositions = [[240,19],[363,63],[423,151],[363,239],[240,283],[117,239],[57,151],[117,63]];
+
 function ReportPreview() {
-  return <div className="scanner-report-preview">
-    <div className="scanner-story-grid">
-      <article className="scanner-story" data-tone="blue"><div className="scanner-story-top"><span>01 · 발견</span><DiagnosisIcon axis="seo"/></div><h3>검색·AI 노출</h3><div className="scanner-story-search" aria-hidden="true"><span>SEO</span><span>GEO</span><span>AEO</span></div><p>페이지 준비도 · 답변 언급 · 출처</p></article>
-      <article className="scanner-story" data-tone="purple"><div className="scanner-story-top"><span>02 · 비교</span><DiagnosisIcon axis="trust"/></div><h3>경쟁사 속 우리</h3><div className="scanner-story-compare" aria-hidden="true"><span/><span/><span/></div><p>검색어 연결 · 메시지 · 선택 정보</p></article>
-      <article className="scanner-story" data-tone="green"><div className="scanner-story-top"><span>03 · 수정</span><DiagnosisIcon axis="copywriting"/></div><h3>바꿀 문구와 근거</h3><div className="scanner-story-rewrite" aria-hidden="true"><span>원문</span><b>→</b><strong>TO-BE</strong></div><p>반복 표현 · 수정 위치 · 작성 틀</p></article>
-      <article className="scanner-story" data-tone="orange"><div className="scanner-story-top"><span>04 · 실행</span><DiagnosisIcon axis="conversionFlow"/></div><h3>실행 순서와 KPI</h3><div className="scanner-story-action" aria-hidden="true"><span>먼저</span><i/><span>다음</span><i/><span>KPI</span></div><p>우선순위 · 실행 일정 · 재측정</p></article>
-    </div>
-    <div className="scanner-preview-output"><span>보고서에 담기는 것</span><p><strong>확인한 근거</strong><b aria-hidden="true">→</b><strong>구체적인 개선안</strong><b aria-hidden="true">→</b><strong>다음 행동</strong></p></div>
+  const [selected,setSelected] = useState(1);
+  const axis = diagnosisAxes[selected];
+  const edge = previewPoint(selected,100);
+  const insightId = useId();
+  return <div className="scanner-radar-preview">
+    <div className="scanner-radar-caption"><strong>강점과 빈틈이 한눈에</strong><span>8개 축 · 예시 점수</span></div>
+    <svg className="scanner-landing-radar" viewBox="0 0 480 306" role="img" aria-label={`8개 영역 진단 예시. 평균 ${exampleAverage}점. ${diagnosisAxes.map((a,i)=>`${a.label} ${exampleScores[i]}점`).join(', ')}. 바깥쪽이 100점입니다.`}>
+      <polygon points={previewPolygon(100)} fill="#edf3ff"/>
+      {[25,50,75,100].map(level=><polygon key={level} points={previewPolygon(level)} fill="none" stroke="#b7c8e5" strokeWidth="1"/>)}
+      {diagnosisAxes.map((a,i)=>{const p=previewPoint(i,100);return <line key={a.key} x1="240" y1="150" x2={p.x} y2={p.y} stroke="#c4d2e8"/>;})}
+      <line x1="240" y1="150" x2={edge.x} y2={edge.y} stroke={axis.color} strokeWidth="20" opacity=".12"/>
+      <polygon points={previewPolygon()} fill="#1745d1" fillOpacity=".22" stroke="#1745d1" strokeWidth="3" strokeLinejoin="round"/>
+      {diagnosisAxes.map((a,i)=>{const p=previewPoint(i,exampleScores[i]);const [x,y]=labelPositions[i];return <g key={a.key}>
+        <circle cx={p.x} cy={p.y} r={i===selected?7:5} fill={a.color} stroke="white" strokeWidth="2"/>
+        <rect x={x-43} y={y-15} width="86" height="30" rx="10" fill={a.surface} stroke={i===selected?a.color:'transparent'} strokeWidth="2"/>
+        <text x={x} y={y+6} textAnchor="middle" fill={a.color} fontSize="18" fontWeight="750">{a.short}</text>
+      </g>;})}
+      <circle cx="240" cy="150" r="37" fill="white" stroke="#cedaef"/>
+      <text className="scanner-radar-average" x="240" y="146" textAnchor="middle" fontSize="28" fontWeight="850" fill="#192a4d">{exampleAverage}</text>
+      <text className="scanner-radar-average-note" x="240" y="174" textAnchor="middle" fontSize="12" fontWeight="650" fill="#526078">평균 · 예시</text>
+    </svg>
+    <div className="scanner-radar-controls" role="group" aria-label="예시 진단 영역 선택">{diagnosisAxes.map((a,i)=><button type="button" key={a.key} aria-pressed={i===selected} aria-controls={insightId} onClick={()=>setSelected(i)} style={{'--axis-color':a.color,'--axis-surface':a.surface} as CSSProperties}>
+      <span><DiagnosisIcon axis={a.key}/>{a.short}<b>{exampleScores[i]}</b></span><i aria-hidden="true"><i style={{width:`${exampleScores[i]}%`}}/></i>
+    </button>)}</div>
+    <div className="scanner-radar-guidance" id={insightId} aria-live="polite"><strong>{axis.label} · 이렇게 개선</strong><p>{axis.action}</p></div>
+    <p className="scanner-radar-extension">진단 이후에도 <strong>검색·AI → 경쟁사 → 개선안·KPI</strong></p>
   </div>;
 }
 
@@ -64,7 +92,7 @@ export default function LivePreviewCard() {
   const [view,setView] = useState<PreviewView>('overview');
   const panelId = useId();
   return <aside className="scanner-preview" aria-label="진단 결과 미리보기 · 예시 데이터">
-    <div className="scanner-preview-heading"><div><p>EXPLORE YOUR REPORT</p><h2>이런 결과를 만나게 됩니다</h2></div><span>미리보기</span></div>
+    <div className="scanner-preview-heading"><div><p>YOUR MARKETING MAP</p><h2>우리 사이트를 읽는 입체적인 시선</h2></div><span>결과 예시</span></div>
     <div className="scanner-preview-tabs" role="group" aria-label="결과 미리보기 선택">
       {views.map(item => <button key={item.key} type="button" aria-pressed={view===item.key} aria-controls={panelId} onClick={() => setView(item.key)}>{item.label}</button>)}
     </div>
