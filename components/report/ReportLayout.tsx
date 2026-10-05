@@ -1,9 +1,9 @@
 "use client";
 import CompetitorLandscape from './CompetitorLandscape';
+import ReportHeader from './ReportHeader';
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {buildReportInsights} from '@/lib/reportInsights';
-import {safeHttpUrl} from '@/lib/citationMeasurement';
 import {CollectionCoverage,ConversionPath,AnswerPageMap,BrandReview,SourceDirectory,MessageMap,KeywordOpportunities,ActionBacklog} from './InsightPanels';
 import ScoreRadar from '@/components/ScoreRadar';
 import KeywordRewritePanel from './KeywordRewritePanel';
@@ -62,9 +62,8 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
     window.addEventListener('resize',schedule);
     return()=>{observer.disconnect();window.removeEventListener('scroll',schedule);window.removeEventListener('resize',schedule);if(frame)window.cancelAnimationFrame(frame);};
   },[]);
-  const site=report.meta?.siteName||report.meta?.domain||report.url.replace(/^https?:\/\//,'').replace(/\/$/,'');const url=safeHttpUrl(report.url);
   return <div className="report-v2" id="report-area">
-    <header className="report-hero" id="report-top"><div className="report-hero-main"><p className="report-eyebrow">JINJJA MARKETING · DIAGNOSIS</p><h1>{site}<span>마케팅 진단 리포트</span></h1>{url&&<a className="report-domain" href={url} target="_blank" rel="noopener noreferrer">{report.url} ↗</a>}<p className="report-hero-summary">{report.oneLineSummary}</p><p className="report-note">공개 페이지 기반 자동 진단 · 실행 전 담당자 검토</p></div><div className="report-hero-score"><span>마케팅 종합 점수</span><div><strong>{report.overallScore}</strong><b>/ 100</b></div><p>페이지 구조·콘텐츠 진단</p><small>AI 인용률과는 다른 지표입니다.</small></div><div className="report-hero-bottom"><div className="report-hero-facts"><span><b>{data.tasks.length}</b> 보완 항목</span><span><b>{data.obs?data.questions.length:"—"}</b> 고객 질문</span><span><b>{data.competitorCount}</b> 비교 후보</span></div><div className="report-toolbar" data-hide-on-export>{actions}</div></div></header>
+    <ReportHeader report={report} data={data} actions={actions}/>
     <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} aria-current={active===id?'location':undefined} onClick={()=>setActive(id)}><span>0{i+1}</span>{label}</a>)}<div className="report-reading-track" aria-hidden="true"><div ref={readingProgress}/></div></nav>
     <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="전체 상태를 확인하고, 점수가 낮은 단계부터 상세 근거를 살펴보세요."><ScoreRadar diagnosis={report.diagnosis}/><ConversionPath data={data}/><CollectionCoverage data={data}/></Chapter>
     <Chapter id="geo" number="02" title="AI가 브랜드를 읽는 방식" note="페이지 준비도, 실제 답변, 출처를 각각 확인합니다.">

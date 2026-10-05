@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import "./access.css";
 import "./visual-theme.css";
+import "./diagnosis-graphics.css";
 import "./landing-preview.css";
 import "./report-layout-refinements.css";
 

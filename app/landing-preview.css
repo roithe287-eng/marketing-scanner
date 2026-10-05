@@ -8,10 +8,10 @@
 .scanner-hero-copy h1 em { color:var(--scanner-cobalt); background:none; }
 .scanner-hero-description { font-size:17px; line-height:1.75; margin-top:17px; }
 .scanner-hero-questions { list-style:none; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; padding:0; margin:22px 0; }
-.scanner-hero-questions li { min-width:0; padding:12px 10px; border:1px solid #c6d6f2; border-radius:12px; background:#eaf1ff; }
+.scanner-hero-questions li { text-align:center; min-width:0; padding:12px 10px; border:1px solid #c6d6f2; border-radius:12px; background:#eaf1ff; }
 .scanner-hero-questions li:nth-child(2) { background:#f0e8fc; border-color:#ddcdec; }
 .scanner-hero-questions li:nth-child(3) { background:#eef3d5; border-color:#d1dfac; }
-.scanner-hero-questions li>span { color:#365a9a; font-size:11px; font-weight:800; line-height:1.5; }
+.scanner-hero-questions li>span { display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:#ffffffb3; margin:0 auto 7px; color:#365a9a; font-size:11px; font-weight:800; line-height:1.5; }
 .scanner-hero-questions li:nth-child(2)>span { color:#6b458f; }
 .scanner-hero-questions li:nth-child(3)>span { color:#486323; }
 .scanner-hero-questions strong { display:block; font-size:16px; line-height:1.5; font-weight:800; margin-top:3px; word-break:keep-all; overflow-wrap:anywhere; }
@@ -53,7 +53,6 @@
 .scanner-radar-caption { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px 12px; line-height:1.6; }
 .scanner-radar-caption strong { font-size:16px; font-weight:800; color:#273f68; }
 .scanner-radar-caption>span { font-size:12px; color:#526581; }
-.scanner-landing-radar { display:block; width:100%; max-width:480px; height:auto; margin:6px auto; }
 .scanner-radar-controls { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:7px; }
 .scanner-radar-controls button { min-width:0; min-height:48px; padding:7px; border:1px solid #d5dfef; background:white; border-radius:9px; color:#344867; }
 .scanner-radar-controls button[aria-pressed=true] { border-color:var(--axis-color); background:var(--axis-surface); box-shadow:inset 0 0 0 1px var(--axis-color); }
@@ -202,9 +201,6 @@
  .scanner-radar-controls { gap:6px; }
  .scanner-radar-controls button { padding:7px 6px; }
  .scanner-radar-controls svg { display:none; }
- .scanner-landing-radar text { font-size:22px; }
- .scanner-landing-radar .scanner-radar-average-note { font-size:17px; }
- .scanner-landing-radar .scanner-radar-average { font-size:32px; }
  .scanner-preview-demo { padding:20px 16px; }
  .scanner-preview-demo h3 { font-size:22px; }
  .scanner-report-features { margin-top:30px; }

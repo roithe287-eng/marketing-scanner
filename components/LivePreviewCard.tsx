@@ -1,42 +1,20 @@
 "use client";
 import {useId, useState, type CSSProperties} from 'react';
 import DiagnosisIcon from '@/components/report/DiagnosisIcon';
-import {diagnosisAxes, radarPoint} from '@/lib/diagnosisVisuals';
+import {diagnosisAxes} from '@/lib/diagnosisVisuals';
+import DiagnosisRadarGraphic from '@/components/DiagnosisRadarGraphic';
 
 const views = [{key:'overview',label:'진단 그래프'}, {key:'ai',label:'검색·AI'}, {key:'competition',label:'경쟁사'}, {key:'rewrite',label:'수정·실행'}] as const;
 type PreviewView = typeof views[number]['key'];
 
 const exampleScores = [78,48,64,84,52,61,88,70];
-const exampleAverage = Math.round(exampleScores.reduce((sum, score) => sum + score, 0) / exampleScores.length);
-const previewPoint = (index:number, value:number) => radarPoint(index,value,240,150,103);
-const previewPolygon = (level?:number) => diagnosisAxes.map((_,i) => {
-  const point = previewPoint(i,level ?? exampleScores[i]);
-  return `${point.x.toFixed(2)},${point.y.toFixed(2)}`;
-}).join(' ');
-const labelPositions = [[240,19],[363,63],[423,151],[363,239],[240,283],[117,239],[57,151],[117,63]];
-
 function ReportPreview() {
   const [selected,setSelected] = useState(1);
   const axis = diagnosisAxes[selected];
-  const edge = previewPoint(selected,100);
   const insightId = useId();
   return <div className="scanner-radar-preview">
     <div className="scanner-radar-caption"><strong>강점과 빈틈이 한눈에</strong><span>8개 축 · 예시 점수</span></div>
-    <svg className="scanner-landing-radar" viewBox="0 0 480 306" role="img" aria-label={`8개 영역 진단 예시. 평균 ${exampleAverage}점. ${diagnosisAxes.map((a,i)=>`${a.label} ${exampleScores[i]}점`).join(', ')}. 바깥쪽이 100점입니다.`}>
-      <polygon points={previewPolygon(100)} fill="#edf3ff"/>
-      {[25,50,75,100].map(level=><polygon key={level} points={previewPolygon(level)} fill="none" stroke="#b7c8e5" strokeWidth="1"/>)}
-      {diagnosisAxes.map((a,i)=>{const p=previewPoint(i,100);return <line key={a.key} x1="240" y1="150" x2={p.x} y2={p.y} stroke="#c4d2e8"/>;})}
-      <line x1="240" y1="150" x2={edge.x} y2={edge.y} stroke={axis.color} strokeWidth="20" opacity=".12"/>
-      <polygon points={previewPolygon()} fill="#1745d1" fillOpacity=".22" stroke="#1745d1" strokeWidth="3" strokeLinejoin="round"/>
-      {diagnosisAxes.map((a,i)=>{const p=previewPoint(i,exampleScores[i]);const [x,y]=labelPositions[i];return <g key={a.key}>
-        <circle cx={p.x} cy={p.y} r={i===selected?7:5} fill={a.color} stroke="white" strokeWidth="2"/>
-        <rect x={x-43} y={y-15} width="86" height="30" rx="10" fill={a.surface} stroke={i===selected?a.color:'transparent'} strokeWidth="2"/>
-        <text x={x} y={y+6} textAnchor="middle" fill={a.color} fontSize="18" fontWeight="750">{a.short}</text>
-      </g>;})}
-      <circle cx="240" cy="150" r="37" fill="white" stroke="#cedaef"/>
-      <text className="scanner-radar-average" x="240" y="146" textAnchor="middle" fontSize="28" fontWeight="850" fill="#192a4d">{exampleAverage}</text>
-      <text className="scanner-radar-average-note" x="240" y="174" textAnchor="middle" fontSize="12" fontWeight="650" fill="#526078">평균 · 예시</text>
-    </svg>
+    <DiagnosisRadarGraphic scores={exampleScores} selected={selected} example />
     <div className="scanner-radar-controls" role="group" aria-label="예시 진단 영역 선택">{diagnosisAxes.map((a,i)=><button type="button" key={a.key} aria-pressed={i===selected} aria-controls={insightId} onClick={()=>setSelected(i)} style={{'--axis-color':a.color,'--axis-surface':a.surface} as CSSProperties}>
       <span><DiagnosisIcon axis={a.key}/>{a.short}<b>{exampleScores[i]}</b></span><i aria-hidden="true"><i style={{width:`${exampleScores[i]}%`}}/></i>
     </button>)}</div>
