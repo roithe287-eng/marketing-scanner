@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.*.local
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+ios/App/Pods/
+ios/App/App/public/
+android/app/src/main/assets/public/
+*.tsbuildinfo
