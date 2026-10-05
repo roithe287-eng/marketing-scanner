@@ -1,3 +1,4 @@
+import {budgetFetch} from './runtime/budget';
 import OpenAI from "openai";
 
 let client: OpenAI | null = null;
@@ -10,7 +11,7 @@ export function getOpenAI(): OpenAI {
     throw new Error("OPENAI_API_KEY가 설정되지 않았습니다.");
   }
   if (!client || configuredKey !== apiKey) {
-    client = new OpenAI({ apiKey });
+    client = new OpenAI({ apiKey, maxRetries:0, fetch:budgetFetch });
     configuredKey = apiKey;
   }
   return client;

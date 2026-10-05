@@ -1,3 +1,4 @@
+import {withBudget} from '@/lib/runtime/budget';
 import {z} from 'zod';
 import {requirePrincipal} from '@/lib/saas/auth';
 import {reserve} from '@/lib/saas/store';
@@ -10,6 +11,7 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
+  const startedAt=Date.now();
   let finish:((refund?:boolean)=>Promise<void>)|undefined;
   try {
     const principal=await requirePrincipal(req,true);
@@ -45,7 +47,7 @@ export async function POST(req: NextRequest) {
     finish=await reserve(principal,'competitor');
     const t0 = Date.now();
 
-    const result = await analyzeCompetitors({
+    const result = await withBudget(Math.max(1,48000-(Date.now()-startedAt)),()=>analyzeCompetitors({
       url,
       title: hints.title || "",
       ogTitle: hints.ogTitle || "",
@@ -54,7 +56,7 @@ export async function POST(req: NextRequest) {
       h1: Array.isArray(hints.h1) ? hints.h1 : [],
       h2: Array.isArray(hints.h2) ? hints.h2 : [],
       keywords: hints.keywords || "",
-    });
+    }),req.signal);
 
     console.log(`[타이밍] 경쟁사 분석 (단독): ${Date.now() - t0}ms`);
 

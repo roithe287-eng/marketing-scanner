@@ -3,6 +3,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {GeoBaselineSchema, DiagnosisBaselineSchema, type DiagnosisBaseline, type GeoBaseline} from '@/lib/reportSchema';
 import {baselineQuestions, comparisonTime, parseReportReference} from '@/lib/geoComparison';
+import {requestJson} from '@/lib/client/request';
 
 type Props = {onSubmit:(url:string, geoQuestions?:string[], baselineId?:string)=>void;loading:boolean};
 export default function UrlForm({onSubmit,loading}:Props) {
@@ -17,13 +18,12 @@ export default function UrlForm({onSubmit,loading}:Props) {
   useEffect(()=>()=>active.current?.abort(),[]);
   async function loadBaseline() {
     active.current?.abort();
+    setBaselineLoading(false);
     const id=parseReportReference(reference,window.location.origin);
     if (!id) {setMessage('마케팅 스캐너의 공유 링크 또는 보고서 ID를 입력해 주세요.');return;}
     const controller=new AbortController();active.current=controller;setBaselineLoading(true);setMessage('');
     try {
-      const response=await fetch(`/api/share?id=${encodeURIComponent(id)}&mode=diagnosis`,{cache:'no-store',signal:controller.signal});
-      const result=await response.json();
-      if (!response.ok) throw new Error(result.message || '보고서를 불러오지 못했습니다.');
+      const result=await requestJson<{diagnosisBaseline:unknown;geoBaseline?:unknown}>(`/api/share?id=${encodeURIComponent(id)}&mode=diagnosis`,{cache:'no-store',signal:controller.signal},15000);
       const restored=DiagnosisBaselineSchema.parse(result.diagnosisBaseline);
       const geo=result.geoBaseline?GeoBaselineSchema.parse(result.geoBaseline):null;
       const fixed=geo?baselineQuestions(geo):[];

@@ -1,3 +1,4 @@
+import {budgetFetch} from './runtime/budget';
 import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import {
@@ -81,7 +82,7 @@ export async function searchNaverWeb(query:string):Promise<NaverSearchResponse> 
   if(!clientId||!clientSecret)return {status:'unavailable',message:'검색 API 자격 정보 미설정',requestedCount,observedAt};
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),NAVER_TIMEOUT_MS);
   try {
-    const res=await fetch(`https://openapi.naver.com/v1/search/webkr.json?query=${encodeURIComponent(query)}&display=${requestedCount}&start=1`,{headers:{'X-Naver-Client-Id':clientId,'X-Naver-Client-Secret':clientSecret},signal:controller.signal,cache:'no-store'});
+    const res=await budgetFetch(`https://openapi.naver.com/v1/search/webkr.json?query=${encodeURIComponent(query)}&display=${requestedCount}&start=1`,{headers:{'X-Naver-Client-Id':clientId,'X-Naver-Client-Secret':clientSecret},signal:controller.signal,cache:'no-store'});
     if(!res.ok)return {status:'error',message:`API HTTP ${res.status}${res.status===429?' · 호출 한도 확인':res.status===401||res.status===403?' · 권한 확인':''}`,requestedCount,observedAt};
     const payload=await res.json();
     if(!Array.isArray(payload.items)||!Number.isInteger(payload.total)||payload.total<0||!Number.isInteger(payload.start)||payload.start<1||payload.items.some((v:unknown)=>!v||typeof v!=='object'||typeof (v as Record<string,unknown>).link!=='string'))return {status:'error',message:'API 응답 형식 확인 필요',requestedCount,observedAt};

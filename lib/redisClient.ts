@@ -1,3 +1,4 @@
+import {scopedSignal} from './runtime/budget';
 import { Redis } from "@upstash/redis";
 
 type RedisConfig = { url: string; token: string };
@@ -24,7 +25,7 @@ export function getRedisClient(): Redis | null {
     return client;
   }
   try {
-    client = new Redis(config);
+    client = new Redis({...config,retry:false,signal:()=>scopedSignal(AbortSignal.timeout(5000))!});
     currentConfig = config;
     return client;
   } catch {

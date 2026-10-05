@@ -1,3 +1,4 @@
+import {budgetFetch,budgetSignal} from './runtime/budget';
 import { createHash } from 'node:crypto';
 import { z } from 'zod';
 import { getOpenAI } from './openaiClient';
@@ -43,7 +44,7 @@ async function resolveGoogleSource(url: string): Promise<string> {
   try {
     const u = new URL(url);
     if (u.protocol !== 'https:' || u.hostname !== 'vertexaisearch.cloud.google.com' || !u.pathname.startsWith('/grounding-api-redirect/')) return url;
-    const response = await fetch(url,{redirect:'manual',signal:AbortSignal.timeout(2500)});
+    const response = await budgetFetch(url,{redirect:'manual',signal:AbortSignal.timeout(2500)});
     const location = response.headers.get('location');
     await response.body?.cancel();
     return location ? safeHttpUrl(new URL(location,url).href) || url : url;
@@ -65,7 +66,7 @@ async function measure(engine:'chatgpt'|'gemini', q:Question, brand:string, targ
   if (!key) return {...base,status:'unavailable',errorMessage:'이 엔진의 API 키가 설정되지 않았습니다.',durationMs:0};
   try {
     const endpoint = engine === 'chatgpt' ? 'https://api.openai.com/v1/responses' : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
-    const response = await fetch(endpoint,{
+    const response = await budgetFetch(endpoint,{
       method:'POST',headers:{'Content-Type':'application/json',...(engine === 'chatgpt' ? {Authorization:`Bearer ${key}`} : {'x-goog-api-key':key})},
       body:JSON.stringify(body),signal:AbortSignal.timeout(TIMEOUT),
     });
@@ -104,7 +105,8 @@ export async function analyzeCitation(data: ExtractedWebsiteData, custom?: strin
     } catch { /* Cache availability must not stop measurement. */ }
   }
   const pendingKey = options.fresh ? `${key}:fresh` : key;
-  if (pending.has(pendingKey)) return pending.get(pendingKey)!;
+  const shared=!budgetSignal();
+  if (shared && pending.has(pendingKey)) return pending.get(pendingKey)!;
   const task = (async ():Promise<LlmCitationTest> => {
     let questions = options.fixedQuestions ? z.array(QuestionSchema).min(1).max(5).parse(options.fixedQuestions) : undefined;
     if (redis && !questions && !custom?.length) {
@@ -126,6 +128,6 @@ export async function analyzeCitation(data: ExtractedWebsiteData, custom?: strin
     }
     return LlmCitationTestSchema.parse(result);
   })();
-  pending.set(pendingKey,task);
-  try {return await task;} finally {pending.delete(pendingKey);}
+  if(shared)pending.set(pendingKey,task);
+  try {return await task;} finally {if(shared)pending.delete(pendingKey);}
 }

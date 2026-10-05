@@ -9,7 +9,8 @@
  */
 
 import { useEffect, useRef, useState } from "react";
-import type { CompetitorDeepDive } from "../lib/reportSchema";
+import { CompetitorDeepDiveSchema, type CompetitorDeepDive } from "../lib/reportSchema";
+import {requestJson} from '@/lib/client/request';
 
 type Props = {
   open: boolean;
@@ -75,22 +76,22 @@ export default function CompetitorDeepDiveModal({
     setLoading(true);
     setError(null);
     setData(null);
+    const controller=new AbortController();
 
-    fetch("/api/deepdive", {
+    requestJson("/api/deepdive", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ targetUrl, ourDomain, ourTitle }),
-    })
-      .then(async (res) => {
-        if (!res.ok) {
-          const j = await res.json().catch(() => ({}));
-          throw new Error(j?.message || `HTTP ${res.status}`);
-        }
-        return res.json();
+      signal:controller.signal,
+    },45000)
+      .then((json) => {
+        const parsed=CompetitorDeepDiveSchema.safeParse(json);
+        if(!parsed.success)throw new Error('경쟁사 상세 결과 형식을 확인하지 못했습니다. 다시 시도해 주세요.');
+        if(!controller.signal.aborted)setData(parsed.data);
       })
-      .then((json) => setData(json))
-      .catch((e) => setError(e?.message || "딥다이브 분석 실패"))
-      .finally(() => setLoading(false));
+      .catch((e) => {if(!controller.signal.aborted)setError(e?.message || "딥다이브 분석 실패");})
+      .finally(() => {if(!controller.signal.aborted)setLoading(false);});
+    return()=>controller.abort();
   }, [open, targetUrl, ourDomain, ourTitle]);
 
   if (!open) return null;
