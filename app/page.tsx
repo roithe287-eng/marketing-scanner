@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {useAccess} from '@/components/access/useAccess';
 import AccessBar from '@/components/access/AccessBar';
 import ReportLayout from '@/components/report/ReportLayout';
@@ -8,6 +8,7 @@ import BrandHeader from "@/components/BrandHeader";
 import LandingHero from "@/components/LandingHero";
 import DownloadReportButton from "@/components/DownloadReportButton";
 import ShareButton from "@/components/ShareButton";
+import {requestJson,RequestError} from '@/lib/client/request';
 import { MarketingReport, MarketingReportSchema } from "@/lib/reportSchema";
 
 export default function HomePage() {
@@ -20,102 +21,77 @@ export default function HomePage() {
   const analysisRun = useRef(0);
   const competitorRequest=useRef<{url:string;hints:unknown;run:number}|null>(null);
 
-  // v14: 백그라운드 경쟁사 분석 호출
-  async function fetchCompetitor(url: string, hints: any, run: number) {
-    if(analysisRun.current!==run) return;
+  const mainRequest=useRef<AbortController|null>(null);
+  const competitorController=useRef<AbortController|null>(null);
+  const scrollTimer=useRef<ReturnType<typeof setTimeout>|null>(null);
+  useEffect(()=>()=>{
+    ++analysisRun.current;
+    mainRequest.current?.abort();
+    competitorController.current?.abort();
+    if(scrollTimer.current)clearTimeout(scrollTimer.current);
+  },[]);
+
+  async function fetchCompetitor(url:string,hints:unknown,run:number) {
+    if(analysisRun.current!==run || competitorController.current)return;
+    const controller=new AbortController();competitorController.current=controller;
+    const current=()=>analysisRun.current===run&&!controller.signal.aborted;
     competitorRequest.current={url,hints,run};
     setCompetitorLoading(true);
     setReport(prev=>prev?{...prev,competitorStatus:{status:'pending',message:'경쟁사 비교를 분석하고 있습니다.'}}:prev);
-    try {
-      const res = await fetch("/api/competitor", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, hints }),
-        signal: AbortSignal.timeout(55000),
-      });
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        throw new Error('경쟁사 분석 서버가 응답하지 않습니다.');
-      }
-      const data = await res.json();
-      if(!res.ok) throw new Error('경쟁사 분석에 실패했습니다.');
+    try{
+      const data=await requestJson<{competitorAnalysis:unknown}>('/api/competitor',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({url,hints}),signal:controller.signal,
+      },60000);
       const parsed=MarketingReportSchema.shape.competitorAnalysis.safeParse(data?.competitorAnalysis);
-      if(!parsed.success || !parsed.data) throw new Error('경쟁사 비교 결과를 수집하지 못했습니다.');
+      if(!parsed.success||!parsed.data)throw new Error('경쟁사 비교 결과를 수집하지 못했습니다.');
       const competitorAnalysis=parsed.data;
-      if (analysisRun.current === run) {
-        // 기존 report에 경쟁사 데이터 병합
-        setReport((prev) =>
-          prev ? { ...prev, competitorAnalysis,competitorStatus:{status:competitorAnalysis.competitors.length?'complete':'empty',message:competitorAnalysis.competitors.length?'경쟁사 비교를 완료했습니다.':'현재 검색 결과에서 비교할 경쟁사를 찾지 못했습니다.'} } : prev
-        );
-
-
-      }
-    } catch (e: any) {
-      if(analysisRun.current===run) setReport(prev=>prev?{...prev,competitorStatus:{status:e?.name==='TimeoutError'?'timeout':'error',message:e?.name==='TimeoutError'?'응답 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.':'경쟁사 비교 결과를 수집하지 못했습니다. 잠시 후 다시 시도해주세요.'}}:prev);
-    } finally {
-      if (analysisRun.current === run) setCompetitorLoading(false);
+      if(current())setReport(prev=>prev?{...prev,competitorAnalysis,competitorStatus:{
+        status:competitorAnalysis.competitors.length?'complete':'empty',
+        message:competitorAnalysis.competitors.length?'경쟁사 비교를 완료했습니다.':'현재 검색 결과에서 비교할 경쟁사를 찾지 못했습니다.',
+      }}:prev);
+    }catch(error){
+      if(current())setReport(prev=>prev?{...prev,competitorStatus:{
+        status:error instanceof RequestError&&error.status===504?'timeout':'error',
+        message:error instanceof Error?error.message:'경쟁사 비교 결과를 수집하지 못했습니다.',
+      }}:prev);
+    }finally{
+      if(competitorController.current===controller)competitorController.current=null;
+      if(current())setCompetitorLoading(false);
     }
   }
 
-  async function handleAnalyze(url: string, geoQuestions?: string[], baselineId?: string) {
+  async function handleAnalyze(url:string,geoQuestions?:string[],baselineId?:string) {
     if(!allowed){window.location.assign('/inquiry');return;}
-    const run = ++analysisRun.current;
-    setLoading(true);
-    setReport(null);
-    setError(null);
-    setCompetitorLoading(false);
+    if(mainRequest.current)return;
+    const run=++analysisRun.current;
+    const controller=new AbortController();mainRequest.current=controller;
+    const current=()=>analysisRun.current===run&&!controller.signal.aborted;
+    competitorController.current?.abort();competitorController.current=null;
+    if(scrollTimer.current)clearTimeout(scrollTimer.current);
+    setLoading(true);setError(null);setCompetitorLoading(false);
+    // Keep the last valid report until its replacement has passed validation.
+    setReport(prev=>prev?.competitorStatus?.status==='pending'?{...prev,competitorStatus:{status:'unavailable',message:'새 진단을 시작해 이전 경쟁사 분석을 중단했습니다.'}}:prev);
     competitorRequest.current=null;
-    try {
-      const res = await fetch("/api/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, geoQuestions, baselineId }),
-        signal: AbortSignal.timeout(90000),
-      });
-      
-      // JSON 이 아닌 응답 처리 (Vercel timeout 등)
-      const contentType = res.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        if (res.status === 504 || res.status === 408) {
-          setError(
-            "분석 시간이 초과되었습니다. 해당 사이트가 매우 무거우거나 응답이 느릴 수 있습니다. 잠시 후 다시 시도하거나 다른 URL로 테스트해보세요."
-          );
-        } else if (res.status === 502 || res.status === 503) {
-          setError(
-            "서버가 일시적으로 응답하지 않습니다. 잠시 후 다시 시도해주세요."
-          );
-        } else {
-          setError(
-            `서버 응답 오류 (HTTP ${res.status}). 잠시 후 다시 시도해주세요.`
-          );
-        }
-        return;
-      }
-      
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.message || "분석에 실패했습니다.");
-        return;
-      }
-      const canAnalyzeCompetitors=Boolean(data?._hasCompetitor && data?._websiteHints);
-      setReport({...data,competitorStatus:{status:canAnalyzeCompetitors?'pending':'unavailable',message:canAnalyzeCompetitors?'경쟁사 비교를 분석하고 있습니다.':'현재 경쟁사 비교 결과를 제공할 수 없습니다.'}});
-      // 결과로 부드럽게 스크롤
-      setTimeout(() => {
-        document
-          .getElementById("report-area")
-          ?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 150);
-
-      // v14: 메인 결과 받자마자 백그라운드로 경쟁사 분석 호출
-      if (canAnalyzeCompetitors) {
-        // await 안함 (백그라운드 실행)
-        fetchCompetitor(data.url || url, data._websiteHints, run);
-      }
-    } catch (e: any) {
-      setError(e?.message || "네트워크 오류가 발생했습니다.");
-    } finally {
-      setLoading(false);
-      void refresh();
+    try{
+      const data=await requestJson<Record<string,unknown>>('/api/analyze',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({url,geoQuestions,baselineId}),signal:controller.signal,
+      },65000);
+      const parsed=MarketingReportSchema.safeParse(data);
+      if(!parsed.success)throw new Error('진단 결과의 필수 항목을 확인하지 못했습니다. 다시 시도해 주세요.');
+      if(!current())return;
+      const canAnalyzeCompetitors=Boolean(data._hasCompetitor&&data._websiteHints);
+      setReport({...parsed.data,competitorStatus:{status:canAnalyzeCompetitors?'pending':'unavailable',message:canAnalyzeCompetitors?'경쟁사 비교를 분석하고 있습니다.':'현재 경쟁사 비교 결과를 제공할 수 없습니다.'}});
+      scrollTimer.current=setTimeout(()=>{
+        if(current())document.getElementById('report-area')?.scrollIntoView({behavior:'smooth',block:'start'});
+      },150);
+      if(canAnalyzeCompetitors)void fetchCompetitor(parsed.data.url||url,data._websiteHints,run);
+    }catch(error){
+      if(current())setError(error instanceof Error?error.message:'분석에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+    }finally{
+      if(mainRequest.current===controller)mainRequest.current=null;
+      if(current()){setLoading(false);void refresh();}
     }
   }
 
@@ -151,8 +127,9 @@ export default function HomePage() {
       {error && !loading && (
         <section className="jm-container pb-20">
           <div className="jm-card p-8 text-center border-jm-red">
-            <p className="text-xl font-black text-jm-red">분석 실패</p>
+            <p className="text-xl font-black text-jm-red">{report?'새 진단을 완료하지 못했습니다':'분석을 완료하지 못했습니다'}</p>
             <p className="mt-3 text-jm-gray text-sm">{error}</p>
+            {report&&<p className="mt-3 font-semibold">이전에 완료한 진단 결과는 아래에 유지됩니다.</p>}
           </div>
         </section>
       )}

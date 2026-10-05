@@ -1,13 +1,11 @@
+import {AccessError} from './security/request';
+import {budgetSignal,remainingBudget} from './runtime/budget';
 import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { MarketingReport, MarketingReportSchema } from "./reportSchema";
 
 // v16: 기본값을 gpt-4.1-mini로 변경 (gpt-4o-mini 대비 속도 2배, 비용 비슷)
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
-
-// v18: gpt-4.1-mini는 응답이 안정적이넦로 timeout 느슨 늘림
-// AI 호출 45초 안에 끝나야 안전 (Vercel 60초 한도 여유)
-const AI_TIMEOUT_MS = 45000;
 
 const SYSTEM_PROMPT = `너는 15년차 퍼포먼스 마케터다. "진짜마케팅" 시니어 컨설턴트로서 웹사이트를 마케팅/전환 관점에서 진단한다.
 원칙: 실제 데이터 인용(추측 금지), 점수 차등 평가, 한국어 직설적 톤.
@@ -119,11 +117,8 @@ async function callOpenAI(
     clearTimeout(timeoutId);
     const text = response.choices[0]?.message?.content;
     const finishReason = response.choices[0]?.finish_reason;
-    if (!text) throw new Error("AI 응답이 비어 있습니다.");
-    // v16.1: 응답 품질 디버그 로그
-    console.log(
-      `[AI] 응답 쪽: ${text.length}자, finish_reason: ${finishReason}, 시작: "${text.slice(0, 50).replace(/\n/g, "\\n")}"`
-    );
+    if (!text || finishReason!=="stop") throw new AccessError(502,"AI 진단 응답이 끝까지 생성되지 않았습니다. 다시 시도해 주세요.");
+    console.log(`[AI] 응답 수신: ${text.length}자, finish_reason: ${finishReason}`);
     return text;
   } catch (err: any) {
     clearTimeout(timeoutId);
@@ -137,10 +132,9 @@ async function callOpenAI(
 export async function analyzeMarketing(
   data: ExtractedWebsiteData
 ): Promise<MarketingReport> {
-  let text: string | null = null;
+  let report: MarketingReport | null = null;
 
-  // v18: max_tokens 충분히 늘림 (이전 1800으로 응답 잔림 테스트됨)
-  // gpt-4.1-mini는 빠르므로 timeout도 조금 대워도 안전
+  // Keep detailed output while limiting retries to the request's remaining budget.
   const attempts: Array<{
     name: string;
     prompt: string;
@@ -150,29 +144,33 @@ export async function analyzeMarketing(
     {
       name: "1차 lean",
       prompt: buildPrompt(data, "lean"),
-      timeout: 45000, // 45초 (gpt-4.1-mini 응답이 25-35초 걸림)
+      timeout: 35000, // 전체 요청 시간 안에서만 시도
       maxTokens: 3500,
     },
     {
       name: "2차 minimal",
       prompt: buildPrompt(data, "minimal"),
-      timeout: 25000, // 25초
+      timeout: 12000, // 남은 시간이 충분할 때만 재시도
       maxTokens: 3000,
     },
   ];
 
   for (const attempt of attempts) {
+    budgetSignal()?.throwIfAborted();
+    if(remainingBudget()<8000)break;
     try {
       console.log(
         `[AI] ${attempt.name} 시도 (프롬프트 ${attempt.prompt.length}자, max_tokens ${attempt.maxTokens})`
       );
       const t0 = Date.now();
-      text = await callOpenAI(attempt.prompt, attempt.timeout, attempt.maxTokens);
+      const text = await callOpenAI(attempt.prompt, Math.min(attempt.timeout,remainingBudget()-1500), attempt.maxTokens);
+      report = parseMarketingResponse(text);
       console.log(`[AI] ${attempt.name} 성공 (${Date.now() - t0}ms)`);
       break;
     } catch (err: any) {
       console.warn(`[AI] ${attempt.name} 실패: ${err?.message}`);
-      if (err?.message !== "AI_TIMEOUT") {
+      budgetSignal()?.throwIfAborted();
+      if (err?.message !== "AI_TIMEOUT" && !(err instanceof AccessError && err.status===502)) {
         // AI timeout이 아닌 다른 에러는 즉시 throw
         throw err;
       }
@@ -180,37 +178,21 @@ export async function analyzeMarketing(
     }
   }
 
-  if (!text) {
-    throw new Error(
-      "AI 분석이 시간 내에 완료되지 못했습니다. 잠시 후 다시 시도하거나 다른 URL을 시도해주세요."
-    );
-  }
-
-  // v16.1: 강력한 JSON 파싱 (gpt-4.1-mini의 다양한 응답 형식 대응)
-  const parsed = robustJsonParse(text);
-  if (!parsed) {
-    console.error("[AI] JSON 파싱 완전 실패. 원본 응답 앞 500자:", text.slice(0, 500));
-    throw new Error(
-      "AI 응답 형식이 올바르지 않습니다. 다시 시도해주세요."
-    );
-  }
-
-  const result = MarketingReportSchema.safeParse(parsed);
-  let report: MarketingReport;
-  if (!result.success) {
-    console.warn(
-      "[AI] Schema 경고 (그대로 반환):",
-      JSON.stringify(result.error.format()).slice(0, 300)
-    );
-    report = parsed as MarketingReport;
-  } else {
-    report = result.data;
-  }
+  if (!report) throw new AccessError(502,"유효한 진단 결과를 생성하지 못했습니다. 잠시 후 다시 시도해 주세요.");
 
   // v17: 공유용 meta 정보 자동 채우기
   report.meta = buildShareMeta(data);
 
   return report;
+}
+
+/** Invalid model output must never enter rendering, storage or export. */
+export function parseMarketingResponse(text:string):MarketingReport {
+  try{
+    const result=MarketingReportSchema.safeParse(robustJsonParse(text));
+    if(result.success)return result.data;
+  }catch{ /* Invalid JSON and missing fields use the same controlled response. */ }
+  throw new AccessError(502,'AI 진단 응답의 필수 항목을 확인하지 못했습니다. 다시 시도해 주세요.');
 }
 
 /**
@@ -264,8 +246,7 @@ function buildShareMeta(data: ExtractedWebsiteData): {
  * v16.1: 강력한 JSON 파서
  * - 마크다운 코드블록 제거 (```json ... ```)
  * - JSON 앞뒤 텍스트 제거
- * - 끝이 잘린 JSON 복구 시도
- * - escape 안 된 줄바꿈/따옴표 수정
+ * - 완전한 JSON만 허용하며 잘린 내용을 보완하거나 생성하지 않음
  */
 function robustJsonParse(raw: string): any | null {
   if (!raw) return null;
@@ -300,23 +281,6 @@ function robustJsonParse(raw: string): any | null {
       // 계속
     }
 
-    // 4차: 잘린 JSON 복구 시도 (끝에 닫는 괄호 몇 개 추가해보기)
-    const fixes = [
-      "",
-      "]",
-      "]}",
-      "}}]}",
-      '"}]}',
-      '"}',
-      '"}]}',
-    ];
-    for (const suffix of fixes) {
-      try {
-        return JSON.parse(candidate + suffix);
-      } catch {
-        // 계속
-      }
-    }
   }
 
   // 5차: BOM / 이상한 제어문자 제거 후 재시도

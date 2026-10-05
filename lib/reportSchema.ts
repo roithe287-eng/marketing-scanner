@@ -372,6 +372,7 @@ export type DiagnosisBaseline=z.infer<typeof DiagnosisBaselineSchema>;
 export type DiagnosisCheck=z.infer<typeof DiagnosisCheckSchema>;
 
 export const MarketingReportSchema = z.object({
+  analysisWarnings:z.array(z.object({key:z.string().max(40),label:z.string().max(80),status:z.enum(["timeout","unavailable","error"])})).max(10).optional(),
   url: z.string(),
   pageEvidence:PageEvidenceSchema.optional(),
   diagnosisMethod:z.string().max(100).optional(),

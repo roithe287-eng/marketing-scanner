@@ -1,3 +1,4 @@
+import {budgetFetch} from './runtime/budget';
 import {websiteHttp} from './security/safeFetch';
 import {keywordCandidates,keywordEvidence,type QuerySite} from "./competitorResearch";
 import type {z} from "zod";
@@ -56,7 +57,7 @@ async function searchNaverWeb(query: string, display = 15) {
     query
   )}&display=${display}`;
 
-  const res = await fetch(url, {
+  const res = await budgetFetch(url, {
     headers: {
       "X-Naver-Client-Id": clientId,
       "X-Naver-Client-Secret": clientSecret,

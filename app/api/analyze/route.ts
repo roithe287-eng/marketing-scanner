@@ -1,3 +1,4 @@
+import {withBudget,optionalStage,remainingBudget} from '@/lib/runtime/budget';
 import {requirePrincipal} from '@/lib/saas/auth';
 import {reserve} from '@/lib/saas/store';
 import {readJson,failure} from '@/lib/security/request';
@@ -40,6 +41,7 @@ function isValidUrl(url: string) {
 }
 
 export async function POST(req: NextRequest) {
+  const startedAt=Date.now();
   let finish:((refund?:boolean)=>Promise<void>)|undefined;
   try {
     const principal=await requirePrincipal(req,true);
@@ -87,10 +89,12 @@ export async function POST(req: NextRequest) {
 
     publicUrl(url);
     finish=await reserve(principal,'analyze');
+    // Leave time for both quota finalization and a failed-finalization refund.
+    const payload=await withBudget(Math.max(1,48_000-(Date.now()-startedAt)),async()=>{
     const t0 = Date.now();
 
     // 1. 사이트 추출
-    const websiteData = await extractWebsite(url);
+    const websiteData = await withBudget(14_000,()=>extractWebsite(url),undefined,"페이지 수집 시간이 초과되었습니다. 최종 페이지 URL을 확인한 뒤 다시 시도해 주세요.");
     const pageEvidence=capturePageEvidence(websiteData);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
@@ -100,22 +104,13 @@ export async function POST(req: NextRequest) {
     //    - AI Citation (v45-W1)
     //    - Keyword Rank (v45-W2)
     const t1 = Date.now();
-    const [report, discoverability, llmCitation, keywordRank] =
-      await Promise.all([
-        analyzeMarketing(websiteData),
-        analyzeDiscoverability(websiteData).catch((e) => {
-          console.warn("[discoverability] 실패:", e?.message || e);
-          return null;
-        }),
-        analyzeCitation(websiteData, geoQuestions?.map((q: string) => q.trim()), {fixedQuestions, fresh:!!geoBaseline}).catch((e) => {
-          console.warn("[citation] 실패:", e?.message || e);
-          return null;
-        }),
-        analyzeKeywordRank(websiteData).catch((e) => {
-          console.warn("[keyword] 실패:", e?.message || e);
-          return null;
-        }),
-      ]);
+    const optionalBudget=Math.max(1,remainingBudget()-2500);
+    const [report, discoverability, llmCitation, keywordRank] = await Promise.all([
+      analyzeMarketing(websiteData),
+      optionalStage('discoverability','AI 검색 준비도',Math.min(34_000,optionalBudget),()=>analyzeDiscoverability(websiteData)),
+      optionalStage('citation','GEO 답변·출처 관측',Math.min(34_000,optionalBudget),()=>analyzeCitation(websiteData,geoQuestions?.map((q:string)=>q.trim()),{fixedQuestions,fresh:!!geoBaseline})),
+      optionalStage('keywords','네이버 키워드 관측',Math.min(30_000,optionalBudget),()=>analyzeKeywordRank(websiteData)),
+    ]);
     console.log(`[타이밍] AI 병렬 분석: ${Date.now() - t1}ms`);
 
     report.url = url;
@@ -123,10 +118,10 @@ export async function POST(req: NextRequest) {
     report.diagnosisMethod=`${DIAGNOSIS_METHOD}:${process.env.OPENAI_MODEL||'gpt-4.1-mini'}`;
     if(diagnosisBaseline)report.diagnosisBaseline=diagnosisBaseline;
     report.competitorAnalysis = null;
-    report.discoverability = discoverability;
-    report.llmCitationTest = llmCitation;
+    report.discoverability = discoverability.value;
+    report.llmCitationTest = llmCitation.value;
     if (geoBaseline) report.geoBaseline = geoBaseline;
-    report.keywordRankTracking = keywordRank;
+    report.keywordRankTracking = keywordRank.value;
 
     // v45-W1: 광고비 낭비 시뮬레이션
     try {
@@ -143,15 +138,13 @@ export async function POST(req: NextRequest) {
     report.naverEcosystemReadiness = null;
     report.technicalSeo = null; // Replaced by scoped observations in naverOptimization.
     report.keywordFrequency = analyzeKeywordFrequency(websiteData);
-    report.industryBenchmark = await analyzeBenchmark(websiteData, report.diagnosis).catch(error => {
-      console.warn("[benchmark] 실패:", error);
-      return null;
-    });
+    const benchmark=await optionalStage('benchmark','업종 비교 데이터',Math.max(1,Math.min(2500,remainingBudget()-500)),()=>analyzeBenchmark(websiteData,report.diagnosis));
+    report.industryBenchmark=benchmark.value;
+    report.analysisWarnings=[discoverability,llmCitation,keywordRank,benchmark].flatMap(stage=>stage.warning?[stage.warning]:[]);
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
-    await finish();
-    return NextResponse.json({
+    return {
       ...report,
       _hasCompetitor: !!(
         process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET && (principal.kind==='internal'||principal.account.features.competitor)
@@ -165,7 +158,10 @@ export async function POST(req: NextRequest) {
         h2: websiteData.h2,
         keywords: websiteData.keywords,
       },
-    });
+    };
+    },req.signal);
+    await finish();
+    return NextResponse.json(payload);
   } catch (error: unknown) {
     if(finish)await finish(true).catch(()=>{});
     return failure(error);

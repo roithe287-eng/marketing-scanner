@@ -1,3 +1,4 @@
+import {scopedSignal} from '../runtime/budget';
 import { lookup } from "node:dns/promises";
 import { request as httpRequest } from "node:http";
 import { request as httpsRequest } from "node:https";
@@ -171,9 +172,7 @@ export async function safeFetch(
   init: RequestInit = {},
 ): Promise<Response> {
   const deadline = AbortSignal.timeout(20_000);
-  const signal = init.signal
-    ? AbortSignal.any([init.signal, deadline])
-    : deadline;
+  const signal = scopedSignal(init.signal,deadline)!;
   let url = publicUrl(String(input));
   for (let hop = 0; hop <= 6; hop++) {
     signal.throwIfAborted();
