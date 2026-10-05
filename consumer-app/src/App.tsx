@@ -11,7 +11,7 @@ import demoData from './demo.json';
 const demo=demoData as Report;
 const labels=Object.keys(categories) as Category[];
 const icons={find:Search,first:Eye,clarity:AlignLeft,trust:ShieldCheck,action:MousePointer2};
-const date=(s:string)=>new Date(s).toLocaleDateString('ko-KR',{month:'long',day:'numeric'});
+const date=(s:string)=>new Date(s).toLocaleDateString('ko-KR',{timeZone:'Asia/Seoul',month:'long',day:'numeric'});
 const avg=(r:Report)=>Math.round(labels.reduce((s,k)=>s+r.scores[k],0)/5);
 const samePage=(a:Report,b:Report)=>a.url===b.url&&a.method===b.method&&a.goal===b.goal;
 async function external(url:string){if(!/^https?:\/\//.test(url))return;if(Capacitor.isNativePlatform())await Browser.open({url});else window.open(url,'_blank','noopener,noreferrer');}
