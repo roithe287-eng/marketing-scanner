@@ -10,7 +10,7 @@
     "lint": "next lint",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:security": "node --import tsx --test tests/security-redis.integration.ts",
-    "build:pocket": "npm ci --prefix consumer-app --no-audit --no-fund && npm run build --prefix consumer-app && node scripts/stage-pocket-preview.mjs"
+    "build:pocket": "npm ci --prefix consumer-app --include=dev --no-audit --no-fund && npm run build --prefix consumer-app && node scripts/stage-pocket-preview.mjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",
