@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">마케팅스캐너 포켓</string>
+    <string name="title_activity_main">마케팅스캐너 포켓</string>
+    <string name="package_name">com.prorealmkt.scanner.pocket</string>
+    <string name="custom_url_scheme">com.prorealmkt.scanner.pocket</string>
+</resources>

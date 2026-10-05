@@ -1,0 +1,180 @@
+{
+  "id": "demo",
+  "url": "https://example.com/",
+  "pageTitle": "오후의 공방 · 예시",
+  "goal": "inquiry",
+  "createdAt": "2026-10-05T05:00:00Z",
+  "method": "pocket-static-v1",
+  "platform": "아임웹",
+  "scores": {
+    "find": 80,
+    "first": 100,
+    "clarity": 100,
+    "trust": 50,
+    "action": 67
+  },
+  "checks": [
+    {
+      "id": "title",
+      "category": "find",
+      "label": "페이지 제목",
+      "pass": true,
+      "weight": 2
+    },
+    {
+      "id": "description",
+      "category": "find",
+      "label": "검색 설명",
+      "pass": false,
+      "weight": 1
+    },
+    {
+      "id": "robots",
+      "category": "find",
+      "label": "HTML 색인 허용",
+      "pass": true,
+      "weight": 2
+    },
+    {
+      "id": "heading",
+      "category": "first",
+      "label": "주요 제목 구조",
+      "pass": true,
+      "weight": 2
+    },
+    {
+      "id": "viewport",
+      "category": "first",
+      "label": "모바일 표시 설정",
+      "pass": true,
+      "weight": 1
+    },
+    {
+      "id": "sections",
+      "category": "clarity",
+      "label": "내용을 나누는 소제목",
+      "pass": true,
+      "weight": 1
+    },
+    {
+      "id": "description-text",
+      "category": "clarity",
+      "label": "설명 본문",
+      "pass": true,
+      "weight": 2
+    },
+    {
+      "id": "alt",
+      "category": "clarity",
+      "label": "이미지 alt 속성",
+      "pass": true,
+      "weight": 1
+    },
+    {
+      "id": "contact",
+      "category": "trust",
+      "label": "연락·사업자 정보",
+      "pass": true,
+      "weight": 1
+    },
+    {
+      "id": "proof",
+      "category": "trust",
+      "label": "사례·이용 조건 관련 표현",
+      "pass": false,
+      "weight": 1
+    },
+    {
+      "id": "cta",
+      "category": "action",
+      "label": "다음 행동 안내",
+      "pass": true,
+      "weight": 2
+    },
+    {
+      "id": "cta-label",
+      "category": "action",
+      "label": "목적을 설명하는 버튼 문구",
+      "pass": false,
+      "weight": 1
+    }
+  ],
+  "guides": [
+    {
+      "id": "cta",
+      "category": "action",
+      "title": "버튼을 누르면 무엇이 나오는지 알려주세요",
+      "current": "JOIN US",
+      "proposal": "상담 방법과 진행 과정 확인",
+      "location": "주요 본문 · “나의 하루를 담는 도자기” 구역 · #join-class",
+      "selector": "#join-class",
+      "steps": [
+        "디자인 모드에서 이 URL의 페이지를 여세요.",
+        "button 위젯의 설정을 열어 같은 문구를 찾으세요. 코드·상품·게시글이면 연결된 편집 화면에서 수정하세요.",
+        "원문과 일치하는 버튼 하나를 선택하세요. 없으면 고객이 다음 행동을 결정하는 위치를 먼저 정하세요.",
+        "제안 문구를 실제 목적지에 맞게 수정하세요. 코드 위젯이면 링크·버튼 요소의 표시 텍스트를 수정하세요.",
+        "기존 링크를 확인하고 문구와 실제 이동 화면이 일치하는지 테스트하세요. 목적지 주소를 임의로 만들지 마세요.",
+        "변경 전 내용을 보관하고 PC·모바일에서 미리보기하세요. 게시 후 같은 URL을 다시 진단하세요."
+      ],
+      "expected": "클릭 후 이어질 행동을 이해하기 쉬워져 선택의 혼선을 줄이는 방향을 기대할 수 있어요.",
+      "boundary": "문의·구매 증가 여부는 별도 실험이 필요해요. 클릭과 완료는 다른 지표예요.",
+      "metric": "버튼 클릭률과 클릭 후 문의·구매 완료율",
+      "source": {
+        "title": "W3C · 링크 목적 이해",
+        "url": "https://www.w3.org/WAI/WCAG22/Understanding/link-purpose-in-context.html"
+      },
+      "priority": 105
+    },
+    {
+      "id": "description",
+      "category": "find",
+      "title": "검색 설명에 서비스와 조건을 담으세요",
+      "current": "메타 설명을 읽지 못했어요.",
+      "proposal": "오후의 공방에서 [대상 고객]을 위한 [실제 제공 내용]을 확인하세요. [이용 조건]과 [다음 행동]을 안내합니다.",
+      "location": "이 페이지의 검색 설정 / HTML head",
+      "selector": "",
+      "steps": [
+        "디자인 모드 → 메뉴 관리에서 이 URL에 해당하는 메뉴의 설정을 여세요.",
+        "페이지별 SEO 제목·설명 항목을 현재 값과 대조하세요.",
+        "이 URL의 메타 설명을 수정하세요. 본문에 없는 가격·성과·기간은 넣지 마세요.",
+        "저장 후 페이지 소스의 meta description과 값을 대조하세요.",
+        "변경 전 내용을 보관하고 PC·모바일에서 미리보기하세요. 게시 후 같은 URL을 다시 진단하세요."
+      ],
+      "expected": "방문 전에 서비스 범위와 조건을 이해할 수 있는 설명을 제공할 수 있어요.",
+      "boundary": "작성한 설명의 그대로 노출이나 클릭 증가를 보장하지 않아요.",
+      "metric": "검색 설명 반영 여부와 동일 조건의 클릭률",
+      "source": {
+        "title": "Google · 검색 설명",
+        "url": "https://developers.google.com/search/docs/appearance/snippet"
+      },
+      "priority": 74
+    },
+    {
+      "id": "proof",
+      "category": "trust",
+      "title": "선택 전에 필요한 조건을 설명하세요",
+      "current": "우리의 작은 공방에서 나만의 도자기를 만나보세요. 손으로 만드는 기쁨과 일상에 오래 남는 작품을 함께합니다. 편안한 공간에서 천천히 흙의 감촉을 느끼고 나만의 색을 찾아보세요.",
+      "proposal": "제공 내용: [실제 범위]\n진행 방법: [실제 절차]\n확인할 조건: [기간·비용·예외]",
+      "location": "주요 본문 · “나의 하루를 담는 도자기” 구역 · #workshop > div:nth-of-type(1) > p:nth-of-type(1)",
+      "selector": "#workshop > div:nth-of-type(1) > p:nth-of-type(1)",
+      "steps": [
+        "디자인 모드에서 이 URL의 페이지를 여세요.",
+        "text 위젯의 설정을 열어 같은 문구를 찾으세요. 코드·상품·게시글이면 연결된 편집 화면에서 수정하세요.",
+        "고객이 선택하기 전 확인해야 하는 실제 조건을 정리하세요.",
+        "사례를 추가한다면 공개 가능한 사실과 기준일을 함께 표시하세요. 없는 성과·후기를 만들지 마세요.",
+        "변경 전 내용을 보관하고 PC·모바일에서 미리보기하세요. 게시 후 같은 URL을 다시 진단하세요."
+      ],
+      "expected": "서비스 범위와 조건을 판단할 정보를 제공할 수 있어요.",
+      "boundary": "설명 보완에 따른 전환 증가는 확인되지 않은 가설이에요.",
+      "metric": "같은 조건 질문의 반복·문의 후 이탈·완료율",
+      "source": {
+        "title": "Google · 유용하고 신뢰할 수 있는 콘텐츠",
+        "url": "https://developers.google.com/search/docs/fundamentals/creating-helpful-content"
+      },
+      "priority": 70
+    }
+  ],
+  "completed": [],
+  "coverage": "공개 HTML 1페이지의 규칙 기반 점검입니다. 5개 영역 점수는 확인 항목 충족률이며 검색 순위·매출·사이트 전체 품질 점수가 아닙니다. 로그인 화면, 동적 렌더링, 실제 관리자 설정·검색 실적은 확인하지 않습니다.",
+  "demo": true
+}

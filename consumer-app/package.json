@@ -1,0 +1,41 @@
+{
+  "name": "marketing-scanner-pocket",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "test": "node --import tsx --test tests/*.test.ts",
+    "native:sync": "npm run build && cap sync",
+    "native:android": "cap open android",
+    "native:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.2",
+    "@capacitor/android": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/share": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/browser": "^8.0.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "lucide-react": "^0.468.0",
+    "cheerio": "^1.0.0",
+    "ipaddr.js": "^2.2.0",
+    "zod": "^3.23.8",
+    "@upstash/redis": "^1.38.0",
+    "pretendard": "1.3.9"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "vite": "8.3.2",
+    "typescript": "^5.9.0",
+    "tsx": "^4.23.0"
+  }
+}
