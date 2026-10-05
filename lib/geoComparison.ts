@@ -46,7 +46,7 @@ export function buildGeoComparison(report:MarketingReport) {
     if (a.length>1||b.length>1) reason='duplicate';
     else if (!a[0]||!b[0]||!after) reason='missing';
     else if (!valid(a[0])||!valid(b[0])) reason='failed';
-    else if (before.measurementProtocol!=='geo-compare-v1'||after.measurementProtocol!=='geo-compare-v1'||!before.targetUrl||!after.targetUrl||!before.brandName||!after.brandName||!a[0].model||!b[0].model||!a[0].requestFingerprint||!b[0].requestFingerprint) reason='legacy';
+    else if (!['geo-compare-v1','geo-compare-v2'].includes(before.measurementProtocol||'')||before.measurementProtocol!==after.measurementProtocol||!before.targetUrl||!after.targetUrl||!before.brandName||!after.brandName||!a[0].model||!b[0].model||!a[0].requestFingerprint||!b[0].requestFingerprint) reason='legacy';
     else if (!canonicalPage(before.targetUrl)||canonicalPage(before.targetUrl)!==canonicalPage(after.targetUrl)||canonicalPage(baseline.url)!==canonicalPage(report.url)||before.brandName!==after.brandName) reason='target';
     else if (a[0].model!==b[0].model) reason='model';
     else if (a[0].requestFingerprint!==b[0].requestFingerprint) reason='request';

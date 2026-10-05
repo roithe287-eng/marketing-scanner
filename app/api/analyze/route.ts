@@ -12,7 +12,7 @@ import { extractWebsite } from "@/lib/extractWebsite";
 import { analyzeMarketing } from "@/lib/analyzeMarketing";
 import { analyzeDiscoverability } from "@/lib/analyzeDiscoverability";
 import { analyzeCitation } from "@/lib/analyzeCitation";
-import { analyzeAdWaste } from "@/lib/analyzeAdWaste";
+import {classifyIndustry} from "@/lib/industryClassifier";
 import { analyzeKeywordRank } from "@/lib/analyzeKeywordRank";
 import { analyzeBenchmark } from "@/lib/analyzeBenchmark";
 import { analyzeKeywordFrequency } from "@/lib/analyzeKeywordFreq";
@@ -105,11 +105,12 @@ export async function POST(req: NextRequest) {
     //    - Keyword Rank (v45-W2)
     const t1 = Date.now();
     const optionalBudget=Math.max(1,remainingBudget()-2500);
-    const [report, discoverability, llmCitation, keywordRank] = await Promise.all([
+    const [report, discoverability, llmCitation, keywordRank, category] = await Promise.all([
       analyzeMarketing(websiteData),
       optionalStage('discoverability','AI 검색 준비도',Math.min(34_000,optionalBudget),()=>analyzeDiscoverability(websiteData)),
       optionalStage('citation','GEO 답변·출처 관측',Math.min(34_000,optionalBudget),()=>analyzeCitation(websiteData,geoQuestions?.map((q:string)=>q.trim()),{fixedQuestions,fresh:!!geoBaseline})),
       optionalStage('keywords','네이버 키워드 관측',Math.min(30_000,optionalBudget),()=>analyzeKeywordRank(websiteData)),
+      optionalStage('category','업종 분류',Math.min(5000,optionalBudget),()=>classifyIndustry(websiteData)),
     ]);
     console.log(`[타이밍] AI 병렬 분석: ${Date.now() - t1}ms`);
 
@@ -123,13 +124,7 @@ export async function POST(req: NextRequest) {
     if (geoBaseline) report.geoBaseline = geoBaseline;
     report.keywordRankTracking = keywordRank.value;
 
-    // v45-W1: 광고비 낭비 시뮬레이션
-    try {
-      report.adWasteSimulation = analyzeAdWaste(report.diagnosis, 5_000_000);
-    } catch (e) {
-      console.warn("[adwaste] 실패:", e);
-      report.adWasteSimulation = null;
-    }
+    report.adWasteSimulation=null; // Page scores cannot establish ad waste or savings.
 
     // Versioned, source-backed observations; account-only checks stay unverified.
     report.naverOptimization = analyzeNaverOptimization(websiteData);
@@ -138,9 +133,9 @@ export async function POST(req: NextRequest) {
     report.naverEcosystemReadiness = null;
     report.technicalSeo = null; // Replaced by scoped observations in naverOptimization.
     report.keywordFrequency = analyzeKeywordFrequency(websiteData);
-    const benchmark=await optionalStage('benchmark','업종 비교 데이터',Math.max(1,Math.min(2500,remainingBudget()-500)),()=>analyzeBenchmark(websiteData,report.diagnosis));
+    const benchmark=await optionalStage('benchmark','업종 비교 데이터',Math.max(1,Math.min(2500,remainingBudget()-500)),()=>category.value?analyzeBenchmark(websiteData,report.diagnosis,category.value,report.diagnosisMethod!):Promise.resolve(null));
     report.industryBenchmark=benchmark.value;
-    report.analysisWarnings=[discoverability,llmCitation,keywordRank,benchmark].flatMap(stage=>stage.warning?[stage.warning]:[]);
+    report.analysisWarnings=[discoverability,llmCitation,keywordRank,category,benchmark].flatMap(stage=>stage.warning?[stage.warning]:[]);
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 

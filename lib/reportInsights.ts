@@ -1,3 +1,4 @@
+import {buildCompetitorPositioning} from './competitorPositioning';
 import {NAVER_CATEGORIES,naverCounts} from './naverKnowledge';
 import {isGenericKeyword} from './keywordRewrite';
 import type {MarketingReport} from './reportSchema';
@@ -45,20 +46,20 @@ export function buildReportInsights(report:MarketingReport) {
     return {question:q.question,id:q.id,target,kind:owned?'인용 페이지':rows.length?'입력 페이지 검토':'재측정 후 연결',evidence:owned?`출처에서 확인: ${owned.title}`:rows.length?'이번 정상 관측에서 자사 URL을 확인하지 못했습니다. 페이지의 답변 적합성을 검토하세요.':'판정 가능한 관측이 없습니다. 콘텐츠 부족으로 단정하지 마세요.',observations:rows.length};
   })||[];
   const competitors=report.competitorAnalysis?.competitors||[];
-  const messageRows=[{name:'자사',url:safeHttpUrl(report.url),title:report.meta?.ogTitle,description:report.meta?.ogDescription,available:!!(report.meta?.ogTitle||report.meta?.ogDescription),isOwn:true},...competitors.map(c=>({name:c.domain,url:safeHttpUrl(c.link),title:c.metaTitle,description:c.metaDescription,available:!c.fetchError&&!!(c.metaTitle||c.metaDescription),isOwn:false}))].map(r=>{
+  const messageRows=(buildCompetitorPositioning(report)?.rows||[]).map(r=>({name:r.own?'자사':r.name,url:r.url,title:r.title,description:r.description,available:r.fieldsPresent===2&&!r.fetchError,isOwn:r.own})).map(r=>{
     const fields=[r.title,r.description].filter((v):v is string=>typeof v==='string');const content=fields.join(' ');
     return {...r,fieldCount:fields.length,cells:messageThemes.map(theme=>({label:theme.label,match:r.available?content.match(theme.pattern)?.[0]||null:undefined})),evidence:content};
   });
   const ownMessage=messageRows[0];
   const messageOpportunities=messageThemes.flatMap((theme,i)=>{
     const known=messageRows.slice(1).filter(r=>r.available);const present=known.filter(r=>r.cells[i].match);
-    return ownMessage.available && !ownMessage.cells[i].match && present.length?[{label:theme.label,count:present.length,total:known.length}]:[];
+    return ownMessage?.available && !ownMessage.cells[i].match && present.length?[{label:theme.label,count:present.length,total:known.length}]:[];
   });
   const stages=[{label:'첫인상',key:'firstView' as const,action:'제안의 핵심과 첫 화면 문구 확인'},{label:'신뢰 형성',key:'trust' as const,action:'검증 가능한 사례·후기·근거 확인'},{label:'행동 유도',key:'cta' as const,action:'버튼 문구·위치·다음 행동 확인'},{label:'전환 흐름',key:'conversionFlow' as const,action:'문의·신청 과정의 마찰 확인'}].map(s=>({...s,score:report.diagnosis[s.key]}));
   const gaps=(report.keywordFrequency?.singles||[]).slice(0,20).filter(k=>!isGenericKeyword(k.keyword)&&(!k.inTitle||!k.inMetaDescription)).slice(0,8);
   const tasks:FollowupTask[]=[];
   const push=(group:string,source:string,rows:{label:string;status:'pass'|'warning'|'fail';currentValue:string;guide:string}[])=>rows.filter(r=>r.status!=='pass').forEach((r,i)=>tasks.push({id:`${source}-${i}`,group,title:r.label,status:r.status as 'warning'|'fail',evidence:r.currentValue,current:r.currentValue,action:r.guide,source}));
-  report.criticalIssues.forEach((r,i)=>tasks.push({id:`critical-${i}`,group:'핵심 개선',title:r.title,status:r.priority==='high'?'fail':r.priority==='medium'?'warning':'review',evidence:r.problem,current:r.badExample,action:r.recommendation,source:'AI 진단'}));
+  report.criticalIssues.forEach((r,i)=>tasks.push({id:`critical-${i}`,group:'핵심 개선',title:r.title,status:r.evidenceStatus==='review'?'review':r.priority==='high'?'fail':r.priority==='medium'?'warning':'review',evidence:r.problem,current:r.badExample,action:r.recommendation,source:'AI 진단'}));
   push('기본 진단','기본 체크리스트',report.checklist||[]);
   push('GEO 준비도','GEO 준비도',readinessItems(report.discoverability));
   for(const check of report.naverOptimization?.mode==='diagnosis'?report.naverOptimization.checks:[]) {

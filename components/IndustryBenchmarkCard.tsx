@@ -1,13 +1,14 @@
 "use client";
 
 /**
- * v45-W3: 업종별 벤치마크 리더보드 카드
+ * v45-W3: 수집 표본 참고 비교 리더보드 카드
  * - 자동 감지된 업종에 대한 익명 집계 비교
  * - 표본 10개 미만이면 안내 메시지 표시
- * - 지표별 3열 비교 (업계 평균 · 상위 10% · 우리)
+ * - 지표별 3열 비교 (수집 표본 평균 · 표본 90백분위 · 우리)
  * - 데이터 없으면 자동 숨김
  */
 
+import {presentBenchmark} from "@/lib/benchmarkPresentation";
 import type {
   IndustryBenchmark,
   IndustryMetric,
@@ -25,7 +26,7 @@ function statusColor(status: IndustryMetric["status"]) {
         text: "text-emerald-700",
         badge: "bg-emerald-100 text-emerald-700 border-emerald-200",
         icon: "🏆",
-        label: "상위권",
+        label: "90백분위 이상",
       };
     case "above_avg":
       return {
@@ -50,7 +51,7 @@ function statusColor(status: IndustryMetric["status"]) {
         text: "text-rose-700",
         badge: "bg-rose-100 text-rose-700 border-rose-200",
         icon: "❌",
-        label: "심각 격차",
+        label: "평균보다 낮음",
       };
   }
 }
@@ -70,7 +71,7 @@ function MetricRow({ metric }: { metric: IndustryMetric }) {
           </h4>
         </div>
         <span
-          className={`shrink-0 inline-block text-[10px] md:text-[11px] font-semibold border rounded-full px-2 py-0.5 ${c.badge}`}
+          className={`shrink-0 inline-block text-[12px] md:text-[13px] font-semibold border rounded-full px-2 py-0.5 ${c.badge}`}
         >
           {c.label}
         </span>
@@ -79,29 +80,29 @@ function MetricRow({ metric }: { metric: IndustryMetric }) {
       {/* Score comparison */}
       <div className="grid grid-cols-3 gap-2 md:gap-3">
         <div className="text-center">
-          <div className="text-[10px] md:text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">
-            업계 평균
+          <div className="text-[12px] md:text-[13px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+            수집 표본 평균
           </div>
           <div className="text-[18px] md:text-[22px] font-extrabold text-neutral-700 tabular-nums leading-none">
             {metric.average}
           </div>
         </div>
         <div className="text-center">
-          <div className="text-[10px] md:text-[11px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">
-            상위 10%
+          <div className="text-[12px] md:text-[13px] font-semibold text-neutral-500 uppercase tracking-wide mb-1">
+            표본 90백분위
           </div>
           <div className="text-[18px] md:text-[22px] font-extrabold text-neutral-700 tabular-nums leading-none">
             {metric.topTen}
           </div>
         </div>
         <div className="text-center">
-          <div className={`text-[10px] md:text-[11px] font-semibold uppercase tracking-wide mb-1 ${c.text}`}>
+          <div className={`text-[12px] md:text-[13px] font-semibold uppercase tracking-wide mb-1 ${c.text}`}>
             우리
           </div>
           <div className={`text-[20px] md:text-[26px] font-extrabold ${c.text} tabular-nums leading-none`}>
             {metric.ours}
           </div>
-          <div className={`text-[10px] md:text-[11px] font-semibold ${c.text} mt-1 tabular-nums`}>
+          <div className={`text-[12px] md:text-[13px] font-semibold ${c.text} mt-1 tabular-nums`}>
             평균 {gapSign}{metric.gapVsAverage}
           </div>
         </div>
@@ -111,6 +112,7 @@ function MetricRow({ metric }: { metric: IndustryMetric }) {
 }
 
 export default function IndustryBenchmarkCard({ benchmark }: Props) {
+  benchmark=presentBenchmark(benchmark);
   if (!benchmark) return null;
 
   const {
@@ -132,11 +134,11 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[20px] md:text-[22px]">🏆</span>
             <h3 className="text-[20px] md:text-[24px] lg:text-[26px] font-extrabold text-neutral-900 leading-tight">
-              업종별 벤치마크
+              수집 표본 참고 비교
             </h3>
           </div>
           <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
-            동일 업종 사이트 그룹의 지표 분포와 현재 사이트를 비교합니다.
+            자동 분류된 업종의 수집 표본을 같은 진단 방식으로 비교합니다.
           </p>
         </div>
 
@@ -145,13 +147,13 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
             <span className="text-[20px] md:text-[22px]">📊</span>
             <div className="min-w-0">
               <h4 className="text-[15px] md:text-[16px] font-bold text-amber-900 mb-1">
-                {categoryLabel} 업종 벤치마크 준비 중
+                {categoryLabel} 비교 표본 준비 중
               </h4>
               <p className="text-[13px] md:text-[14px] text-amber-800 leading-relaxed break-words">
                 {summary}
               </p>
               <p className="text-[12px] md:text-[13px] text-amber-700/80 mt-2 leading-relaxed">
-                * 표본 규모 확대 시 정밀도가 향상되며 벤치마크가 자동 활성화됩니다.
+                표본 수가 늘어도 업계 대표성이나 실제 사업 성과를 보장하지 않습니다.
               </p>
             </div>
           </div>
@@ -167,18 +169,18 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[20px] md:text-[22px]">🏆</span>
           <h3 className="text-[20px] md:text-[24px] lg:text-[26px] font-extrabold text-neutral-900 leading-tight">
-            업종별 벤치마크
+            수집 표본 참고 비교
           </h3>
         </div>
         <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
           <span className="font-bold text-neutral-900">{categoryLabel}</span> 업종
           사이트 <span className="font-bold text-neutral-900">{sampleSize}개</span>{" "}
-          그룹의 지표 분포와 비교했습니다. 현재 사이트는 업계에서 어디쯤일까요?
+          수집 표본과 비교했습니다. 자사는 평균 계산에서 제외합니다.
         </p>
       </div>
 
       {/* Summary Strip */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 mb-5 md:mb-6">
+      <div className={`grid grid-cols-1 ${strongestArea || weakestArea ? "md:grid-cols-3" : ""} gap-3 md:gap-4 mb-5 md:mb-6`}>
         <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 md:p-5">
           <div className="text-[11px] md:text-[13px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">
             업종 감지
@@ -187,7 +189,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
             {categoryLabel}
           </div>
           <div className="text-[11px] md:text-[12px] text-neutral-500 mt-1">
-            비교군 N={sampleSize} · AI 자동 분류
+            비교군 N={sampleSize} · 자동 분류 · 추정
           </div>
         </div>
         {strongestArea && (
@@ -212,10 +214,10 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
         )}
       </div>
 
-      {/* AI 총평 */}
+      {/* 표본 비교 안내 */}
       <div className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-5 mb-5 md:mb-6">
         <div className="text-[12px] md:text-[13px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">
-          AI 총평
+          표본 비교 안내
         </div>
         <p className="text-[14px] md:text-[15px] text-neutral-900 font-semibold leading-snug break-words">
           {summary}
@@ -257,7 +259,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
       )}
 
       <p className="mt-4 text-[11px] md:text-[12px] text-neutral-400 leading-relaxed">
-        * 업종 지표 분포 기반 참고용 비교값 · 실제 성과는 다양한 요인에 따라 달라질 수 있습니다.
+        {benchmark.scopeNote || "집계 방법이 확인된 표본만 제공합니다."} 표본 90백분위는 점수를 오름차순으로 정렬했을 때 90% 위치의 값이며, 업계 상위 10%를 인증하는 수치가 아닙니다.
       </p>
     </section>
   );

@@ -1,3 +1,5 @@
+import {presentBenchmark} from './benchmarkPresentation';
+import {reviewStoredCitation} from './storedCitation';
 import { randomInt } from "node:crypto";
 import { getRedisClient } from "./redisClient";
 import { MarketingReport, MarketingReportSchema } from "./reportSchema";
@@ -34,15 +36,12 @@ export async function saveSharedReport(
       createdAt: Date.now(),
       report,
     };
-    const ok = await db().set(reportKey(id), stored, {
-      nx: true,
-      ex: TTL_SECONDS,
-    });
-    if (ok === "OK") {
-      await db().zadd(key("reports:" + ownerId), {
-        score: stored.createdAt,
-        member: id,
-      });
+    const ok=await db().eval<unknown[],number>(
+      `if redis.call('EXISTS',KEYS[1])==1 then return 0 end;redis.call('ZADD',KEYS[2],ARGV[3],ARGV[4]);redis.call('SET',KEYS[1],ARGV[1],'EX',ARGV[2]);return 1`,
+      [reportKey(id),key('reports:'+ownerId)],
+      [JSON.stringify(stored),TTL_SECONDS,stored.createdAt,id],
+    );
+    if(ok===1){
       return id;
     }
   }
@@ -66,7 +65,11 @@ export async function getSharedReport(
   const parsed = MarketingReportSchema.safeParse(
     wrapped ? (record as Stored).report : record,
   );
-  return parsed.success ? parsed.data : null;
+  if(!parsed.success)return null;
+  const report=parsed.data;
+  return {...report,adWasteSimulation:null,industryBenchmark:presentBenchmark(report.industryBenchmark),
+    llmCitationTest:reviewStoredCitation(report.llmCitationTest,report.url),
+    geoBaseline:report.geoBaseline?{...report.geoBaseline,citation:reviewStoredCitation(report.geoBaseline.citation,report.geoBaseline.url)!}:undefined};
 }
 export async function updateSharedReportCompetitor(
   id: string,

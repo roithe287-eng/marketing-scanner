@@ -75,7 +75,7 @@ export const LlmCitationQuestionResultSchema = z.object({
   errorMessage: z.string().optional(),
 });
 export const LlmCitationTestSchema = z.object({
-  measurementProtocol: z.literal("geo-compare-v1").optional(),
+  measurementProtocol: z.enum(["geo-compare-v1","geo-compare-v2"]).optional(),
   targetUrl: z.string().url().optional(),
   brandName: z.string().optional(),
   measurementVersion: z.literal(2).optional(),
@@ -325,6 +325,7 @@ export const IndustryMetricSchema = z.object({
 });
 
 export const IndustryBenchmarkSchema = z.object({
+  methodVersion:z.literal(2).optional(),windowDays:z.number().optional(),scoringMethod:z.string().optional(),scopeNote:z.string().optional(),
   category: IndustryCategorySchema,
   categoryLabel: z.string(), // 한글 라벨 (예: "교육")
   sampleSize: z.number(), // 표본 개수 N
@@ -372,6 +373,8 @@ export type DiagnosisBaseline=z.infer<typeof DiagnosisBaselineSchema>;
 export type DiagnosisCheck=z.infer<typeof DiagnosisCheckSchema>;
 
 export const MarketingReportSchema = z.object({
+  scoringMethod:z.literal("ai-axes-mean-v1").optional(),
+  integrity:z.object({version:z.literal(1),checkedAt:z.string().datetime(),note:z.string(),warnings:z.array(z.object({field:z.string(),message:z.string()})).max(100)}).optional(),
   analysisWarnings:z.array(z.object({key:z.string().max(40),label:z.string().max(80),status:z.enum(["timeout","unavailable","error"])})).max(10).optional(),
   url: z.string(),
   pageEvidence:PageEvidenceSchema.optional(),
@@ -400,6 +403,8 @@ export const MarketingReportSchema = z.object({
       reason: z.string(),
       recommendation: z.string(),
       priority: z.enum(["high", "medium", "low"]),
+      evidenceStatus:z.literal("review").optional(),
+      evidenceNote:z.string().optional(),
       badExample: z.string().optional(),
       goodExample: z.string().optional(),
       exampleNote: z.string().optional(),

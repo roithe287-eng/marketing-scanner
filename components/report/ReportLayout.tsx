@@ -69,6 +69,7 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
   },[]);
   return <SiteGuideProvider report={report}><div className="report-v2" id="report-area">
     <ReportHeader report={report} data={data} actions={actions}/>
+    {report.integrity&&<aside className="jm-card p-5 my-4" aria-label="결과의 근거와 검증 범위"><h2 className="text-lg font-black">결과의 근거와 검증 범위</h2><p className="mt-2 text-base leading-7">{report.integrity.note}</p>{!!report.integrity.warnings.length&&<details className="mt-3"><summary className="font-bold cursor-pointer">원문 대조 후 재확인이 필요한 항목 {report.integrity.warnings.length}개</summary><ul className="mt-3 space-y-2 text-base leading-7">{report.integrity.warnings.map((warning,i)=><li key={i}>{warning.message}</li>)}</ul></details>}</aside>}
     {!!report.analysisWarnings?.length&&<aside className="jm-card p-5 my-4" role="status"><h2 className="text-lg font-black">핵심 진단은 완료했고, 일부 추가 항목은 확인이 필요합니다</h2><p className="mt-2 text-sm leading-7">아래 항목은 점수나 성과로 추정하지 않았습니다. 완료된 진단과 실행 가이드는 계속 확인·보관할 수 있습니다.</p><ul className="mt-3 flex flex-wrap gap-2">{report.analysisWarnings.map(w=><li key={w.key} className="rounded-xl bg-amber-50 px-3 py-2 text-sm"><strong>{w.label}</strong> · {w.status==='timeout'?'응답 시간 초과':w.status==='unavailable'?'수집되지 않음':'일시적 오류'}</li>)}</ul></aside>}
     <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} aria-current={active===id?'location':undefined} onClick={()=>setActive(id)}><span>0{i+1}</span>{label}</a>)}<div className="report-reading-track" aria-hidden="true"><div ref={readingProgress}/></div></nav>
     <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="전체 상태를 확인하고, 점수가 낮은 단계부터 상세 근거를 살펴보세요."><TodayWork plan={execution}/><ScoreRadar diagnosis={report.diagnosis}/><DiagnosisComparisonPanel key={`comparison:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} onChange={onComparisonChange}/><ConversionPath data={data}/><CollectionCoverage data={data}/></Chapter>
@@ -88,13 +89,13 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
       {(competitorLoading||report.competitorStatus?.status==='pending')&&<p className="report-empty" role="status">경쟁사 정보를 수집 중입니다. 완료된 다른 진단은 먼저 확인할 수 있습니다.</p>}
       <CompetitorStatusNotice report={report} onRetry={onRetry}/><CompetitorLandscape report={report}/><MessageMap data={data}/>
       {report.competitorAnalysis&&(data.competitorCount>0||report.competitorAnalysis.filtering)&&<Disclosure title="경쟁사 페이지 원문과 상세 분석" note={`${data.competitorCount}개 후보 · 상세 항목 확인 ${data.metadataCount}개 · 선정 근거·메시지·원문`}><CompetitorComparison competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/></Disclosure>}
-      {report.industryBenchmark&&<Disclosure title="업종별 벤치마크" note="표본 규모와 비교 가능한 지표 확인"><IndustryBenchmarkCard benchmark={report.industryBenchmark}/></Disclosure>}
+      {report.industryBenchmark&&<Disclosure title="같은 업종의 수집 표본 비교" note="업계 전체를 대표하지 않는 참고 분포"><IndustryBenchmarkCard benchmark={report.industryBenchmark}/></Disclosure>}
     </Chapter>
     <Chapter id="actions" number="05" title="확인한 내용을 실행으로" note="목표 KPI와 확인 방법을 정하고, 보완 목록에서 작업 범위를 구체화하세요."><GrowthKpiPanel key={`kpi:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} targetUrl={report.url}/><ActionBacklog data={data}/><GeoFocusPanel key={report.llmCitationTest?.questionSetId||report.url} report={report}/>
       <Disclosure title="핵심 이슈와 개선 예시" note={`${report.criticalIssues.length}개 이슈 · 문제·원인·조치·예시 전체`}><div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} key={`${issue.title}-${index}`}/>)}</div></Disclosure>
       <Disclosure title="실행 일정과 빠른 개선" note="즉시·이번 주·이번 달의 제안 일정"><PriorityMatrix roadmap={report.priorityRoadmap}/>{report.quickWinsDetailed?.length?<QuickWinsFlow quickWins={report.quickWinsDetailed}/>:<ul>{report.quickWins?.map((w,i)=><li key={i}>{w}</li>)}</ul>}</Disclosure>
       <Disclosure title="카피 개선 제안" note="현재 문구와 제안 문구를 비교하고 사실 여부 확인"><CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis}/></Disclosure>
-      <Disclosure title="광고비 시뮬레이션 · 추정" note="진단 점수 기반의 가정이며 실제 광고비 손실을 측정하지 않습니다"><AdWasteCalculator diagnosis={report.diagnosis} defaultSimulation={report.adWasteSimulation}/></Disclosure>
+      <Disclosure title="광고비·목표 CPA 시나리오" note="직접 입력한 실적과 목표로 계산 · 성과 예측 아님"><AdWasteCalculator/></Disclosure>
     </Chapter>
     <ExecutionBoard report={report} plan={execution}/><div className="report-ending"><FinalCTA report={report}/><Disclaimer/></div>
   </div></SiteGuideProvider>;
