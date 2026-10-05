@@ -1,4 +1,5 @@
 "use client";
+import {SiteGuideProvider,SiteGuidebookOverview} from './SiteGuidebook';
 import CompetitorLandscape from './CompetitorLandscape';
 import ReportHeader from './ReportHeader';
 import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
@@ -66,7 +67,7 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
     window.addEventListener('resize',schedule);
     return()=>{observer.disconnect();window.removeEventListener('scroll',schedule);window.removeEventListener('resize',schedule);if(frame)window.cancelAnimationFrame(frame);};
   },[]);
-  return <div className="report-v2" id="report-area">
+  return <SiteGuideProvider report={report}><div className="report-v2" id="report-area">
     <ReportHeader report={report} data={data} actions={actions}/>
     <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} aria-current={active===id?'location':undefined} onClick={()=>setActive(id)}><span>0{i+1}</span>{label}</a>)}<div className="report-reading-track" aria-hidden="true"><div ref={readingProgress}/></div></nav>
     <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="전체 상태를 확인하고, 점수가 낮은 단계부터 상세 근거를 살펴보세요."><TodayWork plan={execution}/><ScoreRadar diagnosis={report.diagnosis}/><DiagnosisComparisonPanel key={`comparison:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} onChange={onComparisonChange}/><ConversionPath data={data}/><CollectionCoverage data={data}/></Chapter>
@@ -76,7 +77,7 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
       {report.llmCitationTest&&<LlmCitationCard citation={report.llmCitationTest}/>}
       <AnswerPageMap data={data}/><BrandReview data={data}/><SourceDirectory data={data}/><GeoComparisonPanel report={report}/>
     </Chapter>
-    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="SEO·GEO·AEO의 근거를 확인하고, 해당 URL에서 실행할 작업을 정하세요."><PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><PageWorkMap plan={execution}/><GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/><KeywordOpportunities data={data}/>
+    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="SEO·GEO·AEO의 근거를 확인하고, 해당 URL에서 실행할 작업을 정하세요."><SiteGuidebookOverview report={report}/><PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><PageWorkMap plan={execution}/><GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/><KeywordOpportunities data={data}/>
       {report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}
       <NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>
       {report.keywordFrequency&&<Disclosure title="전체 키워드 빈도" note="단어·연속어구의 원래 집계"><KeywordFrequencyCard frequency={report.keywordFrequency}/></Disclosure>}
@@ -95,5 +96,5 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
       <Disclosure title="광고비 시뮬레이션 · 추정" note="진단 점수 기반의 가정이며 실제 광고비 손실을 측정하지 않습니다"><AdWasteCalculator diagnosis={report.diagnosis} defaultSimulation={report.adWasteSimulation}/></Disclosure>
     </Chapter>
     <ExecutionBoard report={report} plan={execution}/><div className="report-ending"><FinalCTA report={report}/><Disclaimer/></div>
-  </div>;
+  </div></SiteGuideProvider>;
 }

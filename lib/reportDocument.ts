@@ -1,5 +1,6 @@
 import {buildNaverReportDocument} from './naverReportDocument';
 import {buildExecutionDocument} from './executionDocument';
+import {buildSiteGuidebookDocument} from './siteGuidebookDocument';
 import {REPORT_NOTICE_TITLE,REPORT_NOTICE_LEAD,REPORT_NOTICE_ITEMS,REPORT_NOTICE_END} from './reportNotice';
 import {buildInsightsDocument} from './reportInsightsDocument';
 import {buildGeoComparison,changeLabels,comparisonRate,comparisonReasons,comparisonTime,GEO_COMPARISON_NOTE,GEO_COMPARISON_TITLE,observationLabel} from './geoComparison';
@@ -37,6 +38,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   blocks.push(...buildInsightsDocument(report));
   blocks.push(...buildGrowthDocument(report));
   blocks.push(...buildExecutionDocument(report));
+  blocks.push(...buildSiteGuidebookDocument(report));
   function walk(value:unknown,key='',depth=0) {
     if (value === undefined) return;
     if (value === null) {blocks.push({kind:'body',text:`${labels[key] || key}: 측정 불가 / 데이터 없음`});return;}

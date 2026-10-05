@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {SiteEditingSchema} from './siteEditingSchema';
 import {NaverOptimizationSchema} from './naverSchema';
 import {SearchSignalsSchema} from './growthSchema';
 import {CompetitorResearchSchema,CompetitorOwnSiteSchema} from './competitorSchema';
@@ -348,6 +349,7 @@ export const PageEvidenceSchema=z.object({
   bodyText:z.string().max(12000),
   bodyTruncated:z.boolean(),
   searchSignals:SearchSignalsSchema.optional(),
+  siteEditing:SiteEditingSchema.optional(),
 });
 export type PageEvidence=z.infer<typeof PageEvidenceSchema>;
 

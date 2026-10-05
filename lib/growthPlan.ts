@@ -1,3 +1,4 @@
+import {buildSiteGuide,guideInstruction,growthGuideTopic} from './siteGuidebook';
 import type {MarketingReport,PageEvidence} from './reportSchema';
 import {safeHttpUrl} from './citationMeasurement';
 import {GROWTH_SOURCES,GROWTH_REVIEWED_AT,GROWTH_SCOPE,type GrowthSourceId} from './growthKnowledge';
@@ -52,5 +53,5 @@ export function buildGrowthPlan(report:MarketingReport) {
 }
 export function growthBrief(report:MarketingReport,task:GrowthAction):string {
   const plan=buildGrowthPlan(report);
-  return [`${task.title}`,`대상: ${plan.url||report.url}`,`분류: ${task.areas.join(' · ')} / ${task.channel}`,`담당: ${task.owner}`,`상태: ${GROWTH_STATUS[task.status]}`,`현재 근거: ${task.evidence}`,`수정 위치: ${task.location}`,'',...task.steps.map((s,i)=>`${i+1}. ${s}`),'',`TO-BE / 작성 틀: ${task.toBe}`,`수정 후 기대하는 변화: ${task.change}`,`확인할 KPI: ${task.kpi}`,`완료 확인: ${task.verify}`,...task.sources.map(id=>`${GROWTH_SOURCES[id].title}: ${GROWTH_SOURCES[id].url}`),`공식 문서 확인: ${GROWTH_REVIEWED_AT}`,GROWTH_SCOPE].join('\n');
+  return [`${task.title}`,`대상: ${plan.url||report.url}`,`분류: ${task.areas.join(' · ')} / ${task.channel}`,`담당: ${task.owner}`,`상태: ${GROWTH_STATUS[task.status]}`,`현재 근거: ${task.evidence}`,`수정 위치: ${task.location}`,'',...task.steps.map((s,i)=>`${i+1}. ${s}`),'',`TO-BE / 작성 틀: ${task.toBe}`,`수정 후 기대하는 변화: ${task.change}`,`확인할 KPI: ${task.kpi}`,`완료 확인: ${task.verify}`,...task.sources.map(id=>`${GROWTH_SOURCES[id].title}: ${GROWTH_SOURCES[id].url}`),`공식 문서 확인: ${GROWTH_REVIEWED_AT}`,GROWTH_SCOPE,guideInstruction(buildSiteGuide(report,{title:task.title,proposal:task.toBe,topic:growthGuideTopic(task.id)}))].join('\n');
 }

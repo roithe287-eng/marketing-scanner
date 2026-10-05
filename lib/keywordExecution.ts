@@ -1,3 +1,4 @@
+import {buildSiteGuide,guideInstruction,type SiteGuide} from './siteGuidebook';
 import type {MarketingReport} from './reportSchema';
 import {buildKeywordRewrites,type KeywordRewrite} from './keywordRewrite';
 import {canonicalPage} from './geoComparison';
@@ -5,7 +6,7 @@ import {safeHttpUrl} from './citationMeasurement';
 
 type Evidence={label:string;text:string;location:'title'|'description'|'heading'|'body'|'cta'|'legacy'};
 export type RewriteField={token:string;label:string;hint:string};
-export type RewriteGuide={url:string|null;site:string;coverage:string;evidence:Evidence[];location:string;steps:{title:string;detail:string}[];fields:RewriteField[];checks:string[]};
+export type RewriteGuide={url:string|null;site:string;coverage:string;evidence:Evidence[];location:string;steps:{title:string;detail:string}[];fields:RewriteField[];checks:string[];editing:SiteGuide};
 export type ExecutableRewrite=KeywordRewrite&{guide:RewriteGuide};
 export type RewriteValues=Record<string,string>;
 
@@ -80,7 +81,7 @@ export function attachRewriteGuide(report:MarketingReport,plan:KeywordRewrite):E
     {title:'저장 후 다시 확인하기',detail:'미리보기에서 PC·모바일 줄바꿈과 문맥을 확인하고 게시하세요. 해당 URL을 다시 열어 반영 여부를 확인합니다. 제목·검색 설명은 관리 화면의 저장 값도 대조하세요. 새 진단은 수집 결과를 확인하는 용도이며 검색 노출·AI 인용 상승을 보장하지 않습니다.'},
   ];
   const checks=[plan.check,'대괄호와 임시 문구가 남지 않고, 가격·수치·부정·예외 조건이 원문 및 실제 운영 내용과 같은가','수정한 URL에서 제목·설명·본문·버튼의 의미가 서로 맞고, PC·모바일에서 읽히는가'];
-  return {...plan,source:first?.text||null,sourceLabel:first?.label||'문장 원문 미저장',guide:{url,site:report.meta?.siteName||report.meta?.domain||report.url,coverage,evidence,location,steps,fields,checks}};
+  return {...plan,source:first?.text||null,sourceLabel:first?.label||'문장 원문 미저장',guide:{url,site:report.meta?.siteName||report.meta?.domain||report.url,coverage,evidence,location,steps,fields,checks,editing:buildSiteGuide(report,{title:`반복 표현 · ${word}`,keyword:word,proposal:plan.template,topic:plan.kind==='배치'?'title':'content'})}};
 }
 export function buildExecutableRewrites(report:MarketingReport) {
   const plans=buildKeywordRewrites(report.keywordFrequency,report.meta);
@@ -92,5 +93,5 @@ export function rewriteInstruction(plan:ExecutableRewrite,values:RewriteValues={
     ...g.evidence.map(e=>`${e.label}: ${e.text}`),...(!g.evidence.length?['일치하는 문장 원문 없음 · 위치 확인 후 수정']:[]),
     ...g.steps.map((s,i)=>`${i+1}. ${s.title}\n${s.detail}`),
     `작성 ${Object.keys(values).length?'초안 (사용자 입력 · 사실 확인 후 사용)':'틀 (사실 확인 후 사용)'} · 남은 괄호 ${remaining}개\n${preview}`,
-    '작성 도움말',...g.fields.map(f=>`${f.token}: ${f.hint}`),'완료 확인',...g.checks.map(c=>`□ ${c}`)].join('\n\n');
+    '작성 도움말',...g.fields.map(f=>`${f.token}: ${f.hint}`),'완료 확인',...g.checks.map(c=>`□ ${c}`),guideInstruction({...g.editing,proposal:preview})].join('\n\n');
 }

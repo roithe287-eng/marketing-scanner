@@ -4,8 +4,11 @@ import {observeRobots} from "./observeRobots";
 import { getScannerContactUrl } from "./siteConfig";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
+import {captureSiteEditing} from './captureSiteEditing';
+import type {SiteEditing} from './siteEditingSchema';
 
 export type ExtractedWebsiteData = {
+  siteEditing?:SiteEditing;
   seoEvidence?: {
     capturedAt:string; titleCount:number; descriptionCount:number; canonicals:string[];
     robotsMeta:{agent:string;content:string}[]; xRobotsTag:string; htmlLang:string;
@@ -559,6 +562,7 @@ export async function extractWebsite(
     } catch { /* invalid link */ }
   });
 
+  const siteEditing=captureSiteEditing($,finalUrl,res.headers);
   // 구조화 데이터와 지도 임베드를 읽은 뒤, 본문 텍스트 분석에서만 제외합니다.
   $("script, style, noscript, iframe").remove();
 
@@ -684,6 +688,7 @@ export async function extractWebsite(
   return {
     url,
     finalUrl,
+    siteEditing,
     seoEvidence: {capturedAt:new Date().toISOString(),titleCount,descriptionCount,canonicals,robotsMeta,xRobotsTag:res.headers.get("x-robots-tag")||"",htmlLang:$("html").attr("lang")||"",jsonLdErrors,microdataCount,rdfaCount,imagesMissingAlt:imageWithoutAlt,imagesEmptyAlt,robots,httpStatus:res.status},
     detectedEncoding,
     title,

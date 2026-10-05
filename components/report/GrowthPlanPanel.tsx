@@ -1,4 +1,6 @@
 'use client';
+import {growthGuideTopic} from '@/lib/siteGuidebook';
+import {Guidebook} from './SiteGuidebook';
 import React,{useMemo,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {buildGrowthPlan,growthBrief,GROWTH_STATUS,type GrowthArea} from '@/lib/growthPlan';
@@ -28,7 +30,7 @@ export default function GrowthPlanPanel({report}:{report:MarketingReport}) {
       <div className="growth-action-body"><div className="growth-current"><h5>이 URL에서 확인한 근거</h5><p>{task.evidence}</p></div><div className="growth-location"><h5>어디를 수정하나요?</h5><p>{task.location}</p></div>
         <h5>이 순서대로 진행하세요</h5><ol className="growth-steps">{task.steps.map((step,n)=><li key={step}><span>{n+1}</span><p>{step}</p></li>)}</ol>
         <div className="growth-change-grid"><div><h5>TO-BE · 적용 목표 / 작성 틀</h5><p>{task.toBe}</p></div><div><h5>사이트에서 기대하는 변화</h5><p>{task.change}</p></div></div>
-        <div className="growth-verification"><div><h5>무엇을 보면 달라진 걸 알 수 있나요?</h5><p>{task.kpi}</p></div><div><h5>완료 확인</h5><p>{task.verify}</p></div></div>
+        <Guidebook title={task.title} topic={growthGuideTopic(task.id)} proposal={task.toBe}/><div className="growth-verification"><div><h5>무엇을 보면 달라진 걸 알 수 있나요?</h5><p>{task.kpi}</p></div><div><h5>완료 확인</h5><p>{task.verify}</p></div></div>
         <div className="growth-action-footer"><div>{task.sources.map(id=><a href={GROWTH_SOURCES[id].url} key={id} target="_blank" rel="noopener noreferrer">{GROWTH_SOURCES[id].title} ↗</a>)}</div><button type="button" className="report-secondary-button" onClick={()=>copy(task.id)}>{copyState===task.id?'작업 지시서 복사됨':'담당자용 작업 지시서 복사'}</button></div>
       </div>
     </details>)}</div>
