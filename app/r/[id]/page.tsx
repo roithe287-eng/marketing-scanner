@@ -12,5 +12,5 @@ export default async function SharedReportPage({params}:{params:Promise<{id:stri
   if(!principal)redirect('/login?next='+encodeURIComponent('/r/'+id));
   const report=await getSharedReport(id,principal);
   if(!report)notFound();
-  return <SharedReportView report={report} shareId={id}/>;
+  return <SharedReportView report={report} shareId={id} canSave={principal.kind==='internal'||principal.account.features.reports}/>;
 }

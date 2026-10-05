@@ -5,11 +5,12 @@ type Props = {
   scores: readonly number[];
   selected: number;
   example?: boolean;
+  previousScores?:readonly number[];
 };
 const labels = [[240,19],[363,63],[423,151],[363,239],[240,283],[117,239],[57,151],[117,63]];
 
 /** The same geometry and palette connect the landing preview and actual report. */
-export default function DiagnosisRadarGraphic({scores,selected,example=false}:Props) {
+export default function DiagnosisRadarGraphic({scores,selected,example=false,previousScores}:Props) {
   const values = diagnosisAxes.map((_,i)=>Math.max(0,Math.min(100,scores[i]??0)));
   const average = Math.round(values.reduce((sum,value)=>sum+value,0)/values.length);
   const active = diagnosisAxes[selected]??diagnosisAxes[0];
@@ -18,11 +19,12 @@ export default function DiagnosisRadarGraphic({scores,selected,example=false}:Pr
     const p=point(i,level??value);return `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
   }).join(' ');
   const edge=point(Math.max(0,Math.min(7,selected)),100);
-  return <svg className="diagnosis-radar-graphic" viewBox="0 0 480 306" role="img" aria-label={`8방향 레이더 차트 · 8개 영역 진단 ${example?'예시':'결과'}. 평균 ${average}점. ${diagnosisAxes.map((a,i)=>`${a.label} ${values[i]}점`).join(', ')}. 바깥쪽이 100점입니다.`}>
+  return <svg className="diagnosis-radar-graphic" viewBox="0 0 480 306" role="img" aria-label={`8방향 레이더 차트 · 8개 영역 진단 ${example?'예시':'결과'}. 평균 ${average}점. ${diagnosisAxes.map((a,i)=>`${a.label} ${previousScores?`이전 ${previousScores[i]}점, 현재 `:''}${values[i]}점`).join(', ')}. 바깥쪽이 100점입니다.`}>
     <polygon points={polygon(100)} fill="#edf3ff"/>
     {[25,50,75,100].map(level=><polygon key={level} points={polygon(level)} fill="none" stroke="#b7c8e5" strokeWidth="1"/>)}
     {diagnosisAxes.map((a,i)=>{const p=point(i,100);return <line key={a.key} x1="240" y1="150" x2={p.x} y2={p.y} stroke="#c4d2e8"/>;})}
     <line x1="240" y1="150" x2={edge.x} y2={edge.y} stroke={active.color} strokeWidth="20" opacity=".12"/>
+    {previousScores&&<polygon points={diagnosisAxes.map((_,i)=>{const p=point(i,Math.max(0,Math.min(100,previousScores[i]??0)));return `${p.x.toFixed(2)},${p.y.toFixed(2)}`;}).join(' ')} fill="#a859b4" fillOpacity=".08" stroke="#9750a2" strokeWidth="3" strokeDasharray="6 5" strokeLinejoin="round"/>}
     <polygon points={polygon()} fill="#1745d1" fillOpacity=".22" stroke="#1745d1" strokeWidth="3" strokeLinejoin="round"/>
     {diagnosisAxes.map((a,i)=>{const p=point(i,values[i]),[x,y]=labels[i];return <g key={a.key}>
       <circle cx={p.x} cy={p.y} r={i===selected?7:5} fill={a.color} stroke="white" strokeWidth="2"/>

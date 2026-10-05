@@ -1,8 +1,11 @@
 "use client";
 import CompetitorLandscape from './CompetitorLandscape';
 import ReportHeader from './ReportHeader';
+import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
+import DiagnosisComparisonPanel from './DiagnosisComparisonPanel';
+import {buildExecutionPlan} from '@/lib/reportExecution';
 import React,{useEffect,useMemo,useRef,useState} from 'react';
-import type {MarketingReport} from '@/lib/reportSchema';
+import type {MarketingReport,DiagnosisBaseline} from '@/lib/reportSchema';
 import {buildReportInsights} from '@/lib/reportInsights';
 import {CollectionCoverage,ConversionPath,AnswerPageMap,BrandReview,SourceDirectory,MessageMap,KeywordOpportunities,ActionBacklog} from './InsightPanels';
 import ScoreRadar from '@/components/ScoreRadar';
@@ -31,9 +34,10 @@ import GrowthKpiPanel from './GrowthKpiPanel';
 const chapters=[['overview','핵심 요약'],['geo','AI·GEO'],['search','검색·페이지'],['competition','경쟁사'],['actions','실행 과제']] as const;
 function Chapter({id,number,title,note,children}:{id:string;number:string;title:string;note:string;children:React.ReactNode}) {return <section id={`report-${id}`} className="report-chapter" data-chapter={id} aria-labelledby={`report-title-${id}`}><div className="report-chapter-heading"><span>{number}</span><div><h2 id={`report-title-${id}`}>{title}</h2><p>{note}</p></div><a href="#report-top" aria-label={`${title}에서 보고서 처음으로`}>↑</a></div><div className="report-stack">{children}</div></section>;}
 function Disclosure({title,note,children}:{title:string;note:string;children:React.ReactNode}) {return <details className="report-disclosure"><summary><span><strong>{title}</strong><small>{note}</small></span><b aria-hidden="true">+</b></summary><div className="report-legacy">{children}</div></details>;}
-export default function ReportLayout({report,actions,competitorLoading=false,onRetry}:{report:MarketingReport;actions?:React.ReactNode;competitorLoading?:boolean;onRetry?:()=>void}) {
+export default function ReportLayout({report,actions,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
   const readingProgress=useRef<HTMLDivElement>(null);
-  const data=useMemo(()=>buildReportInsights(report),[report]);const [active,setActive]=useState('overview');
+  const data=useMemo(()=>buildReportInsights(report),[report]);
+  const execution=useMemo(()=>buildExecutionPlan(report,data),[report,data]);const [active,setActive]=useState('overview');
   useEffect(()=>{
     let frame=0;
     const update=()=>{
@@ -65,14 +69,14 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
   return <div className="report-v2" id="report-area">
     <ReportHeader report={report} data={data} actions={actions}/>
     <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} aria-current={active===id?'location':undefined} onClick={()=>setActive(id)}><span>0{i+1}</span>{label}</a>)}<div className="report-reading-track" aria-hidden="true"><div ref={readingProgress}/></div></nav>
-    <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="전체 상태를 확인하고, 점수가 낮은 단계부터 상세 근거를 살펴보세요."><ScoreRadar diagnosis={report.diagnosis}/><ConversionPath data={data}/><CollectionCoverage data={data}/></Chapter>
+    <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="전체 상태를 확인하고, 점수가 낮은 단계부터 상세 근거를 살펴보세요."><TodayWork plan={execution}/><ScoreRadar diagnosis={report.diagnosis}/><DiagnosisComparisonPanel key={`comparison:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} onChange={onComparisonChange}/><ConversionPath data={data}/><CollectionCoverage data={data}/></Chapter>
     <Chapter id="geo" number="02" title="AI가 브랜드를 읽는 방식" note="페이지 준비도, 실제 답변, 출처를 각각 확인합니다.">
       {(report.discoverability||report.llmCitationTest)&&<GeoIntroduction/>}
       {report.discoverability&&<DiscoverabilityPanel discoverability={report.discoverability}/>}
       {report.llmCitationTest&&<LlmCitationCard citation={report.llmCitationTest}/>}
       <AnswerPageMap data={data}/><BrandReview data={data}/><SourceDirectory data={data}/><GeoComparisonPanel report={report}/>
     </Chapter>
-    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="SEO·GEO·AEO의 근거를 확인하고, 해당 URL에서 실행할 작업을 정하세요."><GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/><KeywordOpportunities data={data}/>
+    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="SEO·GEO·AEO의 근거를 확인하고, 해당 URL에서 실행할 작업을 정하세요."><PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><PageWorkMap plan={execution}/><GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/><KeywordOpportunities data={data}/>
       {report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}
       <NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>
       {report.keywordFrequency&&<Disclosure title="전체 키워드 빈도" note="단어·연속어구의 원래 집계"><KeywordFrequencyCard frequency={report.keywordFrequency}/></Disclosure>}
@@ -90,6 +94,6 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
       <Disclosure title="카피 개선 제안" note="현재 문구와 제안 문구를 비교하고 사실 여부 확인"><CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis}/></Disclosure>
       <Disclosure title="광고비 시뮬레이션 · 추정" note="진단 점수 기반의 가정이며 실제 광고비 손실을 측정하지 않습니다"><AdWasteCalculator diagnosis={report.diagnosis} defaultSimulation={report.adWasteSimulation}/></Disclosure>
     </Chapter>
-    <div className="report-ending"><FinalCTA report={report}/><Disclaimer/></div>
+    <ExecutionBoard report={report} plan={execution}/><div className="report-ending"><FinalCTA report={report}/><Disclaimer/></div>
   </div>;
 }
