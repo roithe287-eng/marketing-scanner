@@ -37,13 +37,16 @@ export function growthGuideTopic(id:string):GuideTopic|undefined {
  return map[id];
 }
 type Route={path:string[];instruction:string;sources:GuideSourceId[];scope:string};
-export function editorRoute(platform:PlatformId|undefined,topic:GuideTopic,url:string):Route {
+export function editorRoute(platform:PlatformId|undefined,topic:GuideTopic,url:string,focus?:PageElement):Route {
  const seo=topic==='title'||topic==='description',heading=topic==='heading';
  let pathname='/';try{pathname=new URL(url).pathname;}catch{}
  const scope='공식 도움말 기준 경로입니다. 관리자에 접속해 확인한 값이 아니며 계정 권한·테마·버전에 따라 달라질 수 있습니다.';
  const field=topic==='title'?'페이지 제목':'페이지 설명';
  if(topic==='account')return {path:['담당 운영 계정','원래 진단의 계정별 실행 순서','설정·연동 상태 기록'],instruction:'페이지 편집 작업이 아닙니다. 아래 작업별 계정 화면에서 직접 확인하고 공개 HTML의 단서를 연동 성공으로 해석하지 않습니다.',sources:[],scope:'계정 내부 상태·메뉴는 직접 확인하지 않았습니다. 원래 항목의 공식 절차를 따라 실제 화면과 대조하세요.'};
  if(['crawl','schema','speed','measurement','viewport','canonical','social'].includes(topic))return {path:['해당 URL의 기술·태그 담당자','아래 수집 근거와 원래 작업 지시 확인','관련 CMS·템플릿·서버·분석 계정'],instruction:'아래 선택자는 공개 HTML의 위치입니다. 서버 파일명이나 관리자 메뉴를 뜻하지 않습니다. 실제 운영 구성을 확인한 뒤 원래 작업 지시와 함께 수정하세요.',sources:[],scope:'기술·계정 설정은 공개 HTML만으로 편집 경로를 확인할 수 없습니다.'};
+ if(platform==='imweb'&&!seo&&focus?.widget?.type==='code')return {path:['디자인 모드','입력 URL에 해당하는 메뉴','원문이 있는 코드 위젯','우클릭 → 코드 설정'],instruction:'선택한 요소는 코드 위젯 안에서 발견됐습니다. 기존 코드를 복사해 보관하고 아래 원문과 선택자로 해당 HTML을 찾으세요. 문구·링크·제목 수준·대체 텍스트 중 지목된 항목만 수정한 뒤 저장하고 PC·모바일 미리보기에서 확인합니다. 화면이 스크립트로 생성되면 제작 담당자에게 원문 위치를 전달하세요.',sources:['imwebCode'],scope};
+ if(platform==='imweb'&&!seo&&focus?.region==='header')return {path:['디자인 모드','상단 디자인 편집','선택한 원문이 있는 상단 전용 위젯','위젯 설정'],instruction:'본문과 별도로 관리되는 상단의 원문입니다. 선택한 원문·링크를 상단 위젯 설정과 대조해 해당 항목을 수정하세요. PC·모바일 상단과 기본·겹치기·고정 상태를 각각 확인하고 같은 문구의 다른 버튼까지 일괄 변경하지 마세요.',sources:['imwebHeader'],scope};
+ if(platform==='imweb'&&!seo&&focus?.widget&&((topic==='cta'&&focus.widget.type!=='button')||(topic==='form'&&focus.widget.type!=='form')||(topic==='image'&&focus.widget.type!=='image')||(['heading','content','trust','ai'].includes(topic)&&focus.widget.type!=='text')))return {path:['디자인 모드','입력 URL에 해당하는 메뉴',`원문을 포함한 ${focus.widget.type} 위젯`,'위젯 설정 또는 연결된 콘텐츠 관리'],instruction:'선택한 요소를 출력하는 위젯 종류를 먼저 확인하세요. 설정에서 같은 원문을 찾고 해당 필드를 수정합니다. 설정에 원문이 없으면 연결된 상품·게시글·커스텀 위젯의 제작 담당자에게 아래 원문과 선택자를 전달하세요. 공개 HTML만으로 전용 관리 메뉴를 확정할 수는 없습니다.',sources:['imwebWidget'],scope};
  if(platform==='imweb'&&topic==='form')return {path:['디자인 모드','해당 페이지의 입력폼 위젯','우클릭 → 입력폼 설정','수정할 항목 선택'],instruction:'아래 수집된 항목명을 설정창에서 대조하고 레이블·필수 여부·버튼 텍스트를 수정합니다. 수신된 제출은 컨텐츠 관리 → 입력폼 관리에서 담당자가 확인합니다.',sources:['imwebForm'],scope};
  if(platform==='imweb')return seo?{path:['디자인 모드','메뉴 관리','입력 URL에 해당하는 메뉴의 설정',field],instruction:'공통 사이트 이름·설명보다 먼저 이 URL의 메뉴별 설정을 확인하세요. 입력 URL이 상품 상세라면 관리자 상품 편집의 SEO 제목·메타 설명 항목을 확인하세요.',sources:['imwebSeo'],scope}:{path:['디자인 모드','입력 URL에 해당하는 메뉴',topic==='cta'?'해당 버튼 위젯 → 버튼 추가·관리':'원문과 일치하는 위젯'],instruction:topic==='cta'?'해당 버튼의 문구와 클릭 시 동작을 함께 수정합니다. 전화·모달·링크 중 실제 의도한 동작과 맞추세요.':heading?'텍스트 위젯을 더블 클릭하고 단락 도구에서 적합한 제목 수준을 지정합니다. 글자 크기 변경과 H1 지정은 다릅니다.':topic==='image'?'해당 이미지 위젯의 설명 설정 지원 여부를 확인합니다. 메뉴가 없으면 위젯 종류와 원문 위치를 제작 담당자에게 전달하세요.':'텍스트 위젯이면 더블 클릭하여 원문을 찾습니다. 게시판·상품·폼 위젯이면 연결된 콘텐츠 관리 화면에서 수정해야 할 수 있습니다.',sources:[topic==='cta'?'imwebButton':topic==='image'?'imwebWidget':'imwebText'],scope};
  if(platform==='cafe24')return seo?{path:['쇼핑몰 설정','기본 설정 → 쇼핑몰 정보','검색 엔진 최적화(SEO)',pathname==='/'?'기본설정 → 공통 페이지 SEO 태그':'고급설정 → 개별 페이지 SEO 태그'],instruction:'상품·분류·게시판 URL이면 해당 관리 화면의 SEO 설정을 먼저 확인합니다. 주요·개별 페이지 설정이 공통 설정보다 우선합니다. 여러 URL에 일괄 덮어쓰지 마세요.',sources:['cafe24Seo'],scope}:{path:['디자인','디자인 보관함','적용 중인 디자인 확인 → 편집','해당 URL의 화면·원문 검색'],instruction:'디자인을 복사해 미리 확인하고, 아래 원문·선택자로 대상 모듈을 찾으세요. PC와 모바일 디자인이 별도인지 확인합니다. 파일명을 이 진단으로 확정할 수는 없습니다.',sources:['cafe24Design'],scope};
@@ -60,7 +63,7 @@ export function buildSiteGuide(report:MarketingReport,request:GuideRequest){
  const missing=!targets.length&&!settings.length;
  const nearby=missing&&['heading','content','trust','ai','cta','form'].includes(topic)?candidates.filter(e=>!['nav','header','footer'].includes(e.region||'')&&(e.kind==='heading'||e.kind==='text')).slice(0,1):[];
  const fields=topic==='account'?[{label:'운영 계정에서 확인할 작업',before:request.evidence||'계정 설정 미확인',action:request.instructions?.join('\n')||request.proposal||'해당 계정에서 원래 진단의 실행 절차를 확인하세요.',done:request.completion||'원래 진단의 완료 조건과 실제 계정 상태 대조'}]:editFields(topic,focus,settings),location=topic==='account'?'담당 운영 계정 · 내부 상태 미확인':focus?elementLocation(focus):settings.length?'페이지의 검색·공유 설정 / HTML 원본':'수정 위치 확인 필요';
- const route=editorRoute(platform.platform,topic,url);
+ const route=editorRoute(platform.platform,topic,url,focus);
  const technical:Partial<Record<GuideTopic,string>>={
  crawl:'이 URL을 공개할지 먼저 정합니다. 공개 대상의 robots.txt·robots 메타·응답 헤더·대표 URL·내부 링크 중 원래 진단이 지목한 항목만 수정합니다. 관리자·회원 정보의 접근 제한은 유지하고, 재수집 후 관리 도구의 상태를 별도로 확인합니다.',
  schema:'실제 페이지에 보이는 내용과 지원되는 구조화 데이터 유형을 대조합니다. 기존 JSON-LD가 있으면 그 원본을 수정하고 중복 삽입하지 않습니다. 현재 공식 규격과 검사 도구로 오류를 확인한 뒤 게시합니다.',

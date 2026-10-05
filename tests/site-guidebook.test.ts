@@ -79,6 +79,19 @@ test('missing H1 is not replaced with arbitrary H2 evidence; broad matches remai
  const missing=buildSiteGuide(r,{title:'H1 태그 부재'});assert.equal(missing.targets.length,0);assert.equal(missing.matchMode,'missing');assert.equal(missing.nearby[0].tag,'h2');
  const generic=buildSiteGuide(r,{title:'본문 개선',current:'실제로는 없는 문장'});assert.equal(generic.matchMode,'candidate');assert.ok(generic.matchReason.includes('직접 일치를 확인하지 못해'));
 });
+test('selected Imweb source changes editor route across header, button, code and content widgets',()=>{
+ const r=report('<html><head><script src="https://cdn.imweb.me/app.js"></script></head><body><header><div data-widget-type="inline_button"><a id="header-cta" href="/header">상담 문의</a></div></header><main><div data-widget-type="button"><a id="body-cta" href="/body">상담 문의</a></div><div data-widget-type="code"><a id="code-cta" href="/code">상담 문의</a></div><div data-widget-type="board"><a id="board-cta" href="/post">상담 문의</a></div></main></body></html>');
+ const base=buildSiteGuide(r,{title:'CTA 버튼',current:'상담 문의'});
+ for(const [selector,source,path] of [['#header-cta','imwebHeader','상단 디자인 편집'],['#body-cta','imwebButton','해당 버튼 위젯 → 버튼 추가·관리'],['#code-cta','imwebCode','우클릭 → 코드 설정'],['#board-cta','imwebWidget','위젯 설정 또는 연결된 콘텐츠 관리']] as const){
+  const selected=base.targets.find(e=>e.selector===selector)!;assert.ok(selected);
+  const g=buildSiteGuide(r,{title:'CTA 버튼',current:'상담 문의',selectedKey:selected.key});
+  assert.ok(g.route.path.includes(path));assert.ok(g.route.sources.includes(source));
+  assert.ok(guideInstruction(g).includes(path));assert.ok(g.fields[1].before.includes(selected.href!));
+ }
+ const code=base.targets.find(e=>e.selector==='#code-cta')!;
+ assert.ok(!editorRoute('imweb','title',url,code).path.includes('우클릭 → 코드 설정'));
+ assert.ok(!editorRoute('imweb','account',url,code).path.includes('디자인 모드'));
+});
 test('captures actual section, widget, image alt state and form labels without private input values',()=>{
  const r=report('<html><body><main><section id="offer"><h2>서비스 구성</h2><div id="widget1" data-widget-type="text"><p>제공 내용</p></div><img id="decor" src="/decor.png" alt=""><img id="missing" src="/detail.png"><form><label for="email">이메일</label><input id="email" value="PRIVATE_VALUE" required><input type="password" value="PRIVATE_PASSWORD"><input type="hidden" value="PRIVATE_TOKEN"></form></section></main></body></html>');
  const s=r.pageEvidence!.siteEditing!,p=s.elements.find(e=>e.text==='제공 내용')!;assert.equal(p.widget?.selector,'#widget1');assert.equal(p.section?.label,'서비스 구성');assert.equal(p.region,'main');
