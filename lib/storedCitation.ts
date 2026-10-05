@@ -1,8 +1,8 @@
 import type { LlmCitationTest } from './reportSchema';
-import { aggregateCitation, brandMentioned, buildActionPlan, normalizeSources } from './citationMeasurement';
+import { CURRENT_GEO_PROTOCOL, aggregateCitation, brandMentioned, buildActionPlan, normalizeSources } from './citationMeasurement';
 /** Re-check old attribution against saved evidence; never pretend a fresh API observation occurred. */
 export function reviewStoredCitation(value: LlmCitationTest | null | undefined, fallbackUrl: string) {
-    if (!value || value.measurementVersion !== 2 || value.measurementProtocol === 'geo-compare-v2')
+    if (!value || value.measurementVersion !== 2 || value.measurementProtocol === CURRENT_GEO_PROTOCOL)
         return value;
     const target = value.targetUrl || fallbackUrl;
     const results = value.results.map(row => {

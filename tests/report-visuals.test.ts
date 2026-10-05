@@ -15,7 +15,7 @@ test('visual metrics separate failed, unverified and absent observations from me
   const citation={...fixture.llmCitationTest!,results:[row({cited:true,brandMentioned:true}),row({engine:'gemini',status:'error'}),row({question:'비용 기준을 어떻게 확인하나요?',status:'unverified',citationVerified:false,brandMentioned:true})]};
   const visual=buildObservationVisual(citation)!;
   assert.equal(visual.citationRate,100);assert.equal(visual.sourceTotal,1);assert.equal(visual.mentionRate,100);assert.equal(visual.mentionTotal,2);
-  assert.deepEqual(visual.distributions[0].counts,{cited:1,uncited:0,unverified:1,failed:0});
+  assert.deepEqual(visual.distributions[0].counts,{cited:1,uncited:0,unverified:1,unavailable:0,failed:0});
   assert.equal(visual.questions[0].cells.gemini.mentioned,null);assert.equal(visual.questions[1].cells.gemini.state,'missing');
   const failed=buildObservationVisual({...citation,results:[row({status:'error'})]})!;assert.equal(failed.citationRate,null);assert.equal(failed.mentionRate,null);
   const zero=buildObservationVisual({...citation,results:[row()]})!;assert.equal(zero.citationRate,0);assert.equal(zero.mentionRate,0);

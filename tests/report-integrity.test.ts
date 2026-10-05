@@ -98,7 +98,7 @@ test('old stored citation attribution is rechecked from evidence without claimin
     const absent = reviewStoredCitation({ ...old, results: [{ ...old.results[0], sources: undefined, responseText: undefined }] }, fixture.url)!;
     assert.equal(absent.ownedCitationRate, null);
     assert.equal(absent.mentionRate, null);
-    assert.equal(reviewStoredCitation({ ...old, measurementProtocol: 'geo-compare-v2' }, fixture.url)?.measurementProtocol, 'geo-compare-v2');
+    assert.equal(reviewStoredCitation({ ...old, measurementProtocol: 'geo-compare-v3' }, fixture.url)?.measurementProtocol, 'geo-compare-v3');
 });
 test('changing attribution protocol prevents a fabricated GEO gain', () => {
     const old = { ...fixture.llmCitationTest!, measurementProtocol: 'geo-compare-v1' as const, targetUrl: fixture.url, brandName: '브랜드', cacheHit: false, results: [{ ...fixture.llmCitationTest!.results[0], model: 'm', requestFingerprint: 'x', measuredAt: '2026-10-01T00:00:00Z' }] };

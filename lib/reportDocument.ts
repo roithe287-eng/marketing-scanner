@@ -1,3 +1,4 @@
+import {keywordFrequencyScope,keywordDensityNote} from './keywordFrequencyPresentation';
 import {presentBenchmark} from './benchmarkPresentation';
 import {AD_BUDGET_NOTE} from './adBudgetScenario';
 import {buildNaverReportDocument} from './naverReportDocument';
@@ -26,8 +27,8 @@ const labels:Record<string,string> = {
   totalTokens:'전체 토큰 수',uniqueSingles:'단일 키워드 수',uniquePhrases:'구문 수',singles:'단일 키워드',phrases:'키워드 구문',count:'횟수',density:'빈도(%)',inTitle:'제목 포함',inMetaDescription:'설명 포함',searchKeyword:'검색 키워드',keywordSource:'키워드 생성 방식',competitors:'경쟁사',rank:'순위',link:'페이지 링크',description:'설명',domain:'도메인',metaTitle:'페이지 제목',metaDescription:'메타 설명',h1:'H1',ctaTexts:'CTA 문구',fetchError:'수집 오류',keyMessage:'핵심 메시지',differentiation:'차별점',overallComparison:'전체 비교',ourPositioning:'우리 포지셔닝',buttonText:'버튼 문구',url:'URL',
 };
 const values:Record<string,string> = {chatgpt:'OpenAI',gemini:'Gemini',true:'예',false:'아니오',ok:'정상',pending:'분석 중',complete:'완료',empty:'비교 대상 없음',error:'실패',timeout:'시간 초과',unavailable:'미설정',unverified:'검색·출처 확인 불가',own:'자사',external:'외부',unresolved:'대상 도메인 미확인',needs_review:'검토 필요',review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요',pass:'통과',warning:'주의',fail:'미충족',high:'높음',medium:'보통',low:'낮음',brand:'브랜드 확인',industry:'업종 비교',service:'서비스',local:'지역·특성'};
-Object.assign(labels, {evidenceStatus:'근거 상태',evidenceNote:'근거 재확인 안내',methodVersion:'집계 방식 버전',windowDays:'집계 기간(일)',scoringMethod:'진단 방식',scopeNote:'비교 범위',measurementProtocol:'비교 측정 규칙',brandName:'브랜드 판정 기준',requestFingerprint:'요청 설정 식별자',filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
-Object.assign(values, {review:'재확인 필요',keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
+Object.assign(labels, {evidenceStatus:'근거 상태',evidenceNote:'근거 재확인 안내',methodVersion:'집계 방식 버전',scope:'집계 범위',sourceLength:'집계한 본문 글자 수',bodyTruncated:'본문 일부만 집계',totalPhrases:'집계 대상 인접 단어쌍 수',windowDays:'집계 기간(일)',scoringMethod:'진단 방식',scopeNote:'비교 범위',measurementProtocol:'비교 측정 규칙',brandName:'브랜드 판정 기준',requestFingerprint:'요청 설정 식별자',filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
+Object.assign(values, {body:'수집 본문',review:'재확인 필요',keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
 export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   const blocks:ReportBlock[] = [
     {kind:'title',text:`${report.meta?.siteName || report.meta?.domain || '웹사이트'} 마케팅 진단 리포트`},
@@ -40,6 +41,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   if(report.integrity){blocks.push({kind:'heading',text:'결과의 근거와 검증 범위'},{kind:'body',text:report.integrity.note});for(const warning of report.integrity.warnings)blocks.push({kind:'body',text:warning.message});}
   if(report.analysisWarnings?.length)for(const warning of report.analysisWarnings)blocks.push({kind:'body',text:`부가 분석 확인 필요: ${warning.label} · ${warning.status}`});
   if(report.scoringMethod)blocks.push({kind:'body',text:'종합 점수는 8개 AI 평가 점수의 산술평균입니다. 실제 성과·모바일 성능·AI 인용률이 아닙니다.'});
+  if(report.keywordFrequency)blocks.push({kind:'heading',text:'반복 표현 집계 범위'},{kind:'body',text:keywordFrequencyScope(report.keywordFrequency)},{kind:'body',text:keywordDensityNote(report.keywordFrequency,false)},{kind:'body',text:keywordDensityNote(report.keywordFrequency,true)});
   blocks.push(...buildInsightsDocument(report));
   blocks.push(...buildGrowthDocument(report));
   blocks.push(...buildExecutionDocument(report));

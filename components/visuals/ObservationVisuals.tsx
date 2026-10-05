@@ -22,7 +22,7 @@ const filters=[['all','전체 질문'],['cited','인용 확인 포함'],['uncite
 export function QuestionMatrix({citation,selected,onSelect}:{citation:LlmCitationTest;selected:string|null;onSelect:(question:string|null)=>void}) {
   const [filter,setFilter]=useState<string>('all');
   const data=buildObservationVisual(citation);if(!data)return null;
-  const questions=data.questions.filter(q=>filter==='all'||Object.values(q.cells).some(c=>filter==='unknown'?['failed','unverified','missing','duplicate'].includes(c.state):c.state===filter));
+  const questions=data.questions.filter(q=>filter==='all'||Object.values(q.cells).some(c=>filter==='unknown'?['failed','unverified','unavailable','missing','duplicate'].includes(c.state):c.state===filter));
   return <div aria-label="질문별 AI 관측 지도">
     <div className="flex flex-wrap items-end justify-between gap-3"><div><h4 className="text-lg font-black">질문별 AI 관측 지도</h4><p className="mt-1 text-xs leading-6 text-jm-gray">질문을 선택하면 아래에서 답변과 출처를 확인할 수 있습니다.</p></div><p role="status" className="text-xs text-jm-gray">{questions.length} / {data.questions.length}개 질문</p></div>
     <div className="my-3 flex flex-wrap gap-2" role="group" aria-label="질문 상태 필터">{filters.map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} onClick={()=>{setFilter(key);onSelect(null);}} className={`rounded-full border px-3 py-2 text-xs font-bold ${filter===key?'border-slate-900 bg-slate-900 text-white':'bg-white text-slate-600'}`}>{label}</button>)}</div>

@@ -1,6 +1,7 @@
 import {sameSite,siteIdentity} from './siteIdentity';
 import type { LlmCitationQuestionResult, LlmCitationTest } from './reportSchema';
 
+export const CURRENT_GEO_PROTOCOL = 'geo-compare-v3' as const;
 export type CitationSource = NonNullable<LlmCitationQuestionResult['sources']>[number];
 export function safeHttpUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
@@ -55,7 +56,7 @@ export function aggregateCitation(results: LlmCitationQuestionResult[]) {
   const pair=(r:LlmCitationQuestionResult)=>JSON.stringify([r.engine,r.question.trim()]);
   results.forEach(r=>counts.set(pair(r),(counts.get(pair(r))||0)+1));
   const unique=valid.filter(r=>counts.get(pair(r))===1);
-  const measured = unique.filter(r => r.searchUsed && r.citationVerified);
+  const measured = unique.filter(r => r.status === 'ok' && r.searchUsed && r.citationVerified);
   const citationRate = rate(measured, r => r.cited);
   return {
     totalTests: results.length, validTests: valid.length, citationValidTests: measured.length,
@@ -72,10 +73,11 @@ export function aggregateCitation(results: LlmCitationQuestionResult[]) {
   };
 }
 export function buildActionPlan(results: LlmCitationQuestionResult[], url: string, hasContent: boolean): NonNullable<LlmCitationTest['actionPlan']> {
-  return [...new Set(results.map(r => r.question))].map(question => {
-    const rows = results.filter(r => r.question === question);
-    const source = rows.flatMap(r => r.sources || []).find(s => s.ownership === 'own');
-    const measured = rows.some(r => r.searchUsed && r.citationVerified);
+  return [...new Set(results.map(r => r.question.trim()))].map(question => {
+    const rows = results.filter(r => r.question.trim() === question);
+    const measuredRows=rows.filter(r=>r.status==='ok'&&r.searchUsed===true&&r.citationVerified===true&&rows.filter(other=>other.engine===r.engine).length===1);
+    const source = measuredRows.filter(r=>r.cited).flatMap(r => r.sources || []).find(s => s.ownership === 'own');
+    const measured = measuredRows.length>0;
     return {
       question, journey: rows[0]?.journey || '검토', accuracy: 'needs_review' as const,
       targetUrl: source?.url || (hasContent ? url : undefined),

@@ -5,9 +5,9 @@ import { getOpenAI } from './openaiClient';
 import type { ExtractedWebsiteData } from './extractWebsite';
 import { LlmCitationTestSchema, type LlmCitationTest, type LlmCitationQuestionResult } from './reportSchema';
 import { getRedisClient } from './redisClient';
-import { aggregateCitation, brandMentioned, buildActionPlan, normalizeSources, parseGemini, parseOpenAI, safeHttpUrl } from './citationMeasurement';
+import { CURRENT_GEO_PROTOCOL, aggregateCitation, brandMentioned, buildActionPlan, normalizeSources, parseGemini, parseOpenAI, safeHttpUrl } from './citationMeasurement';
 
-const VERSION = 'geo-v2.3';
+const VERSION = 'geo-v2.4';
 const TIMEOUT = 22_000;
 const QuestionSchema = z.object({question:z.string().min(5).max(250),type:z.enum(['brand','industry','service','local']),journey:z.string().max(40)});
 export type CitationQuestion = z.infer<typeof QuestionSchema>;
@@ -101,7 +101,7 @@ export async function analyzeCitation(data: ExtractedWebsiteData, custom?: strin
     try {
       const raw = await redis.get(key);
       const checked = LlmCitationTestSchema.safeParse(typeof raw === 'string' ? JSON.parse(raw) : raw);
-      if (checked.success && checked.data.measurementVersion === 2 && checked.data.measurementProtocol === 'geo-compare-v2') return {...checked.data,cacheHit:true};
+      if (checked.success && checked.data.measurementVersion === 2 && checked.data.measurementProtocol === CURRENT_GEO_PROTOCOL) return {...checked.data,cacheHit:true};
     } catch { /* Cache availability must not stop measurement. */ }
   }
   const pendingKey = options.fresh ? `${key}:fresh` : key;
@@ -117,7 +117,7 @@ export async function analyzeCitation(data: ExtractedWebsiteData, custom?: strin
     const results = await Promise.all(questions.flatMap(q => [measure('chatgpt',q,brand,target),measure('gemini',q,brand,target)]));
     const metrics = aggregateCitation(results);
     const result:LlmCitationTest = {
-      ...metrics,measurementVersion:2,measurementProtocol:'geo-compare-v2',targetUrl:target,brandName:brand,questionSetId:digest(JSON.stringify(questions)),measuredAt:new Date().toISOString(),cacheHit:false,results,
+      ...metrics,measurementVersion:2,measurementProtocol:CURRENT_GEO_PROTOCOL,targetUrl:target,brandName:brand,questionSetId:digest(JSON.stringify(questions)),measuredAt:new Date().toISOString(),cacheHit:false,results,
       summary:`${metrics.totalTests}건 중 정상 답변 ${metrics.validTests}건, 출처 판정 ${metrics.citationValidTests}건. 이 질문 세트와 측정 시점에 한정한 API 관측입니다.`,
       priorityActions:['질문별 출처를 열어 자사 정보의 정확성과 최신성을 확인하세요.','입력 페이지의 질문별 직접 답변과 근거를 보완한 뒤 같은 질문으로 비교하세요.'],
       actionPlan:buildActionPlan(results,target,data.bodyText.trim().length >= 120),

@@ -646,7 +646,10 @@ export async function extractWebsite(
     .slice(0, 30);
 
   // v46-W2: thin content 판정용 원본 길이 (slice 전)
-  const fullBodyText = $("body").text().replace(/\s+/g, " ").trim();
+  const textBody = $("body").clone();
+  textBody.find("br").replaceWith("\n");
+  textBody.find("p,div,section,article,header,footer,nav,aside,h1,h2,h3,h4,h5,h6,li,tr,td,th,dt,dd,blockquote").each((_,el)=>{ $(el).prepend("\n").append("\n"); });
+  const fullBodyText = textBody.text().replace(/[^\S\n]+/g, " ").replace(/ *\n */g,"\n").replace(/\n{2,}/g,"\n").trim();
   const bodyTextLength = fullBodyText.length;
   const bodyText = fullBodyText.slice(0, 12000);
 
