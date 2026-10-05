@@ -5,6 +5,8 @@ export const GUIDE_SOURCES={
  canonical:{title:'Google · 대표 URL 지정',url:'https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls'},
  robots:{title:'Google · robots 메타 지시',url:'https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag'},
  imwebWidget:{title:'아임웹 · 위젯 선택·설정',url:'https://www.imweb.me/qna?mode=faq&q=5904'},
+ imwebCode:{title:'아임웹 · 코드 위젯 편집',url:'https://imweb.me/qna?mode=faq&q=329'},
+ imwebHeader:{title:'아임웹 · 상단 전용 위젯',url:'https://www.imweb.me/qna?mode=faq&q=71302'},
  imwebForm:{title:'아임웹 · 입력폼 설정',url:'https://www.imweb.me/qna?mode=faq&q=71185'},
  title:{title:'Google · 검색 제목',url:'https://developers.google.com/search/docs/appearance/title-link'},
  description:{title:'Google · 검색 설명 생성',url:'https://developers.google.com/search/docs/appearance/snippet'},
