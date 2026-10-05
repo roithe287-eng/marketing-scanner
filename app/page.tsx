@@ -163,7 +163,7 @@ export default function HomePage() {
           <div
             className="report-page-content"
           >
-            <ReportLayout report={report} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
+            <ReportLayout report={report} onComparisonChange={baseline=>setReport(prev=>prev?{...prev,diagnosisBaseline:baseline}:prev)} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
               const request=competitorRequest.current;
               if(request && !competitorLoading) void fetchCompetitor(request.url,request.hints,request.run);
             }:undefined} actions={<><DownloadReportButton targetId="report-area" report={report} pending={competitorLoading} direct/>{(access.kind==='internal'||access.account?.features.reports)&&<ShareButton report={report} competitorLoading={competitorLoading}/>}</>}/>

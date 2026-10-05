@@ -351,9 +351,29 @@ export const PageEvidenceSchema=z.object({
 });
 export type PageEvidence=z.infer<typeof PageEvidenceSchema>;
 
+export const DiagnosisScoresSchema = z.object({
+    firstView: z.number().min(0).max(100),
+    cta: z.number().min(0).max(100),
+    copywriting: z.number().min(0).max(100),
+    trust: z.number().min(0).max(100),
+    conversionFlow: z.number().min(0).max(100),
+    adLanding: z.number().min(0).max(100),
+    mobileUx: z.number().min(0).max(100),
+    seo: z.number().min(0).max(100),
+  });
+
+export const DiagnosisCheckSchema=z.object({key:z.string().max(600),label:z.string().max(600),status:z.enum(['pass','warning','fail','review']),evidence:z.string().max(20000),source:z.string().max(100)});
+export const DiagnosisBaselineSchema=z.object({
+ version:z.literal(1),reportId:z.string().regex(/^[A-Za-z0-9]{4,12}$/),url:z.string().max(4000),finalUrl:z.string().max(4000).optional(),capturedAt:z.string().datetime().optional(),method:z.string().max(100).optional(),overallScore:z.number().min(0).max(100),diagnosis:DiagnosisScoresSchema,checks:z.array(DiagnosisCheckSchema).max(500),
+});
+export type DiagnosisBaseline=z.infer<typeof DiagnosisBaselineSchema>;
+export type DiagnosisCheck=z.infer<typeof DiagnosisCheckSchema>;
+
 export const MarketingReportSchema = z.object({
   url: z.string(),
   pageEvidence:PageEvidenceSchema.optional(),
+  diagnosisMethod:z.string().max(100).optional(),
+  diagnosisBaseline:DiagnosisBaselineSchema.optional(),
   overallScore: z.number().min(0).max(100),
   oneLineSummary: z.string(),
   meta: z
@@ -366,16 +386,7 @@ export const MarketingReportSchema = z.object({
       domain: z.string().optional(),
     })
     .optional(),
-  diagnosis: z.object({
-    firstView: z.number().min(0).max(100),
-    cta: z.number().min(0).max(100),
-    copywriting: z.number().min(0).max(100),
-    trust: z.number().min(0).max(100),
-    conversionFlow: z.number().min(0).max(100),
-    adLanding: z.number().min(0).max(100),
-    mobileUx: z.number().min(0).max(100),
-    seo: z.number().min(0).max(100),
-  }),
+  diagnosis: DiagnosisScoresSchema,
 
   checklist: z.array(ChecklistItemSchema).optional(),
 

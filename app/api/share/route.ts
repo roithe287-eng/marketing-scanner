@@ -9,6 +9,7 @@ import {
 } from "@/lib/shareStore";
 
 import {baselineQuestions} from "@/lib/geoComparison";
+import {createDiagnosisBaseline} from '@/lib/diagnosisComparison';
 import { MarketingReportSchema } from "@/lib/reportSchema";
 
 export const runtime = "nodejs";
@@ -21,6 +22,12 @@ export async function GET(req: NextRequest) {
   if (!isShareStoreAvailable()) return NextResponse.json({message:"기준 보고서를 불러올 수 없습니다."},{status:503});
   const report = await getSharedReport(id,principal);
   if (!report) return NextResponse.json({message:"공유 보고서가 만료되었거나 찾을 수 없습니다."},{status:404});
+  if(req.nextUrl.searchParams.get('mode')==='diagnosis') {
+    const diagnosisBaseline=createDiagnosisBaseline(report,id);
+    let geoBaseline;
+    if(report.llmCitationTest){const candidate={reportId:id,url:report.url,citation:report.llmCitationTest};try{baselineQuestions(candidate);geoBaseline=candidate;}catch{ /* Page comparison does not require GEO observations. */ }}
+    return privateJson({diagnosisBaseline,geoBaseline});
+  }
   if (!report.llmCitationTest) return NextResponse.json({message:"GEO 관측이 포함된 보고서를 사용해 주세요."},{status:422});
   const baseline = {reportId:id,url:report.url,citation:report.llmCitationTest};
   try {baselineQuestions(baseline);} catch (error) {return NextResponse.json({message:error instanceof Error?error.message:"질문을 불러올 수 없습니다."},{status:422});}

@@ -4,7 +4,8 @@ import {readJson,failure} from '@/lib/security/request';
 import {publicUrl} from '@/lib/security/safeFetch';
 import {getSharedReport} from "@/lib/shareStore";
 import {baselineQuestions, canonicalPage} from "@/lib/geoComparison";
-import type {GeoBaseline} from "@/lib/reportSchema";
+import type {GeoBaseline,DiagnosisBaseline} from "@/lib/reportSchema";
+import {createDiagnosisBaseline,DIAGNOSIS_METHOD} from '@/lib/diagnosisComparison';
 import { NextRequest, NextResponse } from "next/server";
 import { extractWebsite } from "@/lib/extractWebsite";
 import { analyzeMarketing } from "@/lib/analyzeMarketing";
@@ -65,15 +66,16 @@ export async function POST(req: NextRequest) {
     }
 
     let geoBaseline: GeoBaseline | undefined;
+    let diagnosisBaseline:DiagnosisBaseline|undefined;
     let fixedQuestions: ReturnType<typeof baselineQuestions> | undefined;
     if (body.baselineId !== undefined) {
       if (typeof body.baselineId !== 'string' || !/^[A-Za-z0-9]{4,12}$/.test(body.baselineId)) return NextResponse.json({message:'기준 보고서 ID가 올바르지 않습니다.'},{status:400});
       const previous = await getSharedReport(body.baselineId,principal);
-      if (!previous?.llmCitationTest) return NextResponse.json({message:'기준 보고서가 만료되었거나 GEO 관측이 없습니다. 다른 기준 보고서를 선택해 주세요.'},{status:422});
+      if (!previous) return NextResponse.json({message:'기준 보고서를 찾을 수 없거나 접근 권한이 없습니다. 보관된 기준 보고서를 선택해 주세요.'},{status:422});
       if (!canonicalPage(url) || canonicalPage(previous.url) !== canonicalPage(url)) return NextResponse.json({message:'기준 보고서와 같은 URL로만 비교할 수 있습니다.'},{status:400});
-      geoBaseline = {reportId:body.baselineId,url:previous.url,citation:previous.llmCitationTest};
-      try {fixedQuestions = baselineQuestions(geoBaseline);} catch (error) {return NextResponse.json({message:error instanceof Error?error.message:'기준 질문을 확인할 수 없습니다.'},{status:422});}
-      if (geoQuestions !== undefined && JSON.stringify(geoQuestions.map((q:string)=>q.trim())) !== JSON.stringify(fixedQuestions.map(q=>q.question))) return NextResponse.json({message:'비교 모드에서는 기준 보고서의 질문을 그대로 사용합니다.'},{status:400});
+      diagnosisBaseline=createDiagnosisBaseline(previous,body.baselineId);
+      if(previous.llmCitationTest){const candidate={reportId:body.baselineId,url:previous.url,citation:previous.llmCitationTest};try{fixedQuestions=baselineQuestions(candidate);geoBaseline=candidate;}catch{ /* Page comparison still works without reusable GEO questions. */ }}
+      if (fixedQuestions&&geoQuestions !== undefined && JSON.stringify(geoQuestions.map((q:string)=>q.trim())) !== JSON.stringify(fixedQuestions.map(q=>q.question))) return NextResponse.json({message:'비교 모드에서는 기준 보고서의 질문을 그대로 사용합니다.'},{status:400});
     }
 
     if (!process.env.OPENAI_API_KEY) {
@@ -118,6 +120,8 @@ export async function POST(req: NextRequest) {
 
     report.url = url;
     report.pageEvidence=pageEvidence;
+    report.diagnosisMethod=`${DIAGNOSIS_METHOD}:${process.env.OPENAI_MODEL||'gpt-4.1-mini'}`;
+    if(diagnosisBaseline)report.diagnosisBaseline=diagnosisBaseline;
     report.competitorAnalysis = null;
     report.discoverability = discoverability;
     report.llmCitationTest = llmCitation;
