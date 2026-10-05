@@ -432,3 +432,37 @@ test("HTTP handlers complete inquiry → approval → activation → login → p
     200,
   );
 });
+
+test('benchmark Redis writes deduplicate repeated scans, expire old samples and separate methods/environments',async()=>{
+ const {saveBenchmarkSample,getBenchmarkStats,benchmarkKeys,BENCHMARK_WINDOW_DAYS}=await import('../lib/benchmarkStore');
+ const method='integration-v3',category='commerce',now=Date.now();
+ await Promise.all(Array.from({length:12},(_,i)=>saveBenchmarkSample(category,fixture.diagnosis,'https://repeat.example/page-'+i,method,now)));
+ assert.equal((await getBenchmarkStats(category,'https://self.example',method))?.sampleSize,1);
+ assert.equal((await getBenchmarkStats(category,'https://repeat.example',method))?.sampleSize,0);
+ await saveBenchmarkSample(category,{...fixture.diagnosis,seo:30},'https://repeat.example/changed',method,now+1);
+ // Allow getBenchmarkStats' current clock to include the final update.
+ const stats=await getBenchmarkStats(category,'https://self.example',method);
+ assert.equal(stats?.sampleSize,1);assert.equal(stats?.metrics.seo?.average,30);
+ await saveBenchmarkSample(category,fixture.diagnosis,'https://expired.example',method,now-(BENCHMARK_WINDOW_DAYS+1)*86400000);
+ await saveBenchmarkSample(category,fixture.diagnosis,'https://other.example',method);
+ assert.equal((await getBenchmarkStats(category,'https://self.example',method))?.sampleSize,2);
+ assert.equal(Number(await db().hlen(benchmarkKeys(category,method)[0])),2);
+ assert.equal((await getBenchmarkStats(category,'https://self.example','different-method'))?.sampleSize,0);
+ process.env.VERCEL_ENV='production';
+ try{assert.equal((await getBenchmarkStats(category,'https://self.example',method))?.sampleSize,0);}finally{process.env.VERCEL_ENV='preview';}
+ assert.ok(Number(await db().ttl(benchmarkKeys(category,method)[0]))>0);
+});
+
+test('private report storage and account index are saved together with expiry; legacy claims are withheld on read',async()=>{
+ const {listOwnReports}=await import('../lib/shareStore');
+ const principal:Principal={kind:'internal'};
+ const report={...fixture,industryBenchmark:{category:'commerce' as const,categoryLabel:'커머스',sampleSize:99,hasSufficientSample:true,summary:'unverified historical comparison'}};
+ const id=await saveSharedReport(report,principal);assert.ok(id);
+ assert.ok((await listOwnReports(principal)).some(r=>r?.id===id));
+ const saved=await getSharedReport(id,principal);assert.equal(saved?.industryBenchmark?.hasSufficientSample,false);assert.equal(saved?.adWasteSimulation,null);
+ assert.ok(Number(await db().ttl('ms:preview:report:'+id))>0);
+ const index=key('reports:internal');await db().del(index);await db().set(index,'wrong-type-test');
+ const before=await db().keys('ms:preview:report:*');
+ try{await assert.rejects(()=>saveSharedReport(fixture,principal));assert.deepEqual((await db().keys('ms:preview:report:*')).sort(),before.sort(),'failed index write cannot leave an orphan report');}
+ finally{await db().del(index);}
+});

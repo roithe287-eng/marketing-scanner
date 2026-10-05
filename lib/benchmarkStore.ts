@@ -1,186 +1,67 @@
-import { getRedisClient } from "./redisClient";
-import { IndustryCategory } from "./reportSchema";
-
-/**
- * v45-W3: 업종별 벤치마크 익명 집계 시스템
- * - URL·회사명 절대 저장 안 함
- * - 점수 8개 지표만 카테고리별로 익명 집계
- * - Redis Sorted Set 활용 (각 지표별)
- *
- * Redis 키 구조:
- *   ms:bench:{category}:{metric}     (Sorted Set, member=random_id, score=metric_value)
- *   ms:bench:{category}:count        (String, 표본 개수)
- *   ms:bench:{category}:updated_at   (String, 마지막 업데이트 시각)
- *
- * TTL 없음 (영구 누적) · 매우 안전한 익명 데이터
- */
-
-// 집계할 8개 지표 (기존 diagnosis 필드와 매칭)
-export const BENCHMARK_METRICS = [
-  "firstView",
-  "cta",
-  "copywriting",
-  "trust",
-  "conversionFlow",
-  "adLanding",
-  "mobileUx",
-  "seo",
-] as const;
-
-export type BenchmarkMetric = (typeof BENCHMARK_METRICS)[number];
-
-export const METRIC_LABELS: Record<BenchmarkMetric, string> = {
-  firstView: "첫 화면",
-  cta: "CTA",
-  copywriting: "카피",
-  trust: "신뢰",
-  conversionFlow: "전환 흐름",
-  adLanding: "광고 랜딩",
-  mobileUx: "모바일 UX",
-  seo: "SEO",
-};
-
+import { createHash } from 'node:crypto';
+import { getRedisClient } from './redisClient';
+import { DiagnosisScoresSchema, type IndustryCategory } from './reportSchema';
+import { siteIdentity } from './siteIdentity';
+export const BENCHMARK_METRICS = ['firstView', 'cta', 'copywriting', 'trust', 'conversionFlow', 'adLanding', 'mobileUx', 'seo'] as const;
+export type BenchmarkMetric = typeof BENCHMARK_METRICS[number];
 export type DiagnosisScores = Record<BenchmarkMetric, number>;
-
-/**
- * 랜덤 익명 ID 생성 (URL·회사명 저장 안 함)
- */
-function randomAnonymousId(): string {
-  const t = Date.now().toString(36);
-  const r = Math.random().toString(36).slice(2, 10);
-  return `${t}-${r}`;
+export const METRIC_LABELS: Record<BenchmarkMetric, string> = { firstView: '첫 화면', cta: 'CTA', copywriting: '카피', trust: '신뢰', conversionFlow: '전환 흐름', adLanding: '광고 랜딩', mobileUx: '모바일 UX', seo: 'SEO' };
+export const BENCHMARK_WINDOW_DAYS = 90;
+export const BENCHMARK_CAP = 2000;
+export const BENCHMARK_NOTE = '최근 90일 동안 같은 진단 방식으로 수집한 사이트 호스트·플랫폼 계정별 최신 1건을 비교합니다. 업종·진단 방식별 최신 최대 2,000개를 보관하며 자사 표본은 제외합니다. 자동 업종 분류는 추정이며, 이 표본은 업계 전체·매출·실제 전환율을 대표하지 않습니다. 서로 다른 호스트가 같은 사업자일 수 있습니다.';
+const digest = (s: string) => createHash('sha256').update(s).digest('hex');
+export function benchmarkIdentity(url: string) { const id = siteIdentity(url); return id && (!id.shared || id.tenant) ? digest(JSON.stringify([id.host, id.tenant])) : null; }
+export function benchmarkKeys(category: IndustryCategory, method: string) {
+    const root = `ms:${process.env.VERCEL_ENV === 'preview' ? 'preview:' : ''}bench:v2:${digest(method).slice(0, 24)}:${category}`;
+    return [root + ':records', root + ':time'];
 }
-
-/**
- * 특정 카테고리에 점수 익명 저장
- * - 각 지표를 Sorted Set에 추가 (score=지표값, member=랜덤 ID)
- * - 표본 개수 카운트 +1
- */
-export async function saveBenchmarkSample(
-  category: IndustryCategory,
-  scores: DiagnosisScores
-): Promise<void> {
-  const redis = getRedisClient();
-  if (!redis) return;
-
-  try {
-    const anonId = randomAnonymousId();
-    const now = Date.now();
-
-    // 각 지표를 개별 Sorted Set에 저장
-    // Sorted Set을 쓰는 이유: 백분위 계산·통계 쿼리에 유리
-    const promises: Promise<any>[] = [];
-
-    for (const metric of BENCHMARK_METRICS) {
-      const key = `ms:bench:${category}:${metric}`;
-      const score = Math.max(0, Math.min(100, scores[metric] || 0));
-      promises.push(redis.zadd(key, { score, member: anonId }));
+export const SAVE_BENCHMARK_SCRIPT = `
+redis.call('HSET',KEYS[1],ARGV[1],ARGV[2]);redis.call('ZADD',KEYS[2],ARGV[3],ARGV[1]);
+local expired=redis.call('ZRANGEBYSCORE',KEYS[2],'-inf',ARGV[4]);
+for _,id in ipairs(expired) do redis.call('HDEL',KEYS[1],id);redis.call('ZREM',KEYS[2],id) end;
+local surplus=redis.call('ZCARD',KEYS[2])-tonumber(ARGV[5]);
+if surplus>0 then local old=redis.call('ZRANGE',KEYS[2],0,surplus-1);for _,id in ipairs(old) do redis.call('HDEL',KEYS[1],id);redis.call('ZREM',KEYS[2],id) end end;
+redis.call('EXPIRE',KEYS[1],ARGV[6]);redis.call('EXPIRE',KEYS[2],ARGV[6]);return 1`;
+export type BenchmarkSample = {
+    id: string;
+    at: number;
+    method: string;
+    scores: DiagnosisScores;
+};
+export function benchmarkStatistics(raw: unknown[], excludeId: string, method: string, now = Date.now()) {
+    const recent = new Map<string, BenchmarkSample>();
+    for (const item of raw) {
+        try {
+            const r = typeof item === 'string' ? JSON.parse(item) : item;
+            const scores = DiagnosisScoresSchema.safeParse(r?.scores);
+            if (!scores.success || typeof r.id !== 'string' || r.id === excludeId || r.method !== method || !Number.isFinite(r.at) || r.at > now || r.at <= now - BENCHMARK_WINDOW_DAYS * 86400000)
+                continue;
+            if (!recent.has(r.id) || recent.get(r.id)!.at < r.at)
+                recent.set(r.id, { id: r.id, at: r.at, method, scores: scores.data });
+        }
+        catch { /* Invalid records never become zero-valued samples. */ }
     }
-
-    // 표본 개수 증가
-    promises.push(redis.incr(`ms:bench:${category}:count`));
-
-    // 마지막 업데이트 시각
-    promises.push(redis.set(`ms:bench:${category}:updated_at`, String(now)));
-
-    await Promise.all(promises);
-  } catch (e) {
-    console.warn("[benchmark] 저장 실패:", e);
-    // 실패해도 사용자 리포트 흐름 방해 X
-  }
+    const samples = [...recent.values()].sort((a, b) => b.at - a.at || a.id.localeCompare(b.id)).slice(0, BENCHMARK_CAP);
+    const metrics = Object.fromEntries(BENCHMARK_METRICS.map(key => {
+        const scores = samples.map(r => r.scores[key]).sort((a, b) => a - b);
+        return [key, scores.length ? { average: Math.round(scores.reduce((a, b) => a + b, 0) / scores.length * 10) / 10, topTen: scores[Math.ceil(scores.length * .9) - 1] } : null];
+    })) as Record<BenchmarkMetric, {
+        average: number;
+        topTen: number;
+    } | null>;
+    return { sampleSize: samples.length, metrics };
 }
-
-/**
- * 특정 카테고리의 통계 조회
- * - 지표별 평균 (mean) · 상위 10% 컷 · 표본 개수
- */
-export async function getBenchmarkStats(
-  category: IndustryCategory
-): Promise<{
-  sampleSize: number;
-  metrics: Record<
-    BenchmarkMetric,
-    { average: number; topTen: number } | null
-  >;
-} | null> {
-  const redis = getRedisClient();
-  if (!redis) return null;
-
-  try {
-    // 표본 개수
-    const countRaw = await redis.get<string>(`ms:bench:${category}:count`);
-    const sampleSize = Number(countRaw || 0);
-
-    if (sampleSize === 0) {
-      return {
-        sampleSize: 0,
-        metrics: BENCHMARK_METRICS.reduce((acc, m) => {
-          acc[m] = null;
-          return acc;
-        }, {} as Record<BenchmarkMetric, { average: number; topTen: number } | null>),
-      };
-    }
-
-    // 각 지표별 평균·상위 10% 컷 계산
-    const metricStats: Record<
-      BenchmarkMetric,
-      { average: number; topTen: number } | null
-    > = {} as any;
-
-    const promises = BENCHMARK_METRICS.map(async (metric) => {
-      const key = `ms:bench:${category}:${metric}`;
-      try {
-        // 전체 개수 확인
-        const total = await redis!.zcard(key);
-        if (total === 0) {
-          metricStats[metric] = null;
-          return;
-        }
-
-        // 전체 스코어 배열 조회 (Sorted Set — 낮은 점수부터)
-        // 표본이 크면 offset 사용, 여기선 최대 10,000개까지 안전하게 조회
-        const cap = Math.min(10000, total);
-        const items = (await redis!.zrange(key, 0, cap - 1, {
-          withScores: true,
-        })) as Array<string | number>;
-
-        // withScores → [member, score, member, score, ...]
-        const scores: number[] = [];
-        for (let i = 1; i < items.length; i += 2) {
-          const v = Number(items[i]);
-          if (!isNaN(v)) scores.push(v);
-        }
-
-        if (scores.length === 0) {
-          metricStats[metric] = null;
-          return;
-        }
-
-        // 평균
-        const sum = scores.reduce((s, v) => s + v, 0);
-        const average = Math.round((sum / scores.length) * 10) / 10;
-
-        // 상위 10% 컷 (90th percentile)
-        const sorted = [...scores].sort((a, b) => a - b);
-        const p90Index = Math.floor(sorted.length * 0.9);
-        const topTen =
-          Math.round(sorted[Math.min(p90Index, sorted.length - 1)] * 10) / 10;
-
-        metricStats[metric] = { average, topTen };
-      } catch (e) {
-        console.warn(`[benchmark] ${category}:${metric} 통계 실패:`, e);
-        metricStats[metric] = null;
-      }
-    });
-
-    await Promise.all(promises);
-
-    return {
-      sampleSize,
-      metrics: metricStats,
-    };
-  } catch (e) {
-    console.warn("[benchmark] 통계 조회 실패:", e);
-    return null;
-  }
+export async function saveBenchmarkSample(category: IndustryCategory, scores: DiagnosisScores, url: string, method: string, now = Date.now()) {
+    const redis = getRedisClient(), id = benchmarkIdentity(url);
+    if (!redis || !id)
+        return;
+    const checked = DiagnosisScoresSchema.parse(scores);
+    await redis.eval(SAVE_BENCHMARK_SCRIPT, benchmarkKeys(category, method), [id, JSON.stringify({ id, at: now, method, scores: checked }), now, now - BENCHMARK_WINDOW_DAYS * 86400000, BENCHMARK_CAP, BENCHMARK_WINDOW_DAYS * 86400]);
+}
+export async function getBenchmarkStats(category: IndustryCategory, url: string, method: string) {
+    const redis = getRedisClient(), id = benchmarkIdentity(url);
+    if (!redis || !id)
+        return null;
+    const raw = await redis.hvals(benchmarkKeys(category, method)[0]);
+    return benchmarkStatistics(raw, id, method);
 }

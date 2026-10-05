@@ -5,6 +5,8 @@ const {spawn,execFileSync}=require('node:child_process');
 const assert=require('node:assert/strict');
 const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright':'playwright');
 const fixture=JSON.parse(execFileSync(process.execPath,['--import','tsx','--input-type=module','-e',"import {fixture} from './tests/fixtures/report.ts'; console.log(JSON.stringify(fixture))"],{encoding:'utf8'}));
+fixture.integrity={version:1,checkedAt:new Date().toISOString(),note:'원문 대조는 인용 문구의 일치를 확인하며 AI 해석의 정확성까지 검증한 것은 아닙니다.',warnings:[{field:'criticalIssues.0',message:'수집된 H1과 부재 주장이 일치하지 않아 재확인이 필요합니다.'}]};
+fixture.industryBenchmark={category:'commerce',categoryLabel:'커머스',sampleSize:500,hasSufficientSample:true,summary:'표시되면 안 되는 구버전 비교'};
 const origin='http://127.0.0.1:3018';
 const server=spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port','3018'],{stdio:['ignore','pipe','pipe']});
 let logs='';server.stdout.on('data',data=>logs+=data);server.stderr.on('data',data=>logs+=data);
@@ -54,7 +56,17 @@ try{
  await page.getByText('경쟁사 페이지 원문과 상세 분석',{exact:true}).click();await page.getByRole('button',{name:/딥다이브 분석/}).first().click();
  await page.getByText('경쟁사 상세 결과 형식을 확인하지 못했습니다. 다시 시도해 주세요.',{exact:true}).waitFor();await page.getByLabel('닫기',{exact:true}).click();deepMode='valid';
  await page.getByRole('button',{name:/딥다이브 분석/}).nth(1).click();await page.getByText('새 경쟁사 상세 결과',{exact:true}).waitFor();assert.ok((await page.getByRole('dialog').innerText()).includes('second.example'));await page.getByLabel('닫기',{exact:true}).click();checks.push('malformed competitor detail handled; a different competitor opens correctly');
+ await page.getByText('결과의 근거와 검증 범위',{exact:true}).waitFor();
+ await page.getByText('같은 업종의 수집 표본 비교',{exact:true}).click();
+ await page.getByText('이전 비교값은 중복 사이트·측정 방식·집계 기간을 확인할 수 없어 제공을 보류했습니다. 재진단하면 새 표본 기준을 적용합니다.',{exact:true}).waitFor();
+ assert.equal(await page.getByText('표시되면 안 되는 구버전 비교',{exact:true}).count(),0);
+ await page.getByText('광고비·목표 CPA 시나리오',{exact:true}).click();
+ for(const [label,value] of [['동일 기간 광고비 (원)','1000000'],['동일 기간 전환 수 (건)','100'],['직접 정한 목표 CPA (원)','8000']])await page.getByLabel(label,{exact:true}).fill(value);
+ await page.getByText('10,000원',{exact:true}).waitFor();await page.getByText('800,000원',{exact:true}).waitFor();await page.getByText('200,000원',{exact:true}).waitFor();
+ checks.push('evidence scope visible; unverified historic benchmark withheld; manual CPA arithmetic matches exact inputs');
+ await page.locator('.report-simulation').scrollIntoViewIfNeeded();await page.screenshot({path:'/tmp/marketing-scanner-integrity-desktop.png'});
  for(const width of [320,390,768,1440]){await page.setViewportSize({width,height:1000});const measurement=await page.evaluate(()=>({width:innerWidth,content:document.documentElement.scrollWidth}));assert.ok(measurement.content<=width+1,JSON.stringify(measurement));}checks.push('report and new notice fit 320/390/768/1440px viewports');
+ await page.setViewportSize({width:390,height:900});await page.locator('.report-simulation').scrollIntoViewIfNeeded();await page.screenshot({path:'/tmp/marketing-scanner-integrity-mobile.png'});
  accessMode='malformed';await page.evaluate(()=>window.dispatchEvent(new Event('focus')));await page.getByText('접근 권한을 확인하지 못했습니다. 새로고침해 주세요.',{exact:true}).waitFor();checks.push('malformed access response fails closed');
  assert.deepEqual(errors,[]);console.log(JSON.stringify({checks,uncaughtBrowserErrors:errors,analysisRequests:count,shareAttempts:shareCalls},null,2));
 }finally{if(browser)await browser.close();server.kill();}

@@ -29,7 +29,7 @@ test('Gemini counts only grounding chunks actually supporting the response',()=>
   assert.equal(result.text,'최종 답변');assert.equal(result.sources.length,1);assert.equal(result.sources[0].ownership,'external');
 });
 test('failed, unavailable and unverified searches are excluded from citation denominator',()=>{
-  const stats=aggregateCitation([row({cited:true,brandMentioned:true,branded:true}),row(),row({status:'timeout',citationVerified:false}),row({status:'unavailable'}),row({status:'unverified',searchUsed:false,citationVerified:false,brandMentioned:true})]);
+  const stats=aggregateCitation([row({cited:true,brandMentioned:true,branded:true}),row(),row({status:'timeout',citationVerified:false}),row({status:'unavailable'}),row({status:'unverified',searchUsed:false,citationVerified:false,brandMentioned:true})].map((r,i)=>({...r,question:`독립 질문 ${i}`})));
   assert.equal(stats.validTests,3);assert.equal(stats.citationValidTests,2);assert.equal(stats.ownedCitationRate,50);assert.equal(stats.mentionRate,67);assert.equal(stats.failedTests,2);assert.equal(stats.brandedCitationRate,100);assert.equal(stats.unbrandedCitationRate,0);
 });
 test('zero valid observations are not displayed as zero percent',()=>{

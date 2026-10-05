@@ -1,3 +1,5 @@
+import {presentBenchmark} from './benchmarkPresentation';
+import {AD_BUDGET_NOTE} from './adBudgetScenario';
 import {buildNaverReportDocument} from './naverReportDocument';
 import {buildExecutionDocument} from './executionDocument';
 import {buildSiteGuidebookDocument} from './siteGuidebookDocument';
@@ -19,14 +21,13 @@ const labels:Record<string,string> = {
   checks:'점검 결과',notes:'참고',seoFoundation:'SEO 기반',contentStructure:'콘텐츠 구조',redundancy:'콘텐츠 중복',geo:'GEO',structuredData:'구조화 데이터',eeat:'경험·전문성·신뢰',localBrand:'지역·브랜드',aiAnswerability:'AI 답변 대응',siteType:'사이트 유형',
   citationRate:'구버전 인용률(언급 기반)',totalTests:'총 측정 수',totalCited:'자사 출처 확인 수',engineScores:'엔진별 인용 지표',chatgpt:'OpenAI',gemini:'Gemini',results:'질문별 답변·출처',questionType:'질문 유형',cited:'자사 출처 확인',citationRank:'구버전 답변 목록 위치',responseSnippet:'답변 발췌',reasoning:'판정 설명',
   statusLabel:'측정 상태',brandMentioned:'브랜드 언급',branded:'브랜드 포함 질문',journey:'고객 여정',model:'측정 모델',measuredAt:'측정 시각(UTC)',durationMs:'소요 시간(ms)',searchUsed:'검색 수행 확인',citationVerified:'출처 판정 가능',sources:'출처 링크',ownership:'출처 구분',responseText:'답변 원문',errorMessage:'측정 오류',questionSetId:'질문 세트 ID',cacheHit:'저장된 측정 재사용',validTests:'정상 답변 수',citationValidTests:'출처 판정 분모',failedTests:'실패·미설정 수',mentionRate:'브랜드 언급률(%)',ownedCitationRate:'자사 출처 인용률(%)',brandedCitationRate:'브랜드 포함 질문 인용률(%)',unbrandedCitationRate:'브랜드 미포함 질문 인용률(%)',actionPlan:'질문별 실행 과제',targetUrl:'검토 페이지',action:'권장 조치',nextStep:'다음 실행',accuracy:'사실 정확도',
-  baseWasteRate:'추정 낭비율(%)',contributionFactors:'기여 요인',scenarios:'개선 시나리오',savingAmount:'예상 절감액(원)',savingRate:'예상 절감률(%)',duration:'기간',actions:'실행 과제',
   totalKeywords:'키워드 수',averageRank:'평균 순위',visibleCount:'노출 수',topFiveCount:'상위 5위 수',hiddenCount:'미노출 수',keywords:'키워드별 결과',keyword:'키워드',naverWebRank:'네이버 웹 순위',naverBlogRank:'네이버 블로그 순위',totalResults:'검색 결과 수',competitorAtTop:'상위 경쟁사',
-  category:'분류',categoryLabel:'업종',sampleSize:'표본 수',hasSufficientSample:'표본 충분 여부',metrics:'영역별 비교',ours:'우리 점수',average:'평균',topTen:'상위 10%',gapVsAverage:'평균과 차이',gapVsTopTen:'상위와 차이',strongestArea:'강점',weakestArea:'보완점',naverRef:'참고',group:'점검 그룹',isLocalBusiness:'지역 사업 여부',placeScore:'플레이스 점수',advisorScore:'서치어드바이저 점수',counts:'항목 수',pass:'통과',warning:'주의',fail:'미충족',
+  category:'분류',categoryLabel:'업종',sampleSize:'표본 수',hasSufficientSample:'표본 충분 여부',metrics:'영역별 비교',ours:'우리 점수',average:'평균',topTen:'표본 90백분위',gapVsAverage:'평균과 차이',gapVsTopTen:'상위와 차이',strongestArea:'강점',weakestArea:'보완점',naverRef:'참고',group:'점검 그룹',isLocalBusiness:'지역 사업 여부',placeScore:'플레이스 점수',advisorScore:'서치어드바이저 점수',counts:'항목 수',pass:'통과',warning:'주의',fail:'미충족',
   totalTokens:'전체 토큰 수',uniqueSingles:'단일 키워드 수',uniquePhrases:'구문 수',singles:'단일 키워드',phrases:'키워드 구문',count:'횟수',density:'빈도(%)',inTitle:'제목 포함',inMetaDescription:'설명 포함',searchKeyword:'검색 키워드',keywordSource:'키워드 생성 방식',competitors:'경쟁사',rank:'순위',link:'페이지 링크',description:'설명',domain:'도메인',metaTitle:'페이지 제목',metaDescription:'메타 설명',h1:'H1',ctaTexts:'CTA 문구',fetchError:'수집 오류',keyMessage:'핵심 메시지',differentiation:'차별점',overallComparison:'전체 비교',ourPositioning:'우리 포지셔닝',buttonText:'버튼 문구',url:'URL',
 };
 const values:Record<string,string> = {chatgpt:'OpenAI',gemini:'Gemini',true:'예',false:'아니오',ok:'정상',pending:'분석 중',complete:'완료',empty:'비교 대상 없음',error:'실패',timeout:'시간 초과',unavailable:'미설정',unverified:'검색·출처 확인 불가',own:'자사',external:'외부',unresolved:'대상 도메인 미확인',needs_review:'검토 필요',review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요',pass:'통과',warning:'주의',fail:'미충족',high:'높음',medium:'보통',low:'낮음',brand:'브랜드 확인',industry:'업종 비교',service:'서비스',local:'지역·특성'};
-Object.assign(labels, {measurementProtocol:'비교 측정 규칙',brandName:'브랜드 판정 기준',requestFingerprint:'요청 설정 식별자',filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
-Object.assign(values, {keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
+Object.assign(labels, {evidenceStatus:'근거 상태',evidenceNote:'근거 재확인 안내',methodVersion:'집계 방식 버전',windowDays:'집계 기간(일)',scoringMethod:'진단 방식',scopeNote:'비교 범위',measurementProtocol:'비교 측정 규칙',brandName:'브랜드 판정 기준',requestFingerprint:'요청 설정 식별자',filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
+Object.assign(values, {review:'재확인 필요',keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
 export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   const blocks:ReportBlock[] = [
     {kind:'title',text:`${report.meta?.siteName || report.meta?.domain || '웹사이트'} 마케팅 진단 리포트`},
@@ -35,6 +36,10 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     {kind:'body',text:report.oneLineSummary},
     {kind:'body',text:'전체 상세 내용이 포함된 결과 스냅샷입니다. AI 진단과 시뮬레이션은 검토를 위한 참고 자료이며 성과를 보장하지 않습니다.'},
   ];
+  blocks.push({kind:'heading',text:'광고비·목표 CPA 시나리오'},{kind:'body',text:AD_BUDGET_NOTE+' 화면 입력값은 저장되지 않습니다. CPA=광고비÷전환 수, 목표 예산=직접 정한 목표 CPA×현재 전환 수입니다. 절감 효과 예측이 아닙니다.'});
+  if(report.integrity){blocks.push({kind:'heading',text:'결과의 근거와 검증 범위'},{kind:'body',text:report.integrity.note});for(const warning of report.integrity.warnings)blocks.push({kind:'body',text:warning.message});}
+  if(report.analysisWarnings?.length)for(const warning of report.analysisWarnings)blocks.push({kind:'body',text:`부가 분석 확인 필요: ${warning.label} · ${warning.status}`});
+  if(report.scoringMethod)blocks.push({kind:'body',text:'종합 점수는 8개 AI 평가 점수의 산술평균입니다. 실제 성과·모바일 성능·AI 인용률이 아닙니다.'});
   blocks.push(...buildInsightsDocument(report));
   blocks.push(...buildGrowthDocument(report));
   blocks.push(...buildExecutionDocument(report));
@@ -96,7 +101,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     ['진단 체크리스트',report.checklist],['빠른 개선 과제',report.quickWinsDetailed || report.quickWins],
     ['우선순위 로드맵',report.priorityRoadmap],['카피 개선',report.exampleCopy],
     ['키워드 빈도',report.keywordFrequency],
-    ['업종 벤치마크',report.industryBenchmark],['광고비 낭비 시뮬레이션 (추정)',report.adWasteSimulation],
+    ['수집 표본 참고 비교',presentBenchmark(report.industryBenchmark)],
     ['경쟁사 분석 상태',report.competitorStatus],['경쟁사 분석',report.competitorAnalysis],['다음 단계',report.finalCta],
   ];
   for (const [title,data] of sections) {

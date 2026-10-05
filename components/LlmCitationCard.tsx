@@ -37,7 +37,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
         <summary className="cursor-pointer font-bold text-sm leading-6">
           <span className="text-jm-red">{r.engine === 'chatgpt' ? 'OpenAI' : 'Gemini'} · GEO {modern?'답변 관측':'구버전 측정'} · {r.journey || r.questionType}</span>
           <span className="block mt-1 break-words">{r.question}</span>
-          <span className="block font-normal text-jm-gray">{!modern ? (r.cited ? '브랜드 언급 있음' : '브랜드 언급 없음') : r.status === 'ok' ? `브랜드 언급 ${r.brandMentioned ? '있음' : '없음'} · 자사 출처 ${r.cited ? '확인' : '없음'}` : r.status === 'unverified' ? '답변 수신 · 검색 또는 출처 확인 불가' : r.errorMessage || '측정 실패'} · 답변·출처 펼치기</span>
+          <span className="block font-normal text-jm-gray">{!modern ? (r.cited ? '브랜드 언급 있음' : '브랜드 언급 없음') : r.status === 'ok' ? `브랜드 언급 ${typeof r.brandMentioned!=='boolean'?'미확인':r.brandMentioned ? '있음' : '없음'} · 자사 출처 ${r.cited ? '확인' : '없음'}` : r.status === 'unverified' ? '답변 수신 · 검색 또는 출처 확인 불가' : r.errorMessage || '측정 실패'} · 답변·출처 펼치기</span>
         </summary>
         <div className="pt-4 space-y-3 text-sm leading-7">
           <p className="text-xs text-jm-gray">{r.model} {r.measuredAt && `· ${r.measuredAt}`} {r.durationMs != null && `· ${(r.durationMs/1000).toFixed(1)}초`}</p>

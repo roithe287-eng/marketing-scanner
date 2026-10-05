@@ -1,3 +1,4 @@
+import {sameSite,siteIdentity} from './siteIdentity';
 import type { LlmCitationQuestionResult, LlmCitationTest } from './reportSchema';
 
 export type CitationSource = NonNullable<LlmCitationQuestionResult['sources']>[number];
@@ -5,18 +6,16 @@ export function safeHttpUrl(value: unknown): string | null {
   if (typeof value !== 'string') return null;
   try { const u = new URL(value); return /^https?:$/.test(u.protocol) && !u.username && !u.password ? u.href : null; } catch { return null; }
 }
-export function ownHost(url: string, target: string): boolean {
-  try {
-    const host = new URL(url).hostname.toLowerCase().replace(/^www\./, '');
-    const own = new URL(target).hostname.toLowerCase().replace(/^www\./, '');
-    return host === own || host.endsWith(`.${own}`);
-  } catch { return false; }
-}
+export const ownHost=sameSite;
 export function brandMentioned(text: string, brand: string, target: string): boolean {
   const normalized = text.normalize('NFKC').toLowerCase();
   const name = brand.normalize('NFKC').toLowerCase().trim();
-  const host = new URL(target).hostname.replace(/^www\./, '').toLowerCase();
-  return (name.length >= 2 && normalized.includes(name)) || normalized.includes(host);
+  const identity=siteIdentity(target);if(!identity)return false;
+  const escaped=(v:string)=>v.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  const nameMatch=name.length>=2&&new RegExp('(^|[^\\p{L}\\p{N}])'+escaped(name)+'(?=$|[^\\p{L}\\p{N}]|은|는|이|가|을|를|의|에|와|과|에서)','u').test(normalized);
+  const reference=identity.shared?(identity.tenant?identity.host+'/'+identity.tenant:''):identity.host;
+  const hostMatch=!!reference&&new RegExp('(^|[^a-z0-9._-])'+escaped(reference)+'(?=$|[^a-z0-9._-])','i').test(normalized);
+  return nameMatch||hostMatch;
 }
 export function normalizeSources(raw: {url?: unknown; title?: unknown}[], target: string): CitationSource[] {
   const seen = new Set<string>();
@@ -52,12 +51,16 @@ function rate(rows: LlmCitationQuestionResult[], match: (r: LlmCitationQuestionR
 }
 export function aggregateCitation(results: LlmCitationQuestionResult[]) {
   const valid = results.filter(r => r.status === 'ok' || r.status === 'unverified');
-  const measured = valid.filter(r => r.searchUsed && r.citationVerified);
+  const counts=new Map<string,number>();
+  const pair=(r:LlmCitationQuestionResult)=>JSON.stringify([r.engine,r.question.trim()]);
+  results.forEach(r=>counts.set(pair(r),(counts.get(pair(r))||0)+1));
+  const unique=valid.filter(r=>counts.get(pair(r))===1);
+  const measured = unique.filter(r => r.searchUsed && r.citationVerified);
   const citationRate = rate(measured, r => r.cited);
   return {
     totalTests: results.length, validTests: valid.length, citationValidTests: measured.length,
     failedTests: results.length - valid.length, totalCited: measured.filter(r => r.cited).length,
-    mentionRate: rate(valid, r => !!r.brandMentioned), ownedCitationRate: citationRate,
+    mentionRate: rate(unique.filter(r=>typeof r.brandMentioned==='boolean'), r => !!r.brandMentioned), ownedCitationRate: citationRate,
     brandedCitationRate: rate(measured.filter(r => r.branded), r => r.cited),
     unbrandedCitationRate: rate(measured.filter(r => !r.branded), r => r.cited),
     // Retained for older consumers only. v2 UI uses nullable metrics above.

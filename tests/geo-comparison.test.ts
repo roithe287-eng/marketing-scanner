@@ -69,7 +69,7 @@ test('fresh fixed-question runs bypass stored observations and preserve measurem
     if (String(input).startsWith('https://test.upstash.io/')) {
       const commands=JSON.parse(String(init?.body)) as string[][];
       return Response.json(commands.map(command=>{
-        if(command[0].toLowerCase()==='get') {reads++;return {result:Buffer.from(JSON.stringify(report().llmCitationTest)).toString('base64')};}
+        if(command[0].toLowerCase()==='get') {reads++;return {result:Buffer.from(JSON.stringify({...report().llmCitationTest,measurementProtocol:'geo-compare-v2'})).toString('base64')};}
         return {result:Buffer.from('OK').toString('base64')};
       }));
     }
@@ -82,7 +82,7 @@ test('fresh fixed-question runs bypass stored observations and preserve measurem
     const first=await analyzeCitation(data,undefined,{fixedQuestions:fixed,fresh:true});
     const second=await analyzeCitation(data,undefined,{fixedQuestions:fixed,fresh:true});
     assert.equal(calls,4);assert.equal(reads,1);assert.equal(first?.cacheHit,false);assert.equal(first?.questionSetId,second?.questionSetId);
-    assert.equal(first?.results[0].questionType,'industry');assert.equal(first?.results[0].journey,'비교');assert.equal(first?.measurementProtocol,'geo-compare-v1');
+    assert.equal(first?.results[0].questionType,'industry');assert.equal(first?.results[0].journey,'비교');assert.equal(first?.measurementProtocol,'geo-compare-v2');
     assert.match(first!.results[0].requestFingerprint!,/^[a-f0-9]{24}$/);assert.equal(first?.results[0].requestFingerprint,second?.results[0].requestFingerprint);
     const changed=await analyzeCitation(data,undefined,{fixedQuestions:[{...fixed[0],question:'다른 질문의 조건은 무엇인가요?'}],fresh:true});
     assert.notEqual(changed?.results[0].requestFingerprint,first?.results[0].requestFingerprint);

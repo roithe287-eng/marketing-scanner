@@ -21,7 +21,7 @@ test('concurrent request budgets do not cancel one another',async()=>{
 });
 test('parent cancellation reaches nested analysis and blocks late fetches',async t=>{
  let fetchSignal:AbortSignal|null|undefined;
- t.mock.method(globalThis,'fetch',async(_url,init)=>{fetchSignal=init?.signal;fetchSignal?.throwIfAborted();return Response.json({});});
+ t.mock.method(globalThis,'fetch',async(_url:Parameters<typeof fetch>[0],init?:RequestInit)=>{fetchSignal=init?.signal;fetchSignal?.throwIfAborted();return Response.json({});});
  const parent=new AbortController();let lateFetch:Promise<unknown>|undefined;
  const work=withBudget(500,()=>withBudget(500,async()=>{
    lateFetch=delay(30).then(()=>budgetFetch('https://example.com')).catch(error=>error);
@@ -50,7 +50,7 @@ test('SDK fetch receives request cancellation and does not retry',async t=>{
  const before=process.env.OPENAI_API_KEY;process.env.OPENAI_API_KEY='test-not-a-secret';
  t.after(()=>{if(before===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=before;});
  let calls=0;let observed:AbortSignal|null|undefined;
- t.mock.method(globalThis,'fetch',async(_url,init)=>{
+ t.mock.method(globalThis,'fetch',async(_url:Parameters<typeof fetch>[0],init?:RequestInit)=>{
    ++calls;observed=init?.signal;
    return new Promise<Response>((_,reject)=>{observed?.addEventListener('abort',()=>reject(observed?.reason),{once:true});});
  });
@@ -79,11 +79,11 @@ test('invalid JSON success is rejected; server access messages survive',async t=
  await assert.rejects(requestJson('/api/analyze'),{status:403,message:'승인된 계정만 사용할 수 있습니다.'});
 });
 test('timeout also covers a response body that never completes',async t=>{
- t.mock.method(globalThis,'fetch',async(_url,init)=>new Response(new ReadableStream({start(stream){init?.signal?.addEventListener('abort',()=>stream.error(new DOMException('aborted','AbortError')),{once:true});}}),{headers:{'content-type':'application/json'}}));
+ t.mock.method(globalThis,'fetch',async(_url:Parameters<typeof fetch>[0],init?:RequestInit)=>new Response(new ReadableStream({start(stream){init?.signal?.addEventListener('abort',()=>stream.error(new DOMException('aborted','AbortError')),{once:true});}}),{headers:{'content-type':'application/json'}}));
  await assert.rejects(requestJson('/api/analyze',{},20),error=>error instanceof RequestError&&error.status===504);
 });
 test('user cancellation remains distinguishable from request timeout',async t=>{
- t.mock.method(globalThis,'fetch',async(_url,init)=>new Promise<Response>((_,reject)=>init?.signal?.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true})));
+ t.mock.method(globalThis,'fetch',async(_url:Parameters<typeof fetch>[0],init?:RequestInit)=>new Promise<Response>((_,reject)=>init?.signal?.addEventListener('abort',()=>reject(new DOMException('aborted','AbortError')),{once:true})));
  const controller=new AbortController();const request=requestJson('/api/analyze',{signal:controller.signal},200);
  controller.abort();await assert.rejects(request,{name:'AbortError'});
 });
@@ -98,7 +98,7 @@ test('Redis SDK respects the calling request deadline',async t=>{
  process.env.UPSTASH_REDIS_REST_URL='https://redis-stability.example';process.env.UPSTASH_REDIS_REST_TOKEN='test-only';
  t.after(()=>keys.forEach((key,index)=>{if(before[index]===undefined)delete process.env[key];else process.env[key]=before[index];}));
  let calls=0;let observed:AbortSignal|null|undefined;
- t.mock.method(globalThis,'fetch',async(_url,init)=>{++calls;observed=init?.signal;return new Promise<Response>((_,reject)=>observed?.addEventListener('abort',()=>reject(observed?.reason),{once:true}));});
+ t.mock.method(globalThis,'fetch',async(_url:Parameters<typeof fetch>[0],init?:RequestInit)=>{++calls;observed=init?.signal;return new Promise<Response>((_,reject)=>observed?.addEventListener('abort',()=>reject(observed?.reason),{once:true}));});
  await assert.rejects(withBudget(30,()=>getRedisClient()!.get('test:bounded')),timedOut);
  assert.equal(calls,1);assert.equal(observed?.aborted,true);
 });
