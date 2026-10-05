@@ -4,12 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npm run build:pocket && next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "test": "node --import tsx --test tests/*.test.ts",
-    "test:security": "node --import tsx --test tests/security-redis.integration.ts"
+    "test:security": "node --import tsx --test tests/security-redis.integration.ts",
+    "build:pocket": "npm ci --prefix consumer-app --no-audit --no-fund && npm run build --prefix consumer-app && node scripts/stage-pocket-preview.mjs"
   },
   "dependencies": {
     "@upstash/redis": "^1.38.0",

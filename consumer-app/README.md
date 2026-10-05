@@ -33,7 +33,7 @@ npm run native:ios
 
 ## 서비스 경계
 
-- 프런트엔드: 별도 Vercel 프로젝트, 루트 `consumer-app`.
+- 프런트엔드: 별도 Vercel 프로젝트용 설정, 루트 `consumer-app`. 현재 연결 권한에서 프로젝트 생성이 거부되어 임시 미리보기는 기존 서버의 `/pocket` 경로를 사용합니다. 앱 코드·회원·진단 기록은 계속 분리합니다.
 - 전용 API: 기존 서버의 `app/api/pocket/route.ts` → `consumer-app/server/handler.ts`.
 - 웹 `/api/pocket`은 `vercel.json`에서 기존 서버의 전용 API로 프록시됩니다. 네이티브는 `https://www.mktscanner.com/api/pocket`에 직접 접속합니다.
 - B2B 분석 API, IP 예외, 계정, 결제 권한, 보고서는 재사용하지 않습니다.
@@ -44,6 +44,8 @@ npm run native:ios
 - 체험 1회/일, 회원 3회/일. 한국 시간 자정 기준. 실패한 분석은 사용자 할당량을 환불하며 남용 방지 요청 횟수는 별도 적용됩니다.
 
 ## 배포 환경 변수
+
+루트 `npm run build`는 앱을 빌드해 무시 경로 `public/pocket`에 미리보기를 생성합니다. 네이티브 번들은 변경하지 않습니다.
 
 기존 서버 프로젝트에 `POCKET_WEB_ORIGINS`를 쉼표로 구분한 **정확한 앱 origin** 목록으로 설정하세요. 와일드카드·임의 Origin 반사 금지. 환경 변수 변경은 새로운 서버 배포부터 적용됩니다.
 
