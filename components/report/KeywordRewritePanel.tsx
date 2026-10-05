@@ -1,4 +1,5 @@
 "use client";
+import {keywordFrequencyScope} from '@/lib/keywordFrequencyPresentation';
 import {Guidebook} from './SiteGuidebook';
 import React,{useMemo,useState} from 'react';
 import RewriteExecutionGuide from './RewriteExecutionGuide';
@@ -24,7 +25,7 @@ export default function KeywordRewritePanel({report}:{report:MarketingReport}) {
   const all=plans[tab],filtered=all.filter(p=>(filter==='전체'||p.kind===filter)&&p.item.keyword.toLowerCase().includes(query.trim().toLowerCase())),shown=expanded?filtered:filtered.slice(0,4);
   const reset=()=>{setFilter('전체');setExpanded(false);setQuery('');};
   return <section className="report-card report-rewrite" aria-label="반복 표현 TO-BE 제안">
-    <div className="report-card-heading"><p className="report-eyebrow">CONTENT REWRITE · AS-IS → TO-BE</p><h3>반복 표현, 어떻게 바꿀까요?</h3><p className="report-note">{KEYWORD_REWRITE_NOTE}</p></div>
+    <div className="report-card-heading"><p className="report-eyebrow">CONTENT REWRITE · AS-IS → TO-BE</p><h3>반복 표현, 어떻게 바꿀까요?</h3><p className="report-note">{KEYWORD_REWRITE_NOTE}</p>{report.keywordFrequency&&<p className="report-note keyword-scope-note">{keywordFrequencyScope(report.keywordFrequency)}</p>}</div>
     <div className="report-filter-row" role="group" aria-label="TO-BE 표현 단위"><button type="button" aria-pressed={tab==='singles'} onClick={()=>{setTab('singles');reset();}}>단어</button><button type="button" aria-pressed={tab==='phrases'} onClick={()=>{setTab('phrases');reset();}}>연속어구</button></div>
     <div className="report-rewrite-tools"><label><span>표현 찾기</span><input type="search" value={query} onChange={e=>{setQuery(e.target.value);setExpanded(false);}} placeholder="수정할 단어를 입력하세요"/></label><button type="button" className="report-secondary-button" disabled={!filtered.length} onClick={async()=>{try{await navigator.clipboard.writeText(filtered.map(p=>rewriteInstruction(p,drafts[p.id]||{})).join('\n\n────────\n\n'));setCopyMessage(`현재 필터의 ${filtered.length}개 작업 지시서를 복사했습니다.`);}catch{setCopyMessage('복사하지 못했습니다. 각 항목에서 다시 시도해 주세요.');}}}>{filtered.length}개 작업 지시서 복사</button></div><p role="status" className="report-note">{copyMessage}</p>
     <div className="report-rewrite-kinds" role="group" aria-label="TO-BE 수정 방향 필터">{rewriteKinds.map((kind,i)=>{const count=all.filter(p=>p.kind===kind).length;return <button type="button" key={kind} aria-pressed={filter===kind} onClick={()=>{setFilter(filter===kind?'전체':kind);setExpanded(false);}}><span className="report-index">0{i+1}</span><strong>{kind}</strong><b>{count}<small>개</small></b><span className="report-meter" aria-hidden="true"><i style={{width:`${all.length?count/all.length*100:0}%`}}/></span></button>;})}</div>

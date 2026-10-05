@@ -3,7 +3,7 @@ import {canonicalPage} from './geoComparison';
 import {growthPageEvidence} from './growthPlan';
 import {diagnosisAxes} from './diagnosisVisuals';
 
-export const DIAGNOSIS_METHOD='marketing-diagnosis-2026-10-v3';
+export const DIAGNOSIS_METHOD='marketing-diagnosis-2026-10-v4';
 export const DIAGNOSIS_COMPARISON_NOTE='같은 URL의 저장 결과를 비교합니다. 진단 점수는 AI 평가와 수집 범위에 따라 달라질 수 있으며 매출·노출 성과나 수정의 인과 효과가 아닙니다. 통과 전환도 실제 화면과 담당자 검토로 확인하세요.';
 const normal=(s:string)=>s.trim().replace(/\s+/g,' ').toLowerCase();
 export function diagnosisChecks(report:MarketingReport):DiagnosisCheck[] {

@@ -10,6 +10,13 @@ export function siteIdentity(value: string): {
             return null;
         const host = u.hostname.toLowerCase().replace(/^www\./, '').replace(/\.$/, '');
         const platform = host.replace(/^m\./, '');
+        if(platform==='place.naver.com'||platform.endsWith('.place.naver.com')){
+            const id=u.pathname.match(/^\/(?:restaurant\/|place\/|hospital\/|hairshop\/|beauty\/|cafe\/|accommodation\/)?(\d+)(?:\/|$)/)?.[1];
+            return {host:'place.naver.com',tenant:id||null,shared:true};
+        }
+        if(platform==='cafe.naver.com'&&u.pathname.startsWith('/ca-fe/')){
+            return {host:platform,tenant:u.pathname.match(/^\/ca-fe\/cafes\/(\d+)(?:\/|$)/)?.[1]||null,shared:true};
+        }
         const shared = ['blog.naver.com', 'cafe.naver.com', 'smartstore.naver.com', 'brand.naver.com'].includes(platform);
         if (!shared)
             return { host, tenant: null, shared: false };

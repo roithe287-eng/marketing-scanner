@@ -1,213 +1,35 @@
 "use client";
+import {useId,useState} from 'react';
+import type {KeywordFrequency,KeywordFreqItem} from '@/lib/reportSchema';
+import {keywordDensityNote,keywordFrequencyScope} from '@/lib/keywordFrequencyPresentation';
 
-/**
- * v46-W2-1: 키워드 분포 리포트 카드 (독자 디자인 — 저작권 리스크 제거)
- * - 표 컬럼·용어를 자체 표현으로 작성 (네이버 '키워드 요약'과 무관한 독자 구성)
- * - 비중 막대그래프로 시각 차별화 · 단어/연속어구 탭 구조
- * - 규칙 기반 결과 표시 (keywordFrequency 필드) · 데이터 없으면 자동 숨김
- */
-
-import { useState } from "react";
-import type { KeywordFrequency, KeywordFreqItem } from "../lib/reportSchema";
-
-type Props = {
-  frequency?: KeywordFrequency | null;
-};
-
-function IncludeDot({ on }: { on: boolean }) {
-  return on ? (
-    <span role="img" aria-label="포함"
-      className="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500"
-      title="포함됨"
-    />
-  ) : (
-    <span role="img" aria-label="미포함"
-      className="inline-block w-2.5 h-2.5 rounded-full bg-neutral-200"
-      title="없음"
-    />
-  );
+function Included({on}:{on:boolean}) {
+  return <span className="keyword-included" data-included={on}><b aria-hidden="true">{on?'✓':'−'}</b>{on?'포함':'미포함'}</span>;
 }
-
-function FreqTable({
-  items,
-  totalLabel,
-}: {
-  items: KeywordFreqItem[];
-  totalLabel: string;
-}) {
-  if (!items || items.length === 0) {
-    return (
-      <p className="text-[13px] text-neutral-400 py-4 text-center">
-        두 번 이상 반복되는 표현이 없습니다.
-      </p>
-    );
-  }
-  const max = items[0].count;
-  return (
-    <div className="overflow-x-auto rounded-xl border border-neutral-200">
-      <table className="w-full text-left border-collapse">
-        <thead>
-          <tr className="bg-neutral-50 border-b border-neutral-200">
-            <th className="px-3 py-2 text-[11px] md:text-[12px] font-bold text-neutral-500 w-8">
-              순위
-            </th>
-            <th className="px-3 py-2 text-[11px] md:text-[12px] font-bold text-neutral-500 min-w-[140px]">
-              표현 · 비중
-            </th>
-            <th className="px-3 py-2 text-[11px] md:text-[12px] font-bold text-neutral-500 text-right">
-              등장 횟수
-            </th>
-            <th className="px-3 py-2 text-[11px] md:text-[12px] font-bold text-neutral-500 text-center">
-              제목
-            </th>
-            <th className="px-3 py-2 text-[11px] md:text-[12px] font-bold text-neutral-500 text-center">
-              요약문
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((k, i) => (
-            <tr
-              key={k.keyword}
-              className="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/60"
-            >
-              <td className="px-3 py-2 text-[11px] md:text-[12px] text-neutral-400 tabular-nums">
-                {i + 1}
-              </td>
-              <td className="px-3 py-2">
-                <div className="text-[13px] md:text-[14px] font-semibold text-neutral-900 break-all mb-1">
-                  {k.keyword}
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-1.5 flex-1 max-w-[120px] rounded-full bg-neutral-100 overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-neutral-700"
-                      style={{ width: `${Math.max(6, (k.count / max) * 100)}%` }}
-                    />
-                  </div>
-                  <span className="text-[10px] md:text-[11px] text-neutral-400 tabular-nums">
-                    {k.density.toFixed(2)}%
-                  </span>
-                </div>
-              </td>
-              <td className="px-3 py-2 text-[12px] md:text-[13px] text-neutral-700 text-right tabular-nums">
-                {k.count}회
-              </td>
-              <td className="px-3 py-2 text-center">
-                <IncludeDot on={k.inTitle} />
-              </td>
-              <td className="px-3 py-2 text-center">
-                <IncludeDot on={k.inMetaDescription} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="px-3 py-2 text-[10px] md:text-[11px] text-neutral-400 bg-neutral-50 border-t border-neutral-200">
-        상위 {items.length}개 · {totalLabel} · ● 제목·요약문 포함 / ○ 미포함
-      </p>
-    </div>
-  );
+function FrequencyTable({items,caption}:{items:KeywordFreqItem[];caption:string}) {
+  if(!items.length)return <p className="report-empty">집계 범위에서 두 번 이상 반복된 표현이 없습니다. 전체 사이트에 반복이 없다는 뜻은 아닙니다.</p>;
+  return <table className="keyword-table">
+    <caption>{caption} · 최대 30개 표시 · 막대 전체 길이 = 비중 100%</caption>
+    <thead><tr><th scope="col">순서</th><th scope="col">표현 · 비중</th><th scope="col">등장</th><th scope="col">검색 제목</th><th scope="col">메타 설명</th></tr></thead>
+    <tbody>{items.map((item,i)=><tr key={item.keyword}>
+      <td className="keyword-rank">{i+1}</td>
+      <th scope="row" className="keyword-expression"><strong>{item.keyword}</strong><div className="keyword-density"><span className="keyword-meter" aria-hidden="true"><i style={{width:`${Math.max(0,Math.min(100,item.density))}%`}}/></span><span>{item.density.toFixed(2)}%</span></div></th>
+      <td className="keyword-count"><span className="keyword-cell-label" aria-hidden="true">등장 횟수</span><strong>{item.count.toLocaleString()}회</strong></td>
+      <td><span className="keyword-cell-label" aria-hidden="true">검색 제목</span><Included on={item.inTitle}/></td>
+      <td><span className="keyword-cell-label" aria-hidden="true">메타 설명</span><Included on={item.inMetaDescription}/></td>
+    </tr>)}</tbody>
+  </table>;
 }
-
-export default function KeywordFrequencyCard({ frequency }: Props) {
-  const [tab, setTab] = useState<"singles" | "phrases">("singles");
-  if (!frequency) return null;
-
-  const { totalTokens, uniqueSingles, uniquePhrases, singles, phrases } =
-    frequency;
-
-
-  return (
-    <section className="jm-card p-5 md:p-7 lg:p-8">
-      {/* Header */}
-      <div className="mb-5 md:mb-6">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-[20px] md:text-[22px]">📊</span>
-          <h3 className="text-[20px] md:text-[24px] lg:text-[26px] font-extrabold text-neutral-900 leading-tight">
-            키워드 분포 리포트
-          </h3>
-        </div>
-        <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
-          이 페이지가 실제로 어떤 말을 반복해서 말하고 있는지 집계했습니다.
-          제목·설명·헤딩·본문을 합친 집계이며, 비중만으로 과잉 반복이나 검색 성과를 판단하지 않습니다.
-          수정 방향은 위의 반복 표현 TO-BE 제안에서 확인하세요.
-        </p>
-      </div>
-
-      {/* Summary Strip */}
-      <div className="grid grid-cols-3 gap-2 md:gap-4 mb-5 md:mb-6">
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3 md:p-5 text-center">
-          <div className="text-[22px] md:text-[30px] font-extrabold text-neutral-900 leading-none tabular-nums">
-            {totalTokens.toLocaleString()}
-          </div>
-          <div className="text-[11px] md:text-[13px] font-semibold text-neutral-500 mt-1.5">
-            분석한 단어 수
-          </div>
-        </div>
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3 md:p-5 text-center">
-          <div className="text-[22px] md:text-[30px] font-extrabold text-neutral-900 leading-none tabular-nums">
-            {uniqueSingles.toLocaleString()}
-          </div>
-          <div className="text-[11px] md:text-[13px] font-semibold text-neutral-500 mt-1.5">
-            서로 다른 단어
-          </div>
-        </div>
-        <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-3 md:p-5 text-center">
-          <div className="text-[22px] md:text-[30px] font-extrabold text-neutral-900 leading-none tabular-nums">
-            {uniquePhrases.toLocaleString()}
-          </div>
-          <div className="text-[11px] md:text-[13px] font-semibold text-neutral-500 mt-1.5">
-            서로 다른 연속어구
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 mb-3 md:mb-4">
-        <button
-          type="button"
-          onClick={() => setTab("singles")}
-          aria-pressed={tab === "singles"}
-          className={`px-4 py-2 rounded-full text-[13px] md:text-[14px] font-bold border transition-colors ${
-            tab === "singles"
-              ? "bg-neutral-900 text-white border-neutral-900"
-              : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400"
-          }`}
-        >
-          단어 단위
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab("phrases")}
-          aria-pressed={tab === "phrases"}
-          className={`px-4 py-2 rounded-full text-[13px] md:text-[14px] font-bold border transition-colors ${
-            tab === "phrases"
-              ? "bg-neutral-900 text-white border-neutral-900"
-              : "bg-white text-neutral-600 border-neutral-200 hover:border-neutral-400"
-          }`}
-        >
-          연속어구 단위
-        </button>
-      </div>
-
-      {tab === "singles" ? (
-        <FreqTable
-          items={singles}
-          totalLabel={`전체 ${uniqueSingles.toLocaleString()}종`}
-        />
-      ) : (
-        <FreqTable
-          items={phrases}
-          totalLabel={`전체 ${uniquePhrases.toLocaleString()}종`}
-        />
-      )}
-
-      <p className="mt-4 text-[11px] md:text-[12px] text-neutral-400 leading-relaxed">
-        * 진짜마케팅이 자체 개발한 집계 도구의 결과입니다. 단어를 규칙 기반으로
-        나눈 근사치라 전문 형태소 분석과는 다를 수 있으며, 특정 포털의 분석
-        서비스와 무관합니다.
-      </p>
-    </section>
-  );
+export default function KeywordFrequencyCard({frequency}:{frequency?:KeywordFrequency|null}) {
+  const [tab,setTab]=useState<'singles'|'phrases'>('singles'),id=useId();
+  if(!frequency)return null;
+  const phrase=tab==='phrases';
+  return <section className="jm-card keyword-frequency" aria-labelledby={`${id}-title`}>
+    <header><p className="report-eyebrow">CONTENT SIGNALS</p><h3 id={`${id}-title`}>키워드 분포 리포트</h3><p>{keywordFrequencyScope(frequency)}</p></header>
+    <dl className="keyword-stats">{[[frequency.totalTokens,'집계한 단어 수'],[frequency.uniqueSingles,'서로 다른 단어'],[frequency.uniquePhrases,'서로 다른 연속어구']].map(([value,label])=><div key={label}><dt>{label}</dt><dd>{value.toLocaleString()}</dd></div>)}</dl>
+    <div className="keyword-controls" role="group" aria-label="빈도 집계 단위"><button type="button" aria-pressed={!phrase} aria-controls={`${id}-results`} onClick={()=>setTab('singles')}>단어 단위</button><button type="button" aria-pressed={phrase} aria-controls={`${id}-results`} onClick={()=>setTab('phrases')}>연속어구 단위</button></div>
+    <p className="keyword-method">{keywordDensityNote(frequency,phrase)}</p>
+    <div id={`${id}-results`}><FrequencyTable items={phrase?frequency.phrases:frequency.singles} caption={`${phrase?'연속어구':'단어'} · 서로 다른 표현 ${phrase?frequency.uniquePhrases:frequency.uniqueSingles}종 중 2회 이상 반복된 표현`}/></div>
+    <p className="keyword-footnote">검색 제목·메타 설명의 포함 여부는 같은 단어 형태를 기준으로 확인합니다. 조사·띄어쓰기·동의어 차이를 직접 확인하세요. 비중만으로 과잉 반복이나 검색 성과를 판단하지 않으며, 수정 방향은 ‘반복 표현, 어떻게 바꿀까요?’에서 확인할 수 있습니다.</p>
+  </section>;
 }

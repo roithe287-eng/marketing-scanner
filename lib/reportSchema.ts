@@ -75,7 +75,7 @@ export const LlmCitationQuestionResultSchema = z.object({
   errorMessage: z.string().optional(),
 });
 export const LlmCitationTestSchema = z.object({
-  measurementProtocol: z.enum(["geo-compare-v1","geo-compare-v2"]).optional(),
+  measurementProtocol: z.enum(["geo-compare-v1","geo-compare-v2","geo-compare-v3"]).optional(),
   targetUrl: z.string().url().optional(),
   brandName: z.string().optional(),
   measurementVersion: z.literal(2).optional(),
@@ -272,19 +272,20 @@ export const TechnicalSeoSchema = z.object({
   priorityActions: z.array(z.string()),
 });
 
-// v46-W2: 키워드 빈도 분석 (네이버 애드부스트 '키워드 요약' 대응)
+// Rules-based frequency: reject impossible values before displaying or saving them.
 export const KeywordFreqItemSchema = z.object({
   keyword: z.string(),
-  count: z.number(),
-  density: z.number(),
+  count: z.number().finite().int().nonnegative(),
+  density: z.number().finite().min(0).max(100),
   inTitle: z.boolean(),
   inMetaDescription: z.boolean(),
 });
 
 export const KeywordFrequencySchema = z.object({
-  totalTokens: z.number(),
-  uniqueSingles: z.number(),
-  uniquePhrases: z.number(),
+  methodVersion:z.literal(2).optional(),scope:z.literal("body").optional(),sourceLength:z.number().int().nonnegative().optional(),bodyTruncated:z.boolean().optional(),totalPhrases:z.number().int().nonnegative().optional(),
+  totalTokens: z.number().finite().int().nonnegative(),
+  uniqueSingles: z.number().finite().int().nonnegative(),
+  uniquePhrases: z.number().finite().int().nonnegative(),
   singles: z.array(KeywordFreqItemSchema),
   phrases: z.array(KeywordFreqItemSchema),
 });

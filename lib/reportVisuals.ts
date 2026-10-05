@@ -2,17 +2,19 @@ import type {Discoverability, LlmCitationQuestionResult as Row, LlmCitationTest}
 export const engines=['chatgpt','gemini'] as const;
 export const engineNames={chatgpt:'OpenAI',gemini:'Gemini'};
 export const observationStates={
-  cited:{label:'자사 인용',color:'#087f72',background:'#e5f5f0',symbol:'●'},
+  cited:{label:'자사 인용',color:'#06695f',background:'#e5f5f0',symbol:'●'},
   uncited:{label:'미인용',color:'#3564a7',background:'#edf3fc',symbol:'○'},
   unverified:{label:'판정 불가',color:'#986100',background:'#fff5da',symbol:'?'},
   failed:{label:'호출 실패',color:'#9d3446',background:'#fceef1',symbol:'!'},
+  unavailable:{label:'미설정',color:'#52627b',background:'#edf0f5',symbol:'—'},
   missing:{label:'관측 없음',color:'#667085',background:'#f2f4f7',symbol:'—'},
   duplicate:{label:'중복 관측',color:'#667085',background:'#f2f4f7',symbol:'≠'},
 } as const;
 export type ObservationState=keyof typeof observationStates;
 export function observationState(row?:Row):ObservationState {
   if (!row) return 'missing';
-  if (row.status==='error'||row.status==='timeout'||row.status==='unavailable') return 'failed';
+  if (row.status==='unavailable') return 'unavailable';
+  if (row.status==='error'||row.status==='timeout') return 'failed';
   if (row.status!=='ok'||row.searchUsed!==true||row.citationVerified!==true) return 'unverified';
   return row.cited?'cited':'uncited';
 }
@@ -34,7 +36,7 @@ export function buildObservationVisual(citation?:LlmCitationTest|null) {
   const unique=(r:Row)=>countByPair.get(pairKey(r))===1;
   const distributions=engines.map(engine=>{
     const rows=citation.results.filter(r=>r.engine===engine);
-    const counts={cited:0,uncited:0,unverified:0,failed:0};
+    const counts={cited:0,uncited:0,unverified:0,unavailable:0,failed:0};
     for (const r of rows) {const state=unique(r)?observationState(r):'unverified';if(state in counts)counts[state as keyof typeof counts]++;}
     return {engine,total:rows.length,counts};
   });
