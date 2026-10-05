@@ -65,3 +65,31 @@ test('all existing TO-BE families and copied briefs retain guide paths, evidence
  const rewritten=buildExecutableRewrites(r).singles[0];if(rewritten)assert.ok(rewriteInstruction(rewritten).includes('편집 경로:'));
  const proposal='길어도 생략하지 않는 수정 지시. '.repeat(200);assert.ok(guideInstruction(buildSiteGuide(r,{title:'본문',proposal})).includes(proposal));
 });
+
+test('exact original text and selected duplicate location drive the editing fields',()=>{
+ const r=report('<html><body><main><section id="service"><h2>서비스 소개</h2><a id="ask-one" href="/consult">상담 예약</a></section><section id="end"><h2>다음 단계</h2><a id="ask-two" href="/contact">상담 예약</a></section></main><footer><a href="/">홈</a></footer></body></html>');
+ const first=buildSiteGuide(r,{title:'CTA 버튼',current:'상담 예약',proposal:'서비스 상담 신청'});
+ assert.equal(first.matchMode,'exact');assert.equal(first.targets.length,2);assert.ok(first.location.includes('서비스 소개'));
+ const second=buildSiteGuide(r,{title:'CTA 버튼',current:'상담 예약',selectedKey:first.targets[1].key});
+ assert.ok(second.location.includes('다음 단계'));assert.equal(second.focus?.selector,'#ask-two');assert.ok(second.fields[1].before.endsWith('/contact'));
+ assert.ok(!second.targets.some(e=>e.text==='홈'));assert.ok(guideInstruction(second).includes('수정 필드: 클릭 시 동작'));
+});
+test('missing H1 is not replaced with arbitrary H2 evidence; broad matches remain candidates',()=>{
+ const r=report('<html><body><main><section><h2>서비스 안내</h2><p>구체적인 제공 범위</p></section></main></body></html>');
+ const missing=buildSiteGuide(r,{title:'H1 태그 부재'});assert.equal(missing.targets.length,0);assert.equal(missing.matchMode,'missing');assert.equal(missing.nearby[0].tag,'h2');
+ const generic=buildSiteGuide(r,{title:'본문 개선',current:'실제로는 없는 문장'});assert.equal(generic.matchMode,'candidate');assert.ok(generic.matchReason.includes('직접 일치를 확인하지 못해'));
+});
+test('captures actual section, widget, image alt state and form labels without private input values',()=>{
+ const r=report('<html><body><main><section id="offer"><h2>서비스 구성</h2><div id="widget1" data-widget-type="text"><p>제공 내용</p></div><img id="decor" src="/decor.png" alt=""><img id="missing" src="/detail.png"><form><label for="email">이메일</label><input id="email" value="PRIVATE_VALUE" required><input type="password" value="PRIVATE_PASSWORD"><input type="hidden" value="PRIVATE_TOKEN"></form></section></main></body></html>');
+ const s=r.pageEvidence!.siteEditing!,p=s.elements.find(e=>e.text==='제공 내용')!;assert.equal(p.widget?.selector,'#widget1');assert.equal(p.section?.label,'서비스 구성');assert.equal(p.region,'main');
+ assert.equal(s.elements.find(e=>e.selector==='#decor')!.attributes?.alt,'');assert.equal(s.elements.find(e=>e.selector==='#missing')!.attributes?.alt,undefined);
+ const form=s.elements.find(e=>e.kind==='form')!;assert.equal(form.fields?.length,1);assert.equal(form.fields?.[0].label,'이메일');assert.equal(form.fields?.[0].required,true);assert.ok(!JSON.stringify(s).includes('PRIVATE_'));
+ assert.equal(MarketingReportSchema.safeParse(r).success,true);
+});
+test('technical fields use actual settings and the effect matches OG, viewport and canonical separately',()=>{
+ const r=report('<html><head><meta property="og:title" content="공유 제목"><meta name="viewport" content="width=980"><meta name="robots" content="noindex"><link rel="canonical" href="https://example.com/main"><script type="application/ld+json">{"@type":"Organization","name":"회사"}</script></head><body><h1>제목</h1></body></html>');
+ for(const [title,topic,value] of [['Open Graph','social','공유 제목'],['모바일 viewport','viewport','width=980'],['대표 URL','canonical','https://example.com/main'],['색인 제외','crawl','noindex'],['구조화 데이터','schema','Organization']]){
+  const g=buildSiteGuide(r,{title});assert.equal(g.topic,topic);assert.ok(g.settings.some(s=>s.value.includes(value)));assert.ok(g.fields[0].before.includes(value));assert.equal(g.matchLabel,'실제 설정값 확인');
+ }
+ const account=buildSiteGuide(r,{title:'API 권한 확인',scope:'account',instructions:['개발자 계정의 API 사용 설정을 확인'],completion:'권한·사용량 확인'});assert.equal(account.targets.length,0);assert.ok(!account.route.path.includes('디자인 모드'));assert.equal(account.fields[0].done,'권한·사용량 확인');assert.ok(account.steps[2].detail.includes('개발자 계정'));
+});
