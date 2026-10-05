@@ -4,7 +4,7 @@ import type {MarketingReport} from './reportSchema';
 import {safeHttpUrl,ownHost} from './citationMeasurement';
 import {buildObservationVisual,engineNames,engines,observationState,readinessItems} from './reportVisuals';
 
-export type FollowupTask={id:string;group:string;title:string;status:'fail'|'warning'|'review';evidence:string;action:string;source:string};
+export type FollowupTask={id:string;group:string;title:string;status:'fail'|'warning'|'review';evidence:string;action:string;source:string;current?:string;guideScope?:'page'|'account';instructions?:string[];completion?:string};
 export type SourceEntry={url:string;title:string;domain:string;ownership:'own'|'external'|'unresolved';questions:string[];observations:string[]};
 export const messageThemes=[
   {label:'가격·혜택',pattern:/가격|비용|할인|무료|견적|수수료/},
@@ -57,12 +57,12 @@ export function buildReportInsights(report:MarketingReport) {
   const stages=[{label:'첫인상',key:'firstView' as const,action:'제안의 핵심과 첫 화면 문구 확인'},{label:'신뢰 형성',key:'trust' as const,action:'검증 가능한 사례·후기·근거 확인'},{label:'행동 유도',key:'cta' as const,action:'버튼 문구·위치·다음 행동 확인'},{label:'전환 흐름',key:'conversionFlow' as const,action:'문의·신청 과정의 마찰 확인'}].map(s=>({...s,score:report.diagnosis[s.key]}));
   const gaps=(report.keywordFrequency?.singles||[]).slice(0,20).filter(k=>!isGenericKeyword(k.keyword)&&(!k.inTitle||!k.inMetaDescription)).slice(0,8);
   const tasks:FollowupTask[]=[];
-  const push=(group:string,source:string,rows:{label:string;status:'pass'|'warning'|'fail';currentValue:string;guide:string}[])=>rows.filter(r=>r.status!=='pass').forEach((r,i)=>tasks.push({id:`${source}-${i}`,group,title:r.label,status:r.status as 'warning'|'fail',evidence:r.currentValue,action:r.guide,source}));
-  report.criticalIssues.forEach((r,i)=>tasks.push({id:`critical-${i}`,group:'핵심 개선',title:r.title,status:r.priority==='high'?'fail':r.priority==='medium'?'warning':'review',evidence:r.problem,action:r.recommendation,source:'AI 진단'}));
+  const push=(group:string,source:string,rows:{label:string;status:'pass'|'warning'|'fail';currentValue:string;guide:string}[])=>rows.filter(r=>r.status!=='pass').forEach((r,i)=>tasks.push({id:`${source}-${i}`,group,title:r.label,status:r.status as 'warning'|'fail',evidence:r.currentValue,current:r.currentValue,action:r.guide,source}));
+  report.criticalIssues.forEach((r,i)=>tasks.push({id:`critical-${i}`,group:'핵심 개선',title:r.title,status:r.priority==='high'?'fail':r.priority==='medium'?'warning':'review',evidence:r.problem,current:r.badExample,action:r.recommendation,source:'AI 진단'}));
   push('기본 진단','기본 체크리스트',report.checklist||[]);
   push('GEO 준비도','GEO 준비도',readinessItems(report.discoverability));
   for(const check of report.naverOptimization?.mode==='diagnosis'?report.naverOptimization.checks:[]) {
-    if(check.status==='action'||(check.status==='manual'&&check.priority==='high'))tasks.push({id:`naver-${check.id}`,group:'네이버',title:check.title,status:check.status==='manual'?'review':check.priority==='high'?'fail':'warning',evidence:check.evidence,action:`${check.steps.join(' → ')} / 완료 확인: ${check.completion}`,source:NAVER_CATEGORIES[check.category]});
+    if(check.status==='action'||(check.status==='manual'&&check.priority==='high'))tasks.push({id:`naver-${check.id}`,group:'네이버',title:check.title,status:check.status==='manual'?'review':check.priority==='high'?'fail':'warning',evidence:check.evidence,guideScope:check.category!=='search'||check.owner==='marketer'?'account':'page',instructions:check.steps,completion:check.completion,action:`${check.steps.join(' → ')} / 완료 확인: ${check.completion}`,source:NAVER_CATEGORIES[check.category]});
   }
   reviews.forEach((r,i)=>tasks.push({id:`brand-review-${i}`,group:'AI 답변',title:`${r.engine} 브랜드 답변 대조`,status:'review',evidence:r.question,action:'답변의 서비스 설명·업체명과 연결된 출처를 대조하세요. 오인식 여부는 확인 후 판단하세요.',source:'AI 답변 관측'}));
   const rank={fail:0,warning:1,review:2};tasks.sort((a,b)=>rank[a.status]-rank[b.status]);

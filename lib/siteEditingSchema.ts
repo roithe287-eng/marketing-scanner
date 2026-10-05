@@ -6,11 +6,17 @@ export const PageElementSchema=z.object({
   tag:z.string().max(20),selector:z.string().max(1000),text:z.string().max(1400),
   truncated:z.boolean(),heading:z.string().max(300),order:z.number().int().nonnegative(),
   anchor:z.string().max(300).optional(),href:z.string().max(4000).optional(),
+  region:z.enum(['head','header','nav','main','footer','body']).optional(),
+  section:z.object({selector:z.string().max(1000),label:z.string().max(300)}).optional(),
+  widget:z.object({selector:z.string().max(1000),type:z.string().max(100)}).optional(),
+  attributes:z.object({alt:z.string().max(1400).optional(),src:z.string().max(4000).optional(),type:z.string().max(100).optional(),ariaLabel:z.string().max(300).optional()}).optional(),
+  fields:z.array(z.object({selector:z.string().max(1000),tag:z.string().max(20),label:z.string().max(300),type:z.string().max(100),required:z.boolean()})).max(20).optional(),
 });
 export const SiteEditingSchema=z.object({
   version:z.literal(1),source:z.literal('static-html'),
   signals:z.array(z.object({id:PlatformIdSchema,kind:z.enum(['cms','framework','delivery']),evidence:z.array(z.string().max(250)).max(8)})).max(8),
   elements:z.array(PageElementSchema).max(100),elementsTruncated:z.boolean(),
+  settings:z.array(z.object({name:z.string().max(100),selector:z.string().max(1000),value:z.string().max(3000),truncated:z.boolean()})).max(30).optional(),
 });
 export type SiteEditing=z.infer<typeof SiteEditingSchema>;
 export type PageElement=z.infer<typeof PageElementSchema>;

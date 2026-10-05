@@ -66,3 +66,27 @@
  .guide-content>.report-secondary-button { width:100%; white-space:normal; }
  .guide-route { display:grid; grid-template-columns:minmax(0,1fr); }
 }
+.guide-proof-badge { display:inline-block; margin:0 0 0 12px; color:#55663f; font-size:13px; line-height:1.8; }
+.guide-grounding { padding:18px; background:#eef3ff; border:1px solid #c8d7ef; border-radius:12px; }
+.guide-grounding>strong { color:#234aa8; font-size:17px; }
+.guide-grounding p { margin-top:10px; }
+.guide-grounding label { display:block; margin:16px 0; font-size:15px; font-weight:700; }
+.guide-grounding select { display:block; width:100%; min-width:0; max-width:100%; margin-top:8px; padding:12px; color:#263c5b; background:#fff; border:1px solid #b6c9ec; border-radius:8px; font:inherit; font-size:16px; }
+.guide-field-list { display:grid; gap:14px; }
+.guide-field-list article { border:1px solid #d3dced; border-radius:12px; background:#fff; overflow:hidden; }
+.guide-field-list h6 { margin:0; padding:16px 18px; font-size:18px; line-height:1.6; font-weight:800; color:#234891; background:#edf2ff; }
+.guide-field-list dl { margin:0; padding:0 18px; }
+.guide-field-list dl>div { display:grid; grid-template-columns:90px minmax(0,1fr); gap:14px; padding:16px 0; border-bottom:1px solid #e0e6ef; }
+.guide-field-list dl>div:last-child { border-bottom:0; }
+.guide-field-list dt { font-size:15px; line-height:1.85; font-weight:800; color:#3a567a; }
+.guide-field-list dd { margin:0; font-size:16px; line-height:1.85; white-space:pre-wrap; overflow-wrap:anywhere; }
+.guide-settings { display:grid; gap:14px; min-width:0; }
+.guide-settings article { padding:18px; background:#f6f8fc; border:1px solid #d3dced; border-radius:12px; min-width:0; }
+.guide-settings strong { color:#234891; font-size:17px; }
+.guide-settings pre { margin:12px 0; font:inherit; font-size:15px; white-space:pre-wrap; overflow-wrap:anywhere; word-break:break-word; }
+@media(max-width:767px){
+ .guide-proof-badge { display:block; margin:6px 0 0; }
+ .guide-grounding { padding:15px; }
+ .guide-field-list dl>div { grid-template-columns:minmax(0,1fr); gap:5px; }
+ .guide-field-list h6 { font-size:17px; }
+}
