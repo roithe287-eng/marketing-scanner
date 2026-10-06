@@ -6,6 +6,7 @@ import {
   requireSameOrigin,
 } from "../security/request";
 import { Principal } from "./types";
+import { isLoginFreeNetwork } from '../security/networkAccess';
 import { sessionAccount, SESSION_SECONDS, limitRequest, isOwnerAccount } from "./store";
 export const SESSION_COOKIE =
   process.env.NODE_ENV === "production"
@@ -30,9 +31,9 @@ export async function principalFrom(
   session: string | undefined,
 ): Promise<Principal | null> {
   const account = await sessionAccount(session);
-  if (!account) return null;
-  // A shared office IP never substitutes for an approved, identifiable account.
-  // Keep the existing additional network restriction on the sole owner's account.
+  if (!account) return isLoginFreeNetwork(headers) ? { kind: 'internal' } : null;
+  // Valid sessions keep their account identity, permissions, and activity tracking.
+  // Login-free network access never grants the sole owner's administrator role.
   if (account.role === "admin" &&
       (!isInternal(headers) || !(await isOwnerAccount(account)))) return null;
   return { kind: "account", account };

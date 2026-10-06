@@ -14,7 +14,7 @@ export default function AccessBar({ access }: { access: AccessState }) {
       <div className="jm-container">
         <span>
           {access.kind === "internal"
-            ? "등록 네트워크 · 기존 진단 이용 가능"
+            ? "등록 네트워크 · 로그인 없이 이용 중"
             : access.kind === "account"
               ? `${access.account?.name}님 · 승인된 계정`
               : access.kind === "loading"

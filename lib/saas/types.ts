@@ -60,8 +60,8 @@ export function canReadOwner(
   ownerId: string | undefined,
   principal: Principal,
 ) {
+  if (principal.kind === 'internal') return ownerId === 'internal';
   return (
-    principal.kind === "internal" ||
     principal.account.role === "admin" ||
     (!!ownerId &&
       principal.account.id === ownerId &&

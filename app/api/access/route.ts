@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getPrincipal, requireAdmin } from "@/lib/saas/auth";
+import { getPrincipal } from "@/lib/saas/auth";
 import { privateJson, failure } from "@/lib/security/request";
 import { usage } from "@/lib/saas/store";
 import { safeAccount } from "@/lib/saas/types";
@@ -10,10 +10,9 @@ export async function GET(req: NextRequest) {
     const principal = await getPrincipal(req);
     if (!principal) return privateJson({ kind: "guest" });
     if (principal.kind === "internal") {
-      const admin = await requireAdmin(req).catch(() => null);
       return privateJson({
         kind: "internal",
-        admin: !!admin,
+        admin: false,
         ...(req.nextUrl.searchParams.get("reports") === "1"
           ? { reports: await listOwnReports(principal) }
           : {}),
