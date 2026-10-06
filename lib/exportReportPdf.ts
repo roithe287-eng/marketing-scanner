@@ -2,15 +2,15 @@ import {buildReportSummaryPage} from './reportSummaryPdf';
 export type PdfScope='full'|'summary';
 import {buildVisualPdfPages,type VisualPdfPage} from './reportVisualPdf';
 import type { MarketingReport } from './reportSchema';
-import { buildReportDocument } from './reportDocument';
-import { layoutPdfPages, PDF_FONT, PDF_PAGE, type PdfTextStyle } from './pdfLayout';
+import { buildDetailedReportPdf } from './reportReadingPdf';
+import { PDF_FONT, PDF_PAGE, type PdfTextStyle } from './pdfLayout';
 
 const yieldToBrowser=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 
 /** Prepare a browser-independent PDF result; saving is an explicit user action. */
 export async function renderReportPdf(report:MarketingReport,onProgress:(text:string)=>void,canvas:HTMLCanvasElement,fontFamily=PDF_FONT,signal?:AbortSignal,scope:PdfScope='full') {
   signal?.throwIfAborted();
-  onProgress(scope==='summary'?'한 장 요약을 정리 중...':'전체 상세 내용을 페이지별로 정리 중...');
+  onProgress(scope==='summary'?'한 장 요약을 정리 중...':'결과 차트·비교 카드·상세 안내를 정리 중...');
   const {default:JsPDF}=await import('jspdf');
   const scale=2;
   canvas.width=PDF_PAGE.width*scale;canvas.height=PDF_PAGE.height*scale;
@@ -23,7 +23,12 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
   };
   const measure=(text:string,style:PdfTextStyle)=>{setFont(style);return ctx.measureText(text).width;};
   const summary=buildReportSummaryPage(report,measure);
-  const pages=scope==='summary'?[summary]:[summary,...buildVisualPdfPages(report,measure),...layoutPdfPages(buildReportDocument(report),measure)];
+  const visuals=scope==='full'?buildVisualPdfPages(report,measure):[];
+  if(visuals.length)visuals[0].anchors=['visual-report-start'];
+  const detail=scope==='full'?buildDetailedReportPdf(report,measure,1+visuals.length):null;
+  const pages=detail?[summary,...detail.contents,...visuals,...detail.pages]:[summary];
+  const anchors=new Map<string,number>();
+  pages.forEach((page,index)=>page.anchors?.forEach(id=>anchors.set(id,index+1)));
   const pdf=new JsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   pdf.setProperties({title:`${report.meta?.siteName || 'Marketing Scanner'} report`,creator:'Marketing Scanner'});
   try {
@@ -43,7 +48,7 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
         setFont(line);ctx.fillStyle=line.color;
         const top=line.y+(line.lineHeight-line.size)/2;
         ctx.fillText(line.text,line.x,top);
-        if(line.href && line.width) {
+        if((line.href||line.targetId) && line.width) {
           ctx.strokeStyle=line.color;ctx.lineWidth=0.5;ctx.beginPath();
           ctx.moveTo(line.x,top+line.size+2);ctx.lineTo(line.x+line.width,top+line.size+2);ctx.stroke();
         }
@@ -52,11 +57,14 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
       ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(PDF_PAGE.padding,footerTop);ctx.lineTo(PDF_PAGE.width-PDF_PAGE.padding,footerTop);ctx.stroke();
       setFont({size:11,weight:400,color:'#6b7280',lineHeight:18});ctx.fillStyle='#6b7280';
       ctx.fillText(`진짜마케팅 · 마케팅스캐너     ${i+1} / ${pages.length}`,PDF_PAGE.padding,footerTop+9);
+      if(detail&&i>0){ctx.fillStyle='#2442b5';ctx.fillText('목차로 이동',PDF_PAGE.width-PDF_PAGE.padding-64,footerTop+9);}
       if(i>0) pdf.addPage();
       pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,210,297,undefined,'FAST');
-      for(const line of pages[i].lines) if(line.href && line.width) {
-        pdf.link(line.x*210/PDF_PAGE.width,line.y*297/PDF_PAGE.height,line.width*210/PDF_PAGE.width,line.lineHeight*297/PDF_PAGE.height,{url:line.href});
+      for(const line of pages[i].lines) if((line.href||line.targetId) && line.width) {
+        const targetPage=line.targetId?anchors.get(line.targetId):undefined;
+        if(line.href||targetPage)pdf.link(line.x*210/PDF_PAGE.width,line.y*297/PDF_PAGE.height,line.width*210/PDF_PAGE.width,line.lineHeight*297/PDF_PAGE.height,line.href?{url:line.href}:{pageNumber:targetPage!,top:0});
       }
+      if(detail&&i>0)pdf.link((PDF_PAGE.width-PDF_PAGE.padding-70)*210/PDF_PAGE.width,(footerTop+5)*297/PDF_PAGE.height,23,7,{pageNumber:anchors.get('report-contents')!,top:0});
     }
     let domain='website';
     try {domain=new URL(report.url).hostname.replace(/[^a-zA-Z0-9-]/g,'_');} catch { /* Older snapshots may contain a bare domain. */ }

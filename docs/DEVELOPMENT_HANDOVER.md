@@ -1,3 +1,5 @@
+> Latest PDF work: [Visual results and readable full-detail export](PDF_READABILITY_HANDOVER_2026-10-06.md).
+
 > Latest access change: [Explicit login-free network access](NETWORK_ACCESS_HANDOVER_2026-10-06.md). This supersedes the earlier no-network-exception rule only for the explicitly configured network.
 
 > Latest report UI work: [12-screen usability revision](REPORT_USABILITY_HANDOVER_2026-10-06.md), PR #60.
