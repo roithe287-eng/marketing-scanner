@@ -28,9 +28,9 @@ test('brief names missing word data without inventing TO-BE suggestions',()=>{
  const text=buildReportSummaryPage(fixture,measure).lines.map(l=>l.text).join('');
  assert.match(text,/저장된 반복 표현 제안이 없습니다/);assert.doesNotMatch(text,/운영 · 구체화/);
 });
-test('template highlighting retains literal wording and offers four accessible placement controls',()=>{
+test('template highlighting retains literal wording without a duplicate generic placement map',()=>{
  const r={...fixture,keywordFrequency:frequency},html=renderToStaticMarkup(React.createElement(KeywordRewritePanel,{report:r}));
- assert.match(html,/<mark>\[운영 대상\]<\/mark>/);assert.match(html,/문구 적용 위치 선택/);
- assert.equal((html.match(/class="report-wirezone report-wirezone-/g)||[]).length,4);
+ assert.match(html,/<mark>\[운영 대상\]<\/mark>/);assert.doesNotMatch(html,/문구 적용 위치 선택/);
+ assert.equal((html.match(/class="report-wirezone report-wirezone-/g)||[]).length,0);
  const text=html.replace(/<[^>]+>/g,'');for(const p of buildKeywordRewrites(frequency).singles)assert.ok(text.includes(p.template));
 });

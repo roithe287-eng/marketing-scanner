@@ -46,7 +46,7 @@ test('shared report keeps all five chapters, eight directions and complete issue
   assert.equal($('.report-chapter').length,5);assert.equal($('.report-axis').length,8);
   assert.ok($.text().includes(issue.recommendation));assert.equal($('.report-copy-fallback textarea[readonly]').length,1);
   assert.ok($('.report-copy-fallback textarea').text().includes(report.url));
-  const counts=$('.report-backlog-distribution button strong').map((_,el)=>parseInt($(el).text())).get();assert.equal(counts.slice(1).reduce((a,b)=>a+b,0),counts[0]);
+  assert.equal($('#report-execution-board').length,1);assert.equal($('.report-backlog-distribution').length,0);assert.ok($('.work-task-list>details').length>0);
   assert.equal(JSON.stringify(report),before);
 });
 test('Naver graphic uses criteria counts for legacy reports, without invented current status',()=>{

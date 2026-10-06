@@ -19,11 +19,11 @@ const input={id:'own',name:'자사',url:fixture.url,own:true,title:'메타 광�
 const competitor={rank:1,searchRank:3,title:'검색 결과 제목',description:'검색 요약',domain:'agency.test',link:'https://agency.test',metaTitle:input.title,metaDescription:input.description};
 const report=MarketingReportSchema.parse({...fixture,competitorAnalysis:{searchKeyword:'메타 광고 대행',competitors:[competitor],ourSite:{url:fixture.url,domain:'example.com',title:input.title,metaDescription:input.description,h1:''}}});
 test('coordinates are reproducible, independent of repeated words and never measure price or quality',()=>{
-  const row=scorePosition(input,'메타 광고 대행');assert.equal(row.x,67);assert.equal(row.y,100);
-  assert.equal(scorePosition({...input,description:'메타 광고 대행'},'메타 광고 대행').x,100);
+  const row=scorePosition(input,'메타 광고 대행');assert.equal(row.keywordScore,67);assert.equal(row.x,100);assert.equal(row.y,50);
+  assert.equal(scorePosition({...input,description:'메타 광고 대행'},'메타 광고 대행').keywordScore,100);
   const repeated=scorePosition({...input,description:input.description.repeat(30)},'메타 광고 대행');assert.equal(repeated.x,row.x);assert.equal(repeated.y,row.y);assert.equal(repeated.signalCount,row.signalCount);
   const noPrice=scorePosition({...input,title:'원하는 광고',description:'원하는 내용을 적었습니다'},'광고');assert.equal(noPrice.checks[0].found,false);assert.equal(noPrice.y,0);
-  assert.equal(scorePosition({...input,title:'메타 광고',description:'일반 안내'},'메타 광고 대행').x,33);
+  assert.equal(scorePosition({...input,title:'메타 광고',description:'일반 안내'},'메타 광고 대행').keywordScore,33);
   assert.equal(scorePosition({...input,title:'메타 광고',description:'후기 없음, 인증 미보유, 상담 불가'},'광고').y,0);
 });
 test('failed or missing evidence is unplaced while complete zero-signal evidence remains real zero',()=>{
@@ -83,10 +83,10 @@ test('PDF chart uses the same coordinates, keeps all candidate labels, and stays
 test('bubble area reflects capped distinct information and group size never rewards duplicate companies',()=>{
   const sparse=scorePosition({...input,title:'광고',description:'사례 상담'},'광고');
   const rich=scorePosition({...input,title:'광고',description:'사례 후기 인증 특허 상담 문의 예약'},'광고');
-  assert.equal(sparse.y,rich.y);assert.equal(sparse.signalCount,2);assert.equal(rich.signalCount,4);
+  assert.ok(sparse.y!<rich.y!);assert.equal(sparse.signalCount,2);assert.equal(rich.signalCount,4);
   assert.equal(rich.checks[2].signals.length,4);assert.equal(rich.checks[2].signalCount,2);
   const repeated=scorePosition({...input,title:'광고 사례 상담',description:'사례 상담 사례 상담'},'광고');assert.equal(repeated.signalCount,2);
-  const group=positionGroups([sparse,{...sparse,id:'candidate-2'},rich])[0];assert.equal(group.signalCount,8/3);
+  const group=positionGroups([sparse,{...sparse,id:'candidate-2'}])[0];assert.equal(group.signalCount,2);assert.equal(positionGroups([sparse,rich]).length,2);
   assert.ok(positionDiameter(rich.signalCount!)>positionDiameter(sparse.signalCount!));
   assert.ok(Math.abs((positionDiameter(0)**2+positionDiameter(8)**2)/2-positionDiameter(4)**2)<.001);
   assert.equal(positionDiameter(0),44);assert.equal(positionDiameter(8,true),64);

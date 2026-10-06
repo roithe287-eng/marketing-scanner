@@ -1,4 +1,4 @@
-import {buildSiteGuide,guideInstruction} from './siteGuidebook';
+import {buildSiteGuide,guideInstruction,guideTopic} from './siteGuidebook';
 import type {MarketingReport} from './reportSchema';
 import {buildReportInsights, type ReportInsights} from './reportInsights';
 import {growthPageEvidence} from './growthPlan';
@@ -31,10 +31,18 @@ export function buildExecutionPlan(report:MarketingReport,data:ReportInsights=bu
  });
  // Only the starting list is deduplicated. Every original evidence row remains in the board and backlog.
  const seen=new Set<string>();
- const first=tasks.filter(t=>{const key=/\bH1\b/i.test(t.title)?'heading-h1':t.title.replace(/\s+/g,'').toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).slice(0,3);
+ const first=tasks.filter(t=>{const topic=guideTopic(t.title);const key=t.guideScope==='account'?t.id:topic==='ai'?'answer-content':/\bH1\b/i.test(t.title)?'heading-h1':t.title.replace(/\s+/g,'').toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).slice(0,3);
  return {tasks,first};
 }
 export type ExecutionPlan=ReturnType<typeof buildExecutionPlan>;
+export function groupExecutionTasks(tasks:ExecutionPlan['tasks']){
+ const groups=new Map<string,ExecutionPlan['tasks']>();
+ for(const task of tasks){
+  const key=task.guideScope==='account'?task.id:guideTopic(task.title)==='ai'?`${task.owner}:ai-content`:`${task.owner}:${task.title.replace(/\s+/g,'').toLowerCase()}`;
+  const group=groups.get(key)||[];group.push(task);groups.set(key,group);
+ }
+ return [...groups.values()].map(members=>({primary:members[0],related:members.slice(1),members}));
+}
 export function executionBrief(report:MarketingReport,tasks:ExecutionPlan['tasks'],owner?:string) {
  return [`마케팅스캐너 · ${owner||'전체'} 작업 지시서`,`대상 URL: ${report.url}`,'담당 구분과 수정 위치는 추천입니다. 원문·실제 설정을 확인한 뒤 적용하세요.',...tasks.map((t,i)=>`\n${i+1}. ${t.title}\n담당: ${workOwners.find(o=>o.id===t.owner)!.label}\n진단 출처: ${t.source}\n위치: ${t.location}\n확인 근거: ${t.evidence}\n실행: ${t.action}\n완료 확인: ${t.completion}\n관찰 KPI: ${t.kpi}\n\n${guideInstruction(buildSiteGuide(report,{title:t.title,scope:t.guideScope,instructions:t.instructions,completion:t.completion,current:t.current,evidence:t.evidence,proposal:t.action}))}`),'\n완료 후 같은 URL을 재진단하고, 실제 사업 성과는 같은 기간·채널·기기 조건으로 별도 비교하세요.'].join('\n');
 }

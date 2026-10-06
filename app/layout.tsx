@@ -9,6 +9,7 @@ import "./report-layout-refinements.css";
 import "./report-workflow.css";
 import "./report-guidebook.css";
 import "./report-reading.css";
+import "./report-usability.css";
 
 const pretendard = localFont({
   src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",

@@ -17,7 +17,7 @@ export default function GrowthPlanPanel({report}:{report:MarketingReport}) {
     const text=growthBrief(report,task);setFallback('');
     try{await navigator.clipboard.writeText(text);setCopyState(id);}catch{setCopyState('');setFallback(text);}
   }
-  return <section className="report-card report-growth" aria-label="SEO GEO AEO 실행 가이드">
+  return <section className="report-card report-growth" aria-label="SEO GEO AEO 실행 가이드" id="report-growth-plan">
     <div className="report-card-heading"><p className="report-eyebrow">SEARCH → ANSWER → ACTION</p><h3>{GROWTH_TITLE}</h3><p className="report-note">SEO·GEO·AEO는 서로 연결된 관점입니다. 고객이 찾고, 이해하고, 행동하도록 같은 페이지의 기본기를 함께 개선합니다.</p></div>
     <div className="growth-concepts">{GROWTH_CONCEPTS.map(c=><article key={c.id} data-area={c.id}><span>{c.id}</span><h4>{c.title}</h4><p>{c.text}</p><small>확인할 지표</small><strong>{c.metric}</strong></article>)}</div>
     <ol className="growth-path" aria-label="사이트 개선과 측정의 연결"><li><span>01</span><strong>읽을 수 있는 페이지</strong><p>접근·색인 확인</p></li><li><span>02</span><strong>선택할 이유가 있는 제목</strong><p>노출·CTR 관찰</p></li><li><span>03</span><strong>근거가 있는 답변</strong><p>AI 노출·인용 관측</p></li><li><span>04</span><strong>완료할 수 있는 행동</strong><p>문의·구매 확인</p></li></ol>
