@@ -196,7 +196,9 @@ test("customer cannot read another owner or a legacy unowned report", () => {
   assert.equal(canReadOwner("user-a", { kind: "account", account }), true);
   assert.equal(canReadOwner("user-b", { kind: "account", account }), false);
   assert.equal(canReadOwner(undefined, { kind: "account", account }), false);
-  assert.equal(canReadOwner(undefined, { kind: "internal" }), true);
+  assert.equal(canReadOwner(undefined, { kind: "internal" }), false);
+  assert.equal(canReadOwner('internal', { kind: "internal" }), true);
+  assert.equal(canReadOwner('user-a', { kind: "internal" }), false);
   assert.equal(isActive({ ...account, status: "suspended" }), false);
   assert.equal(isActive({ ...account, expiresAt: 1 }), false);
 });

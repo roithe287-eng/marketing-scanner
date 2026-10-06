@@ -80,9 +80,9 @@ export async function updateSharedReportCompetitor(
   principal: Principal,
 ): Promise<boolean> {
   if (!validId(id)) return false;
-  const privileged =
-    principal.kind === "internal" || principal.account.role === "admin";
-  if (!privileged && !principal.account.features.reports) return false;
+  const privileged = principal.kind === 'account' && principal.account.role === 'admin';
+  if (principal.kind === 'account' && !privileged && !principal.account.features.reports) return false;
+  const owner = principal.kind === 'internal' ? 'internal' : principal.account.id;
   for(let attempt=0;attempt<3;attempt++) {
     const raw=await db().get<string|Stored>(reportKey(id));
     const record=decode<Stored>(raw);if(!record||record.version!==2)return false;
@@ -91,7 +91,7 @@ export async function updateSharedReportCompetitor(
     const result=await db().eval<unknown[],number>(
       RETENTION_LUA+`if not data then return 0 end;if ARGV[3]~='privileged' and data.ownerId~=ARGV[3] then return 0 end;local current=cjson.decode(data.raw);if current.createdAt~=tonumber(ARGV[5]) then return 2 end;redis.call('SET',KEYS[1],ARGV[4],'KEEPTTL');return 1`,
       [reportKey(id)],
-      [...retentionArgs(),privileged?'privileged':principal.account.id,replacement,record.createdAt],
+      [...retentionArgs(),privileged?'privileged':owner,replacement,record.createdAt],
     );
     if(result!==2)return result===1;
   }
@@ -108,6 +108,7 @@ export async function listOwnReports(principal: Principal) {
   return own;
 }
 export async function listReportsForOwner(owner:string,principal:Principal) {
+  if(principal.kind==='internal'&&owner!=='internal')throw new AccessError(403,'보고서 목록 접근 권한이 없습니다.');
   if(principal.kind==='account'&&principal.account.role!=='admin'&&principal.account.id!==owner)throw new AccessError(403,'보고서 목록 접근 권한이 없습니다.');
   await db().zremrangebyscore(
     key("reports:" + owner),
