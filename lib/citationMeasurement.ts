@@ -37,16 +37,6 @@ export function parseOpenAI(payload: any, target: string) {
     .filter((a: any) => a.type === 'url_citation').map((a: any) => ({url:a.url,title:a.title}))), target);
   return { text, sources, searchUsed: (payload.output || []).some((o: any) => o.type === 'web_search_call' && o.status === 'completed') };
 }
-export function parseGemini(payload: any, target: string) {
-  const candidate = payload.candidates?.[0];
-  const text = (candidate?.content?.parts || []).filter((p: any) => !p.thought).map((p: any) => p.text || '').join('\n');
-  const meta = candidate?.groundingMetadata;
-  // Only chunks actually referenced by a grounding support are citations.
-  const referenced = new Set<number>((meta?.groundingSupports || []).flatMap((s: any) => s.groundingChunkIndices || []));
-  const sources = normalizeSources((meta?.groundingChunks || []).flatMap((c: any, i: number) =>
-    referenced.has(i) && c.web ? [{url:c.web.uri,title:c.web.title}] : []), target);
-  return {text, sources, searchUsed: !!meta?.webSearchQueries?.length};
-}
 function rate(rows: LlmCitationQuestionResult[], match: (r: LlmCitationQuestionResult) => boolean) {
   return rows.length ? Math.round(rows.filter(match).length / rows.length * 100) : null;
 }
@@ -68,7 +58,6 @@ export function aggregateCitation(results: LlmCitationQuestionResult[]) {
     overallScore: citationRate ?? 0, citationRate: citationRate ?? 0,
     engineScores: {
       chatgpt: rate(measured.filter(r => r.engine === 'chatgpt'), r => r.cited) ?? 0,
-      gemini: rate(measured.filter(r => r.engine === 'gemini'), r => r.cited) ?? 0,
     },
   };
 }

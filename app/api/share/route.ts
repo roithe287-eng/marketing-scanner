@@ -21,15 +21,15 @@ export async function GET(req: NextRequest) {
   if (!/^[A-Za-z0-9]{4,12}$/.test(id)) return NextResponse.json({message:"올바른 공유 링크 또는 ID를 입력해 주세요."},{status:400});
   if (!isShareStoreAvailable()) return NextResponse.json({message:"기준 보고서를 불러올 수 없습니다."},{status:503});
   const report = await getSharedReport(id,principal);
-  if (!report) return NextResponse.json({message:"공유 보고서가 만료되었거나 찾을 수 없습니다."},{status:404});
+  if (!report) return privateJson({message:"공유 보고서가 만료되었거나 찾을 수 없습니다. 보관 기간은 최대 7일입니다."},404);
   if(req.nextUrl.searchParams.get('mode')==='diagnosis') {
     const diagnosisBaseline=createDiagnosisBaseline(report,id);
     let geoBaseline;
-    if(report.llmCitationTest){const candidate={reportId:id,url:report.url,citation:report.llmCitationTest};try{baselineQuestions(candidate);geoBaseline=candidate;}catch{ /* Page comparison does not require GEO observations. */ }}
+    if(report.llmCitationTest){const candidate={reportId:id,expiresAt:report.sharedRetention?.expiresAt,url:report.url,citation:report.llmCitationTest};try{baselineQuestions(candidate);geoBaseline=candidate;}catch{ /* Page comparison does not require GEO observations. */ }}
     return privateJson({diagnosisBaseline,geoBaseline});
   }
   if (!report.llmCitationTest) return NextResponse.json({message:"GEO 관측이 포함된 보고서를 사용해 주세요."},{status:422});
-  const baseline = {reportId:id,url:report.url,citation:report.llmCitationTest};
+  const baseline = {reportId:id,expiresAt:report.sharedRetention?.expiresAt,url:report.url,citation:report.llmCitationTest};
   try {baselineQuestions(baseline);} catch (error) {return NextResponse.json({message:error instanceof Error?error.message:"질문을 불러올 수 없습니다."},{status:422});}
   return privateJson({baseline});
  }catch(error){return failure(error);}
@@ -62,7 +62,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ id });
+    const saved=await getSharedReport(id,principal);
+    if(!saved?.sharedRetention)throw new AccessError(410,'보고서 보관 기간이 만료되었습니다. 다시 진단해 주세요.');
+    return privateJson({id,createdAt:saved.sharedRetention.createdAt,expiresAt:saved.sharedRetention.expiresAt});
   } catch (error: any) {
     return failure(error);
   }
@@ -120,7 +122,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    return NextResponse.json({ ok: true });
+    return privateJson({ ok: true });
   } catch (error: any) {
     return failure(error);
   }

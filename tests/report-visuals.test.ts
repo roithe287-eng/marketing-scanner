@@ -16,7 +16,7 @@ test('visual metrics separate failed, unverified and absent observations from me
   const visual=buildObservationVisual(citation)!;
   assert.equal(visual.citationRate,100);assert.equal(visual.sourceTotal,1);assert.equal(visual.mentionRate,100);assert.equal(visual.mentionTotal,2);
   assert.deepEqual(visual.distributions[0].counts,{cited:1,uncited:0,unverified:1,unavailable:0,failed:0});
-  assert.equal(visual.questions[0].cells.gemini.mentioned,null);assert.equal(visual.questions[1].cells.gemini.state,'missing');
+  assert.equal(visual.distributions.length,1);assert.equal(visual.total,2);assert.deepEqual(Object.keys(visual.questions[0].cells),['chatgpt']);
   const failed=buildObservationVisual({...citation,results:[row({status:'error'})]})!;assert.equal(failed.citationRate,null);assert.equal(failed.mentionRate,null);
   const zero=buildObservationVisual({...citation,results:[row()]})!;assert.equal(zero.citationRate,0);assert.equal(zero.mentionRate,0);
 });
@@ -28,9 +28,9 @@ test('legacy and duplicated observations cannot imply verified source rates',()=
 });
 test('accessible charts provide text equivalents and distinguish percentage points',()=>{
   assert.equal(percentageChange(20,40),'+20%p');assert.equal(percentageChange(20,0),'-20%p');assert.equal(percentageChange(0,0),'변화 없음');assert.equal(percentageChange(null,0),'비교 불가');
-  const citation={...fixture.llmCitationTest!,results:[row({engine:'gemini',status:'error'})]};
+  const citation={...fixture.llmCitationTest!,results:[row({status:'error'})]};
   const html=renderToStaticMarkup(React.createElement(ObservationOverview,{citation}));assert.match(html,/호출 실패 1건/);assert.match(html,/판정 가능한 관측 없음/);assert.ok(!/>0%<\//.test(html));
-  const matrix=renderToStaticMarkup(React.createElement(QuestionMatrix,{citation,selected:null,onSelect:()=>{}}));assert.match(matrix,/질문 상태 필터/);assert.match(matrix,/관측 없음/);assert.match(matrix,/호출 실패/);
+  const matrix=renderToStaticMarkup(React.createElement(QuestionMatrix,{citation,selected:null,onSelect:()=>{}}));assert.match(matrix,/질문 상태 필터/);assert.match(matrix,/호출 실패/);
   const paired=renderToStaticMarkup(React.createElement(PairedBars,{label:'출처',before:null,after:null,count:0}));assert.match(paired,/비교 불가/);assert.ok(!/>0%<\/strong>/.test(paired));
 });
 test('all infographic pages preserve long questions and stay inside PDF content bounds',()=>{

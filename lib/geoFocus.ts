@@ -1,9 +1,10 @@
+import {activeCitation} from './activeCitation';
 import type { MarketingReport } from './reportSchema';
 import { safeHttpUrl } from './citationMeasurement';
 
 export type GeoTask = {id: string; title: string; evidence: string; nextStep: string; completion: string; targetUrl?: string};
 export function buildGeoFocus(report: MarketingReport) {
-  const citation = report.llmCitationTest;
+  const citation = report.llmCitationTest?activeCitation(report.llmCitationTest):null;
   if (citation?.measurementVersion !== 2) return null;
   const questions = [...new Set(citation.results.map(row => row.question.trim()).filter(Boolean))].slice(0, 5);
   const measured = citation.results.filter(row => row.status === 'ok' && row.searchUsed && row.citationVerified);
@@ -26,7 +27,7 @@ export function buildGeoFocus(report: MarketingReport) {
     nextStep: report.discoverability.priorityActions[0], completion: '해당 변경을 반영한 페이지와 실제 표시 내용을 확인',
     targetUrl: safeHttpUrl(report.url) || undefined});
   if (failed.length > 0 || measured.length === 0) {
-    const engines = [...new Set(failed.map(row => row.engine === 'chatgpt' ? 'OpenAI' : 'Gemini'))];
+    const engines = [...new Set(failed.map(row => 'OpenAI'))];
     const retry = {id: 'restore-measurement', title: '실패·미확인 관측을 복구하고 다시 확인',
       evidence: measured.length === 0 ? '출처 판정이 완료된 응답이 없어 콘텐츠의 인용 여부를 확정할 수 없습니다.'
         : `${engines.join('·')}에서 실패·검색 미확인 ${failed.length}건이 있습니다. 이 응답으로 인용 여부를 판단하지 않습니다.`,

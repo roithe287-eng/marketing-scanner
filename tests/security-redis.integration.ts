@@ -123,7 +123,7 @@ test("inquiry, approval, single-use activation, login, ownership, concurrency an
   assert.equal(await updateSharedReportCompetitor(id, {}, other), false);
   await db().set("ms:preview:report:abc123", fixture, { ex: 60 });
   assert.equal(await getSharedReport("abc123", principal), null);
-  assert.ok(await getSharedReport("abc123", { kind: "internal" }));
+  assert.equal(await getSharedReport("abc123", { kind: "internal" }),null,"untraceable legacy age is not re-dated on read");
   const parallel = await Promise.allSettled(
     Array.from({ length: 12 }, () => reserve(principal, "analyze")),
   );

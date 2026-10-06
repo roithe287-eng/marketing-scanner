@@ -1,3 +1,5 @@
+import {retentionTime} from './reportRetention';
+import {activeCitationReport} from './activeCitation';
 import {keywordFrequencyScope,keywordDensityNote} from './keywordFrequencyPresentation';
 import {presentBenchmark} from './benchmarkPresentation';
 import {AD_BUDGET_NOTE} from './adBudgetScenario';
@@ -20,18 +22,20 @@ const labels:Record<string,string> = {
   problem:'문제',reason:'이유',recommendation:'개선안',priority:'우선순위',badExample:'현재 예시',goodExample:'개선 예시',exampleNote:'예시 참고',steps:'실행 순서',beforeExample:'개선 전',afterExample:'개선 후',
   immediately:'즉시',thisWeek:'이번 주',thisMonth:'이번 달',heroHeadline:'추천 헤드라인',subHeadline:'서브 헤드라인',ctaText:'추천 CTA',currentHeroHeadline:'현재 헤드라인',currentCtaText:'현재 CTA',competitorCopyInsight:'경쟁사 카피 인사이트',
   checks:'점검 결과',notes:'참고',seoFoundation:'SEO 기반',contentStructure:'콘텐츠 구조',redundancy:'콘텐츠 중복',geo:'GEO',structuredData:'구조화 데이터',eeat:'경험·전문성·신뢰',localBrand:'지역·브랜드',aiAnswerability:'AI 답변 대응',siteType:'사이트 유형',
-  citationRate:'구버전 인용률(언급 기반)',totalTests:'총 측정 수',totalCited:'자사 출처 확인 수',engineScores:'엔진별 인용 지표',chatgpt:'OpenAI',gemini:'Gemini',results:'질문별 답변·출처',questionType:'질문 유형',cited:'자사 출처 확인',citationRank:'구버전 답변 목록 위치',responseSnippet:'답변 발췌',reasoning:'판정 설명',
+  citationRate:'구버전 인용률(언급 기반)',totalTests:'총 측정 수',totalCited:'자사 출처 확인 수',engineScores:'엔진별 인용 지표',chatgpt:'OpenAI',results:'질문별 답변·출처',questionType:'질문 유형',cited:'자사 출처 확인',citationRank:'구버전 답변 목록 위치',responseSnippet:'답변 발췌',reasoning:'판정 설명',
   statusLabel:'측정 상태',brandMentioned:'브랜드 언급',branded:'브랜드 포함 질문',journey:'고객 여정',model:'측정 모델',measuredAt:'측정 시각(UTC)',durationMs:'소요 시간(ms)',searchUsed:'검색 수행 확인',citationVerified:'출처 판정 가능',sources:'출처 링크',ownership:'출처 구분',responseText:'답변 원문',errorMessage:'측정 오류',errorCode:'오류 분류',errorAction:'오류 조치 안내',httpStatus:'API 응답 상태',providerCode:'제공자 오류·종료 코드',diagnosticId:'오류 식별 번호',questionSetId:'질문 세트 ID',cacheHit:'저장된 측정 재사용',validTests:'정상 답변 수',citationValidTests:'출처 판정 분모',failedTests:'실패·미설정 수',mentionRate:'브랜드 언급률(%)',ownedCitationRate:'자사 출처 인용률(%)',brandedCitationRate:'브랜드 포함 질문 인용률(%)',unbrandedCitationRate:'브랜드 미포함 질문 인용률(%)',actionPlan:'질문별 실행 과제',targetUrl:'검토 페이지',action:'권장 조치',nextStep:'다음 실행',accuracy:'사실 정확도',
   totalKeywords:'키워드 수',averageRank:'평균 순위',visibleCount:'노출 수',topFiveCount:'상위 5위 수',hiddenCount:'미노출 수',keywords:'키워드별 결과',keyword:'키워드',naverWebRank:'네이버 웹 순위',naverBlogRank:'네이버 블로그 순위',totalResults:'검색 결과 수',competitorAtTop:'상위 경쟁사',
   category:'분류',categoryLabel:'업종',sampleSize:'표본 수',hasSufficientSample:'표본 충분 여부',metrics:'영역별 비교',ours:'우리 점수',average:'평균',topTen:'표본 90백분위',gapVsAverage:'평균과 차이',gapVsTopTen:'상위와 차이',strongestArea:'강점',weakestArea:'보완점',naverRef:'참고',group:'점검 그룹',isLocalBusiness:'지역 사업 여부',placeScore:'플레이스 점수',advisorScore:'서치어드바이저 점수',counts:'항목 수',pass:'통과',warning:'주의',fail:'미충족',
   totalTokens:'전체 토큰 수',uniqueSingles:'단일 키워드 수',uniquePhrases:'구문 수',singles:'단일 키워드',phrases:'키워드 구문',count:'횟수',density:'빈도(%)',inTitle:'제목 포함',inMetaDescription:'설명 포함',searchKeyword:'검색 키워드',keywordSource:'키워드 생성 방식',competitors:'경쟁사',rank:'순위',link:'페이지 링크',description:'설명',domain:'도메인',metaTitle:'페이지 제목',metaDescription:'메타 설명',h1:'H1',ctaTexts:'CTA 문구',fetchError:'수집 오류',keyMessage:'핵심 메시지',differentiation:'차별점',overallComparison:'전체 비교',ourPositioning:'우리 포지셔닝',buttonText:'버튼 문구',url:'URL',
 };
-const values:Record<string,string> = {chatgpt:'OpenAI',gemini:'Gemini',true:'예',false:'아니오',ok:'정상',pending:'분석 중',complete:'완료',empty:'비교 대상 없음',error:'실패',timeout:'시간 초과',unavailable:'미설정',unverified:'검색·출처 확인 불가',own:'자사',external:'외부',unresolved:'대상 도메인 미확인',needs_review:'검토 필요',review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요',pass:'통과',warning:'주의',fail:'미충족',high:'높음',medium:'보통',low:'낮음',brand:'브랜드 확인',industry:'업종 비교',service:'서비스',local:'지역·특성'};
+const values:Record<string,string> = {chatgpt:'OpenAI',true:'예',false:'아니오',ok:'정상',pending:'분석 중',complete:'완료',empty:'비교 대상 없음',error:'실패',timeout:'시간 초과',unavailable:'미설정',unverified:'검색·출처 확인 불가',own:'자사',external:'외부',unresolved:'대상 도메인 미확인',needs_review:'검토 필요',review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요',pass:'통과',warning:'주의',fail:'미충족',high:'높음',medium:'보통',low:'낮음',brand:'브랜드 확인',industry:'업종 비교',service:'서비스',local:'지역·특성'};
 Object.assign(labels, {evidenceStatus:'근거 상태',evidenceNote:'근거 재확인 안내',methodVersion:'집계 방식 버전',scope:'집계 범위',sourceLength:'집계한 본문 글자 수',bodyTruncated:'본문 일부만 집계',totalPhrases:'집계 대상 인접 단어쌍 수',windowDays:'집계 기간(일)',scoringMethod:'진단 방식',scopeNote:'비교 범위',measurementProtocol:'비교 측정 규칙',brandName:'브랜드 판정 기준',requestFingerprint:'요청 설정 식별자',filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
 Object.assign(values, {body:'수집 본문',review:'재확인 필요',keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
 export function buildReportDocument(report:MarketingReport):ReportBlock[] {
+  report=activeCitationReport(report);
   const blocks:ReportBlock[] = [
     {kind:'title',text:`${report.meta?.siteName || report.meta?.domain || '웹사이트'} 마케팅 진단 리포트`},
+    ...(report.sharedRetention?[{kind:'body' as const,text:`공유 페이지 열람 종료: ${retentionTime(report.sharedRetention.expiresAt)} · 다운로드한 파일은 자동 회수되지 않습니다.`}]:[]),
     {kind:'body',text:report.url,href:safeHttpUrl(report.url)||undefined},
     {kind:'body',text:`종합 점수 ${report.overallScore} / 100`},
     {kind:'body',text:report.oneLineSummary},
@@ -90,7 +94,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
       {kind:'body',text:`${comparison.matched}쌍 비교 · ${comparison.excluded}쌍 제외`});
     if (comparison.matched) blocks.push({kind:'body',text:`새로 인용 ${comparison.gained}건 · 이번에 미확인 ${comparison.lost}건 · 인용 유지 ${comparison.kept}건`});
     for (const pair of comparison.pairs) {
-      blocks.push({kind:'subheading',text:`${pair.engine==='chatgpt'?'OpenAI':'Gemini'} · ${pair.question}`},
+      blocks.push({kind:'subheading',text:`OpenAI · ${pair.question}`},
         {kind:'body',text:pair.reason?`비교 제외 · ${comparisonReasons[pair.reason]}`:changeLabels[pair.change!]},
         {kind:'body',text:`이전: ${observationLabel(pair.before)} / 현재: ${observationLabel(pair.after)}`});
     }

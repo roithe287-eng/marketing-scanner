@@ -1,6 +1,7 @@
-.diagnosis-radar-graphic { display:block; width:100%; max-width:480px; height:auto; margin:6px auto; }
+.diagnosis-radar-graphic { display:block; width:100%; max-width:480px; height:auto; margin:4px auto; overflow:hidden; }
+.diagnosis-radar-label { font-size:16px; }
 @media(max-width:599px) {
- .diagnosis-radar-graphic text { font-size:22px; }
- .diagnosis-radar-graphic .diagnosis-radar-average { font-size:32px; }
- .diagnosis-radar-graphic .diagnosis-radar-average-note { font-size:17px; }
+ .diagnosis-radar-graphic .diagnosis-radar-label { font-size:18px; }
+ .diagnosis-radar-graphic .diagnosis-radar-average { font-size:28px; }
+ .diagnosis-radar-graphic .diagnosis-radar-average-note { font-size:13px; }
 }

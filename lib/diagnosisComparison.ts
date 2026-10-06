@@ -16,7 +16,7 @@ export function diagnosisChecks(report:MarketingReport):DiagnosisCheck[] {
 }
 export function createDiagnosisBaseline(report:MarketingReport,reportId:string):DiagnosisBaseline {
  const p=growthPageEvidence(report);
- return DiagnosisBaselineSchema.parse({version:1,reportId,url:report.url,finalUrl:p?.finalUrl,capturedAt:p?.capturedAt,method:report.diagnosisMethod,overallScore:report.overallScore,diagnosis:report.diagnosis,checks:diagnosisChecks(report)});
+ return DiagnosisBaselineSchema.parse({version:1,reportId,expiresAt:report.sharedRetention?.expiresAt,url:report.url,finalUrl:p?.finalUrl,capturedAt:p?.capturedAt,method:report.diagnosisMethod,overallScore:report.overallScore,diagnosis:report.diagnosis,checks:diagnosisChecks(report)});
 }
 export const comparisonGroups=[{id:'resolved',label:'통과 전환',note:'동일 항목이 보완에서 통과로 변경'},{id:'kept',label:'보완 유지',note:'양쪽 결과에서 보완 필요'},{id:'new',label:'새로 보완',note:'현재 결과에서 새로 확인한 보완 항목'},{id:'unknown',label:'재확인 필요',note:'누락·중복·수동 확인 등으로 해결 판단 보류'}] as const;
 export type DiagnosisChange=typeof comparisonGroups[number]['id'];

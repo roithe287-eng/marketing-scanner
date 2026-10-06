@@ -1,3 +1,4 @@
+import {activeCitationReport,activeCitation} from './activeCitation';
 import type {GeoBaseline, LlmCitationQuestionResult as Row, MarketingReport} from './reportSchema';
 
 export const GEO_COMPARISON_TITLE = 'GEO 이전·현재 비교';
@@ -23,7 +24,7 @@ export function parseReportReference(value:string, origin?:string):string|null {
 }
 export function baselineQuestions(baseline:GeoBaseline) {
   if (baseline.citation.measurementVersion!==2) throw new Error('이 보고서에는 재측정할 GEO 관측이 없습니다. 새 진단 결과를 먼저 공유해 주세요.');
-  const questions=[...new Map(baseline.citation.results.map(row => [row.question.trim(), {question:row.question.trim(),type:row.questionType,journey:row.journey || '기존 질문'}])).values()];
+  const questions=[...new Map(activeCitation(baseline.citation).results.map(row => [row.question.trim(), {question:row.question.trim(),type:row.questionType,journey:row.journey || '기존 질문'}])).values()];
   if (!questions.length || questions.length>5 || questions.some(q=>q.question.length<5||q.question.length>250||q.journey.length>40)) throw new Error('기준 보고서의 질문 형식을 확인할 수 없습니다. 새 진단 결과를 기준으로 사용해 주세요.');
   return questions;
 }
@@ -35,6 +36,7 @@ export function observationLabel(row?:Row) {
 }
 export function comparisonTime(value?:string) {return value && Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium',timeStyle:'short'}).format(new Date(value))+' KST' : '시각 기록 없음';}
 export function buildGeoComparison(report:MarketingReport) {
+  report=activeCitationReport(report);
   const baseline=report.geoBaseline;if (!baseline) return null;
   const before=baseline.citation,after=report.llmCitationTest;
   const index=(rows:Row[])=>{const map=new Map<string,Row[]>();for (const row of rows) {const key=JSON.stringify([row.engine,row.question.trim()]);map.set(key,[...(map.get(key)||[]),row]);}return map;};

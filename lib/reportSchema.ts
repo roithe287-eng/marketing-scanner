@@ -1,3 +1,4 @@
+import {activeCitation} from './activeCitation';
 import { z } from "zod";
 import { citationFailureCodes } from './citationFailure';
 import {SiteEditingSchema} from './siteEditingSchema';
@@ -80,7 +81,7 @@ export const LlmCitationQuestionResultSchema = z.object({
   providerCode: z.string().max(80).optional(),
   diagnosticId: z.string().uuid().optional(),
 });
-export const LlmCitationTestSchema = z.object({
+const StoredLlmCitationTestSchema = z.object({
   measurementProtocol: z.enum(["geo-compare-v1","geo-compare-v2","geo-compare-v3"]).optional(),
   targetUrl: z.string().url().optional(),
   brandName: z.string().optional(),
@@ -113,12 +114,15 @@ export const LlmCitationTestSchema = z.object({
   results: z.array(LlmCitationQuestionResultSchema),
   engineScores: z.object({
     chatgpt: z.number().min(0).max(100),
-    gemini: z.number().min(0).max(100),
+    gemini: z.number().min(0).max(100).optional(),
   }),
   priorityActions: z.array(z.string()).optional(),
 });
 
+export const LlmCitationTestSchema = StoredLlmCitationTestSchema.transform(activeCitation);
+
 export const GeoBaselineSchema = z.object({
+  expiresAt:z.number().finite().optional(),
   reportId: z.string().regex(/^[A-Za-z0-9]{4,12}$/),
   url: z.string().url(),
   citation: LlmCitationTestSchema,
@@ -374,12 +378,14 @@ export const DiagnosisScoresSchema = z.object({
 
 export const DiagnosisCheckSchema=z.object({key:z.string().max(600),label:z.string().max(600),status:z.enum(['pass','warning','fail','review']),evidence:z.string().max(20000),source:z.string().max(100)});
 export const DiagnosisBaselineSchema=z.object({
+ expiresAt:z.number().finite().optional(),
  version:z.literal(1),reportId:z.string().regex(/^[A-Za-z0-9]{4,12}$/),url:z.string().max(4000),finalUrl:z.string().max(4000).optional(),capturedAt:z.string().datetime().optional(),method:z.string().max(100).optional(),overallScore:z.number().min(0).max(100),diagnosis:DiagnosisScoresSchema,checks:z.array(DiagnosisCheckSchema).max(500),
 });
 export type DiagnosisBaseline=z.infer<typeof DiagnosisBaselineSchema>;
 export type DiagnosisCheck=z.infer<typeof DiagnosisCheckSchema>;
 
 export const MarketingReportSchema = z.object({
+  sharedRetention:z.object({reportId:z.string().regex(/^[A-Za-z0-9]{4,12}$/),createdAt:z.number().finite(),expiresAt:z.number().finite()}).optional(),
   scoringMethod:z.literal("ai-axes-mean-v1").optional(),
   integrity:z.object({version:z.literal(1),checkedAt:z.string().datetime(),note:z.string(),warnings:z.array(z.object({field:z.string(),message:z.string()})).max(100)}).optional(),
   analysisWarnings:z.array(z.object({key:z.string().max(40),label:z.string().max(80),status:z.enum(["timeout","unavailable","error"])})).max(10).optional(),
@@ -549,7 +555,7 @@ export type MarketingReport = z.infer<typeof MarketingReportSchema>;
 export type ChecklistItem = z.infer<typeof ChecklistItemSchema>;
 export type DiscoverabilityItem = z.infer<typeof DiscoverabilityItemSchema>;
 export type Discoverability = z.infer<typeof DiscoverabilitySchema>;
-export type LlmCitationTest = z.infer<typeof LlmCitationTestSchema>;
+export type LlmCitationTest = z.infer<typeof StoredLlmCitationTestSchema>;
 export type LlmCitationQuestionResult = z.infer<
   typeof LlmCitationQuestionResultSchema
 >;

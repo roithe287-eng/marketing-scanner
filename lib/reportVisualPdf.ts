@@ -62,7 +62,7 @@ export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer)
       const qText=`Q${q.id}. ${q.question}`,qHeight=wrapped(qText,662,14,700).length*21.7,height=qHeight+112;
       ensure(height+14,'질문별 AI 관측 지도 · 계속',note);rect(48,y,694,height,'#f6f8fb');
       text(qText,64,y+14,662,14,ink,700);const top=y+qHeight+29;
-      engines.forEach((engine,i)=>{const c=q.cells[engine],state=observationStates[c.state],x=64+i*339;rect(x,top,323,66,state.background,8);text(`${engineNames[engine]} · ${state.label}`,x+12,top+11,299,13,state.color,700);text(`브랜드 ${c.mentioned===null?'미확인':c.mentioned?'언급 있음':'언급 없음'}`,x+12,top+36,299,12,state.color);});
+      engines.forEach((engine,i)=>{const c=q.cells[engine],state=observationStates[c.state],x=64+i*339;rect(x,top,662,66,state.background,8);text(`${engineNames[engine]} · ${state.label}`,x+12,top+11,638,13,state.color,700);text(`브랜드 ${c.mentioned===null?'미확인':c.mentioned?'언급 있음':'언급 없음'}`,x+12,top+36,638,12,state.color);});
       y+=height+14;
     }
   }

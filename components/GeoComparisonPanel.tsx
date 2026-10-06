@@ -26,9 +26,9 @@ export default function GeoComparisonPanel({report}:{report:MarketingReport}) {
     </div>
     {result.matched>0 ? <p className="mt-4 text-sm leading-6">새로 인용 {result.gained}건 · 이번에 미확인 {result.lost}건 · 인용 유지 {result.kept}건</p> : <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm leading-7">비교 가능한 관측이 없습니다. 제외 이유를 확인하고, 이번 결과를 공유해 다음 측정의 기준으로 사용할 수 있습니다.</p>}
     <div className="mt-5 space-y-3">{result.pairs.map(pair=><details key={pair.key} className="rounded-xl border p-4">
-      <summary className="cursor-pointer text-sm leading-7"><span className="mr-2 font-bold">{pair.engine==='chatgpt'?'OpenAI':'Gemini'}</span><span className="break-words">{pair.question}</span><span className="mt-1 block text-xs text-jm-gray">{pair.reason?`비교 제외 · ${comparisonReasons[pair.reason]}`:changeLabels[pair.change!]} · 이전·현재 답변과 출처 보기</span></summary>
+      <summary className="cursor-pointer text-sm leading-7"><span className="mr-2 font-bold">OpenAI</span><span className="break-words">{pair.question}</span><span className="mt-1 block text-xs text-jm-gray">{pair.reason?`비교 제외 · ${comparisonReasons[pair.reason]}`:changeLabels[pair.change!]} · 이전·현재 답변과 출처 보기</span></summary>
       <div className="mt-4 grid gap-3 md:grid-cols-2"><Evidence row={pair.before} label="이전"/><Evidence row={pair.after} label="현재"/></div>
     </details>)}</div>
-    <p className="mt-4 text-xs leading-6 text-jm-gray">기준 보고서 ID: {result.baseline.reportId}. 이 비교에 사용한 이전 관측은 현재 보고서에 함께 저장됩니다. 상세 내용을 펼칠 때 AI를 다시 호출하지 않습니다.</p>
+    <p className="mt-4 text-xs leading-6 text-jm-gray">기준 보고서 ID: {result.baseline.reportId}. 이전 관측을 함께 저장해도 기준 보고서의 만료일은 연장되지 않습니다. 상세 내용을 펼칠 때 AI를 다시 호출하지 않습니다.</p>
   </section>;
 }

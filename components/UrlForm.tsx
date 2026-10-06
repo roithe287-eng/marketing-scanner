@@ -3,6 +3,7 @@
 import {useEffect, useRef, useState} from 'react';
 import {GeoBaselineSchema, DiagnosisBaselineSchema, type DiagnosisBaseline, type GeoBaseline} from '@/lib/reportSchema';
 import {baselineQuestions, comparisonTime, parseReportReference} from '@/lib/geoComparison';
+import {retentionTime} from '@/lib/reportRetention';
 import {requestJson} from '@/lib/client/request';
 
 type Props = {onSubmit:(url:string, geoQuestions?:string[], baselineId?:string)=>void;loading:boolean};
@@ -50,10 +51,10 @@ export default function UrlForm({onSubmit,loading}:Props) {
       <summary>GEO 질문·이전 보고서 비교 <span>(선택)</span></summary>
     <details className="px-4 py-3 text-left text-sm">
       <summary className="cursor-pointer font-bold">이전 보고서와 재진단 비교하기</summary>
-      <p className="mt-3 text-xs leading-6 text-jm-gray">보관한 보고서의 URL로 다시 진단해 레이더·보완 항목을 비교합니다. 재사용 가능한 GEO 질문이 있으면 동일 질문의 관측도 함께 비교합니다.</p>
+      <p className="mt-3 text-xs leading-6 text-jm-gray">보관한 보고서의 URL로 다시 진단해 레이더·보완 항목을 비교합니다. 재사용 가능한 GEO 질문이 있으면 동일 질문의 관측도 함께 비교합니다.</p><p className="mt-2 text-xs leading-6 text-jm-gray">공유 보고서는 최대 7일간 보관됩니다. 만료 전에 비교하세요. 비교를 저장해도 기준 보고서의 만료일은 연장되지 않습니다.</p>
       {!baseline ? <div className="mt-3 flex flex-col gap-2 sm:flex-row"><input aria-label="기준 보고서 공유 링크 또는 ID" value={reference} onChange={e=>{active.current?.abort();setBaselineLoading(false);setReference(e.target.value);setMessage('');}} disabled={loading} placeholder="https://www.mktscanner.com/r/..." className="min-w-0 flex-1 rounded-xl border p-3"/>
         <button type="button" onClick={loadBaseline} disabled={loading||baselineLoading||!reference.trim()} className="rounded-xl border px-4 py-3 font-bold disabled:opacity-50">{baselineLoading?'불러오는 중...':'기준 보고서 불러오기'}</button></div> :
-        <div className="mt-3 rounded-xl border bg-neutral-50 p-4"><p className="font-bold">비교 기준을 불러왔습니다</p><p className="mt-2 break-all text-xs leading-6">{baseline.url}<br/>{comparisonTime(baseline.capturedAt)} · {geoBaseline?`질문 ${baselineQuestions(geoBaseline).length}개 고정`:'페이지 진단 비교'}</p>
+        <div className="mt-3 rounded-xl border bg-neutral-50 p-4"><p className="font-bold">비교 기준을 불러왔습니다</p><p className="mt-2 break-all text-xs leading-6">{baseline.url}<br/>{baseline.expiresAt?`열람 종료: ${retentionTime(baseline.expiresAt)}`:null}<br/>{comparisonTime(baseline.capturedAt)} · {geoBaseline?`질문 ${baselineQuestions(geoBaseline).length}개 고정`:'페이지 진단 비교'}</p>
           {geoBaseline && !geoBaseline.citation.measurementProtocol && <p className="mt-2 text-xs leading-6 text-amber-800">이전 보고서에는 요청 설정 기록이 없어 변화율을 계산하지 않습니다. 이번 결과부터 다음 비교의 기준으로 사용할 수 있습니다.</p>}
           <button type="button" disabled={loading} onClick={()=>{setBaseline(null);setGeoBaseline(null);setMessage('');}} className="mt-3 text-xs underline">비교 해제 · 질문 직접 편집</button></div>}
     </details>

@@ -80,11 +80,11 @@ test('all failed or unverified GEO results suggest restoring observation, never 
   assert.deepEqual(focus.tasks.map(task=>task.id),['restore-measurement']);assert.equal(focus.questions.length,1);
 });
 
-test('valid own source and failed provider coexist without failure being treated as an uncited observation', () => {
+test('retired provider failure cannot create an OpenAI retry task', () => {
   const results=[row({cited:true,sources:[{url:'https://example.com/faq',title:'FAQ',ownership:'own'}]}),row({engine:'gemini',status:'error',searchUsed:false,citationVerified:false})];
   const report={...fixture,llmCitationTest:{...fixture.llmCitationTest!,results}};
   const focus=buildGeoFocus(report)!;
-  assert.ok(focus.tasks.some(task=>task.id==='review-source'));assert.ok(focus.tasks.some(task=>task.id==='restore-measurement'));
+  assert.ok(focus.tasks.some(task=>task.id==='review-source'));assert.ok(!focus.tasks.some(task=>task.id==='restore-measurement'));
   assert.ok(!focus.tasks.some(task=>task.id==='answer-question'));
   const text=buildReportDocument(MarketingReportSchema.parse(JSON.parse(JSON.stringify(report)))).map(block=>block.text).join('\n');
   assert.match(text,/완료 기준/);assert.match(text,/재사용할 고객 질문/);
