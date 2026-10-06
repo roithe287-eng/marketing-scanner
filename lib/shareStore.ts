@@ -100,6 +100,15 @@ export async function updateSharedReportCompetitor(
 export async function listOwnReports(principal: Principal) {
   const owner =
     principal.kind === "internal" ? "internal" : principal.account.id;
+  const own=await listReportsForOwner(owner,principal);
+  if(principal.kind==='account'&&principal.account.role==='admin'){
+    const legacy=await listReportsForOwner('internal',principal);
+    return [...own,...legacy].sort((a,b)=>b.createdAt-a.createdAt).slice(0,50);
+  }
+  return own;
+}
+export async function listReportsForOwner(owner:string,principal:Principal) {
+  if(principal.kind==='account'&&principal.account.role!=='admin'&&principal.account.id!==owner)throw new AccessError(403,'보고서 목록 접근 권한이 없습니다.');
   await db().zremrangebyscore(
     key("reports:" + owner),
     0,
@@ -115,6 +124,7 @@ export async function listOwnReports(principal: Principal) {
       return report
         ? {
             id,
+            createdAt:report.sharedRetention!.createdAt,
             expiresAt:report.sharedRetention!.expiresAt,
             url: report.url,
             title: report.meta?.siteName || report.meta?.domain || report.url,
@@ -122,7 +132,7 @@ export async function listOwnReports(principal: Principal) {
         : null;
     }),
   );
-  return records.filter(Boolean);
+  return records.filter((record):record is NonNullable<typeof record>=>record!==null);
 }
 export function isShareStoreAvailable() {
   return getRedisClient() !== null;

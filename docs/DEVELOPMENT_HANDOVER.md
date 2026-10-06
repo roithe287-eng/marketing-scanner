@@ -1,5 +1,7 @@
 # 마케팅스캐너 개발 인수인계
 
+최신 관리자 변경(2026-10-06): [소유자 관리자·사용자 활동 기록 인계](OWNER_ADMIN_ACTIVITY_HANDOVER_2026-10-06.md)를 참고하세요. 운영 관리자 등록 확인이 배포 선행 조건입니다.
+
 최신 변경(2026-10-06): [레이더·7일 보관 정책·Gemini 제거 인계](RADAR_RETENTION_HANDOVER_2026-10-06.md)를 우선 참고하세요. 아래 9월 30일 기록의 공유 21일·Gemini 설정 설명은 현재 구현에 적용되지 않습니다.
 
 확인일: 2026-09-30. 앞으로는 ZIP 대신 최신 Git 브랜치에서 작업합니다.
@@ -90,3 +92,6 @@ npm run dev -- --hostname 127.0.0.1
 - 운영 브라우저는 정상 도메인으로 이동한 뒤 기존 IP 제한 안내를 표시함. 이는 접근 정책 적용 확인이며 분석 성공 확인은 아님.
 - 실서비스 분석·외부 AI/네이버 호출·Redis 실제 저장·PDF 화면 다운로드는 회사 IP 밖의 점검 브라우저에서 실행할 수 없었습니다. 허용된 회사 네트워크에서 URL 분석 → 경쟁사 분석 → 공유 링크 → PDF 다운로드 흐름 확인이 필요합니다.
 - 이번 변경으로 IP 제한을 해제하거나 비밀값을 노출하지 않았습니다. 신규 보조 테스트를 실제 서비스 연동 검증으로 표기하지 않습니다.
+# Latest owner administration and activity work
+
+See [OWNER_ADMIN_ACTIVITY_HANDOVER_2026-10-06.md](./OWNER_ADMIN_ACTIVITY_HANDOVER_2026-10-06.md) for the single-owner approval workflow, per-user activity records and production setup prerequisite.

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import {ACTIVITY_POLICY} from '@/lib/saas/activityTypes';
 export default function AuthForm({
   mode,
 }: {
@@ -119,14 +120,13 @@ export default function AuthForm({
         <div className="access-consent">
           <p>
             이름·회사명·이메일은 계정 제공과 이용 관리에 사용됩니다. 탈퇴·삭제는
-            이용 문의로 요청할 수 있습니다. 보관된 보고서는 저장 후 21일에
-            만료됩니다.
+            이용 문의로 요청할 수 있습니다. {ACTIVITY_POLICY}
           </p>
           <label>
             <input type="checkbox" name="consent" required /> 계정 정보
             수집·이용 및{" "}
-            <a href="/notice" target="_blank" rel="noopener noreferrer">
-              진단 이용 안내
+            <a href="/privacy" target="_blank" rel="noopener noreferrer">
+              개인정보·이용 기록 안내
             </a>
             에 동의합니다.
           </label>
@@ -155,10 +155,10 @@ export default function AuthForm({
               : "비밀번호 설정하고 시작"}
       </button>
       {mode === "login" && (
-        <p className="access-muted">
+        <div className="access-muted"><p>
           승인·계정 복구가 필요하다면 <a href="/inquiry">이용 문의</a>를 남겨
           주세요. 담당자가 본인 확인 후 안내합니다.
-        </p>
+        </p><p>보안과 사용량 관리를 위해 접속 IP와 이용 기록이 수집됩니다. <a href="/privacy">수집 항목·보관기간 확인</a></p></div>
       )}
     </form>
   );

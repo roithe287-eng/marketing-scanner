@@ -31,7 +31,7 @@ export default function AccountView() {
         <>
           <p className="access-muted">
             이용 종료:{" "}
-            {new Date(account.expiresAt).toLocaleDateString("ko-KR", {
+            {account.role==='admin'?'관리자 · 기간 제한 없음':new Date(account.expiresAt).toLocaleDateString("ko-KR", {
               timeZone: "Asia/Seoul",
             })}{" "}
             · 사용량은 매월 1일 00:00 UTC(한국 09:00)에 초기화됩니다.
@@ -63,7 +63,7 @@ export default function AccountView() {
                   <strong>{access.usage?.[row.key] || 0}</strong>
                   <span>
                     {" "}
-                    / {row.enabled ? account.monthlyLimit * row.multiple : 0}회
+                    / {account.role==='admin'?'제한 없음':(row.enabled ? account.monthlyLimit * row.multiple : 0)+'회'}
                   </span>
                 </p>
                 <span>{row.enabled ? "이번 달 사용량" : "현재 미승인"}</span>
@@ -85,7 +85,7 @@ export default function AccountView() {
         <h2>보관한 진단 결과</h2>
         <p>
           결과 화면의 ‘결과 보관·링크 복사’를 누른 보고서입니다. 보관 기간은
-          최대 7일이며, 해당 계정 또는 등록 네트워크에서 열람할 수 있습니다.
+          최대 7일이며, 해당 계정과 관리자만 열람할 수 있습니다.
         </p>
         {access.reports?.length ? (
           <ul>

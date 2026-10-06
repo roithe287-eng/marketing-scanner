@@ -57,14 +57,14 @@ test('workflow HTML and PDF preserve detailed instructions, escape markup and ke
  for(const p of layoutPdfPages(blocks,measure))for(const l of p.lines){assert.ok(l.x>=48&&l.x+l.width<=742.1);assert.ok(l.y+l.lineHeight<=1039);}
 });
 test('diagnosis baseline endpoint requires access, supports reports without GEO, and never returns nested prior snapshots',async()=>{
- const {GET}=await import('../app/api/share/route');const {NextRequest}=await import('next/server');
+ const {GET}=await import('../app/api/share/route');const {NextRequest}=await import('next/server');const {SESSION_COOKIE}=await import('../lib/saas/auth');const uid='00000000-0000-4000-8000-000000000001';
  const keys=['UPSTASH_REDIS_REST_URL','UPSTASH_REDIS_REST_TOKEN','KV_REST_API_URL','KV_REST_API_TOKEN','VERCEL','ALLOWED_IPS'];const saved=Object.fromEntries(keys.map(k=>[k,process.env[k]]));const original=globalThis.fetch;
  for(const k of keys)delete process.env[k];
  try{
   assert.equal((await GET(new NextRequest('https://www.mktscanner.com/api/share?id=prior123&mode=diagnosis'))).status,401);
   process.env.VERCEL='1';process.env.ALLOWED_IPS='203.0.113.10';process.env.UPSTASH_REDIS_REST_URL='https://workflow.upstash.io';process.env.UPSTASH_REDIS_REST_TOKEN='test';
-  let calls=0;globalThis.fetch=async(input,init)=>{assert.ok(String(input).startsWith('https://workflow.upstash.io/'));calls++;return Response.json(JSON.parse(String(init?.body)).map((command:string[])=>({result:command[0].toLowerCase()==='eval'&&!command[1].includes('local function read(k,depth)')?1:[Buffer.from(JSON.stringify({version:2,ownerId:'internal',createdAt:Date.now(),expiresAt:Date.now()+604800000,report:{...current,llmCitationTest:null}})).toString('base64'),Date.now(),Date.now()+604800000,Buffer.from('internal').toString('base64')]})));};
-  const response=await GET(new NextRequest('https://www.mktscanner.com/api/share?id=prior123&mode=diagnosis',{headers:{'x-vercel-forwarded-for':'203.0.113.10'}}));
+  let calls=0;globalThis.fetch=async(input,init)=>{assert.ok(String(input).startsWith('https://workflow.upstash.io/'));calls++;return Response.json(JSON.parse(String(init?.body)).map((command:string[])=>({result:command[0].toLowerCase()==='get'?Buffer.from(JSON.stringify(command[1].includes('session:')?{userId:uid,version:1}:{id:uid,role:'customer',status:'approved',expiresAt:Date.now()+86400000,features:{reports:true},passwordHash:'fixture',version:1})).toString('base64'):command[0].toLowerCase()==='eval'&&!command[1].includes('local function read(k,depth)')?1:[Buffer.from(JSON.stringify({version:2,ownerId:uid,createdAt:Date.now(),expiresAt:Date.now()+604800000,report:{...current,llmCitationTest:null}})).toString('base64'),Date.now(),Date.now()+604800000,Buffer.from(uid).toString('base64')]})));};
+  const response=await GET(new NextRequest('https://www.mktscanner.com/api/share?id=prior123&mode=diagnosis',{headers:{'x-vercel-forwarded-for':'203.0.113.10',cookie:SESSION_COOKIE+'='+'a'.repeat(43)}}));
   assert.equal(response.status,200);assert.match(response.headers.get('cache-control')!,/no-store/);const data=await response.json();assert.equal(data.diagnosisBaseline.reportId,'prior123');assert.equal(data.geoBaseline,undefined);assert.equal(data.diagnosisBaseline.diagnosisBaseline,undefined);assert.ok(calls>0);
  }finally{globalThis.fetch=original;for(const k of keys)if(saved[k]===undefined)delete process.env[k];else process.env[k]=saved[k];}
 });

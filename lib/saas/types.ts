@@ -16,6 +16,8 @@ export type Account = {
   passwordHash: string | null;
   version: number;
   createdAt: number;
+  approvedAt?: number;
+  approvedBy?: string;
 };
 export type Principal =
   | { kind: "internal" }

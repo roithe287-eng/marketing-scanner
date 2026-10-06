@@ -12,6 +12,7 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "test:retention": "node --import tsx --test tests/report-retention.integration.ts",
     "test:security": "node --import tsx --test tests/security-redis.integration.ts",
+    "test:admin": "node --import tsx --test tests/admin-activity.integration.ts",
     "build:pocket": "npm ci --prefix consumer-app --include=dev --no-audit --no-fund && npm run build --prefix consumer-app && node scripts/stage-pocket-preview.mjs"
   },
   "dependencies": {

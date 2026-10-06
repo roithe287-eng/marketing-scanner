@@ -90,15 +90,15 @@ test('fresh fixed-question runs bypass stored observations and preserve measurem
 });
 
 test('analysis rejects changed baseline URL, changed questions and expired IDs before provider calls',async()=>{
-  const {POST}=await import('../app/api/analyze/route');const {NextRequest}=await import('next/server');
+  const {POST}=await import('../app/api/analyze/route');const {NextRequest}=await import('next/server');const {SESSION_COOKIE}=await import('../lib/saas/auth');const uid='00000000-0000-4000-8000-000000000001';
   const keys=['UPSTASH_REDIS_REST_URL','UPSTASH_REDIS_REST_TOKEN','VERCEL','ALLOWED_IPS'];const saved=Object.fromEntries(keys.map(k=>[k,process.env[k]]));
   const original=globalThis.fetch;let missing=false,providerCalls=0;
   process.env.VERCEL='1';process.env.ALLOWED_IPS='203.0.113.10';process.env.UPSTASH_REDIS_REST_URL='https://baseline.upstash.io';process.env.UPSTASH_REDIS_REST_TOKEN='test';
   globalThis.fetch=async(input,init)=>{
     if (!String(input).startsWith('https://baseline.upstash.io/')) {providerCalls++;throw new Error('Unexpected provider request');}
-    return Response.json(JSON.parse(String(init?.body)).map((command:string[])=>({result:command[0].toLowerCase()==='eval'&&!command[1].includes('local function read(k,depth)')?1:missing?null:[Buffer.from(JSON.stringify({version:2,ownerId:'internal',createdAt:Date.now(),expiresAt:Date.now()+604800000,report:report()})).toString('base64'),Date.now(),Date.now()+604800000,Buffer.from('internal').toString('base64')]})));
+    return Response.json(JSON.parse(String(init?.body)).map((command:string[])=>({result:command[0].toLowerCase()==='get'?Buffer.from(JSON.stringify(command[1].includes('session:')?{userId:uid,version:1}:{id:uid,role:'customer',status:'approved',expiresAt:Date.now()+86400000,features:{reports:true},passwordHash:'fixture',version:1})).toString('base64'):command[0].toLowerCase()==='eval'&&!command[1].includes('local function read(k,depth)')?1:missing?null:[Buffer.from(JSON.stringify({version:2,ownerId:uid,createdAt:Date.now(),expiresAt:Date.now()+604800000,report:report()})).toString('base64'),Date.now(),Date.now()+604800000,Buffer.from(uid).toString('base64')]})));
   };
-  const submit=(body:object)=>POST(new NextRequest('https://www.mktscanner.com/api/analyze',{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json','origin':'https://www.mktscanner.com','x-vercel-forwarded-for':'203.0.113.10'}}));
+  const submit=(body:object)=>POST(new NextRequest('https://www.mktscanner.com/api/analyze',{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json','origin':'https://www.mktscanner.com','x-vercel-forwarded-for':'203.0.113.10',cookie:SESSION_COOKIE+'='+'a'.repeat(43)}}));
   try {
     assert.equal((await submit({url:fixture.url,baselineId:'invalid-id'})).status,400);
     assert.equal((await submit({url:'https://other.example',baselineId:'abc123'})).status,400);

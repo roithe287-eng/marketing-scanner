@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
     }
 
     publicUrl(targetUrl);
-    finish=await reserve(principal,'deepdive');
+    finish=await reserve(principal,'deepdive',{headers:req.headers,url:targetUrl});
     const result = await withBudget(Math.max(1,34000-(Date.now()-startedAt)),()=>analyzeDeepDive(targetUrl, {
       domain: ourDomain,
       title: ourTitle,
