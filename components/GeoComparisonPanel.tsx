@@ -8,6 +8,7 @@ function Evidence({row,label}:{row?:LlmCitationQuestionResult;label:string}) {
     <h4 className="font-bold">{label} · {observationLabel(row)}</h4>
     <p className="mt-2 text-xs leading-6 text-jm-gray">{comparisonTime(row?.measuredAt)}<br/>요청 모델: {row?.model || '기록 없음'}<br/>브랜드 언급: {typeof row?.brandMentioned==='boolean'?(row.brandMentioned?'있음':'없음'):'판정 불가'}</p>
     {row?.errorMessage && <p className="mt-3 text-xs leading-6 text-amber-800">{row.errorMessage}</p>}
+    {row?.errorAction && <p className="mt-2 text-sm leading-6 text-amber-900">{row.errorAction}</p>}
     <p className="mt-3 whitespace-pre-wrap break-words text-sm leading-7">{row?.responseText||row?.responseSnippet||'저장된 답변이 없습니다.'}</p>
     {!!row?.sources?.length && <ul className="mt-3 space-y-2">{row.sources.map((source,i)=><li key={`${source.url}-${i}`}><a href={source.url} target="_blank" rel="noopener noreferrer" className="break-all text-xs text-blue-700 underline">{source.ownership==='own'?'자사':source.ownership==='unresolved'?'대상 미확인':'외부'} · {source.title||source.url}</a></li>)}</ul>}
   </div>;

@@ -1,11 +1,12 @@
 import {budgetFetch,budgetSignal} from './runtime/budget';
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { getOpenAI } from './openaiClient';
 import type { ExtractedWebsiteData } from './extractWebsite';
 import { LlmCitationTestSchema, type LlmCitationTest, type LlmCitationQuestionResult } from './reportSchema';
 import { getRedisClient } from './redisClient';
 import { CURRENT_GEO_PROTOCOL, aggregateCitation, brandMentioned, buildActionPlan, normalizeSources, parseGemini, parseOpenAI, safeHttpUrl } from './citationMeasurement';
+import { citationFailure, httpCitationFailure, incompleteCitationFailure, CitationRequestError, readCitationError } from './citationFailure';
 
 const VERSION = 'geo-v2.4';
 const TIMEOUT = 22_000;
@@ -63,19 +64,24 @@ async function measure(engine:'chatgpt'|'gemini', q:Question, brand:string, targ
   const base = {engine,question:q.question,questionType:q.type,journey:q.journey,model,requestFingerprint:digest(JSON.stringify([model,body])),
     branded:brandMentioned(q.question,brand,target),measuredAt:new Date().toISOString(),cited:false,citationRank:null};
   const key = engine === 'chatgpt' ? process.env.OPENAI_API_KEY : process.env.GEMINI_API_KEY;
-  if (!key) return {...base,status:'unavailable',errorMessage:'이 엔진의 API 키가 설정되지 않았습니다.',durationMs:0};
+  if (!key) return {...base,...citationFailure('API_KEY_MISSING'),citationVerified:false,durationMs:0};
+  const requestSignal=AbortSignal.timeout(TIMEOUT);
+  let phase:'request'|'response'|'parse'='request';
   try {
     const endpoint = engine === 'chatgpt' ? 'https://api.openai.com/v1/responses' : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
     const response = await budgetFetch(endpoint,{
       method:'POST',headers:{'Content-Type':'application/json',...(engine === 'chatgpt' ? {Authorization:`Bearer ${key}`} : {'x-goog-api-key':key})},
-      body:JSON.stringify(body),signal:AbortSignal.timeout(TIMEOUT),
+      body:JSON.stringify(body),signal:requestSignal,
     });
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    if (!response.ok) throw new CitationRequestError(httpCitationFailure(response.status,await readCitationError(response)));
+    phase='response';
     const payload = await response.json();
-    if (engine === 'chatgpt' && payload.status !== 'completed') throw new Error('답변이 완료되지 않았습니다.');
-    if (engine === 'gemini' && payload.candidates?.[0]?.finishReason !== 'STOP') throw new Error('답변이 완료되지 않았습니다.');
+    if (!payload || typeof payload!=='object' || Array.isArray(payload)) throw new CitationRequestError(citationFailure('INVALID_RESPONSE'));
+    phase='parse';
+    if (engine === 'chatgpt' && payload.status !== 'completed') throw new CitationRequestError(incompleteCitationFailure(payload.incomplete_details?.reason || payload.error?.code));
+    if (engine === 'gemini' && payload.candidates?.[0]?.finishReason !== 'STOP') throw new CitationRequestError(incompleteCitationFailure(payload.promptFeedback?.blockReason || payload.candidates?.[0]?.finishReason));
     const result = engine === 'chatgpt' ? parseOpenAI(payload,target) : parseGemini(payload,target);
-    if (!result.text.trim()) throw new Error('빈 답변');
+    if (!result.text.trim()) throw new CitationRequestError(citationFailure('EMPTY_RESPONSE'));
     if (engine === 'gemini') result.sources = normalizeSources(await Promise.all(result.sources.map(async s => ({...s,url:await resolveGoogleSource(s.url)}))),target);
     const cited = result.sources.some(s => s.ownership === 'own');
     const citationVerified = result.searchUsed && (cited || !result.sources.some(s => s.ownership === 'unresolved'));
@@ -83,11 +89,14 @@ async function measure(engine:'chatgpt'|'gemini', q:Question, brand:string, targ
       searchUsed:result.searchUsed,citationVerified,sources:result.sources,responseText:result.text,
       responseSnippet:result.text.slice(0,600),durationMs:Date.now()-started};
   } catch (error) {
-    const timeout = error instanceof Error && /timeout|abort/i.test(error.name+' '+error.message);
-    const message = timeout ? '응답 시간이 초과되었습니다.' : error instanceof Error && error.message === 'HTTP 429'
-      ? 'API 할당량 또는 요청 제한으로 측정하지 못했습니다 (HTTP 429). 계정의 사용량·결제 설정을 확인하세요.'
-      : `측정에 실패했습니다${error instanceof Error && /^HTTP \d+$/.test(error.message) ? ` (${error.message})` : ''}.`;
-    return {...base,status:timeout?'timeout':'error',errorMessage:message,durationMs:Date.now()-started};
+    const parent=budgetSignal();
+    const timeout=requestSignal.aborted || (parent?.aborted && parent.reason?.status===504) || (error instanceof Error && error.name==='TimeoutError');
+    const cancelled=parent?.aborted || (error instanceof Error && error.name==='AbortError');
+    const failure=error instanceof CitationRequestError ? error.failure : citationFailure(timeout?'TIMEOUT':cancelled?'CANCELLED':phase==='response'||phase==='parse'?'INVALID_RESPONSE':error instanceof TypeError?'NETWORK':'UNKNOWN');
+    const diagnosticId=randomUUID();const durationMs=Date.now()-started;
+    // Deliberately exclude raw error messages, API keys, prompts, URLs and provider response bodies.
+    console.warn('[geo-provider-failure]',JSON.stringify({diagnosticId,engine,model:/^[a-zA-Z0-9._-]{1,100}$/.test(model)?model:'custom',errorCode:failure.errorCode,httpStatus:failure.httpStatus,providerCode:failure.providerCode,durationMs}));
+    return {...base,...failure,diagnosticId,citationVerified:false,durationMs};
   }
 }
 export async function analyzeCitation(data: ExtractedWebsiteData, custom?: string[], options: {fixedQuestions?: CitationQuestion[]; fresh?: boolean} = {}): Promise<LlmCitationTest|null> {

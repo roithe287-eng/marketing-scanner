@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { citationFailureCodes } from './citationFailure';
 import {SiteEditingSchema} from './siteEditingSchema';
 import {NaverOptimizationSchema} from './naverSchema';
 import {SearchSignalsSchema} from './growthSchema';
@@ -73,6 +74,11 @@ export const LlmCitationQuestionResultSchema = z.object({
   sources: z.array(CitationSourceSchema).optional(),
   responseText: z.string().optional(),
   errorMessage: z.string().optional(),
+  errorCode: z.enum(citationFailureCodes).optional(),
+  errorAction: z.string().max(600).optional(),
+  httpStatus: z.number().int().min(400).max(599).optional(),
+  providerCode: z.string().max(80).optional(),
+  diagnosticId: z.string().uuid().optional(),
 });
 export const LlmCitationTestSchema = z.object({
   measurementProtocol: z.enum(["geo-compare-v1","geo-compare-v2","geo-compare-v3"]).optional(),
