@@ -40,7 +40,7 @@ const origin='http://127.0.0.1:3019',server=spawn(process.execPath,['node_module
  let expandedResult=null;
  if(!baseline){
   await page.getByRole('heading',{name:'수집 관측',exact:true}).waitFor();
-  await page.getByText('— 미설정',{exact:true}).first().waitFor();
+  assert.doesNotMatch(await page.locator('body').innerText(),/Gemini|gemini|제미나이/);
   // Double text sizes with original line-height ratios retained, revealing fixed-box clipping.
   await page.locator('.report-v2').evaluate(root=>{const rows=[root,...root.querySelectorAll('*')].filter(e=>!(e instanceof SVGElement)).map(e=>{const s=getComputedStyle(e);return {e,size:parseFloat(s.fontSize),line:parseFloat(s.lineHeight)};});for(const {e,size,line} of rows){e.style.setProperty('font-size',size*2+'px','important');if(Number.isFinite(line))e.style.setProperty('line-height',line*2+'px','important');}});
   await page.locator('.keyword-frequency').evaluate(e=>window.scrollTo(0,window.scrollY+e.getBoundingClientRect().top-70));await page.screenshot({path:folder+'/text-200-mobile.png'});

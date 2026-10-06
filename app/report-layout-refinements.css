@@ -1,5 +1,5 @@
 /* Keep explanatory text and axis furniture outside data geometry. */
-.report-radar-chart svg { overflow:visible; }
+.report-radar-chart svg { overflow:hidden; }
 .report-axis-title { min-height:3.4em; display:flex; align-items:center; }
 .report-journey li:not(:last-child)::after { display:none; }
 .position-chart-grid { display:grid; grid-template-columns:34px minmax(0,1fr); grid-template-rows:auto 26px; gap:10px 8px; }
@@ -176,3 +176,7 @@
  .report-next-action { display:none; }
  .report-outcome-links a { text-decoration:none; }
 }
+
+.report-retention-note { margin:12px 0; padding:14px 18px; border:1px solid #c5d5ef; border-radius:14px; background:#f4f7fd; color:#2d4772; }
+.report-retention-note strong { font-size:15px; line-height:1.6; }
+.report-retention-note p { margin:5px 0 0; font-size:14px; line-height:1.75; overflow-wrap:anywhere; }

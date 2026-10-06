@@ -37,7 +37,7 @@ export const GROWTH_UPDATES=[
 ] satisfies {title:string;text:string;source:GrowthSourceId}[];
 export const GROWTH_MEASUREMENT=[
   {title:'네이버 웹 검색',where:'서치어드바이저 → 콘텐츠 노출 및 클릭',metric:'노출수 · 클릭수 · CTR',note:'웹 검색 관련 영역 기준입니다. 블로그·VIEW·광고·플레이스 전체 실적과 합산하지 않습니다. 화면의 업데이트 기준일을 확인하고 동일 길이의 이전 기간과 비교하세요.',source:'naverPerformance'},
-  {title:'Google 검색·AI',where:'Search Console → 검색 실적 / 생성형 AI 성과',metric:'검색 노출·클릭·CTR / AI 링크 노출',note:'일반 검색과 AI 보고서의 집계 범위가 다릅니다. AI 보고서는 제공 여부를 먼저 확인하고 URL·기기·국가·기간을 맞춥니다. API의 Gemini 답변은 Google 검색 AI 노출 실적이 아닙니다.',source:'aiReport'},
+  {title:'Google 검색·AI',where:'Search Console → 검색 실적 / 생성형 AI 성과',metric:'검색 노출·클릭·CTR / AI 링크 노출',note:'일반 검색과 AI 보고서의 집계 범위가 다릅니다. AI 보고서는 제공 여부를 먼저 확인하고 URL·기기·국가·기간을 맞춥니다. AI API 답변은 Google 검색 AI 노출 실적이 아닙니다.',source:'aiReport'},
   {title:'사이트 문의·구매',where:'GA4 → 획득 → 트래픽 획득',metric:'세션 · 핵심 이벤트 발생 세션 · 세션 전환율',note:'동일한 유입 채널에서 문의 완료 등 하나의 핵심 이벤트 정의를 고정합니다. 버튼 클릭과 문의 완료, 이벤트 발생 횟수와 전환 세션 수를 구분하세요.',source:'analytics'},
   {title:'질문별 AI 답변',where:'이 보고서의 질문·출처 관측 / 재진단 비교',metric:'동일 질문의 자사 출처 인용 · 실패 수',note:'질문·모델·검색 설정을 맞추고 유효 응답만 비교합니다. 이 표본은 시장 전체 점유율이 아닙니다. 네이버 AI 브리핑과 Google AI 화면은 각각 별도로 기록해야 합니다.',source:'naverBriefing'},
 ] satisfies {title:string;where:string;metric:string;note:string;source:GrowthSourceId}[];

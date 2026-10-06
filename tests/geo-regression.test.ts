@@ -2,7 +2,7 @@ import { blocksAllCrawling } from '../lib/robotsRules';
 import { fixture } from './fixtures/report';
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { aggregateCitation, brandMentioned, buildActionPlan, normalizeSources, ownHost, parseGemini, parseOpenAI } from '../lib/citationMeasurement';
+import { aggregateCitation, brandMentioned, buildActionPlan, normalizeSources, ownHost, parseOpenAI } from '../lib/citationMeasurement';
 import { buildReportDocument } from '../lib/reportDocument';
 import { MarketingReportSchema, type LlmCitationQuestionResult } from '../lib/reportSchema';
 import { analyzeCitation } from '../lib/analyzeCitation';
@@ -24,10 +24,7 @@ test('OpenAI citation comes from URL annotations, never brand text or ranking nu
   assert.equal(result.sources[0].ownership,'external');assert.equal(result.searchUsed,true);
   assert.equal(parseOpenAI({output:[{type:'message',content:[{type:'output_text',text:'example.com'}]}]},target).sources.length,0);
 });
-test('Gemini counts only grounding chunks actually supporting the response',()=>{
-  const result=parseGemini({candidates:[{content:{parts:[{text:'사고 과정',thought:true},{text:'최종 답변'}]},groundingMetadata:{webSearchQueries:['검색'],groundingChunks:[{web:{uri:'https://example.com',title:'미인용'}},{web:{uri:'https://other.test',title:'실제 인용'}}],groundingSupports:[{groundingChunkIndices:[1]}]}}]},target);
-  assert.equal(result.text,'최종 답변');assert.equal(result.sources.length,1);assert.equal(result.sources[0].ownership,'external');
-});
+
 test('failed, unavailable and unverified searches are excluded from citation denominator',()=>{
   const stats=aggregateCitation([row({cited:true,brandMentioned:true,branded:true}),row(),row({status:'timeout',citationVerified:false}),row({status:'unavailable'}),row({status:'unverified',searchUsed:false,citationVerified:false,brandMentioned:true})].map((r,i)=>({...r,question:`독립 질문 ${i}`})));
   assert.equal(stats.validTests,3);assert.equal(stats.citationValidTests,2);assert.equal(stats.ownedCitationRate,50);assert.equal(stats.mentionRate,67);assert.equal(stats.failedTests,2);assert.equal(stats.brandedCitationRate,100);assert.equal(stats.unbrandedCitationRate,0);
@@ -65,12 +62,11 @@ test('provider request contracts and partial errors produce honest metrics',asyn
       assert.equal(body.tool_choice,'required');assert.equal(body.tools[0].type,'web_search_preview');
       return Response.json({status:'completed',output:[{type:'web_search_call',status:'completed'},{type:'message',content:[{type:'output_text',text:'브랜드 답변입니다.',annotations:[{type:'url_citation',url:target+'/faq',title:'검증 출처'}]}]}]});
     }
-    assert.ok(url.includes('generativelanguage.googleapis.com'));assert.ok(body.tools[0].google_search);
-    return Response.json({error:'quota'},{status:429});
+    throw new Error('Retired provider must never be called');
   };
   try {
     const report=await analyzeCitation({url:target,finalUrl:target,title:'브랜드',ogSiteName:'브랜드',description:'',bodyText:'본문'.repeat(100)} as ExtractedWebsiteData,['비교할 때 어떤 조건을 확인하나요?']);
-    assert.equal(report?.failedTests,1);assert.equal(report?.citationValidTests,1);assert.equal(report?.ownedCitationRate,100);assert.equal(report?.results[1].status,'error');
+    assert.equal(report?.failedTests,0);assert.equal(report?.citationValidTests,1);assert.equal(report?.ownedCitationRate,100);assert.equal(report?.results.length,1);assert.equal(report?.results[0].engine,'chatgpt');
   } finally {
     globalThis.fetch=oldFetch;
     for(const [key,value] of [['OPENAI_API_KEY',saved.openai],['GEMINI_API_KEY',saved.gemini],['ENABLE_LLM_CITATION',saved.enabled]])if(value===undefined)delete process.env[key!];else process.env[key!]=value;

@@ -1,4 +1,6 @@
 "use client";
+import {activeCitation} from '@/lib/activeCitation';
+
 import React, { memo, useState } from 'react';
 import {ObservationOverview,QuestionMatrix} from './visuals/ObservationVisuals';
 import type { LlmCitationTest } from '@/lib/reportSchema';
@@ -10,13 +12,15 @@ const actionLabels = {review_cited:'인용 페이지 검토',improve_candidate:'
 function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
   const [selectedQuestion,setSelectedQuestion]=useState<string|null>(null);
   if (!citation) return null;
+  citation=activeCitation(citation);
+  if (!citation.results.length) return null;
   const modern = citation.measurementVersion === 2;
   const selected=selectedQuestion && citation.results.some(r=>r.question.trim()===selectedQuestion) ? selectedQuestion : null;
   const visibleResults=modern ? citation.results.filter(r=>r.question.trim()===selected) : citation.results;
   return <section className="report-geo-observations jm-card p-5 md:p-8" aria-label="GEO 질문·출처·실행 과제">
     <p className="text-xs font-bold text-jm-red">GEO · 브랜드 언급과 출처 인용</p>
     <h3 className="text-2xl font-black mt-2">AI 답변에서 확인한 GEO 결과</h3>
-    <p className="mt-3 text-sm text-jm-charcoal leading-7">{modern?'고객 질문에 대한 AI 답변에서 우리 브랜드가 언급되는지, 우리 사이트가 근거 출처로 인용되는지 확인합니다. 아래 OpenAI·Gemini 결과는 이 GEO 진단을 위한 관측입니다.':'아래 AI 결과는 고객 질문에 대한 브랜드 언급을 확인한 구버전 GEO 자료입니다. 자사 URL의 실제 출처 인용은 이 결과에서 측정하지 않았습니다.'}</p>
+    <p className="mt-3 text-sm text-jm-charcoal leading-7">{modern?'고객 질문에 대한 AI 답변에서 우리 브랜드가 언급되는지, 우리 사이트가 근거 출처로 인용되는지 확인합니다. 아래 OpenAI 결과는 이 GEO 진단을 위한 관측입니다.':'아래 AI 결과는 고객 질문에 대한 브랜드 언급을 확인한 구버전 GEO 자료입니다. 자사 URL의 실제 출처 인용은 이 결과에서 측정하지 않았습니다.'}</p>
     <p className="mt-3 text-sm text-jm-gray leading-6">{modern ? citation.summary : '이 리포트는 구버전의 브랜드 언급 기반 측정입니다. 실제 URL 출처 인용률과 비교할 수 없습니다.'}</p>
     {modern ? <ObservationOverview citation={citation}/> : <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-5">
       {[
@@ -29,7 +33,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
       <p>브랜드 포함 질문 인용률 {percent(citation.brandedCitationRate)} · 미포함 질문 {percent(citation.unbrandedCitationRate)}</p>
       <p>정상 답변 {citation.validTests}건 · 검색 출처 판정 {citation.citationValidTests}건. 실패·검색 미확인 응답은 인용률 분모에서 제외합니다.</p>
       <p>측정: {citation.measuredAt?.replace('T',' ').replace('Z',' UTC')} · 질문 세트 {citation.questionSetId}{citation.cacheHit ? ' · 저장된 관측 결과' : ''}</p>
-      <p>API에서 관측한 결과이며 일반 ChatGPT·Gemini 화면이나 시장 전체 노출률을 의미하지 않습니다.</p>
+      <p>API에서 관측한 결과이며 일반 ChatGPT 화면이나 시장 전체 노출률을 의미하지 않습니다.</p>
     </div>}
     {modern && <CitationFailureSummary citation={citation}/>}
     {modern && <QuestionMatrix citation={citation} selected={selected} onSelect={setSelectedQuestion}/>}
@@ -37,7 +41,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
     <div className="space-y-3">
       {visibleResults.map((r,i) => <details key={`${r.engine}-${i}`} className="geo-detail rounded-xl border p-4">
         <summary className="cursor-pointer font-bold text-sm leading-6">
-          <span className="text-jm-red">{r.engine === 'chatgpt' ? 'OpenAI' : 'Gemini'} · GEO {modern?'답변 관측':'구버전 측정'} · {r.journey || r.questionType}</span>
+          <span className="text-jm-red">OpenAI · GEO {modern?'답변 관측':'구버전 측정'} · {r.journey || r.questionType}</span>
           <span className="block mt-1 break-words">{r.question}</span>
           <span className="block font-normal text-jm-gray">{!modern ? (r.cited ? '브랜드 언급 있음' : '브랜드 언급 없음') : r.status === 'ok' ? `브랜드 언급 ${typeof r.brandMentioned!=='boolean'?'미확인':r.brandMentioned ? '있음' : '없음'} · 자사 출처 ${r.cited ? '확인' : '없음'}` : r.status === 'unverified' ? '답변 수신 · 검색 또는 출처 확인 불가' : r.errorMessage || '측정 실패'} · 답변·출처 펼치기</span>
         </summary>

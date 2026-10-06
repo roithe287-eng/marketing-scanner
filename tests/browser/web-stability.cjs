@@ -35,7 +35,7 @@ try{
  });
  await page.route('**/api/share',route=>{
    saved=JSON.parse(route.request().postData()).report;++shareCalls;
-   return route.fulfill(shareCalls===1?{status:503,json:{message:'저장 서비스 일시 지연 · 다시 시도해 주세요.'}}:{json:{id:'stable123'}});
+   return route.fulfill(shareCalls===1?{status:503,json:{message:'저장 서비스 일시 지연 · 다시 시도해 주세요.'}}:{json:{id:'stable123',createdAt:Date.now(),expiresAt:Date.now()+604800000}});
  });
  await page.route('**/api/deepdive',route=>{
    if(deepMode==='invalid')return route.fulfill({json:{copyStrategy:{keyMessages:'malformed'}}});

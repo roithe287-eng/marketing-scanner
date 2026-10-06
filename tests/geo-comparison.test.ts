@@ -19,7 +19,7 @@ test('matching uses question and engine, compares identical denominator and excl
   const old=[row(q),row('계약 조건은 무엇인가요?',{cited:true}),row('비용은 얼마인가요?',{engine:'gemini',cited:true})];
   const current=[row(old[1].question,{measuredAt:'2026-10-02',cited:false}),row(old[2].question,{engine:'gemini',status:'error',measuredAt:'2026-10-02'}),row(q,{measuredAt:'2026-10-02',cited:true})];
   const r=buildGeoComparison(report(old,current))!;
-  assert.equal(r.matched,2);assert.equal(r.excluded,1);assert.equal(r.beforeRate,50);assert.equal(r.afterRate,50);assert.equal(r.gained,1);assert.equal(r.lost,1);assert.equal(r.pairs[2].reason,'failed');
+  assert.equal(r.matched,2);assert.equal(r.excluded,0);assert.equal(r.beforeRate,50);assert.equal(r.afterRate,50);assert.equal(r.gained,1);assert.equal(r.lost,1);assert.equal(r.pairs.length,2);
 });
 test('missing metadata, target, model, settings, cache and timestamps never claim a gain',()=>{
   const cases:[string,(r:MarketingReport)=>void][]=[
@@ -81,7 +81,7 @@ test('fresh fixed-question runs bypass stored observations and preserve measurem
     const cached=await analyzeCitation(data,undefined,{fixedQuestions:fixed});assert.equal(cached?.cacheHit,true);assert.equal(calls,0);assert.equal(reads,1);
     const first=await analyzeCitation(data,undefined,{fixedQuestions:fixed,fresh:true});
     const second=await analyzeCitation(data,undefined,{fixedQuestions:fixed,fresh:true});
-    assert.equal(calls,4);assert.equal(reads,1);assert.equal(first?.cacheHit,false);assert.equal(first?.questionSetId,second?.questionSetId);
+    assert.equal(calls,2);assert.equal(reads,1);assert.equal(first?.cacheHit,false);assert.equal(first?.questionSetId,second?.questionSetId);
     assert.equal(first?.results[0].questionType,'industry');assert.equal(first?.results[0].journey,'비교');assert.equal(first?.measurementProtocol,'geo-compare-v3');
     assert.match(first!.results[0].requestFingerprint!,/^[a-f0-9]{24}$/);assert.equal(first?.results[0].requestFingerprint,second?.results[0].requestFingerprint);
     const changed=await analyzeCitation(data,undefined,{fixedQuestions:[{...fixed[0],question:'다른 질문의 조건은 무엇인가요?'}],fresh:true});
@@ -96,7 +96,7 @@ test('analysis rejects changed baseline URL, changed questions and expired IDs b
   process.env.VERCEL='1';process.env.ALLOWED_IPS='203.0.113.10';process.env.UPSTASH_REDIS_REST_URL='https://baseline.upstash.io';process.env.UPSTASH_REDIS_REST_TOKEN='test';
   globalThis.fetch=async(input,init)=>{
     if (!String(input).startsWith('https://baseline.upstash.io/')) {providerCalls++;throw new Error('Unexpected provider request');}
-    return Response.json(JSON.parse(String(init?.body)).map((command:string[])=>({result:command[0].toLowerCase()==='eval'?1:missing?null:Buffer.from(JSON.stringify(report())).toString('base64')})));
+    return Response.json(JSON.parse(String(init?.body)).map((command:string[])=>({result:command[0].toLowerCase()==='eval'&&!command[1].includes('local function read(k,depth)')?1:missing?null:[Buffer.from(JSON.stringify({version:2,ownerId:'internal',createdAt:Date.now(),expiresAt:Date.now()+604800000,report:report()})).toString('base64'),Date.now(),Date.now()+604800000,Buffer.from('internal').toString('base64')]})));
   };
   const submit=(body:object)=>POST(new NextRequest('https://www.mktscanner.com/api/analyze',{method:'POST',body:JSON.stringify(body),headers:{'Content-Type':'application/json','origin':'https://www.mktscanner.com','x-vercel-forwarded-for':'203.0.113.10'}}));
   try {

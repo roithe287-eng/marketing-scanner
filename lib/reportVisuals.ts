@@ -1,6 +1,7 @@
+import {activeCitation} from './activeCitation';
 import type {Discoverability, LlmCitationQuestionResult as Row, LlmCitationTest} from './reportSchema';
-export const engines=['chatgpt','gemini'] as const;
-export const engineNames={chatgpt:'OpenAI',gemini:'Gemini'};
+export const engines=['chatgpt'] as const;
+export const engineNames={chatgpt:'OpenAI'};
 export const observationStates={
   cited:{label:'자사 인용',color:'#06695f',background:'#e5f5f0',symbol:'●'},
   uncited:{label:'미인용',color:'#3564a7',background:'#edf3fc',symbol:'○'},
@@ -26,9 +27,10 @@ export function observationCell(rows:Row[]) {
 }
 export function buildObservationVisual(citation?:LlmCitationTest|null) {
   if(citation?.measurementVersion!==2)return null;
+  citation=activeCitation(citation);
   const questions=[...new Set(citation.results.map(r=>r.question.trim()))].map((question,i)=>{
     const rows=citation.results.filter(r=>r.question.trim()===question);
-    return {id:i+1,question,journey:rows[0].journey||'고객 질문',cells:{chatgpt:observationCell(rows.filter(r=>r.engine==='chatgpt')),gemini:observationCell(rows.filter(r=>r.engine==='gemini'))}};
+    return {id:i+1,question,journey:rows[0].journey||'고객 질문',cells:{chatgpt:observationCell(rows.filter(r=>r.engine==='chatgpt'))}};
   });
   const countByPair=new Map<string,number>();
   const pairKey=(r:Row)=>JSON.stringify([r.engine,r.question.trim()]);

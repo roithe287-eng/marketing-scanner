@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
       if (!previous) return NextResponse.json({message:'기준 보고서를 찾을 수 없거나 접근 권한이 없습니다. 보관된 기준 보고서를 선택해 주세요.'},{status:422});
       if (!canonicalPage(url) || canonicalPage(previous.url) !== canonicalPage(url)) return NextResponse.json({message:'기준 보고서와 같은 URL로만 비교할 수 있습니다.'},{status:400});
       diagnosisBaseline=createDiagnosisBaseline(previous,body.baselineId);
-      if(previous.llmCitationTest){const candidate={reportId:body.baselineId,url:previous.url,citation:previous.llmCitationTest};try{fixedQuestions=baselineQuestions(candidate);geoBaseline=candidate;}catch{ /* Page comparison still works without reusable GEO questions. */ }}
+      if(previous.llmCitationTest){const candidate={reportId:body.baselineId,expiresAt:previous.sharedRetention?.expiresAt,url:previous.url,citation:previous.llmCitationTest};try{fixedQuestions=baselineQuestions(candidate);geoBaseline=candidate;}catch{ /* Page comparison still works without reusable GEO questions. */ }}
       if (fixedQuestions&&geoQuestions !== undefined && JSON.stringify(geoQuestions.map((q:string)=>q.trim())) !== JSON.stringify(fixedQuestions.map(q=>q.question))) return NextResponse.json({message:'비교 모드에서는 기준 보고서의 질문을 그대로 사용합니다.'},{status:400});
     }
 

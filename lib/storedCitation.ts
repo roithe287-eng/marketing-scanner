@@ -1,7 +1,9 @@
+import {activeCitation} from './activeCitation';
 import type { LlmCitationTest } from './reportSchema';
 import { CURRENT_GEO_PROTOCOL, aggregateCitation, brandMentioned, buildActionPlan, normalizeSources } from './citationMeasurement';
 /** Re-check old attribution against saved evidence; never pretend a fresh API observation occurred. */
 export function reviewStoredCitation(value: LlmCitationTest | null | undefined, fallbackUrl: string) {
+    value=value?activeCitation(value):value;
     if (!value || value.measurementVersion !== 2 || value.measurementProtocol === CURRENT_GEO_PROTOCOL)
         return value;
     const target = value.targetUrl || fallbackUrl;

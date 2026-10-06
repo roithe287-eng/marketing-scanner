@@ -38,7 +38,7 @@ export function buildReportInsights(report:MarketingReport) {
     sourceMap.set(key,entry);
   }
   const sources=[...sourceMap.values()].sort((a,b)=>b.observations.length-a.observations.length||a.url.localeCompare(b.url));
-  const reviews=verified.filter(r=>r.brandMentioned===true && (r.sources||[]).some(s=>s.ownership!=='unresolved'&&!!safeHttpUrl(s.url)&&!ownHost(s.url,report.url)) && !(r.sources||[]).some(s=>s.ownership!=='unresolved'&&!!safeHttpUrl(s.url)&&ownHost(s.url,report.url))).map(r=>({question:r.question,engine:engineNames[r.engine],answer:r.responseText||r.responseSnippet||'답변 원문이 저장되지 않았습니다.',sources:(r.sources||[]).filter(s=>safeHttpUrl(s.url)),measuredAt:r.measuredAt}));
+  const reviews=verified.filter(r=>r.brandMentioned===true && (r.sources||[]).some(s=>s.ownership!=='unresolved'&&!!safeHttpUrl(s.url)&&!ownHost(s.url,report.url)) && !(r.sources||[]).some(s=>s.ownership!=='unresolved'&&!!safeHttpUrl(s.url)&&ownHost(s.url,report.url))).map(r=>({question:r.question,engine:engineNames.chatgpt,answer:r.responseText||r.responseSnippet||'답변 원문이 저장되지 않았습니다.',sources:(r.sources||[]).filter(s=>safeHttpUrl(s.url)),measuredAt:r.measuredAt}));
   const questions=obs?.questions.map(q=>{
     const rows=verified.filter(r=>r.question.trim()===q.question);
     const owned=rows.flatMap(r=>r.sources||[]).find(s=>s.ownership!=='unresolved'&&!!safeHttpUrl(s.url)&&ownHost(s.url,report.url));
@@ -71,7 +71,7 @@ export function buildReportInsights(report:MarketingReport) {
   const coverage=[
     {label:'페이지 진단',value:`${(report.checklist||[]).length}개 체크`,state:'저장됨',detail:'입력 페이지 기반 진단'},
     {label:'네이버 최적화',value:report.naverOptimization?.mode==='diagnosis'?`${report.naverOptimization.checks.length}개 점검`:'재진단 필요',state:report.naverOptimization?.mode==='diagnosis'?'관측·수동 분리':'기준 업데이트',detail:report.naverOptimization?.mode==='diagnosis'?`관측 확인 ${naverCounts(report.naverOptimization.checks).observed}개 · 계정·적용 범위 별도 확인`:'구버전 점수는 표시하지 않음'},
-    {label:'AI 출처 판정',value:obs?`${obs.sourceTotal} / ${obs.total}건`:'—',state:!obs?'미확인':obs.sourceTotal===obs.total&&obs.total?'판정 완료':obs.sourceTotal?'일부 판정':'판정 불가',detail:'분모는 저장된 전체 관측'},
+    {label:'AI 출처 판정',value:obs?`${obs.sourceTotal} / ${obs.total}건`:'—',state:!obs?'미확인':obs.sourceTotal===obs.total&&obs.total?'판정 완료':obs.sourceTotal?'일부 판정':'판정 불가',detail:'분모는 OpenAI 관측'},
     {label:'경쟁사 수집',value:`${metadataCount} / ${competitors.length}개`,state:report.competitorStatus?.status==='pending'?'진행 중':competitors.length?(metadataCount===competitors.length?'저장됨':'일부 미확인'):'미확인',detail:'후보 중 상세 항목이 있는 사이트'},
   ];
   return {obs,sources,reviews,questions,messageRows,messageOpportunities,stages,gaps,tasks,coverage,metadataCount,competitorCount:competitors.length};

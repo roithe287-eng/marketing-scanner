@@ -5,10 +5,10 @@ import { getOpenAI } from './openaiClient';
 import type { ExtractedWebsiteData } from './extractWebsite';
 import { LlmCitationTestSchema, type LlmCitationTest, type LlmCitationQuestionResult } from './reportSchema';
 import { getRedisClient } from './redisClient';
-import { CURRENT_GEO_PROTOCOL, aggregateCitation, brandMentioned, buildActionPlan, normalizeSources, parseGemini, parseOpenAI, safeHttpUrl } from './citationMeasurement';
+import { CURRENT_GEO_PROTOCOL, aggregateCitation, brandMentioned, buildActionPlan, parseOpenAI } from './citationMeasurement';
 import { citationFailure, httpCitationFailure, incompleteCitationFailure, CitationRequestError, readCitationError } from './citationFailure';
 
-const VERSION = 'geo-v2.4';
+const VERSION = 'geo-v2.6-openai';
 const TIMEOUT = 22_000;
 const QuestionSchema = z.object({question:z.string().min(5).max(250),type:z.enum(['brand','industry','service','local']),journey:z.string().max(40)});
 export type CitationQuestion = z.infer<typeof QuestionSchema>;
@@ -39,38 +39,24 @@ async function questionsFor(data: ExtractedWebsiteData, brand: string, custom?: 
   }
 }
 
-// Google returns signed redirect URLs. Follow only this provider's known redirect endpoint,
-// inspect Location, and never fetch the final third-party URL.
-async function resolveGoogleSource(url: string): Promise<string> {
-  try {
-    const u = new URL(url);
-    if (u.protocol !== 'https:' || u.hostname !== 'vertexaisearch.cloud.google.com' || !u.pathname.startsWith('/grounding-api-redirect/')) return url;
-    const response = await budgetFetch(url,{redirect:'manual',signal:AbortSignal.timeout(2500)});
-    const location = response.headers.get('location');
-    await response.body?.cancel();
-    return location ? safeHttpUrl(new URL(location,url).href) || url : url;
-  } catch { return url; }
-}
-async function measure(engine:'chatgpt'|'gemini', q:Question, brand:string, target:string): Promise<LlmCitationQuestionResult> {
+async function measure(q:Question, brand:string, target:string): Promise<LlmCitationQuestionResult> {
+  const engine = 'chatgpt' as const;
   const started = Date.now();
-  const model = engine === 'chatgpt' ? process.env.OPENAI_CITATION_MODEL || 'gpt-4.1-mini' : process.env.GEMINI_CITATION_MODEL || 'gemini-3.5-flash-lite';
-    const body = engine === 'chatgpt' ? {
+  const model = process.env.OPENAI_CITATION_MODEL || 'gpt-4.1-mini';
+    const body = {
       model,tools:[{type:'web_search_preview'}],tool_choice:'required',max_output_tokens:1400,
       input:q.question,instructions:'웹 검색을 사용해 한국어로 답변하고 근거 출처를 제공하세요. 질문에 직접 답하고 1200자 이내로 작성하세요.',
-    } : {
-      contents:[{parts:[{text:`웹 검색을 사용해 다음 질문에 한국어로 1200자 이내로 답하고 근거를 제공하세요.\n${q.question}`}]}],
-      tools:[{google_search:{}}],generationConfig:{maxOutputTokens:2200},
     };
   const base = {engine,question:q.question,questionType:q.type,journey:q.journey,model,requestFingerprint:digest(JSON.stringify([model,body])),
     branded:brandMentioned(q.question,brand,target),measuredAt:new Date().toISOString(),cited:false,citationRank:null};
-  const key = engine === 'chatgpt' ? process.env.OPENAI_API_KEY : process.env.GEMINI_API_KEY;
+  const key = process.env.OPENAI_API_KEY;
   if (!key) return {...base,...citationFailure('API_KEY_MISSING'),citationVerified:false,durationMs:0};
   const requestSignal=AbortSignal.timeout(TIMEOUT);
   let phase:'request'|'response'|'parse'='request';
   try {
-    const endpoint = engine === 'chatgpt' ? 'https://api.openai.com/v1/responses' : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+    const endpoint = 'https://api.openai.com/v1/responses';
     const response = await budgetFetch(endpoint,{
-      method:'POST',headers:{'Content-Type':'application/json',...(engine === 'chatgpt' ? {Authorization:`Bearer ${key}`} : {'x-goog-api-key':key})},
+      method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${key}`},
       body:JSON.stringify(body),signal:requestSignal,
     });
     if (!response.ok) throw new CitationRequestError(httpCitationFailure(response.status,await readCitationError(response)));
@@ -78,11 +64,9 @@ async function measure(engine:'chatgpt'|'gemini', q:Question, brand:string, targ
     const payload = await response.json();
     if (!payload || typeof payload!=='object' || Array.isArray(payload)) throw new CitationRequestError(citationFailure('INVALID_RESPONSE'));
     phase='parse';
-    if (engine === 'chatgpt' && payload.status !== 'completed') throw new CitationRequestError(incompleteCitationFailure(payload.incomplete_details?.reason || payload.error?.code));
-    if (engine === 'gemini' && payload.candidates?.[0]?.finishReason !== 'STOP') throw new CitationRequestError(incompleteCitationFailure(payload.promptFeedback?.blockReason || payload.candidates?.[0]?.finishReason));
-    const result = engine === 'chatgpt' ? parseOpenAI(payload,target) : parseGemini(payload,target);
+    if (payload.status !== 'completed') throw new CitationRequestError(incompleteCitationFailure(payload.incomplete_details?.reason || payload.error?.code));
+    const result = parseOpenAI(payload,target);
     if (!result.text.trim()) throw new CitationRequestError(citationFailure('EMPTY_RESPONSE'));
-    if (engine === 'gemini') result.sources = normalizeSources(await Promise.all(result.sources.map(async s => ({...s,url:await resolveGoogleSource(s.url)}))),target);
     const cited = result.sources.some(s => s.ownership === 'own');
     const citationVerified = result.searchUsed && (cited || !result.sources.some(s => s.ownership === 'unresolved'));
     return {...base,status:citationVerified ? 'ok' : 'unverified',cited,brandMentioned:brandMentioned(result.text,brand,target),
@@ -103,7 +87,7 @@ export async function analyzeCitation(data: ExtractedWebsiteData, custom?: strin
   if (process.env.ENABLE_LLM_CITATION === 'false') return null;
   const target = data.finalUrl || data.url;
   const brand = (data.ogSiteName || data.title.split(/[|–·]/)[0] || new URL(target).hostname).trim().slice(0,60);
-  const identity = digest(JSON.stringify([VERSION,target,data.title,data.description,data.bodyText.slice(0,1800),options.fixedQuestions || custom || [],process.env.OPENAI_CITATION_MODEL,process.env.GEMINI_CITATION_MODEL]));
+  const identity = digest(JSON.stringify([VERSION,target,data.title,data.description,data.bodyText.slice(0,1800),options.fixedQuestions || custom || [],process.env.OPENAI_CITATION_MODEL]));
   const redis = getRedisClient();
   const key = `ms:${process.env.VERCEL_ENV==='preview'?'preview:':''}citation:${VERSION}:${identity}`;
   if (redis && !options.fresh) {
@@ -122,8 +106,8 @@ export async function analyzeCitation(data: ExtractedWebsiteData, custom?: strin
       try { const raw = await redis.get(`${key}:questions`); questions = z.array(QuestionSchema).min(1).max(5).parse(typeof raw === 'string' ? JSON.parse(raw) : raw); } catch { /* generate */ }
     }
     questions ||= await questionsFor(data,brand,custom);
-    if (redis) { try {await redis.set(`${key}:questions`,questions,{ex:21*86400});} catch {} }
-    const results = await Promise.all(questions.flatMap(q => [measure('chatgpt',q,brand,target),measure('gemini',q,brand,target)]));
+    if (redis) { try {await redis.set(`${key}:questions`,questions,{ex:7*86400});} catch {} }
+    const results = await Promise.all(questions.map(q => measure(q,brand,target)));
     const metrics = aggregateCitation(results);
     const result:LlmCitationTest = {
       ...metrics,measurementVersion:2,measurementProtocol:CURRENT_GEO_PROTOCOL,targetUrl:target,brandName:brand,questionSetId:digest(JSON.stringify(questions)),measuredAt:new Date().toISOString(),cacheHit:false,results,

@@ -4,11 +4,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run build:pocket && next build",
+    "build": "npm run build:pocket && next build && npm run migrate:report-retention",
     "start": "next start",
+    "migrate:report-retention": "node --import tsx scripts/migrate-report-retention.ts",
     "typecheck": "tsc --noEmit",
     "lint": "next lint",
     "test": "node --import tsx --test tests/*.test.ts",
+    "test:retention": "node --import tsx --test tests/report-retention.integration.ts",
     "test:security": "node --import tsx --test tests/security-redis.integration.ts",
     "build:pocket": "npm ci --prefix consumer-app --include=dev --no-audit --no-fund && npm run build --prefix consumer-app && node scripts/stage-pocket-preview.mjs"
   },

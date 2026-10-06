@@ -1,8 +1,10 @@
+import {activeCitation} from '@/lib/activeCitation';
 import React from 'react';
 import type {LlmCitationQuestionResult, LlmCitationTest} from '@/lib/reportSchema';
 import {citationFailure, httpCitationFailure} from '@/lib/citationFailure';
 
 export default function CitationFailureSummary({citation}:{citation:LlmCitationTest}) {
+  citation=activeCitation(citation);
   const failures=citation.results.filter(r=>r.status==='error'||r.status==='timeout'||r.status==='unavailable');
   if(!failures.length)return null;
   const groups=new Map<string,LlmCitationQuestionResult[]>();
@@ -14,7 +16,7 @@ export default function CitationFailureSummary({citation}:{citation:LlmCitationT
       const row=rows[0];const httpStatus=row.httpStatus || Number(row.errorMessage?.match(/\bHTTP (4\d\d|5\d\d)\b/)?.[1]) || undefined;
       const fallback=row.errorCode ? citationFailure(row.errorCode) : httpStatus ? httpCitationFailure(httpStatus,null) : citationFailure(row.status==='timeout'?'TIMEOUT':row.status==='unavailable'?'API_KEY_MISSING':'UNKNOWN');
       return <div key={key} className="min-w-0 rounded-xl border border-amber-200 bg-white p-4 text-sm leading-6 [overflow-wrap:anywhere]">
-        <p className="font-black text-slate-900">{row.engine==='gemini'?'Gemini':'OpenAI'} · {rows.length}건 {row.status==='unavailable'?'미설정':'관측 실패'}</p>
+        <p className="font-black text-slate-900">OpenAI · {rows.length}건 {row.status==='unavailable'?'미설정':'관측 실패'}</p>
         <p className="mt-2 font-bold text-amber-900">{row.errorMessage || fallback.errorMessage}</p>
         <p className="mt-2 text-slate-700">{row.errorAction || fallback.errorAction}</p>
         <p className="mt-3 text-sm text-slate-600">{httpStatus && `HTTP ${httpStatus} · `}{row.providerCode || row.errorCode || '상세 코드 기록 없음'}</p>

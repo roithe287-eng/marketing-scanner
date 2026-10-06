@@ -19,7 +19,7 @@ test('source review excludes failures, unresolved attribution and duplicated eng
 test('source counts deduplicate URLs within one observation and do not trust an own label on another host',()=>{
   const same={url:'https://example.com/faq#answer',title:'자사 FAQ',ownership:'own' as const};
   const d=buildReportInsights(report([row({cited:true,sources:[same,same]}),row({engine:'gemini',sources:[{...same,url:'https://example.com/faq'}]}),row({question:'비슷한 주소',sources:[{url:'https://example.com.evil.test/faq',title:'비슷한 도메인',ownership:'own'}]})]));
-  assert.equal(d.sources.length,2);const own=d.sources.find(s=>s.ownership==='own')!;assert.equal(own.observations.length,2);assert.equal(own.questions.length,1);assert.equal(own.url,'https://example.com/faq');assert.equal(d.reviews.length,1);assert.equal(d.questions[0].kind,'인용 페이지');
+  assert.equal(d.sources.length,2);const own=d.sources.find(s=>s.ownership==='own')!;assert.equal(own.observations.length,1);assert.equal(own.questions.length,1);assert.equal(own.url,'https://example.com/faq');assert.equal(d.reviews.length,1);assert.equal(d.questions[0].kind,'인용 페이지');
 });
 test('unsafe URL values and legacy data cannot become usable source links or invented review scores',()=>{
   const r=report([row({sources:[{url:'javascript:alert(1)',title:'unsafe',ownership:'external'},{url:'https://u:p@other.example',title:'credentials',ownership:'external'}]})]);const d=buildReportInsights(r);assert.equal(d.sources.length,0);assert.equal(d.reviews.length,0);
