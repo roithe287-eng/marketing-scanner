@@ -3,6 +3,7 @@ import React, { memo, useState } from 'react';
 import {ObservationOverview,QuestionMatrix} from './visuals/ObservationVisuals';
 import type { LlmCitationTest } from '@/lib/reportSchema';
 import { safeHttpUrl } from '@/lib/citationMeasurement';
+import CitationFailureSummary from './CitationFailureSummary';
 
 const percent = (value:number|null|undefined) => value == null ? '측정 불가' : `${value}%`;
 const actionLabels = {review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요'};
@@ -30,6 +31,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
       <p>측정: {citation.measuredAt?.replace('T',' ').replace('Z',' UTC')} · 질문 세트 {citation.questionSetId}{citation.cacheHit ? ' · 저장된 관측 결과' : ''}</p>
       <p>API에서 관측한 결과이며 일반 ChatGPT·Gemini 화면이나 시장 전체 노출률을 의미하지 않습니다.</p>
     </div>}
+    {modern && <CitationFailureSummary citation={citation}/>}
     {modern && <QuestionMatrix citation={citation} selected={selected} onSelect={setSelectedQuestion}/>}
     {modern && <div className="mb-3 mt-6 border-t pt-5" aria-live="polite"><h4 className="text-sm font-black">선택한 질문의 답변·출처</h4><p className="mt-2 text-sm leading-6 text-jm-gray">{selected || '위 관측 지도에서 질문을 선택해 주세요.'}</p></div>}
     <div className="space-y-3">
@@ -41,6 +43,8 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
         </summary>
         <div className="pt-4 space-y-3 text-sm leading-7">
           <p className="text-xs text-jm-gray">{r.model} {r.measuredAt && `· ${r.measuredAt}`} {r.durationMs != null && `· ${(r.durationMs/1000).toFixed(1)}초`}</p>
+          {r.errorAction && <p className="rounded-lg bg-amber-50 p-3 text-amber-950">{r.errorAction}</p>}
+          {r.diagnosticId && <p className="break-all text-sm text-jm-gray">오류 번호: {r.diagnosticId}{r.httpStatus && ` · HTTP ${r.httpStatus}`}{r.providerCode && ` · ${r.providerCode}`}</p>}
           <p className="whitespace-pre-wrap break-words">{r.responseText || r.responseSnippet || '수신한 답변이 없습니다.'}</p>
           {(r.sources || []).length > 0 ? <ul className="space-y-2">{r.sources!.map((s,j) => <li key={`${s.url}-${j}`} className="rounded-lg bg-neutral-50 p-3 break-words">
             <span className="text-xs font-bold">{s.ownership === 'own' ? '자사 출처' : s.ownership === 'unresolved' ? '대상 도메인 확인 필요' : '외부 출처'} · </span>
