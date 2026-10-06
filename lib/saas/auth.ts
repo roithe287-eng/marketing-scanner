@@ -6,7 +6,7 @@ import {
   requireSameOrigin,
 } from "../security/request";
 import { Principal } from "./types";
-import { sessionAccount, SESSION_SECONDS, limitRequest } from "./store";
+import { sessionAccount, SESSION_SECONDS, limitRequest, isOwnerAccount } from "./store";
 export const SESSION_COOKIE =
   process.env.NODE_ENV === "production"
     ? "__Host-ms_session"
@@ -29,14 +29,13 @@ export async function principalFrom(
   headers: Headers,
   session: string | undefined,
 ): Promise<Principal | null> {
-  const internal = isInternal(headers);
-  // The existing IP exception does not depend on session/storage availability.
-  if (internal) return { kind: "internal" };
   const account = await sessionAccount(session);
-  // Administrative sessions are bound to the registered network as well as a password.
-  return account && account.role !== "admin"
-    ? { kind: "account", account }
-    : null;
+  if (!account) return null;
+  // A shared office IP never substitutes for an approved, identifiable account.
+  // Keep the existing additional network restriction on the sole owner's account.
+  if (account.role === "admin" &&
+      (!isInternal(headers) || !(await isOwnerAccount(account)))) return null;
+  return { kind: "account", account };
 }
 export async function getPrincipal(req?: NextRequest) {
   return req
@@ -63,7 +62,7 @@ export async function requireAdmin(req?: NextRequest) {
       ? req.cookies.get(SESSION_COOKIE)?.value
       : (await cookies()).get(SESSION_COOKIE)?.value,
   );
-  if (!account || account.role !== "admin")
+  if (!account || !(await isOwnerAccount(account)))
     throw new AccessError(403, "관리자 계정으로 로그인해 주세요.");
   return account;
 }

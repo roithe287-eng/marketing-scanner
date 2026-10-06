@@ -3,6 +3,8 @@ import {notFound,redirect} from 'next/navigation';
 import {getPrincipal} from '@/lib/saas/auth';
 import {getSharedReport} from '@/lib/shareStore';
 import SharedReportView from '@/components/SharedReportView';
+import {headers} from 'next/headers';
+import {captureActivity,targetHost} from '@/lib/saas/activity';
 export const dynamic='force-dynamic';
 // Never put private customer report information in social/link-preview metadata.
 export const metadata:Metadata={title:'보관된 진단 결과 | 마케팅스캐너',description:'이용 권한 확인 후 진단 결과를 열람할 수 있습니다.',robots:{index:false,follow:false}};
@@ -12,5 +14,8 @@ export default async function SharedReportPage({params}:{params:Promise<{id:stri
   if(!principal)redirect('/login?next='+encodeURIComponent('/r/'+id));
   const report=await getSharedReport(id,principal);
   if(!report)notFound();
+  const h=await headers();
+  if(principal.kind==='account'&&!h.get('next-router-prefetch')&&!/prefetch/i.test(h.get('purpose')||h.get('sec-purpose')||''))
+    await captureActivity(principal.account.id,'report_view',h,{reportId:id,target:targetHost(report.url)});
   return <SharedReportView report={report} shareId={id} canSave={principal.kind==='internal'||principal.account.features.reports}/>;
 }

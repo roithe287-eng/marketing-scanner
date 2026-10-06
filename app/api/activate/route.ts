@@ -14,6 +14,7 @@ import {
   deleteSession,
 } from "@/lib/saas/store";
 import { SESSION_COOKIE, setSession } from "@/lib/saas/auth";
+import { captureActivity } from "@/lib/saas/activity";
 export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
       })
       .parse(await readJson(req));
     const account = await activate(body.token, body.password);
+    await captureActivity(account.id,'activated',req.headers);
     await deleteSession(req.cookies.get(SESSION_COOKIE)?.value);
     return setSession(privateJson({ ok: true }), await createSession(account));
   } catch (error) {

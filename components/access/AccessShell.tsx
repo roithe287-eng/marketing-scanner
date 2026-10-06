@@ -26,6 +26,7 @@ export default function AccessShell({
       </section>
       <footer className="access-footer">
         <a href="/notice">진단 이용 안내</a>
+        <a href="/privacy">개인정보·이용 기록 안내</a>
         <span>진짜마케팅 · 마케팅스캐너</span>
       </footer>
     </main>

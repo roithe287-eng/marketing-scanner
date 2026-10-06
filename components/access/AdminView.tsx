@@ -1,10 +1,12 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import type { Account, Inquiry, Features } from "@/lib/saas/types";
 import { DEFAULT_FEATURES } from "@/lib/saas/types";
-type SafeAccount = Omit<Account, "passwordHash">;
+import UserActivityView, {koreanTime} from './UserActivityView';
+import type {ActivityStats} from '@/lib/saas/activityTypes';
+type SafeAccount = Omit<Account, "passwordHash"> & {activity?:ActivityStats};
 const formatDate = (value: number) =>
-  new Date(value).toISOString().slice(0, 10);
+  new Date(value+9*3600000).toISOString().slice(0, 10);
 function GrantFields({ account }: { account?: SafeAccount }) {
   const features = account?.features || DEFAULT_FEATURES;
   return (
@@ -74,23 +76,33 @@ export default function AdminView() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [link, setLink] = useState("");
+  const [owner,setOwner]=useState<SafeAccount|null>(null);
+  const [offset,setOffset]=useState(0),[total,setTotal]=useState(0);
+  const [search,setSearch]=useState(''),[selected,setSelected]=useState(''),[revision,setRevision]=useState(0);
+  const activeLoad=useRef<AbortController|null>(null);
   const load = useCallback(async () => {
+    activeLoad.current?.abort();const controller=new AbortController();activeLoad.current=controller;
     try {
-      const r = await fetch("/api/admin", { cache: "no-store" });
+      setLoading(true);setError('');
+      const r = await fetch("/api/admin?offset="+offset, { cache: "no-store",signal:controller.signal });
       const data = await r.json();
       if (!r.ok) throw new Error(data.message);
+      if(controller.signal.aborted)return;
       setInquiries(data.inquiries);
       setAccounts(data.accounts);
+      setOwner(data.owner);setTotal(data.total);setRevision(v=>v+1);
     } catch (err) {
+      if(controller.signal.aborted)return;
       setError(
         err instanceof Error ? err.message : "목록을 불러오지 못했습니다.",
       );
     } finally {
-      setLoading(false);
+      if(!controller.signal.aborted)setLoading(false);
     }
-  }, []);
+  }, [offset]);
   useEffect(() => {
     void load();
+    return()=>activeLoad.current?.abort();
   }, [load]);
   async function action(body: unknown) {
     if (busy) return;
@@ -119,7 +131,7 @@ export default function AdminView() {
   return (
     <div className="access-admin">
       <div className="access-account-head">
-        <p>등록 네트워크 + 관리자 계정 인증</p>
+        <div><p><strong>{owner?.name||'소유자'} 관리자</strong> · {owner?.email}</p><p className="access-muted">계정 발급·승인은 이 관리자 한 명만 가능합니다. 등록 네트워크와 관리자 로그인을 함께 확인합니다.</p></div>
         <button
           className="access-secondary"
           onClick={() => void load()}
@@ -128,6 +140,7 @@ export default function AdminView() {
           목록 새로고침
         </button>
       </div>
+      <nav className="admin-jump-nav" aria-label="관리자 메뉴"><a href="#admin-users">사용자·활동 기록</a><a href="#admin-create">계정 직접 생성</a><a href="#admin-inquiries">이용 문의·승인</a><button onClick={async()=>{const r=await fetch('/api/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(r.ok)window.location.assign('/login');}}>로그아웃</button></nav>
       {error && (
         <p role="alert" className="access-error">
           {error}
@@ -187,7 +200,7 @@ export default function AdminView() {
               ).length
             }
           </strong>
-          <span>이용 승인</span>
+          <span>현재 목록의 승인 계정</span>
         </article>
         <article>
           <strong>
@@ -199,10 +212,22 @@ export default function AdminView() {
               ).length
             }
           </strong>
-          <span>중지·기간 종료</span>
+          <span>현재 목록의 중지·종료</span>
         </article>
       </div>
-      <section>
+      <section id="admin-create">
+        <h2>계정 직접 생성</h2>
+        <p className="access-muted">문의 접수 없이도 관리자가 고객 계정을 생성할 수 있습니다. 생성 즉시 승인되며, 고객이 48시간 내 전용 링크에서 비밀번호를 설정해야 로그인할 수 있습니다.</p>
+        <details className="access-admin-card"><summary><strong>새 고객 계정 만들기</strong><span>관리자 전용</span></summary><div>
+          <form className="access-form" onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);void action({action:'create',name:f.get('name'),email:f.get('email'),company:f.get('company'),contactVerified:f.has('contactVerified'),...grant(f)});}}>
+            <div className="access-form-grid"><label>고객 이름<input name="name" required maxLength={80}/></label><label>로그인 이메일<input name="email" type="email" required maxLength={254}/></label></div>
+            <label>회사명<input name="company" maxLength={120}/></label><GrantFields/>
+            <label className="access-checkbox"><input name="contactVerified" type="checkbox" required/>계정 소유자와 이메일을 확인했고 이용을 승인합니다.</label>
+            <button className="jm-button" disabled={busy}>계정 생성·활성화 링크 발급</button>
+          </form>
+        </div></details>
+      </section>
+      <section id="admin-inquiries">
         <h2>이용 문의</h2>
         <p className="access-muted">
           최근 90일 내 문의 중 최신 100건. 연락처와 이메일을 확인한 뒤 승인해
@@ -281,22 +306,25 @@ export default function AdminView() {
           ))
         )}
       </section>
-      <section>
-        <h2>고객 이용 관리</h2>
+      <section id="admin-users">
+        <h2>사용자·활동 기록</h2>
         <p className="access-muted">
-          최신 200개 계정. 이용 조건을 변경하면 기존 로그인 세션이 종료되고 다시
+          전체 {total}개 계정 중 {total?offset+1:0}~{Math.min(offset+50,total)}번째 계정. 이용 조건을 변경하면 기존 로그인 세션이 종료되고 다시
           로그인해야 합니다.
         </p>
+        <label className="admin-search">현재 목록 검색<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="이름 · 회사 · 로그인 이메일 · UUID"/></label>
+        {owner&&<details className="access-admin-card" onToggle={e=>{if(e.currentTarget.open)setSelected(owner.id);}}><summary><strong>{owner.name} · 내 관리자 기록</strong><span>소유자</span></summary><div>{selected===owner.id&&<UserActivityView id={owner.id} revision={revision}/>}</div></details>}
         {accounts
-          .filter((a) => a.role === "customer")
+          .filter((a) => a.role === "customer"&&[a.name,a.company,a.email,a.id].join(' ').toLowerCase().includes(search.trim().toLowerCase()))
           .map((account) => (
             <details
               className="access-admin-card"
               key={`${account.id}:${account.version}`}
+              onToggle={e=>{if(e.currentTarget.open)setSelected(account.id);}}
             >
               <summary>
                 <span>
-                  <strong>{account.name}</strong> {account.email}
+                  <strong>{account.name}</strong> {account.email}<small className="admin-account-summary">진단 완료 {account.activity?.analyze_success||0} · PDF 저장 클릭 {account.activity?.pdf_save||0} · 링크 생성 {account.activity?.share_created||0}<br/>최근 기록 {koreanTime(account.activity?.lastSeenAt)}</small>
                 </span>
                 <span>
                   {account.status === "suspended"
@@ -307,6 +335,8 @@ export default function AdminView() {
                 </span>
               </summary>
               <div>
+                {selected===account.id&&<UserActivityView id={account.id} revision={revision}/>}
+                <h3 className="admin-settings-title">이용 조건 관리</h3>
                 <form
                   className="access-form"
                   onSubmit={(e) => {
@@ -358,7 +388,7 @@ export default function AdminView() {
                   onClick={() => {
                     if (
                       window.confirm(
-                        "고객 계정 정보를 삭제하고 로그인을 즉시 차단할까요? 기존 보고서는 원래 보관 기간(21일)까지 남습니다.",
+                        "고객 계정과 사용자별 접속 기록·누적 횟수를 삭제하고 로그인을 즉시 차단할까요? 기존 보고서는 원래 보관 기간(최대 7일)까지 남으며 관리자만 열람할 수 있습니다.",
                       )
                     )
                       void action({
@@ -373,6 +403,7 @@ export default function AdminView() {
               </div>
             </details>
           ))}
+        <div className="admin-pagination"><button className="access-secondary" disabled={!offset||loading} onClick={()=>{setSelected('');setOffset(Math.max(0,offset-50));}}>이전 50개</button><span>{total}개 계정</span><button className="access-secondary" disabled={offset+50>=total||loading} onClick={()=>{setSelected('');setOffset(offset+50);}}>다음 50개</button></div>
       </section>
     </div>
   );

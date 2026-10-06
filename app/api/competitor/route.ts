@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
     }
 
     publicUrl(url);
-    finish=await reserve(principal,'competitor');
+    finish=await reserve(principal,'competitor',{headers:req.headers,url});
     const t0 = Date.now();
 
     const result = await withBudget(Math.max(1,48000-(Date.now()-startedAt)),()=>analyzeCompetitors({

@@ -425,6 +425,50 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
 }
+.admin-jump-nav{display:flex;gap:12px;flex-wrap:wrap;margin:24px 0}
+.admin-jump-nav a,.admin-jump-nav button{padding:10px 14px;border-radius:999px;border:1px solid #ddd5d1;background:#fff;font-size:14px;font-weight:700}
+.admin-account-summary{display:block;font-size:13px;color:#675f5b;line-height:1.75;margin-top:8px}
+.admin-search{display:grid;gap:8px;margin:22px 0;font-size:14px;font-weight:700}
+.admin-search input,.admin-section-head select{border:1px solid #dcd1ca;background:white;border-radius:10px;padding:12px;font:inherit;min-width:0;width:100%}
+.admin-user-activity{padding-top:20px;border-top:1px solid #e9dfd8}
+.admin-identity{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;background:#f7f5f2;padding:22px;border-radius:14px;margin-bottom:18px}
+.admin-identity dt{font-size:12px;font-weight:700;color:#70665e;margin-bottom:7px}
+.admin-identity dd{font-size:15px;font-weight:650;overflow-wrap:anywhere}
+.admin-uuid{font-variant-numeric:tabular-nums;letter-spacing:-.03em}
+.admin-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}
+.admin-metrics article{border:1px solid #e6dfd9;padding:18px 16px;border-radius:14px;background:#fff}
+.admin-metrics span{font-size:13px;color:#675f5b;font-weight:700}
+.admin-metrics strong{display:block;font-size:30px;font-weight:850;margin:12px 0}
+.admin-metrics small{font-size:13px;font-weight:500;margin-left:6px}
+.admin-metrics p{font-size:12px;color:#675f5b;line-height:1.7}
+.admin-detail-section{margin:28px 0;padding-top:24px;border-top:1px solid #e9dfd8}
+.admin-detail-section h3,.admin-settings-title{font-size:18px;font-weight:800;line-height:1.6;margin-bottom:14px}
+.admin-settings-title{border-top:1px solid #e9dfd8;padding-top:28px;margin-top:34px}
+.admin-daily{display:flex;align-items:flex-end;gap:5px;min-height:116px;padding:8px 0}
+.admin-daily>div{flex:1;min-width:0;display:flex;align-items:center;flex-direction:column;gap:8px}
+.admin-daily span{display:block;width:100%;max-width:18px;background:#c73c30;border-radius:4px 4px 0 0}
+.admin-daily span[data-empty="true"]{background:#e9e3df}
+.admin-daily small{font-size:10px;color:#786a62}
+.admin-ip-list{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.admin-ip-list code{font-size:13px;background:#f3f1f0;border:1px solid #e4deda;padding:8px 12px;border-radius:8px;overflow-wrap:anywhere}
+.admin-links{list-style:none;padding:0;display:grid;gap:10px;margin-bottom:12px}
+.admin-links li{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;padding:16px;background:#f7f6f4;border-radius:10px}
+.admin-links a{font-size:15px;font-weight:750}
+.admin-links p{font-size:12px;color:#6c625d;margin-top:6px}
+.admin-badge{color:#236144;background:#e7f0e9;border-radius:999px;padding:4px 10px;font-size:12px;white-space:nowrap}
+.admin-section-head{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:10px}
+.admin-section-head label{display:flex;align-items:center;gap:10px;font-size:13px;white-space:nowrap}
+.admin-section-head select{width:auto;max-width:170px;padding:8px 12px}
+.admin-table-scroll{overflow:auto;max-width:100%;margin-top:16px;border:1px solid #e5dbd4;border-radius:12px}
+.admin-event-table{width:100%;min-width:690px;border-collapse:collapse;text-align:left;font-size:13px;line-height:1.65}
+.admin-event-table th{background:#f7f4f1;padding:13px 14px;color:#665c56;font-size:12px}
+.admin-event-table td{vertical-align:top;border-top:1px solid #eee7e2;padding:15px 14px;max-width:260px;overflow-wrap:anywhere}
+.admin-event-table strong{font-weight:700}
+.admin-event-table small{display:block;margin-top:5px;color:#726760;font-size:11px}
+.admin-event-table code{font-size:12px;white-space:nowrap}
+.admin-pagination{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:22px;font-size:13px}
+@media(max-width:850px){.admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr));}.admin-section-head{align-items:flex-start;flex-direction:column;gap:10px}}
+@media(max-width:640px){.admin-identity{grid-template-columns:1fr;padding:16px}.admin-metrics article{padding:16px 12px}.admin-daily{gap:3px}.admin-daily>div:nth-child(2n) small{visibility:hidden}.admin-pagination{flex-wrap:wrap}.admin-uuid{font-size:13px!important}}
 @media (max-width: 640px) {
   .access-bar > .jm-container {
     align-items: flex-start;

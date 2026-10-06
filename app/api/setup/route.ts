@@ -13,6 +13,7 @@ import {
 import { emailSchema, passwordSchema } from "@/lib/saas/validation";
 import { createAdmin, createSession, limitRequest } from "@/lib/saas/store";
 import { setSession } from "@/lib/saas/auth";
+import { captureActivity } from "@/lib/saas/activity";
 export const runtime = "nodejs";
 export async function POST(req: NextRequest) {
   try {
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
     const expires = Number(process.env.SAAS_SETUP_EXPIRES_AT || 0);
     if (
       !/^[a-f0-9]{64}$/.test(expected) ||
+      !Number.isFinite(expires) ||
       expires <= Date.now() ||
       !timingSafeEqual(
         Buffer.from(expected, "hex"),
@@ -46,6 +48,7 @@ export async function POST(req: NextRequest) {
         "관리자 등록 코드가 올바르지 않거나 만료되었습니다.",
       );
     const account = await createAdmin(body);
+    await captureActivity(account.id,'owner_created',req.headers);
     return setSession(privateJson({ ok: true }), await createSession(account));
   } catch (error) {
     return failure(error);

@@ -11,6 +11,7 @@ import {
 import {baselineQuestions} from "@/lib/geoComparison";
 import {createDiagnosisBaseline} from '@/lib/diagnosisComparison';
 import { MarketingReportSchema } from "@/lib/reportSchema";
+import { captureActivity, targetHost } from '@/lib/saas/activity';
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -22,6 +23,7 @@ export async function GET(req: NextRequest) {
   if (!isShareStoreAvailable()) return NextResponse.json({message:"기준 보고서를 불러올 수 없습니다."},{status:503});
   const report = await getSharedReport(id,principal);
   if (!report) return privateJson({message:"공유 보고서가 만료되었거나 찾을 수 없습니다. 보관 기간은 최대 7일입니다."},404);
+  if(principal.kind==='account')await captureActivity(principal.account.id,'comparison_loaded',req.headers,{reportId:id,target:targetHost(report.url)});
   if(req.nextUrl.searchParams.get('mode')==='diagnosis') {
     const diagnosisBaseline=createDiagnosisBaseline(report,id);
     let geoBaseline;
@@ -64,6 +66,7 @@ export async function POST(req: NextRequest) {
 
     const saved=await getSharedReport(id,principal);
     if(!saved?.sharedRetention)throw new AccessError(410,'보고서 보관 기간이 만료되었습니다. 다시 진단해 주세요.');
+    if(principal.kind==='account')await captureActivity(principal.account.id,'share_created',req.headers,{reportId:id,target:targetHost(report.url),expiresAt:saved.sharedRetention.expiresAt},id);
     return privateJson({id,createdAt:saved.sharedRetention.createdAt,expiresAt:saved.sharedRetention.expiresAt});
   } catch (error: any) {
     return failure(error);
@@ -122,6 +125,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    if(principal.kind==='account')await captureActivity(principal.account.id,'share_updated',req.headers,{reportId:id,target:targetHost(existing.url)});
     return privateJson({ ok: true });
   } catch (error: any) {
     return failure(error);

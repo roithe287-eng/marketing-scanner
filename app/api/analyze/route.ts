@@ -88,7 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     publicUrl(url);
-    finish=await reserve(principal,'analyze');
+    finish=await reserve(principal,'analyze',{headers:req.headers,url});
     // Leave time for both quota finalization and a failed-finalization refund.
     const payload=await withBudget(Math.max(1,48_000-(Date.now()-startedAt)),async()=>{
     const t0 = Date.now();

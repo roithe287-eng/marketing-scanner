@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { getRedisClient } from "../redisClient";
 import { AccessError, digest, clientIp } from "../security/request";
+import { captureActivity, targetHost, activityStorageKeys } from './activity';
 import {
   Account,
   Inquiry,
@@ -36,6 +37,10 @@ export function decode<T>(raw: unknown): T | null {
 export async function getAccount(id: string) {
   if (!/^[\w-]{36}$/.test(id)) return null;
   return decode<Account>(await db().get(key("account:" + id)));
+}
+export async function isOwnerAccount(account: Account) {
+  return account.role === "admin" && account.status === "approved" &&
+    (await db().get<string>(key("admin-initialized"))) === account.id;
 }
 const derive = (password: string, salt: string) =>
   new Promise<Buffer>((resolve, reject) =>
@@ -138,9 +143,17 @@ if not redis.call('SET',KEYS[3],ARGV[5],'NX','EX',120) then return -4 end
 redis.call('HINCRBY',KEYS[2],action,1);redis.call('EXPIRE',KEYS[2],6048000);return count+1`;
 export const FINISH_SCRIPT = `if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
 redis.call('DEL',KEYS[1]);if ARGV[2]=='refund' then local n=tonumber(redis.call('HGET',KEYS[2],ARGV[3]) or '0');if n>0 then redis.call('HINCRBY',KEYS[2],ARGV[3],-1) end end;return 1`;
-export async function reserve(principal: Principal, action: UsageAction) {
-  if (principal.kind === "internal" || principal.account.role === "admin")
-    return async (_refund = false) => {};
+export async function reserve(principal: Principal, action: UsageAction, context?: { headers: Headers; url: string }) {
+  if(principal.kind==='internal')return async (_refund=false)=>{};
+  const requestId=randomUUID();
+  const track=async(phase:'started'|'success'|'failed')=>{
+    if(context)await captureActivity(principal.account.id,`${action}_${phase}`,context.headers,{target:targetHost(context.url)},requestId);
+  };
+  if (principal.account.role === "admin") {
+    await track('started');
+    let completed=false;
+    return async (refund=false)=>{if(completed)return;completed=true;await track(refund?'failed':'success');};
+  }
   const user = principal.account;
   const reservation = token();
   const bucket = key(`usage:${user.id}:${monthBucket()}`);
@@ -163,6 +176,7 @@ export async function reserve(principal: Principal, action: UsageAction) {
       )[result],
     );
   let finished = false;
+  await track('started');
   return async (refund = false) => {
     if (finished) return;
     await db().eval(
@@ -171,16 +185,31 @@ export async function reserve(principal: Principal, action: UsageAction) {
       [reservation, refund ? "refund" : "complete", action],
     );
     finished = true;
+    await track(refund?'failed':'success');
   };
 }
 export async function audit(actor: string, action: string, target: string) {
-  const r = db();
-  await r.lpush(
-    key("audit"),
-    JSON.stringify({ actor, action, target, at: Date.now() }),
-  );
-  await r.ltrim(key("audit"), 0, 1999);
-  await r.expire(key("audit"), 180 * 24 * 3600);
+  await migrateLegacyAudit();
+  const at=Date.now(),day=Math.floor(at/86400000);
+  const auditKey=key('audit-day:'+day);
+  await db().eval(`redis.call('LPUSH',KEYS[1],ARGV[1]);redis.call('LTRIM',KEYS[1],0,1999);redis.call('EXPIREAT',KEYS[1],ARGV[2]);return 1`,
+    [auditKey],[JSON.stringify({actor,action,target,at}),(day+180)*86400]);
+}
+/** Move the former sliding-TTL audit list to bounded, absolute day buckets. */
+export async function migrateLegacyAudit() {
+  return db().eval<unknown[],number>(`
+local rows=redis.call('LRANGE',KEYS[1],0,1999);local moved=0
+for _,row in ipairs(rows) do
+  local ok,e=pcall(cjson.decode,row)
+  if ok and type(e)=='table' and type(e.at)=='number' then
+    local expires=(math.floor(e.at/86400000)+180)*86400
+    if expires>tonumber(ARGV[1])/1000 and e.at<=tonumber(ARGV[1]) then
+      local k=ARGV[2]..math.floor(e.at/86400000)
+      redis.call('LPUSH',k,row);redis.call('LTRIM',k,0,1999);redis.call('EXPIREAT',k,expires);moved=moved+1
+    end
+  end
+end
+redis.call('DEL',KEYS[1]);return moved`,[key('audit')],[Date.now(),key('audit-day:')]);
 }
 export async function saveInquiry(
   data: Omit<Inquiry, "id" | "status" | "createdAt">,
@@ -212,13 +241,35 @@ export async function listInquiries() {
     .map((raw) => decode<Inquiry>(raw))
     .filter((x): x is Inquiry => !!x);
 }
-export async function listAccounts() {
-  const ids = await db().zrange<string[]>(key("accounts"), 0, 199, {
+export async function listAccounts(offset = 0, limit = 50) {
+  const ids = await db().zrange<string[]>(key("accounts"), offset, offset + limit - 1, {
     rev: true,
   });
   return (await Promise.all(ids.map(getAccount))).filter(
     (x): x is Account => !!x,
   );
+}
+/** No public signup endpoint: only the authenticated owner calls this operation. */
+export async function createCustomer(
+  data: Pick<Account, "email" | "name" | "company" | "expiresAt" | "monthlyLimit" | "features">,
+  actor: string,
+) {
+  const account: Account = { email:data.email,name:data.name,company:data.company,
+    expiresAt:data.expiresAt,monthlyLimit:data.monthlyLimit,features:data.features,
+    id: randomUUID(), role: "customer", status: "approved",
+    passwordHash: null, version: 1, createdAt: Date.now(), approvedAt: Date.now(), approvedBy: actor };
+  const invite = token();
+  const ok = await db().eval<unknown[], number>(`
+if redis.call('GET',KEYS[5])~=ARGV[5] then return -1 end
+if redis.call('EXISTS',KEYS[1])==1 then return 0 end
+redis.call('SET',KEYS[1],ARGV[1]);redis.call('SET',KEYS[2],ARGV[2]);
+redis.call('SET',KEYS[3],ARGV[3],'EX',ARGV[4]);redis.call('ZADD',KEYS[4],ARGV[6],ARGV[1]);return 1`,
+    [emailKey(account.email),key("account:"+account.id),key("invite:"+digest(invite)),key("accounts"),key("admin-initialized")],
+    [account.id,JSON.stringify(account),JSON.stringify({userId:account.id,version:1}),INVITE_SECONDS,actor,account.createdAt]);
+  if (ok === -1) throw new AccessError(403, "소유자만 계정을 생성할 수 있습니다.");
+  if (ok !== 1) throw new AccessError(409, "이미 등록된 이메일입니다. 기존 계정의 이용 조건을 변경해 주세요.");
+  await audit(actor,"create-account",account.id);
+  return {account,invite};
 }
 export async function createAdmin(data: {
   email: string;
@@ -284,6 +335,8 @@ export async function issueAccount(
     passwordHash: previous?.passwordHash || null,
     version: (previous?.version || 0) + 1,
     createdAt: previous?.createdAt || Date.now(),
+    approvedAt: Date.now(),
+    approvedBy: actor,
   };
   const invite = token();
   const updated = { ...inquiry, status: "approved", accountId: account.id };
@@ -388,8 +441,9 @@ export async function deleteAccount(
   if (!account || account.role !== "customer")
     throw new AccessError(404, "고객 계정을 찾을 수 없습니다.");
   const ok = await db().eval<unknown[], number>(
-    `local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end;local u=cjson.decode(raw);if u.role~='customer' or u.version~=tonumber(ARGV[1]) then return 0 end;redis.call('DEL',KEYS[1],KEYS[2]);redis.call('ZREM',KEYS[3],ARGV[2]);return 1`,
-    [key("account:" + id), emailKey(account.email), key("accounts")],
+    `local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end;local u=cjson.decode(raw);if u.role~='customer' or u.version~=tonumber(ARGV[1]) then return 0 end;redis.call('DEL',KEYS[1],KEYS[2]);redis.call('ZREM',KEYS[3],ARGV[2]);for i=4,#KEYS do redis.call('DEL',KEYS[i]) end;return 1`,
+    [key("account:" + id), emailKey(account.email), key("accounts"),...activityStorageKeys(id),
+      ...Array.from({length:4},(_,i)=>{const d=new Date();d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()-i);return key(`usage:${id}:${monthBucket(d.getTime())}`);})],
     [version, id],
   );
   if (!ok)

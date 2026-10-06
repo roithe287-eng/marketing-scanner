@@ -110,7 +110,7 @@ test("inquiry, approval, single-use activation, login, ownership, concurrency an
   const session = await createSession(account);
   assert.equal((await sessionAccount(session))?.id, account.id);
   assert.equal((await getPrincipal(req(session)))?.kind, "account");
-  assert.equal((await getPrincipal(req("", "203.0.113.10")))?.kind, "internal");
+  assert.equal(await getPrincipal(req("", "203.0.113.10")), null, 'registered IP alone never identifies an approved user');
   const principal: Principal = { kind: "account", account };
   const id = await saveSharedReport(fixture, principal);
   assert.ok(id);
