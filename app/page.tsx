@@ -97,7 +97,7 @@ export default function HomePage() {
 
   return (
     <main className={report && !loading ? "report-page" : undefined}>
-      <BrandHeader />
+      <BrandHeader showInquiry={!report || loading} />
       <AccessBar access={access}/>
 
       {report && !loading ? <details className="scanner-retry">

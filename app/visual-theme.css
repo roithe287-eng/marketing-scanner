@@ -27,6 +27,15 @@ body { color:var(--scanner-ink); background:var(--scanner-ivory); }
 .scanner-brand-name { font-size:20px; font-weight:850; letter-spacing:-.04em; line-height:1.3; color:var(--scanner-ink); }
 .scanner-brand-name small { display:block; font-size:11px; font-weight:600; letter-spacing:.015em; color:var(--scanner-muted); margin-top:3px; }
 .scanner-brand-header a[target] { background:var(--scanner-indigo); font-size:13px; padding:12px 18px; }
+.scanner-brand-actions { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.scanner-brand-header a.scanner-inquiry-link { gap:7px; color:var(--scanner-ink); background:var(--scanner-lime); box-shadow:inset 0 0 0 1px #d8e773; }
+.scanner-brand-header a.scanner-inquiry-link:hover { background:#dcec5b; }
+.scanner-inquiry-link svg { flex-shrink:0; }
+@media(max-width:639px) {
+  .scanner-brand-bar--with-inquiry { height:auto; min-height:64px; flex-wrap:wrap; padding-top:12px; padding-bottom:12px; gap:12px; }
+  .scanner-brand-bar--with-inquiry .scanner-brand-actions { width:100%; gap:8px; }
+  .scanner-brand-header .scanner-brand-bar--with-inquiry .scanner-brand-actions a { flex:1; min-height:44px; font-size:12px; padding:11px 10px; }
+}
 .access-bar { background:#eaf0ff; color:#354a7b; border-color:#d5dff5; }
 .access-bar>.jm-container { padding-top:9px; padding-bottom:9px; }
 .access-bar a,.access-bar button { color:var(--scanner-cobalt-dark); }
