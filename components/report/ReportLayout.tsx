@@ -10,7 +10,7 @@ import {buildExecutionPlan} from '@/lib/reportExecution';
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import type {MarketingReport,DiagnosisBaseline} from '@/lib/reportSchema';
 import {buildReportInsights} from '@/lib/reportInsights';
-import {CollectionCoverage,ConversionPath,AnswerPageMap,BrandReview,SourceDirectory,MessageMap,KeywordOpportunities,ActionBacklog} from './InsightPanels';
+import {CollectionCoverage,ConversionPath,AnswerPageMap,BrandReview,SourceDirectory,MessageMap,KeywordOpportunities} from './InsightPanels';
 import ScoreRadar from '@/components/ScoreRadar';
 import KeywordRewritePanel from './KeywordRewritePanel';
 import DiagnosisCard from '@/components/DiagnosisCard';

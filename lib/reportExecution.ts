@@ -15,7 +15,7 @@ export type WorkZone=typeof workZones[number]['id'];
 export type WorkOwner=typeof workOwners[number]['id'];
 function zoneFor(title:string):WorkZone {
  if(/\bH1\b|첫 화면|첫인상|헤드라인|대표 제목/i.test(title))return 'hero';
- if(/robots|색인|수집|canonical|구조화|schema|메타|SEO|title|사이트맵|성능|모바일|속도|이미지|alt|스크립트/i.test(title))return 'settings';
+ if(/robots|색인|수집|canonical|구조화|schema|메타|검색 제목|검색 설명|SEO|title|description|사이트맵|성능|모바일|속도|이미지|alt|스크립트/i.test(title))return 'settings';
  if(/CTA|버튼|전환|문의|폼|구매|신청/i.test(title))return 'action';
  if(/신뢰|후기|사례|근거|출처|자격|인증/i.test(title))return 'proof';
  return 'body';

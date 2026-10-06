@@ -1,3 +1,5 @@
+> Latest report UI work: [12-screen usability revision](REPORT_USABILITY_HANDOVER_2026-10-06.md), PR #60.
+
 # 마케팅스캐너 개발 인수인계
 
 최신 관리자 변경(2026-10-06): [소유자 관리자·사용자 활동 기록 인계](OWNER_ADMIN_ACTIVITY_HANDOVER_2026-10-06.md)를 참고하세요. 운영 관리자 등록 확인이 배포 선행 조건입니다.

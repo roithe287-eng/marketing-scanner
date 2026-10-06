@@ -7,8 +7,9 @@ export function revealReportTarget(id:string) {
   if(!target)return false;
   let parent:HTMLElement|null=target;
   while(parent){if(parent instanceof HTMLDetailsElement)parent.open=true;parent=parent.parentElement;}
+  if(target instanceof HTMLButtonElement&&target.dataset.reportTab==='true')target.click();
   requestAnimationFrame(()=>{
-    target.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});
+    target.scrollIntoView({behavior:'instant',block:'start'});
     target.tabIndex=-1;target.focus({preventScroll:true});
   });
   return true;
