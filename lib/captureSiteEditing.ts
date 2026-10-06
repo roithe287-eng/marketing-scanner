@@ -34,7 +34,7 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
     const el=node as Element,item=$(node),tag=el.tagName;
     if(item.parents('script,style,noscript,template,[hidden],[aria-hidden="true"]').length||item.is('[hidden],[aria-hidden="true"]'))return;
     const text=clean(tag==='meta'?item.attr('content')||'':tag==='img'?item.attr('alt')||'':tag==='form'?'문의·입력 폼':item.text());
-    if(!text&&tag!=='img')return;if(tag==='li'&&item.children('p,ul,ol').length)return;
+    if(!text&&tag!=='img')return;if(tag==='li'&&item.children('p,ul,ol,a').length)return;
     if(/^h[1-3]$/.test(tag))lastHeading=text.slice(0,300);
     const kind:PageElement['kind']=tag==='title'?'title':tag==='meta'?'description':/^h[1-3]$/.test(tag)?'heading':tag==='a'||tag==='button'?'cta':tag==='img'?'image':tag==='form'?'form':'text';
     total++;order++;if(elements.length>=100||counts[kind]>=limits[kind])return;counts[kind]++;

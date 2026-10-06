@@ -1,6 +1,21 @@
 export type KpiInputs={impressions:string;clicks:string;sessions:string;converted:string;targetImpressions:string;targetCtr:string;targetSessions:string;targetCvr:string};
 export const EMPTY_KPI:KpiInputs={impressions:'',clicks:'',sessions:'',converted:'',targetImpressions:'',targetCtr:'',targetSessions:'',targetCvr:''};
 export const DEMO_KPI:KpiInputs={impressions:'10000',clicks:'300',sessions:'240',converted:'6',targetImpressions:'12000',targetCtr:'4',targetSessions:'360',targetCvr:'3'};
+export type SimpleGoalInputs={opportunities:string;completed:string;targetCompleted:string};
+export function calculateSimpleGoal(input:SimpleGoalInputs){
+  const errors:Partial<Record<keyof SimpleGoalInputs,string>>={};
+  const values={} as Record<keyof SimpleGoalInputs,number|null>;
+  for(const key of Object.keys(input) as (keyof SimpleGoalInputs)[]){
+    const raw=input[key].trim(),n=Number(raw);
+    values[key]=raw&&Number.isFinite(n)&&n>=0&&n<=1e12&&Number.isInteger(n)?n:null;
+    if(raw&&values[key]===null)errors[key]='0 이상 1조 이하의 정수를 입력하세요.';
+  }
+  if(values.opportunities!==null&&values.completed!==null&&values.completed>values.opportunities)errors.completed='완료 횟수가 전체 횟수보다 큽니다. 같은 기간의 수치인지 확인하세요.';
+  const valid=!Object.keys(errors).length;
+  const rate=valid&&values.opportunities&&values.completed!==null?values.completed/values.opportunities:null;
+  const required=valid&&values.targetCompleted!==null?(values.targetCompleted===0?0:rate?Math.ceil(values.targetCompleted/rate):null):null;
+  return {values,errors,rate,required,additional:required!==null&&values.opportunities!==null?required-values.opportunities:null};
+}
 const names:Record<keyof KpiInputs,string>={impressions:'현재 노출수',clicks:'현재 클릭수',sessions:'현재 세션 수',converted:'현재 전환 세션 수',targetImpressions:'목표 노출수',targetCtr:'목표 CTR',targetSessions:'목표 세션 수',targetCvr:'목표 세션 전환율'};
 export function calculateGrowthKpi(input:KpiInputs) {
   const errors:Partial<Record<keyof KpiInputs,string>>={};

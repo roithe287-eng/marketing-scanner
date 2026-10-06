@@ -3,7 +3,7 @@ import type {MarketingReport} from './reportSchema';
 import type {PageElement,PlatformId} from './siteEditingSchema';
 import {canonicalPage} from './geoComparison';
 import {safeHttpUrl} from './citationMeasurement';
-import {GUIDE_EFFECTS,GUIDE_REVIEWED_AT,GUIDE_SOURCES,type GuideSourceId,type GuideTopic} from './guideKnowledge';
+import {naverGuideCondition,GUIDE_EFFECTS,GUIDE_REVIEWED_AT,GUIDE_SOURCES,type GuideSourceId,type GuideTopic} from './guideKnowledge';
 
 export const PLATFORM_NAMES:Record<PlatformId,string>={imweb:'아임웹',cafe24:'카페24',wordpress:'WordPress',shopify:'Shopify',wix:'Wix',nextjs:'Next.js',cloudflare:'Cloudflare',vercel:'Vercel'};
 export type GuideRequest={title:string;proposal?:string;keyword?:string;topic?:GuideTopic;current?:string;evidence?:string;instructions?:string[];selectedKey?:string;scope?:'page'|'account';completion?:string};
@@ -55,7 +55,17 @@ export function editorRoute(platform:PlatformId|undefined,topic:GuideTopic,url:s
  if(platform==='wix')return seo?{path:['사이트 에디터','페이지 및 메뉴','해당 페이지 → SEO basics',field],instruction:'일반 페이지 SEO 기준입니다. 동적 페이지나 상품이면 연결된 콘텐츠의 SEO 패널을 확인하세요.',sources:['wixSeo'],scope}:{path:['사이트 에디터','입력 URL의 페이지','원문과 일치하는 요소 선택'],instruction:'텍스트·버튼·이미지의 해당 속성을 편집하세요. 동적 콘텐츠는 연결된 컬렉션을 확인합니다. 요소별 메뉴와 테마는 실제 에디터에서 확인이 필요합니다.',sources:[],scope:'요소별 편집 경로는 실제 에디터 확인이 필요한 안내입니다. 계정 권한·테마·버전에 따라 달라질 수 있습니다.'};
  return {path:['운영 관리자·제작 담당자에게 해당 URL 전달',seo?'이 URL의 SEO 제목·설명 설정 찾기':'아래 원문·선택자로 콘텐츠 또는 템플릿 검색','해당 항목만 수정 → 미리보기'],instruction:seo?'HTML을 직접 관리한다면 이 URL을 출력하는 head의 title 또는 meta name="description" 값을 수정합니다. CMS 설정이 따로 있다면 코드 중복 삽입보다 기존 설정을 우선하세요.':'제작 도구가 확인되지 않았으므로 특정 관리자 메뉴나 소스 파일명은 제시하지 않습니다. 원문과 HTML 선택자를 전달해 실제 페이지를 출력하는 편집 위치부터 확인하세요.',sources:[],scope:'편집 도구 미확인 · 공개 페이지에서 찾은 위치만 연결합니다.'};
 }
-export function elementLink(url:string,e:PageElement){const safe=safeHttpUrl(url);if(!safe)return null;const u=new URL(safe);u.hash=e.anchor?encodeURIComponent(e.anchor):e.kind!=='title'&&e.kind!=='description'&&e.text&&!e.truncated?':~:text='+encodeURIComponent(e.text.slice(0,180)):'';return u.href;}
+export function elementLink(url:string,e:PageElement){
+ const safe=safeHttpUrl(url);if(!safe)return null;
+ const u=new URL(safe);
+ if(e.anchor){u.hash=encodeURIComponent(e.anchor);return u.href;}
+ // Metadata, alt text and generated form labels are not visible page text.
+ if(['title','description','image','form'].includes(e.kind)||e.truncated||e.text.trim().length<4)return null;
+ const text=e.text.replace(/\s+/g,' ').trim();
+ const encode=(value:string)=>encodeURIComponent(value).replace(/-/g,'%2D');
+ u.hash=':~:text='+encode(text.length>180?text.slice(0,80):text)+(text.length>180?','+encode(text.slice(-80)):'');
+ return u.href;
+}
 export function buildSiteGuide(report:MarketingReport,request:GuideRequest){
  const page=editingEvidence(report),capture=page?.siteEditing,topic=request.scope==='account'?'account':request.topic||guideTopic(request.title),platform=editingPlatform(report),url=safeHttpUrl(page?.finalUrl||report.url)||'',effect=GUIDE_EFFECTS[topic];
  const candidates=capture?.elements||[],word=request.keyword?.trim().toLowerCase();
@@ -86,4 +96,4 @@ export function buildSiteGuide(report:MarketingReport,request:GuideRequest){
  return {title:request.title,proposal:request.proposal||'',topic,url,capturedAt:page?.capturedAt,platform,route,effect,targets,focus,settings,fields,location,matchMode:matched.mode,matchLabel:topic==='account'?'계정에서 직접 확인':settings.length?'실제 설정값 확인':matched.label,matchReason:topic==='account'?'공개 페이지의 원문 위치로 확인할 수 없는 작업입니다. 아래 계정별 절차를 따르세요.':settings.length?'수집한 설정값과 HTML 선택자를 연결했습니다. 실제 출력을 관리하는 설정 화면은 담당자가 대조해야 합니다.':matched.reason,nearby,missing,hasCapture:!!capture,steps,reviewedAt:GUIDE_REVIEWED_AT};
 }
 export type SiteGuide=ReturnType<typeof buildSiteGuide>;
-export function guideInstruction(g:SiteGuide){return [`URL 맞춤 실행 가이드 · ${g.title}`,`대상: ${g.url||'유효 URL 미확인'}`,`제작 도구: ${g.platform.label}`,g.route.scope,`편집 경로: ${g.route.path.join(' → ')}`,g.route.instruction,`위치 연결: ${g.matchLabel} · ${g.matchReason}`,`선택한 위치: ${g.location}`,`선택한 원문: ${g.focus?.text||'선택 요소 없음'}`,...g.settings.map(s=>`설정 ${s.name}: ${s.value}\n위치 선택자: ${s.selector}`),...g.fields.map(f=>`수정 필드: ${f.label}\n현재: ${f.before}\n작업: ${f.action}\n완료 조건: ${f.done}`),...(g.targets.length>1?[`연결 원문 ${g.targets.length}개 중 기본 또는 선택한 원문을 아래에 표시합니다. 다른 위치를 수정하려면 보고서에서 원문 선택을 변경해 다시 복사하세요.`]:[]),...(g.focus?[g.focus]:[]).map(e=>`원문 (${e.tag}, HTML 순서 ${e.order}): ${e.text}\n위치 선택자: ${e.selector}${e.truncated?'\n발췌된 원문 · 전체 내용은 원문 확인':''}`),...(!g.targets.length&&!g.settings.length&&g.topic!=='account'?['일치하는 수집 요소 미확인 · 실제 페이지에서 위치 확인 후 적용']:[]),...g.steps.map((s,i)=>`${i+1}. ${s.title}\n${s.detail}`),`TO-BE · 적용 전 사실 확인: ${g.proposal||'원래 개선 지시와 실제 원문을 대조하세요.'}`,`공식 근거의 원리: ${g.effect.mechanism}`,`기대효과 · 조건부: ${g.effect.expected}`,`한계: ${g.effect.limit}`,`검증 지표: ${g.effect.metric}`,...[...new Set([...g.effect.sources,...g.route.sources])].map(id=>`${GUIDE_SOURCES[id].title}: ${GUIDE_SOURCES[id].url}`),`공식 문서 검토일: ${g.reviewedAt}`].join('\n\n');}
+export function guideInstruction(g:SiteGuide){return [`URL 맞춤 실행 가이드 · ${g.title}`,`대상: ${g.url||'유효 URL 미확인'}`,`제작 도구: ${g.platform.label}`,g.route.scope,`편집 경로: ${g.route.path.join(' → ')}`,g.route.instruction,`위치 연결: ${g.matchLabel} · ${g.matchReason}`,`선택한 위치: ${g.location}`,`선택한 원문: ${g.focus?.text||'선택 요소 없음'}`,...g.settings.map(s=>`설정 ${s.name}: ${s.value}\n위치 선택자: ${s.selector}`),...g.fields.map(f=>`수정 필드: ${f.label}\n현재: ${f.before}\n작업: ${f.action}\n완료 조건: ${f.done}`),...(g.targets.length>1?[`연결 원문 ${g.targets.length}개 중 기본 또는 선택한 원문을 아래에 표시합니다. 다른 위치를 수정하려면 보고서에서 원문 선택을 변경해 다시 복사하세요.`]:[]),...(g.focus?[g.focus]:[]).map(e=>`원문 (${e.tag}, HTML 순서 ${e.order}): ${e.text}\n위치 선택자: ${e.selector}${e.truncated?'\n발췌된 원문 · 전체 내용은 원문 확인':''}`),...(!g.targets.length&&!g.settings.length&&g.topic!=='account'?['일치하는 수집 요소 미확인 · 실제 페이지에서 위치 확인 후 적용']:[]),...g.steps.map((s,i)=>`${i+1}. ${s.title}\n${s.detail}`),`TO-BE · 적용 전 사실 확인: ${g.proposal||'원래 개선 지시와 실제 원문을 대조하세요.'}`,`공식 근거의 원리: ${g.effect.mechanism}`,...(naverGuideCondition(g.topic)?[`네이버 적용 조건: ${naverGuideCondition(g.topic)}`]:[]),`기대효과 · 조건부: ${g.effect.expected}`,`한계: ${g.effect.limit}`,`검증 지표: ${g.effect.metric}`,...[...new Set([...g.effect.sources,...g.route.sources])].map(id=>`${GUIDE_SOURCES[id].title}: ${GUIDE_SOURCES[id].url}`),`공식 문서 검토일: ${g.reviewedAt}`].join('\n\n');}

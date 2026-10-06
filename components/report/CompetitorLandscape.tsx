@@ -2,13 +2,15 @@
 import {Guidebook} from './SiteGuidebook';
 import {buildSiteGuide,guideInstruction} from '@/lib/siteGuidebook';
 import React,{useId,useState,type CSSProperties} from 'react';
-import type {MarketingReport} from '@/lib/reportSchema';
+import {POSITION_INDUSTRIES} from '@/lib/industryPositioning';
+import type {MarketingReport,IndustryCategory} from '@/lib/reportSchema';
 import {buildCompetitorPositioning,POSITION_AXES,POSITION_NOTE,POSITION_CRITERIA,positioningActions,positioningBrief,positionCoordinates,positionDiameter,POSITION_SIZE_NOTE} from '@/lib/competitorPositioning';
 import {COMPETITOR_API_NOTE,COMPETITOR_VOLUME_NOTE,COMPETITOR_SOURCES} from '@/lib/competitorResearch';
 
 export default function CompetitorLandscape({report}:{report:MarketingReport}) {
   const [selected,setSelected]=useState('own'),[status,setStatus]=useState(''),[fallback,setFallback]=useState('');const id=useId();
-  const model=buildCompetitorPositioning(report);if(!model)return null;
+  const [industry,setIndustry]=useState<IndustryCategory|undefined>();
+  const model=buildCompetitorPositioning(report,industry);if(!model)return null;
   const {analysis,rows,groups,own,known}=model,research=analysis.research;
   const active=rows.find(r=>r.id===selected)||own,actions=positioningActions(own);
   const choose=(value:string)=>{setSelected(value);setStatus('');setFallback('');};
@@ -35,10 +37,11 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
       <div className="position-sources">{COMPETITOR_SOURCES.map(s=><a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>)}</div>
     </div></details>
 
-    <div className="position-map-heading"><p className="report-eyebrow">MESSAGE POSITIONING</p><h4>검색어 연결도 × 선택 정보 범위</h4><p>{POSITION_NOTE}</p></div>
-    <div className="position-axis-cards"><article><span>X축 · 오른쪽으로 갈수록</span><h5>검색어와 설명이 잘 연결됩니다</h5><p>대표 키워드의 구성 단어가 제목과 설명에 각각 있는지 봅니다. 모든 구성 단어가 한 곳에만 있으면 50점, 두 곳 모두에 있으면 100점입니다. 여러 단어는 포함 비율을 계산합니다.</p><strong>제목 포함 비율 × 50 + 설명 포함 비율 × 50</strong></article><article><span>Y축 · 위로 갈수록</span><h5>선택에 필요한 정보 종류가 많습니다</h5><p>가격·조건, 대상·범위, 사례·근거, 진행·지원 중 관련 표현이 있는 종류를 셉니다. 표현의 사실성은 별도 확인합니다.</p><strong>탐지한 정보 종류 수 ÷ 4 × 100</strong></article></div>
+    <div className="position-map-heading"><p className="report-eyebrow">MESSAGE POSITIONING</p><h4>업종에 맞춰 비교하는 설명과 근거</h4><p>{POSITION_NOTE}</p></div>
+    <div className="position-industry"><label>비교할 업종<select value={model.profile.id} onChange={e=>{setIndustry(e.target.value as IndustryCategory);choose('own');}}>{Object.entries(POSITION_INDUSTRIES).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><p>{model.industryBasis}. 모든 업체에 같은 업종 기준을 적용합니다. 업종 선택은 이 화면에만 반영되며 PDF·공유에는 기본 업종을 사용합니다.</p></div>
+    <div className="position-axis-cards"><article><span>가로축 · 어떤 상품·서비스인가요?</span><h5>{model.profile.criteria.slice(0,2).map(c=>c.label).join(' · ')}</h5><p>오른쪽일수록 제공 내용과 조건을 설명하는 단서가 많습니다.</p></article><article><span>세로축 · 무엇을 확인하고 이용하나요?</span><h5>{model.profile.criteria.slice(2).map(c=>c.label).join(' · ')}</h5><p>위쪽일수록 선택 근거와 이용 방법을 설명하는 단서가 많습니다.</p></article></div>
     <div className="position-size-guide"><div><span className="report-eyebrow">BUBBLE SIZE</span><h5>클수록 선택 정보 단서가 풍부합니다</h5><p>{POSITION_SIZE_NOTE}</p></div><div className="position-size-samples" aria-label="버블 크기 예시">{[0,4,8].map(n=><div key={n}><i aria-hidden="true" style={{'--bubble-size':`${positionDiameter(n)}px`,'--bubble-mobile-size':`${positionDiameter(n,true)}px`} as CSSProperties}/><span>{n}개{n===8?' 이상':''}</span></div>)}</div></div>
-    <figure className="position-figure"><div className="position-y-caption"><strong>Y · {POSITION_AXES.y}</strong><span>상단: 4종류 / 하단: 0종류</span></div>
+    <figure className="position-figure"><div className="position-y-caption"><strong>Y · {POSITION_AXES.y}</strong><span>상단: 근거·이용 단서가 더 많음</span></div>
       <div className="position-chart-grid">
       <div className="position-y-scale" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
       <div className="position-plot" aria-label="검색 메시지 비교 도표">
@@ -48,19 +51,19 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
         {!groups.length&&<p className="position-empty">두 필드를 확보한 사이트가 없어<br/>좌표를 표시하지 않습니다.</p>}
       </div>
       <div className="position-x-scale" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
-      </div><div className="position-x-caption"><strong>X · {POSITION_AXES.x}</strong><span>오른쪽: 구성 단어가 더 많이 포함됨</span></div>
-      <div className="position-quadrant-key" aria-label="도표의 영역 안내"><span>왼쪽 위 · 검색어 연결 검토</span><span>오른쪽 위 · 연결·정보 함께 탐지</span><span>왼쪽 아래 · 주제·정보 함께 검토</span><span>오른쪽 아래 · 선택 정보 보완 검토</span></div>
+      </div><div className="position-x-caption"><strong>X · {POSITION_AXES.x}</strong><span>오른쪽: 제공 정보·조건 단서가 더 많음</span></div>
+      <div className="position-quadrant-key" aria-label="도표의 영역 안내"><span>왼쪽 위 · 제공 내용 보완</span><span>오른쪽 위 · 설명·근거 함께 확인</span><span>왼쪽 아래 · 설명·근거 함께 보완</span><span>오른쪽 아래 · 선택·이용 근거 보완</span></div>
       <figcaption>버블 또는 업체를 선택해 위치와 크기의 근거를 확인하세요. 0·100도 도표 안쪽에 여백을 두어 배치합니다. 같은 좌표는 묶고 크기는 해당 업체들의 평균 단서 수를 사용합니다. 50은 안내선이며 합격 기준·업종 평균이 아닙니다.</figcaption>
     </figure>
     <div className="position-site-list" role="group" aria-label="포지셔닝 근거를 볼 사이트 선택">{rows.map((r,i)=><button type="button" key={r.id} aria-pressed={active.id===r.id} aria-controls={`${id}-evidence`} onClick={()=>choose(r.id)}><span className={r.own?'is-own':''}>{r.own?'자사':i}</span><strong>{r.name}</strong><small>{r.x===null?'판정 보류':`X ${r.x} · Y ${r.y} · 단서 ${r.signalCount}`}</small></button>)}</div>
     <article id={`${id}-evidence`} className="position-evidence" aria-live="polite"><div className="position-evidence-heading"><div><span>{active.own?'자사 원문 확인':'비교 후보 원문 확인'}</span><h4>{active.name}</h4></div><strong>{active.x===null?'판정 보류':`X ${active.x} / Y ${active.y}`}</strong></div>
-      <p>{active.x===null?active.reason:`제목 ${active.termFields[0].matched.length}/${active.terms.length}개 · 설명 ${active.termFields[1].matched.length}/${active.terms.length}개 연결 · 선택 정보 ${active.checks.filter(c=>c.found).length}/4종류 · 버블 단서 ${active.signalCount}/8개`}</p>
+      <p>{active.x===null?active.reason:`제목 ${active.termFields[0].matched.length}/${active.terms.length}개 · 설명 ${active.termFields[1].matched.length}/${active.terms.length}개 연결 · 선택 정보 ${active.checks.filter(c=>c.found).length}/4종류 · 업종별 단서 ${active.signalCount}/8개`}</p>
       {active.searchRank&&<p>네이버 웹문서 API 응답의 {active.searchRank}번째 항목 · 비교 번호와 별개</p>}
-      <div className="position-terms"><strong>X축에 사용한 구성 단어 · 제목/설명 중 한 곳 이상</strong>{active.terms.map(t=><span key={t} data-found={active.matched.includes(t)}>{active.x===null?'—':active.matched.includes(t)?'확인':'미탐지'} · {t}</span>)}</div>
+      <div className="position-terms"><strong>비교 검색어 포함 여부 · 좌표와 별도 확인</strong>{active.terms.map(t=><span key={t} data-found={active.matched.includes(t)}>{active.x===null?'—':active.matched.includes(t)?'확인':'미탐지'} · {t}</span>)}</div>
       <div className="position-checks">{active.checks.map(c=><div key={c.id}><strong>{c.label}</strong><span>{active.x===null?'판정 보류':c.found?`탐지 · ${c.matched}`:'미탐지'}</span><p>{active.x!==null&&c.found?`크기 반영 ${c.signalCount}/2개 · 탐지 표현: ${c.signals.join(' · ')}`:'서비스 부재를 뜻하지 않습니다.'}</p></div>)}</div>
       <details className="position-method"><summary>계산에 사용한 원문 전체 보기</summary><div><strong>페이지 제목</strong><p>{active.title||'저장된 값 없음'}</p><strong>페이지 설명</strong><p>{active.description||'저장된 값 없음'}</p><p>{active.sourceLabel}. 구버전 후보는 메타 설명과 OG 설명의 대체 여부가 기록되지 않았습니다. 엄밀한 같은 시점 비교는 재진단하세요.</p>{active.url&&<a href={active.url} target="_blank" rel="noopener noreferrer">해당 페이지 확인</a>}</div></details>
     </article>
-    <details className="position-method"><summary>좌표 해석과 측정 한계 자세히 보기</summary><div><p>X축은 제목·설명 각각의 구성 단어 포함 비율을 50:50으로 합칩니다. 공백·대소문자를 보정하며 반복 횟수는 반영하지 않습니다. 동의어, 검색 의도, 실제 순위 결정 요소를 모두 평가하지 않습니다. Y축은 다음 표현 종류를 각 25점으로 셉니다.</p><ul>{POSITION_CRITERIA.map(c=><li key={c.id}><strong>{c.label}</strong> · {c.action}</li>)}</ul><p>{POSITION_SIZE_NOTE} 서로 다른 숫자·표현도 같은 종류에서는 최대 2개까지만 반영합니다. 도형의 최소 크기는 선택 편의를 위한 것이며 단서 0개도 작은 버블로 표시합니다.</p><p>두 축의 수치는 내부 표현 탐지 지수이며 백분위나 성과 확률이 아닙니다. 오른쪽 위라고 매출·SEO 성과가 더 좋은 것은 아닙니다. 빈 공간도 시장의 미충족 수요를 뜻하지 않습니다. 실제 검색어·고객 질문·전환 데이터를 함께 확인하세요.</p><p>제목과 설명 두 필드가 모두 있어야 표시합니다. 수집 실패·정보 부족을 0점이나 중앙값으로 대체하지 않습니다. 본문·이미지·실제 가격·품질은 이 좌표의 평가 범위가 아닙니다.</p></div></details>
+    <details className="position-method"><summary>좌표 해석과 측정 한계 자세히 보기</summary><div><p>선택한 업종의 네 가지 정보 기준으로 계산합니다. 가로축은 앞의 두 기준, 세로축은 뒤의 두 기준에서 찾은 표현 수를 각각 0~100으로 환산합니다. 각 기준은 다른 표현을 최대 2개까지 반영합니다. 분석용 비교 규칙이며 업종 평균이나 성과 지표가 아닙니다.</p><ul>{model.profile.criteria.map(c=><li key={c.id}><strong>{c.label}</strong> · {c.action}</li>)}</ul><p>{POSITION_SIZE_NOTE} 서로 다른 숫자·표현도 같은 종류에서는 최대 2개까지만 반영합니다. 도형의 최소 크기는 선택 편의를 위한 것이며 단서 0개도 작은 버블로 표시합니다.</p><p>두 축의 수치는 내부 표현 탐지 지수이며 백분위나 성과 확률이 아닙니다. 오른쪽 위라고 매출·SEO 성과가 더 좋은 것은 아닙니다. 빈 공간도 시장의 미충족 수요를 뜻하지 않습니다. 실제 검색어·고객 질문·전환 데이터를 함께 확인하세요.</p><p>제목과 설명 두 필드가 모두 있어야 표시합니다. 수집 실패·정보 부족을 0점이나 중앙값으로 대체하지 않습니다. 본문·이미지·실제 가격·품질은 이 좌표의 평가 범위가 아닙니다.</p></div></details>
     <div className="position-actions"><p className="report-eyebrow">NEXT EDIT FOR YOUR PAGE</p><h4>자사에서 바로 검토할 작업</h4><p>점수를 올리기 위해 표현을 채우기보다, 고객이 선택하는 데 필요한 실제 정보를 보완하세요.</p>{actions.map((a,i)=><article key={a.title}><span className="position-step">0{i+1}</span><div><h5>{a.title}</h5><p><strong>근거</strong> {a.evidence}</p><p><strong>실행</strong> {a.action}</p><div className="position-template"><strong>TO-BE 작성 틀 · 사실 확인 후 사용</strong><p>{a.template}</p></div><Guidebook title={a.title} evidence={a.evidence} proposal={a.template}/><p><strong>확인할 KPI</strong> {a.metric}. 변화는 별도 측정하며 이 도표로 상승률을 추정하지 않습니다.</p></div></article>)}<button type="button" className="report-secondary-button" onClick={copy}>자사 개선 작업 복사</button><span role="status">{status}</span>{fallback&&<label className="growth-copy-fallback">직접 복사할 작업 지시서<textarea readOnly value={fallback} rows={10}/></label>}</div>
   </section>;
 }
