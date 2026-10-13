@@ -551,3 +551,18 @@ button:disabled {
     font-size: 21px;
   }
 }
+
+/* Usage dashboard keeps the summary above account-management forms. */
+.admin-dashboard{scroll-margin-top:24px}
+.admin-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:#a64122;margin:0 0 7px}
+.admin-dashboard .access-admin-stats{margin:20px 0 24px}
+.admin-dashboard-controls{display:flex;gap:18px;align-items:center;flex-wrap:wrap;padding-top:4px}
+.admin-dashboard-controls label{display:flex;gap:9px;align-items:center;font-size:13px;font-weight:700}
+.admin-dashboard-controls select{width:auto;min-width:130px;margin:0}
+.admin-flow-metrics{grid-template-columns:repeat(3,minmax(0,1fr))}
+.admin-flow-metrics article:nth-child(2),.admin-flow-metrics article:nth-child(5){border-color:#e8b09d;background:#fffaf7}
+.admin-counting-note{margin-top:14px!important;line-height:1.8!important}
+.admin-text-button{padding:0;border:0;background:none;color:#a64122;text-align:left;font:inherit;font-weight:700;cursor:pointer}
+.admin-section-head input{width:180px;margin:0 0 0 8px}
+@media(max-width:850px){.admin-flow-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.admin-dashboard-controls{gap:10px}.admin-dashboard-controls label{width:100%;justify-content:space-between}.admin-dashboard-controls select{min-width:170px}.admin-flow-metrics strong{font-size:26px}.admin-section-head input{width:150px}}

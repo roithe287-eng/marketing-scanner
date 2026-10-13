@@ -50,6 +50,8 @@ test("registered IPs fail closed when missing, malformed or supplied outside Ver
     isInternal(h, { NODE_ENV: "test", VERCEL: "1", ALLOWED_IPS: "203.0.113.10" }),
     true,
   );
+  h.delete("x-vercel-forwarded-for");
+  assert.equal(clientIp(h,{NODE_ENV:"test",VERCEL:"1"}),"","no fallback to client forwarding headers");
   h.set("x-vercel-forwarded-for", "203.0.113.11");
   assert.equal(
     isInternal(h, { NODE_ENV: "test", VERCEL: "1", ALLOWED_IPS: "203.0.113.10" }),

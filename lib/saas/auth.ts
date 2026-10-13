@@ -56,6 +56,11 @@ export async function requirePrincipal(req: NextRequest, mutate = false) {
 }
 export async function requireAdmin(req?: NextRequest) {
   const h = req?.headers || (await headers());
+  const fetchSite=h.get("sec-fetch-site");
+  if(fetchSite && fetchSite!=="same-origin" && fetchSite!=="none")
+    throw new AccessError(403,"관리자 화면에서 다시 요청해 주세요.");
+  if(req && h.get("origin") && h.get("origin")!==req.nextUrl.origin)
+    throw new AccessError(403,"관리자 화면에서 다시 요청해 주세요.");
   if (!isInternal(h))
     throw new AccessError(403, "관리자 접근 권한이 없습니다.");
   const account = await sessionAccount(

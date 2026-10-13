@@ -26,12 +26,20 @@ import {
 } from "@/lib/saas/store";
 import { safeAccount } from "@/lib/saas/types";
 import { activityDetail, activityTotals, captureActivity } from '@/lib/saas/activity';
+import { adminOverview } from '@/lib/saas/adminOverview';
+import { NETWORK_ACTIVITY_ID } from '@/lib/saas/activityTypes';
 import { listReportsForOwner } from '@/lib/shareStore';
 export const runtime = "nodejs";
 export async function GET(req: NextRequest) {
   try {
     const admin=await requireAdmin(req);
+    await limitRequest(req.headers,'admin-read',60,60);
+    if(req.nextUrl.searchParams.get('view')==='overview')return privateJson(await adminOverview(admin.id));
     const id=req.nextUrl.searchParams.get('id');
+    if(id===NETWORK_ACTIVITY_ID){
+      const [activity,totals]=await Promise.all([activityDetail(id),activityTotals([id])]);
+      return privateJson({network:true,account:null,activity,totals:totals[0],usage:{},reports:[]});
+    }
     if(id){
       z.string().uuid().parse(id);
       const account=await getAccount(id);
