@@ -1,14 +1,15 @@
 import type {MarketingReport} from './reportSchema';
 import type {ReportBlock} from './reportDocument';
-import {buildCompetitorPositioning,POSITION_NOTE,POSITION_METHOD,POSITION_SIZE_NOTE,positioningActions} from './competitorPositioning';
-import {COMPETITOR_API_NOTE,COMPETITOR_VOLUME_NOTE,COMPETITOR_SOURCES} from './competitorResearch';
+import {buildCompetitorPositioning,POSITION_NOTE,POSITION_METHOD,POSITION_SIZE_NOTE,positioningActions,positionCheckReason,positionCheckNextStep,positionFieldFinding} from './competitorPositioning';
+import {COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE,COMPETITOR_SOURCES} from './competitorResearch';
 import {safeHttpUrl} from './citationMeasurement';
 export function buildCompetitorDocument(report:MarketingReport):ReportBlock[] {
   const model=buildCompetitorPositioning(report);if(!model)return [];
   const b:ReportBlock[]=[];const add=(kind:ReportBlock['kind'],text:string,href?:string)=>{b.push({kind,text,href});};
   const {analysis,rows,own}=model,r=analysis.research;
-  add('subheading','검색 메시지 포지셔닝');add('body',POSITION_NOTE);add('body',POSITION_SIZE_NOTE);add('body',COMPETITOR_API_NOTE);add('body',COMPETITOR_VOLUME_NOTE);
+  add('subheading','검색 메시지 포지셔닝');add('body',POSITION_NOTE);add('body',POSITION_SIZE_NOTE);add('body',COMPETITOR_API_NOTE);add('body',COMPETITOR_KEYWORD_NOTE);
   add('body',`대표 키워드: ${analysis.searchKeyword} · 산정 규칙: ${POSITION_METHOD}`);
+  add('body',`원문 비교 가능 ${model.known.length}/${analysis.competitors.length}곳 · 저장된 제목·설명을 모두 확보하고 같은 기준으로 계산 가능한 외부 후보 수입니다.`);
   add('body',`업종: ${model.profile.label} · ${model.industryBasis}. 기준: ${model.profile.criteria.map(c=>c.label).join(' / ')}`);
   add('body','X 상품·서비스 설명 = 업종별 앞의 두 기준의 표현 수 ÷ 4 × 100. Y 선택·이용 근거 = 뒤의 두 기준의 표현 수 ÷ 4 × 100. 각 기준은 중복을 제외하고 최대 2개 표현을 반영합니다. 업종 평균이나 성과 점수가 아닙니다.');
   add('body','제목·설명이 모두 있어야 좌표를 표시합니다. 0·100도 내부 여백을 두어 배치하고, 같은 좌표는 묶으며 버블 크기는 해당 업체들의 평균 단서 수를 사용합니다. 50은 안내선이며 합격·평균 기준이 아닙니다. 오른쪽 위나 비어 있는 영역이 성과 우위·시장 수요를 뜻하지 않습니다. 구버전은 설명의 OG 대체 여부가 미기록되어 엄밀한 비교에는 재진단이 필요합니다.');
@@ -25,7 +26,12 @@ export function buildCompetitorDocument(report:MarketingReport):ReportBlock[] {
     add('body',row.x===null?`좌표 판정 보류: ${row.reason}`:`X 상품·서비스 설명 ${row.x}/100 · Y 선택·이용 근거 ${row.y}/100 · 크기 단서 ${row.signalCount}/8개`);
     add('body',`검색어 구성 단어: ${row.terms.join(' · ')} · 원문에서 확인: ${row.matched.join(' · ')||'미탐지'}`);
     add('body',row.termFields.map(f=>`${f.label}: 검색어 구성 단어 ${f.matched.length}/${row.terms.length}개`).join(' / '));
-    add('body',row.checks.map(c=>`${c.label}: ${row.x===null?'판정 보류':c.found?`${c.signals.join(' · ')} (크기 반영 ${c.signalCount}/2개)`:'미탐지'}`).join(' / '));
+    for(const c of row.checks){
+      add('body',`${c.label} · ${row.x===null?'판정 보류':c.found?'표현 확인':'미탐지'}: ${positionCheckReason(row,c)}`);
+      add('body',`확인 기준 표현: ${c.examples.join(' · ')}. 띄어쓰기·영문 대소문자 차이는 무시하며, 본문·이미지와 다른 말로 표현한 의미까지 판정하지는 않습니다.`);
+      for(const source of c.sources)add('body',`${source.label}: ${positionFieldFinding(source)}`);
+      add('body',`다음 확인: ${positionCheckNextStep(row,c)}`);
+    }
     add('body',`페이지 제목: ${row.title||'미저장'}`);add('body',`페이지 설명: ${row.description||'미저장'}`);
     if(!row.own){const c=analysis.competitors[i-1];if(c.searchRank)add('body',`웹문서 검색 응답 순서: ${c.searchRank}번째`);if(c.selectionEvidence)add('body',`선정 근거: ${c.selectionEvidence}`);add('body',`검색 결과 제목: ${c.title}`);add('body',`검색 요약: ${c.description}`);
       for(const [label,value] of [['H1',c.h1],['CTA 문구',c.ctaTexts?.join(' / ')],['AI 핵심 메시지 해석',c.keyMessage],['AI 차별점 해석',c.differentiation],['수집 오류',c.fetchError]])if(value)add('body',`${label}: ${value}`);
