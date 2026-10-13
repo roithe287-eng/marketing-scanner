@@ -81,6 +81,9 @@ export default function AdminView() {
   const [owner,setOwner]=useState<SafeAccount|null>(null);
   const [offset,setOffset]=useState(0),[total,setTotal]=useState(0);
   const [search,setSearch]=useState(''),[selected,setSelected]=useState(''),[revision,setRevision]=useState(0);
+  const [overviewSelected,setOverviewSelected]=useState('');
+  const overviewDetailRef=useRef<HTMLElement|null>(null);
+  useEffect(()=>{if(overviewSelected)overviewDetailRef.current?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth',block:'start'});},[overviewSelected]);
   const activeLoad=useRef<AbortController|null>(null);
   const load = useCallback(async () => {
     activeLoad.current?.abort();const controller=new AbortController();activeLoad.current=controller;
@@ -88,7 +91,7 @@ export default function AdminView() {
       setLoading(true);setError('');
       const r = await fetch("/api/admin?offset="+offset, { cache: "no-store",signal:controller.signal });
       const data = await r.json();
-      if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setLink('');window.location.replace('/login');}throw new Error(data.message);}
+      if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setLink('');window.location.replace('/login');}throw new Error(data.message);}
       if(controller.signal.aborted)return;
       setInquiries(data.inquiries);
       setAccounts(data.accounts);
@@ -125,7 +128,7 @@ export default function AdminView() {
         body: JSON.stringify(body),
       });
       const data = await r.json();
-      if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setLink('');window.location.replace('/login');}throw new Error(data.message);}
+      if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setLink('');window.location.replace('/login');}throw new Error(data.message);}
       if (data.activationPath)
         setLink(window.location.origin + data.activationPath);
       else setNotice("변경 사항을 저장했습니다.");
@@ -148,7 +151,7 @@ export default function AdminView() {
           목록 새로고침
         </button>
       </div>
-      <nav className="admin-jump-nav" aria-label="관리자 메뉴"><a href="#admin-dashboard">이용 현황</a><a href="#admin-users">사용자·활동 기록</a><a href="#admin-create">계정 직접 생성</a><a href="#admin-inquiries">이용 문의·승인</a><button onClick={async()=>{const r=await fetch('/api/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(r.ok){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setLink('');window.location.replace('/login');}}}>로그아웃</button></nav>
+      <nav className="admin-jump-nav" aria-label="관리자 메뉴"><a href="#admin-dashboard">이용 현황</a><a href="#admin-users">사용자·활동 기록</a><a href="#admin-create">계정 직접 생성</a><a href="#admin-inquiries">이용 문의·승인</a><button onClick={async()=>{const r=await fetch('/api/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(r.ok){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setLink('');window.location.replace('/login');}}}>로그아웃</button></nav>
       {error && (
         <p role="alert" className="access-error">
           {error}
@@ -190,8 +193,8 @@ export default function AdminView() {
           </button>
         </section>
       )}
-      {owner&&<AdminActivityDashboard revision={revision} pending={inquiries.filter(i=>i.status==='pending').length} onSelect={setSelected}/>}
-      {selected===NETWORK_ACTIVITY_ID&&<section><div className="admin-section-head"><h2>허용 네트워크 이용 상세</h2><button className="access-secondary" onClick={()=>setSelected('')}>닫기</button></div><UserActivityView id={selected} revision={revision}/></section>}
+      {owner&&<AdminActivityDashboard revision={revision} pending={inquiries.filter(i=>i.status==='pending').length} onSelect={setOverviewSelected}/>}
+      {owner&&overviewSelected&&<section ref={overviewDetailRef} className="admin-overview-detail"><div className="admin-section-head"><h2>{overviewSelected===NETWORK_ACTIVITY_ID?'허용 네트워크 이용 상세':'고객별 이용 상세'}</h2><button className="access-secondary" onClick={()=>setOverviewSelected('')}>닫기</button></div><UserActivityView id={overviewSelected} revision={revision}/></section>}
       <section id="admin-create">
         <h2>계정 직접 생성</h2>
         <p className="access-muted">문의 접수 없이도 관리자가 고객 계정을 생성할 수 있습니다. 생성 즉시 승인되며, 고객이 48시간 내 전용 링크에서 비밀번호를 설정해야 로그인할 수 있습니다.</p>
@@ -301,7 +304,7 @@ export default function AdminView() {
             >
               <summary>
                 <span>
-                  <strong>{account.name}</strong> {account.email}<small className="admin-account-summary">진단 완료 {account.activity?.analyze_success||0} · PDF 생성 {account.activity?.pdf_ready||0} · 다운로드 요청 {account.activity?.pdf_save||0} · 저장 완료 {account.activity?.pdf_saved||0} · 링크 생성 {account.activity?.share_created||0}<br/>최근 기록 {koreanTime(account.activity?.lastSeenAt)}</small>
+                  <strong>{account.name}</strong> {account.email}<small className="admin-customer-account-id">고객 ID · {account.id}</small><small className="admin-account-summary">진단 완료 {account.activity?.analyze_success||0} · PDF 생성 {account.activity?.pdf_ready||0} · 다운로드 요청 {account.activity?.pdf_save||0} · 저장 완료 {account.activity?.pdf_saved||0} · 링크 생성 {account.activity?.share_created||0}<br/>최근 기록 {koreanTime(account.activity?.lastSeenAt)}</small>
                 </span>
                 <span>
                   {account.status === "suspended"
