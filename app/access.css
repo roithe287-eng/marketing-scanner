@@ -138,6 +138,10 @@
 .admin-inquiry-selections { display: grid; gap: 12px; padding: 16px; margin-bottom: 20px; background: #f3f6fc; border-radius: 12px; }
 .admin-inquiry-selections dt { font-size: 12px; font-weight: 700; color: var(--scanner-muted); margin-bottom: 5px; }
 .admin-inquiry-selections dd { font-size: 14px; color: var(--scanner-ink); line-height: 1.7; }
+.admin-inquiry-email { padding: 18px 20px; margin: 18px 0; border: 1px solid var(--scanner-line); border-radius: 12px; background: #f3f6fc; line-height: 1.8; }
+.admin-inquiry-email strong { font-size: 15px; color: var(--scanner-ink); }
+.admin-inquiry-email p { font-size: 13px; color: var(--scanner-muted); overflow-wrap: anywhere; }
+.admin-inquiry-mail-status { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; font-size: 13px; color: var(--scanner-muted); }
 @media (max-width: 640px) { .access-inquiry-services > div { grid-template-columns: 1fr; } }
 .access-form .access-checkbox,
 .access-consent label,

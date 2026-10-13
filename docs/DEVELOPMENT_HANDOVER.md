@@ -67,7 +67,7 @@ npm run dev -- --hostname 127.0.0.1
 | `ALLOWED_IPS` | 회사 IP 제한. 현재 운영·미리보기에 설정 존재. 유지함 |
 | `INTERNAL_ACCESS_KEY` | 선택적 쿠키 제한. 현재 Vercel 목록에 없음. 사용 시 4자 이상 |
 | `NEXT_PUBLIC_BRAND_URL`, `NEXT_PUBLIC_CONSULT_URL` | 브랜드·상담 링크. 운영·미리보기 설정 존재 |
-| `SLACK_WEBHOOK_URL` | 리드 알림. 로컬 검증에 설정하지 않음 |
+| `RESEND_API_KEY`, `INQUIRY_EMAIL_FROM`, `INQUIRY_NOTIFY_TO` | 운영 문의 이메일 알림. 상세 연결은 INQUIRY_EMAIL_SETUP.md 참고 |
 
 운영 환경변수는 이름·적용 환경만 확인했으며 비밀값을 추출하거나 복사하지 않았습니다. 운영 접근 제한과 기존 데이터 보관 기간(공유 21일, 인용 캐시 24시간)을 유지합니다.
 

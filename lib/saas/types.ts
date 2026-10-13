@@ -25,6 +25,12 @@ export type Principal =
   | { kind: "internal" }
   | { kind: "account"; account: Account };
 export type UsageAction = "analyze" | "competitor" | "deepdive";
+export type InquiryNotification = {
+  status: 'pending' | 'sent' | 'failed' | 'unconfigured' | 'disabled';
+  updatedAt: number;
+  attempts: number;
+  sentAt?: number;
+};
 export type Inquiry = {
   id: string;
   name: string;
@@ -39,6 +45,7 @@ export type Inquiry = {
   createdAt: number;
   status: "pending" | "approved" | "closed";
   accountId?: string;
+  notification?: InquiryNotification;
 };
 export const DEFAULT_FEATURES: Features = {
   competitor: true,

@@ -6,6 +6,7 @@ import { captureActivity, targetHost, activityStorageKeys } from './activity';
 import {
   Account,
   Inquiry,
+  InquiryNotification,
   Principal,
   UsageAction,
   MULTIPLIER,
@@ -213,7 +214,7 @@ end
 redis.call('DEL',KEYS[1]);return moved`,[key('audit')],[Date.now(),key('audit-day:')]);
 }
 export async function saveInquiry(
-  data: Omit<Inquiry, "id" | "status" | "createdAt">,
+  data: Omit<Inquiry, "id" | "status" | "createdAt" | "notification">,
 ) {
   const inquiry: Inquiry = {
     ...data,
@@ -238,9 +239,13 @@ export async function listInquiries() {
   const ids = await db().zrange<string[]>(key("inquiries"), 0, 99, {
     rev: true,
   });
-  return (await Promise.all(ids.map((id) => db().get(key("inquiry:" + id)))))
+  const inquiries = (await Promise.all(ids.map((id) => db().get(key("inquiry:" + id)))))
     .map((raw) => decode<Inquiry>(raw))
     .filter((x): x is Inquiry => !!x);
+  return Promise.all(inquiries.map(async inquiry => ({
+    ...inquiry,
+    notification: decode<InquiryNotification>(await db().get(key('inquiry-email:' + inquiry.id))) || undefined,
+  })));
 }
 export async function listAccounts(offset = 0, limit = 50) {
   const ids = await db().zrange<string[]>(key("accounts"), offset, offset + limit - 1, {

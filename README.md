@@ -23,7 +23,7 @@ URL을 입력하면 AI가 웹사이트를 분석해 마케팅/전환 관점 8개
 - ✅ 리드 수집 모달 (PDF 다운로드 전 이름·연락처 입력)
 - ✅ PDF 리포트 다운로드 (html2canvas + jsPDF)
 - ✅ 진짜마케팅 상담 CTA
-- ✅ (선택) Slack Webhook으로 리드 자동 알림
+- ✅ (선택) 이용 문의 이메일 알림과 관리자 발송 상태
 
 ---
 
@@ -52,8 +52,10 @@ OPENAI_MODEL=gpt-4.1-mini
 NEXT_PUBLIC_CONSULT_URL=https://prorealmkt.com/contact
 NEXT_PUBLIC_BRAND_URL=https://prorealmkt.com
 
-# (선택) 리드를 슬랙으로 자동 알림
-# SLACK_WEBHOOK_URL=https://hooks.slack.com/services/xxx/xxx/xxx
+# (선택) 운영 사이트 이용 문의 이메일 알림
+# RESEND_API_KEY=
+# INQUIRY_EMAIL_FROM=
+# INQUIRY_NOTIFY_TO= (생략 시 소유자 관리자 이메일)
 ```
 
 ### 3. 로컬 실행
@@ -75,7 +77,7 @@ npm run dev
    - `OPENAI_MODEL` (선택, 기본 `gpt-4.1-mini`)
    - `NEXT_PUBLIC_CONSULT_URL` (선택)
    - `NEXT_PUBLIC_BRAND_URL` (선택)
-   - `SLACK_WEBHOOK_URL` (선택)
+   - `RESEND_API_KEY`, `INQUIRY_EMAIL_FROM`, `INQUIRY_NOTIFY_TO` (선택)
 4. Deploy 클릭
 
 > ⚠️ Vercel 무료 플랜은 함수 실행시간이 10초로 짧습니다. AI 분석이 종종 30초를 넘기 때문에 **Pro 플랜(60초)** 사용을 권장합니다. `app/api/analyze/route.ts` 에 `maxDuration = 60` 으로 설정되어 있습니다.
@@ -136,9 +138,8 @@ OPENAI_MODEL=gpt-4.1-mini    # 빠르고 저렴 (MVP 기본)
 
 `app/api/lead/route.ts`:
 
-- **Slack 알림**: `SLACK_WEBHOOK_URL` 환경변수 설정만으로 자동 동작
-- **Supabase**: `@supabase/supabase-js` 추가 후 insert 코드 작성
-- **Google Sheets**: `googleapis` 패키지로 append
+- **문의 보관**: Redis에 저장하며 관리자에서 조회합니다.
+- **이메일 알림**: Resend 연결 후 운영 환경에서만 발송합니다. 연결·재시도 방법은 [이메일 알림 설정](docs/INQUIRY_EMAIL_SETUP.md)을 참고하세요.
 
 ### 4. 진짜마케팅 로고
 
