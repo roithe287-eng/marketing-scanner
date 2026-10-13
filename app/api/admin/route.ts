@@ -19,12 +19,14 @@ import {
   listAccounts,
   listInquiries,
   limitRequest,
+  rateLimit,
   audit,
   createCustomer,
   getAccount,
   usage,
 } from "@/lib/saas/store";
 import { safeAccount } from "@/lib/saas/types";
+import { inquiryEmailSettings, notifyInquiry } from '@/lib/saas/inquiryNotification';
 import { activityDetail, activityTotals, captureActivity } from '@/lib/saas/activity';
 import { adminOverview } from '@/lib/saas/adminOverview';
 import { NETWORK_ACTIVITY_ID } from '@/lib/saas/activityTypes';
@@ -56,7 +58,7 @@ export async function GET(req: NextRequest) {
       listInquiries(),
     ]);
     const [totals,total]=await Promise.all([activityTotals(accounts.map(a=>a.id)),db().zcard(key('accounts'))]);
-    return privateJson({owner:safeAccount(admin),accounts:accounts.map((a,i)=>({...safeAccount(a),activity:totals[i]})),inquiries,total,offset,pageSize:50});
+    return privateJson({owner:safeAccount(admin),accounts:accounts.map((a,i)=>({...safeAccount(a),activity:totals[i]})),inquiries,total,offset,pageSize:50,inquiryEmail:inquiryEmailSettings(admin.email)});
   } catch (error) {
     return failure(error);
   }
@@ -68,6 +70,7 @@ export async function POST(req: NextRequest) {
     await limitRequest(req.headers, "admin", 30, 60);
     const body = z
       .discriminatedUnion("action", [
+        z.object({ action: z.literal('notify-inquiry'), inquiryId: z.string().uuid() }).strict(),
         grantSchema.extend({action:z.literal('create'),email:emailSchema,name:z.string().trim().min(1).max(80),company:z.string().trim().max(120).default(''),contactVerified:z.literal(true)}).strict(),
         grantSchema.extend({
           action: z.literal("approve"),
@@ -93,6 +96,12 @@ export async function POST(req: NextRequest) {
         z.object({ action: z.literal("close"), inquiryId: z.string().uuid() }),
       ])
       .parse(await readJson(req));
+    if (body.action === 'notify-inquiry') {
+      await rateLimit('inquiry-email-retry:' + body.inquiryId, 3, 3600);
+      const status = await notifyInquiry(body.inquiryId);
+      const message = { sent: '알림 메일 발송 요청을 완료했습니다.', pending: '다른 발송 요청이 처리 중입니다. 잠시 후 목록을 새로고침해 주세요.', failed: '메일 발송에 실패했습니다. 문의는 보관되어 있으며 다시 시도할 수 있습니다.', unconfigured: '메일 발송 서비스 연결이 필요합니다.', disabled: '운영 사이트에서만 알림 메일을 발송합니다.' }[status];
+      return privateJson({ ok: status === 'sent', message });
+    }
     if(body.action==='create'){
       if(body.expiresAt<=Date.now())throw new AccessError(400,'이용 종료일을 미래 날짜로 지정해 주세요.');
       const {account,invite}=await createCustomer(body,admin.id);

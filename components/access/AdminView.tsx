@@ -74,6 +74,7 @@ function grant(form: FormData) {
 }
 export default function AdminView() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  const [inquiryEmail, setInquiryEmail] = useState<{configured:boolean;enabled:boolean;recipient:string}|null>(null);
   const [accounts, setAccounts] = useState<SafeAccount[]>([]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -96,6 +97,7 @@ export default function AdminView() {
       if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setLink('');window.location.replace('/login');}throw new Error(data.message);}
       if(controller.signal.aborted)return;
       setInquiries(data.inquiries);
+      setInquiryEmail(data.inquiryEmail);
       setAccounts(data.accounts);
       setOwner(data.owner);setTotal(data.total);setRevision(v=>v+1);
     } catch (err) {
@@ -133,8 +135,9 @@ export default function AdminView() {
       if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setLink('');window.location.replace('/login');}throw new Error(data.message);}
       if (data.activationPath)
         setLink(window.location.origin + data.activationPath);
-      else setNotice("변경 사항을 저장했습니다.");
+      else if (data.ok !== false) setNotice(data.message || "변경 사항을 저장했습니다.");
       await load();
+      if (data.ok === false) setError(data.message);
     } catch (err) {
       setError(err instanceof Error ? err.message : "처리하지 못했습니다.");
     } finally {
@@ -213,8 +216,13 @@ export default function AdminView() {
         <h2>이용 문의</h2>
         <p className="access-muted">
           최근 90일 내 문의 중 최신 100건. 연락처와 이메일을 확인한 뒤 승인해
-          주세요. 알림은 자동 발송되지 않습니다.
+          주세요. 아래에서 알림 연결 상태와 문의별 발송 결과를 확인할 수 있습니다.
         </p>
+        {inquiryEmail && <div className="admin-inquiry-email">
+          <strong>이메일 알림 · {inquiryEmail.enabled ? '발송 설정됨' : inquiryEmail.configured ? '운영 환경에서만 발송' : '설정 필요'}</strong>
+          <p>수신 주소: {inquiryEmail.recipient}</p>
+          <p>{inquiryEmail.enabled ? '새 문의가 저장되면 이 주소로 알림 메일을 요청합니다. 실제 수신 여부는 메일함과 스팸함에서 확인해 주세요.' : '현재 문의는 관리자 화면에 저장됩니다. 자동 알림을 시작하려면 메일 발송 서비스 연결이 필요합니다.'}</p>
+        </div>}
         {loading ? (
           <p>불러오는 중…</p>
         ) : !inquiries.length ? (
@@ -238,6 +246,12 @@ export default function AdminView() {
                 </span>
               </summary>
               <div>
+                <div className="admin-inquiry-mail-status">
+                  <p>이메일 알림: {item.notification ? {pending:'발송 처리 중',sent:'발송 요청 완료',failed:'발송 실패',unconfigured:'메일 연결 대기',disabled:'운영 환경에서만 발송'}[item.notification.status] : '발송 기록 없음'}
+                    {item.notification?.sentAt ? ` · ${koreanTime(item.notification.sentAt)}` : ''}
+                  </p>
+                  {item.notification?.status !== 'sent' && <button type="button" className="access-secondary" disabled={busy || !inquiryEmail?.enabled} onClick={() => void action({action:'notify-inquiry',inquiryId:item.id})}>{item.notification?.attempts ? '알림 재시도' : '알림 보내기'}</button>}
+                </div>
                 {(item.planId || !!item.services?.length) && <dl className="admin-inquiry-selections">
                   {inquiryPlanLabel(item.planId) && <div><dt>선택한 이용 안내</dt><dd>{inquiryPlanLabel(item.planId)}</dd></div>}
                   {!!item.services?.length && <div><dt>광고대행 문의</dt><dd>{inquiryServiceLabels(item.services).join(' · ')}</dd></div>}
