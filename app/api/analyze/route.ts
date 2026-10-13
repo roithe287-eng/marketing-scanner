@@ -1,3 +1,4 @@
+import {analyzeOfficialSeo} from '@/lib/analyzeOfficialSeo';
 import {withBudget,optionalStage,remainingBudget} from '@/lib/runtime/budget';
 import {requirePrincipal} from '@/lib/saas/auth';
 import {reserve} from '@/lib/saas/store';
@@ -128,6 +129,7 @@ export async function POST(req: NextRequest) {
 
     // Versioned, source-backed observations; account-only checks stay unverified.
     report.naverOptimization = analyzeNaverOptimization(websiteData);
+    report.officialSeoAudit = analyzeOfficialSeo(websiteData);
     report.naverAiReadiness = null;
     report.naverBriefingReadiness = null;
     report.naverEcosystemReadiness = null;

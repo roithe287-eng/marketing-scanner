@@ -1,3 +1,4 @@
+import {OfficialSeoAuditSchema} from './officialSeoSchema';
 import {activeCitation} from './activeCitation';
 import { z } from "zod";
 import { citationFailureCodes } from './citationFailure';
@@ -492,6 +493,7 @@ export const MarketingReportSchema = z.object({
   adWasteSimulation: AdWasteSimulationSchema.nullable().optional(),
   keywordRankTracking: KeywordRankTrackingSchema.nullable().optional(),
   naverOptimization:NaverOptimizationSchema.nullable().optional(),
+  officialSeoAudit:OfficialSeoAuditSchema.nullable().optional(),
 
   // v45-W3: 업종별 벤치마크
   industryBenchmark: IndustryBenchmarkSchema.nullable().optional(),

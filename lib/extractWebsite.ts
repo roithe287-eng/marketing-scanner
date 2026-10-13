@@ -1,5 +1,6 @@
 import {websiteHttp} from './security/safeFetch';
 import { blocksAllCrawling, type RobotsObservation } from "./robotsRules";
+import {collectOfficialSeoEvidence,type OfficialSeoEvidence} from './officialSeoEvidence';
 import {observeRobots} from "./observeRobots";
 import { getScannerContactUrl } from "./siteConfig";
 import * as cheerio from "cheerio";
@@ -8,6 +9,7 @@ import {captureSiteEditing} from './captureSiteEditing';
 import type {SiteEditing} from './siteEditingSchema';
 
 export type ExtractedWebsiteData = {
+  officialSeoEvidence?:OfficialSeoEvidence;
   siteEditing?:SiteEditing;
   seoEvidence?: {
     capturedAt:string; titleCount:number; descriptionCount:number; canonicals:string[];
@@ -387,6 +389,7 @@ export async function extractWebsite(
   const finalUrl = res.url || fetchedUrl;
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
+  const officialSeoEvidence=collectOfficialSeoEvidence($,finalUrl,res.headers);
   const titleCount = $("title").length;
   const descriptionCount = $('meta[name="description" i]').length;
   const canonicals = $('link[rel~="canonical" i]').map((_, el) => $(el).attr("href") || "").get();
@@ -692,6 +695,7 @@ export async function extractWebsite(
     url,
     finalUrl,
     siteEditing,
+    officialSeoEvidence,
     seoEvidence: {capturedAt:new Date().toISOString(),titleCount,descriptionCount,canonicals,robotsMeta,xRobotsTag:res.headers.get("x-robots-tag")||"",htmlLang:$("html").attr("lang")||"",jsonLdErrors,microdataCount,rdfaCount,imagesMissingAlt:imageWithoutAlt,imagesEmptyAlt,robots,httpStatus:res.status},
     detectedEncoding,
     title,

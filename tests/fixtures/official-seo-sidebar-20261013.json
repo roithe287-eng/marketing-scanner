@@ -1,0 +1,1166 @@
+{
+  "capturedAt": "2026-10-13",
+  "entries": [
+    {
+      "id": "google-search-docs",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs?hl=ko"
+    },
+    {
+      "id": "google-essentials",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/essentials?hl=ko"
+    },
+    {
+      "id": "google-fundamentals-seo-starter-guide",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/fundamentals/seo-starter-guide?hl=ko"
+    },
+    {
+      "id": "google-essentials-technical",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/essentials/technical?hl=ko"
+    },
+    {
+      "id": "google-fundamentals-how-search-works",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/fundamentals/how-search-works?hl=ko"
+    },
+    {
+      "id": "google-essentials-spam-policies",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/essentials/spam-policies?hl=ko"
+    },
+    {
+      "id": "google-fundamentals-using-gen-ai-content",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/fundamentals/using-gen-ai-content?hl=ko"
+    },
+    {
+      "id": "google-fundamentals-get-started",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/fundamentals/get-started?hl=ko"
+    },
+    {
+      "id": "google-fundamentals-ai-optimization-guide",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/fundamentals/ai-optimization-guide?hl=ko"
+    },
+    {
+      "id": "google-fundamentals-creating-helpful-content",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/fundamentals/creating-helpful-content?hl=ko"
+    },
+    {
+      "id": "google-fundamentals-do-i-need-seo",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/fundamentals/do-i-need-seo?hl=ko"
+    },
+    {
+      "id": "google-fundamentals-third-party-seo",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/fundamentals/third-party-seo?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing?hl=ko"
+    },
+    {
+      "id": "google-fundamentals-get-started-developers",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/fundamentals/get-started-developers?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-links-crawlable",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/links-crawlable?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-indexable-file-types",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/indexable-file-types?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-url-structure",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/url-structure?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-sitemaps-overview",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-sitemaps-image-sitemaps",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/image-sitemaps?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-sitemaps-news-sitemap",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-sitemaps-large-sitemaps",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/large-sitemaps?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-sitemaps-build-sitemap",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-sitemaps-combine-sitemap-extensions",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/combine-sitemap-extensions?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-ask-google-to-recrawl",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/ask-google-to-recrawl?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-sitemaps-video-sitemaps",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/video-sitemaps?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-troubleshoot-crawling-errors",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/troubleshoot-crawling-errors?hl=ko"
+    },
+    {
+      "id": "google-crawling-docs-crawlers-fetchers-overview-google-crawlers",
+      "engine": "google",
+      "url": "https://developers.google.com/crawling/docs/crawlers-fetchers/overview-google-crawlers?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-googlebot",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/googlebot?hl=ko"
+    },
+    {
+      "id": "google-crawling-docs-crawlers-fetchers-reduce-crawl-rate",
+      "engine": "google",
+      "url": "https://developers.google.com/crawling/docs/crawlers-fetchers/reduce-crawl-rate?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-robots-intro",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/robots/intro?hl=ko"
+    },
+    {
+      "id": "google-crawling-docs-crawlers-fetchers-verifying-googlebot",
+      "engine": "google",
+      "url": "https://developers.google.com/crawling/docs/crawlers-fetchers/verifying-googlebot?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-canonicalization",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/canonicalization?hl=ko"
+    },
+    {
+      "id": "google-crawling-docs-robots-txt-robots-txt-spec",
+      "engine": "google",
+      "url": "https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-canonicalization-troubleshooting",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/canonicalization-troubleshooting?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-consolidate-duplicate-urls",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-amp",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/amp?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-mobile-mobile-sites-mobile-first-indexing",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-amp-enhance-amp",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/amp/enhance-amp?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-amp-validate-amp",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/amp/validate-amp?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-javascript-javascript-seo-basics",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-amp-remove-amp",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/amp/remove-amp?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-javascript-dynamic-rendering",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/dynamic-rendering?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-javascript-fix-search-javascript",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/fix-search-javascript?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-javascript-lazy-loading",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-valid-page-metadata",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/valid-page-metadata?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-block-indexing",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/block-indexing?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-special-tags",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/special-tags?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-robots-meta-tag",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-qualify-outbound-links",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-prevent-images-on-your-page",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/prevent-images-on-your-page?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-remove-information",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/remove-information?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-keep-redacted-information-out",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/keep-redacted-information-out?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-control-what-you-share",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/control-what-you-share?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-301-redirects",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/301-redirects?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-website-testing",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/website-testing?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-site-move-with-url-changes",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-site-move-no-url-changes",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/site-move-no-url-changes?hl=ko"
+    },
+    {
+      "id": "google-appearance-ai-features",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/ai-features?hl=ko"
+    },
+    {
+      "id": "google-crawling-indexing-pause-online-business",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/crawling-indexing/pause-online-business?hl=ko"
+    },
+    {
+      "id": "google-appearance",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance?hl=ko"
+    },
+    {
+      "id": "google-appearance-publication-dates",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/publication-dates?hl=ko"
+    },
+    {
+      "id": "google-appearance-favicon-in-search",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/favicon-in-search?hl=ko"
+    },
+    {
+      "id": "google-appearance-google-discover",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/google-discover?hl=ko"
+    },
+    {
+      "id": "google-appearance-featured-snippets",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/featured-snippets?hl=ko"
+    },
+    {
+      "id": "google-appearance-flexible-sampling",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/flexible-sampling?hl=ko"
+    },
+    {
+      "id": "google-appearance-top-places-list",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/top-places-list?hl=ko"
+    },
+    {
+      "id": "google-appearance-establish-business-details",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/establish-business-details?hl=ko"
+    },
+    {
+      "id": "google-appearance-google-images",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/google-images?hl=ko"
+    },
+    {
+      "id": "google-appearance-core-web-vitals",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/core-web-vitals?hl=ko"
+    },
+    {
+      "id": "google-appearance-avoid-intrusive-interstitials",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/avoid-intrusive-interstitials?hl=ko"
+    },
+    {
+      "id": "google-appearance-page-experience",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/page-experience?hl=ko"
+    },
+    {
+      "id": "google-webmasters-answer-3035947",
+      "engine": "google",
+      "url": "https://support.google.com/webmasters/answer/3035947?hl=ko"
+    },
+    {
+      "id": "google-appearance-preferred-sources",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/preferred-sources?hl=ko"
+    },
+    {
+      "id": "google-appearance-ranking-systems-guide",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/ranking-systems-guide?hl=ko"
+    },
+    {
+      "id": "google-appearance-reviews-system",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/reviews-system?hl=ko"
+    },
+    {
+      "id": "google-appearance-aggregator-features",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/aggregator-features?hl=ko"
+    },
+    {
+      "id": "google-appearance-spam-updates",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/spam-updates?hl=ko"
+    },
+    {
+      "id": "google-appearance-core-updates",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/core-updates?hl=ko"
+    },
+    {
+      "id": "google-appearance-aggregator-unit",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/aggregator-unit?hl=ko"
+    },
+    {
+      "id": "google-appearance-supplier-unit",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/supplier-unit?hl=ko"
+    },
+    {
+      "id": "google-appearance-job-sites",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/job-sites?hl=ko"
+    },
+    {
+      "id": "google-appearance-ecosystem-carousel",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/ecosystem-carousel?hl=ko"
+    },
+    {
+      "id": "google-appearance-places-sites",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/places-sites?hl=ko"
+    },
+    {
+      "id": "google-appearance-site-names",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/site-names?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-carousels-beta",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/carousels-beta?hl=ko"
+    },
+    {
+      "id": "google-appearance-search-profiles",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/search-profiles?hl=ko"
+    },
+    {
+      "id": "google-appearance-south-africa-features",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/south-africa-features?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-intro-structured-data",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data?hl=ko"
+    },
+    {
+      "id": "google-appearance-snippet",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/snippet?hl=ko"
+    },
+    {
+      "id": "google-appearance-sitelinks",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/sitelinks?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-sd-policies",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/sd-policies?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-generate-structured-data-with-javascript",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/generate-structured-data-with-javascript?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-search-gallery",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/search-gallery?hl=ko"
+    },
+    {
+      "id": "google-appearance-enriched-search-results",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/enriched-search-results?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-article",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/article?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-breadcrumb",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/breadcrumb?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-course",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/course?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-carousel",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/carousel?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-book",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/book?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-employer-rating",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/employer-rating?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-dataset",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/dataset?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-education-qa",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/education-qa?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-discussion-forum",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/discussion-forum?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-factcheck",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/factcheck?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-job-posting",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/job-posting?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-event",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/event?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-image-license-metadata",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/image-license-metadata?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-math-solvers",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/math-solvers?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-movie",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/movie?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-organization",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/organization?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-local-business",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/local-business?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-product-snippet",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/product-snippet?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-product-variants",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/product-variants?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-product",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/product?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-merchant-listing",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/merchant-listing?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-shipping-policy",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/shipping-policy?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-loyalty-program",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/loyalty-program?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-return-policy",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/return-policy?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-profile-page",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/profile-page?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-software-app",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/software-app?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-recipe",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/recipe?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-review-snippet",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/review-snippet?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-qapage",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/qapage?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-paywalled-content",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/paywalled-content?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-vacation-rental",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/vacation-rental?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-speakable",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/speakable?hl=ko"
+    },
+    {
+      "id": "google-appearance-structured-data-video",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/structured-data/video?hl=ko"
+    },
+    {
+      "id": "google-appearance-title-link",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/title-link?hl=ko"
+    },
+    {
+      "id": "google-appearance-ad-network-and-translation",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/ad-network-and-translation?hl=ko"
+    },
+    {
+      "id": "google-appearance-video",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/video?hl=ko"
+    },
+    {
+      "id": "google-appearance-translated-results",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/translated-results?hl=ko"
+    },
+    {
+      "id": "google-appearance-web-stories-creation-best-practices",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/web-stories-creation-best-practices?hl=ko"
+    },
+    {
+      "id": "google-appearance-web-stories-content-policy",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/web-stories-content-policy?hl=ko"
+    },
+    {
+      "id": "google-appearance-visual-elements-gallery",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/visual-elements-gallery?hl=ko"
+    },
+    {
+      "id": "google-appearance-enable-web-stories",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/enable-web-stories?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-search-console-start",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/search-console-start?hl=ko"
+    },
+    {
+      "id": "google-appearance-package-tracking",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/appearance/package-tracking?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-bubble-chart-analysis",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/bubble-chart-analysis?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-debugging-search-traffic-drops",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/debugging-search-traffic-drops?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-search-operators-all-search-site",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/search-operators/all-search-site?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-search-operators",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/search-operators?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-google-analytics-search-console",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/google-analytics-search-console?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-analyze-social-video-content",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/analyze-social-video-content?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-security",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/security?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-search-operators-image-search",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/search-operators/image-search?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-prevent-abuse",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/prevent-abuse?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-security-malware",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/security/malware?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-security-social-engineering",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/security/social-engineering?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-security-safe-browsing-repeat-offenders",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/security/safe-browsing-repeat-offenders?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-security-prevent-malware",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/security/prevent-malware?hl=ko"
+    },
+    {
+      "id": "google-monitor-debug-trends-start",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/monitor-debug/trends-start?hl=ko"
+    },
+    {
+      "id": "google-specialty-ecommerce",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/ecommerce?hl=ko"
+    },
+    {
+      "id": "google-specialty-ecommerce-where-ecommerce-data-can-appear-on-google",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/ecommerce/where-ecommerce-data-can-appear-on-google?hl=ko"
+    },
+    {
+      "id": "google-specialty-ecommerce-share-your-product-data-with-google",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/ecommerce/share-your-product-data-with-google?hl=ko"
+    },
+    {
+      "id": "google-specialty-ecommerce-include-structured-data-relevant-to-ecommerce",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/ecommerce/include-structured-data-relevant-to-ecommerce?hl=ko"
+    },
+    {
+      "id": "google-specialty-ecommerce-write-high-quality-reviews",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/ecommerce/write-high-quality-reviews?hl=ko"
+    },
+    {
+      "id": "google-specialty-ecommerce-designing-a-url-structure-for-ecommerce-sites",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/ecommerce/designing-a-url-structure-for-ecommerce-sites?hl=ko"
+    },
+    {
+      "id": "google-specialty-ecommerce-how-to-launch-an-ecommerce-website",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/ecommerce/how-to-launch-an-ecommerce-website?hl=ko"
+    },
+    {
+      "id": "google-specialty-ecommerce-help-google-understand-your-ecommerce-site-structure",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/ecommerce/help-google-understand-your-ecommerce-site-structure?hl=ko"
+    },
+    {
+      "id": "google-specialty-international-managing-multi-regional-sites",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/international/managing-multi-regional-sites?hl=ko"
+    },
+    {
+      "id": "google-specialty-international",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/international?hl=ko"
+    },
+    {
+      "id": "google-specialty-ecommerce-pagination-and-incremental-page-loading",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading?hl=ko"
+    },
+    {
+      "id": "google-specialty-international-localized-versions",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/international/localized-versions?hl=ko"
+    },
+    {
+      "id": "google-specialty-international-locale-adaptive-pages",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/international/locale-adaptive-pages?hl=ko"
+    },
+    {
+      "id": "google-specialty-explicit-troubleshooting",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/explicit/troubleshooting?hl=ko"
+    },
+    {
+      "id": "naver-seo-basic-intro",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-basic-intro"
+    },
+    {
+      "id": "naver-seo-basic-create",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-basic-create"
+    },
+    {
+      "id": "naver-seo-basic-robots",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-basic-robots"
+    },
+    {
+      "id": "naver-seo-basic-redirect",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-basic-redirect"
+    },
+    {
+      "id": "naver-seo-basic-migration",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-basic-migration"
+    },
+    {
+      "id": "naver-seo-basic-close",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-basic-close"
+    },
+    {
+      "id": "naver-seo-basic-firewall",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-basic-firewall"
+    },
+    {
+      "id": "naver-seo-basic-http",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-basic-http"
+    },
+    {
+      "id": "naver-seo-advanced-javascript",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-advanced-javascript"
+    },
+    {
+      "id": "naver-seo-advanced-url",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-advanced-url"
+    },
+    {
+      "id": "naver-seo-advanced-indexing",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-advanced-indexing"
+    },
+    {
+      "id": "naver-seo-help",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/seo-help"
+    },
+    {
+      "id": "naver-resource-and-link",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/resource-and-link"
+    },
+    {
+      "id": "naver-content-abusing",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/content-abusing"
+    },
+    {
+      "id": "naver-content-basic",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/content-basic"
+    },
+    {
+      "id": "naver-markup-structure",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/markup-structure"
+    },
+    {
+      "id": "naver-markup-content",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/markup-content"
+    },
+    {
+      "id": "naver-markup-mobile",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/markup-mobile"
+    },
+    {
+      "id": "naver-markup-favicon",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/markup-favicon"
+    },
+    {
+      "id": "naver-request-crawl",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/request-crawl"
+    },
+    {
+      "id": "naver-request-feed",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/request-feed"
+    },
+    {
+      "id": "naver-diagnose-site",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/diagnose-site"
+    },
+    {
+      "id": "naver-url-inspection",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/url-inspection"
+    },
+    {
+      "id": "naver-report-expose-ctr",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/report-expose-ctr"
+    },
+    {
+      "id": "naver-report-diagnosis",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/report-diagnosis"
+    },
+    {
+      "id": "naver-report-seo",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/report-seo"
+    },
+    {
+      "id": "naver-report-crawl-refine",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/report-crawl-refine"
+    },
+    {
+      "id": "naver-site-summary",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/site-summary"
+    },
+    {
+      "id": "naver-structured-data-intro",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-intro"
+    },
+    {
+      "id": "naver-structured-data-channel",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-channel"
+    },
+    {
+      "id": "naver-structured-data-job",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-job"
+    },
+    {
+      "id": "naver-structured-data-address",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-address"
+    },
+    {
+      "id": "naver-structured-data-breadcrumb",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-breadcrumb"
+    },
+    {
+      "id": "naver-structured-data-howto",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-howto"
+    },
+    {
+      "id": "naver-structured-data-carousel",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-carousel"
+    },
+    {
+      "id": "naver-structured-data-rating",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-rating"
+    },
+    {
+      "id": "naver-structured-data-recipe",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-recipe"
+    },
+    {
+      "id": "naver-structured-data-review",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-review"
+    },
+    {
+      "id": "naver-structured-data-restaurant",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-restaurant"
+    },
+    {
+      "id": "naver-structured-data-tvseries",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-tvseries"
+    },
+    {
+      "id": "naver-structured-data-movie",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-movie"
+    },
+    {
+      "id": "naver-structured-data-software",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-software"
+    },
+    {
+      "id": "naver-structured-data-video",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/structured-data-video"
+    },
+    {
+      "id": "naver-crawl-request-api",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/crawl-request-api"
+    },
+    {
+      "id": "naver-indexnow-about",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/indexnow-about"
+    },
+    {
+      "id": "naver-indexnow-api-key",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/indexnow-api-key"
+    },
+    {
+      "id": "naver-indexnow-request",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/indexnow-request"
+    },
+    {
+      "id": "naver-indexnow-faq",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/indexnow-faq"
+    },
+    {
+      "id": "naver-education-basic",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/education-basic"
+    },
+    {
+      "id": "naver-education-wmt-advanced",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/education-wmt-advanced"
+    },
+    {
+      "id": "naver-faq-serpedit",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/faq-serpedit"
+    },
+    {
+      "id": "naver-faq-serpmissing",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/faq-serpmissing"
+    },
+    {
+      "id": "naver-faq-serpremove",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/faq-serpremove"
+    },
+    {
+      "id": "naver-faq-sublink",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/faq-sublink"
+    },
+    {
+      "id": "naver-faq-start-register",
+      "engine": "naver",
+      "url": "https://searchadvisor.naver.com/guide/faq-start-register"
+    },
+    {
+      "id": "google-specialty-explicit-guidelines",
+      "engine": "google",
+      "url": "https://developers.google.com/search/docs/specialty/explicit/guidelines?hl=ko"
+    }
+  ],
+  "excludedResources": [
+    {
+      "engine": "google",
+      "url": "https://developers.google.com/search?hl=ko",
+      "title": ""
+    },
+    {
+      "engine": "google",
+      "url": "https://developers.google.com/search/blog?hl=ko",
+      "title": "블로그"
+    },
+    {
+      "engine": "google",
+      "url": "https://developers.google.com/search/help?hl=ko",
+      "title": "지원"
+    },
+    {
+      "engine": "google",
+      "url": "https://developers.google.com/search/events?hl=ko",
+      "title": "이벤트"
+    },
+    {
+      "engine": "google",
+      "url": "https://developers.google.com/search/case-studies?hl=ko",
+      "title": "우수사례"
+    },
+    {
+      "engine": "google",
+      "url": "https://developers.google.com/search/news?hl=ko",
+      "title": "새로운 기능"
+    },
+    {
+      "engine": "google",
+      "url": "https://status.search.google.com/products/rGHU1u87FJnkP6W2GwMi/history?hl=ko",
+      "title": "순위 업데이트 목록"
+    },
+    {
+      "engine": "google",
+      "url": "https://developers.google.com/search/updates?hl=ko",
+      "title": "문서 업데이트"
+    },
+    {
+      "engine": "google",
+      "url": "https://pod.link/1512522198?hl=ko",
+      "title": "최근 팟캐스트 에피소드"
+    },
+    {
+      "engine": "google",
+      "url": "https://www.youtube.com/channel/UCWf2ZlNsCGDS89VBF_awNvA?hl=ko",
+      "title": "새 YouTube 동영상"
+    }
+  ],
+  "educationPdfs": [
+    "https://searchadvisor.naver.com/doc/wmt_guide_ps_websearch.pdf",
+    "https://searchadvisor.naver.com/doc/wmt_guide_ps_quality.pdf"
+  ]
+}
