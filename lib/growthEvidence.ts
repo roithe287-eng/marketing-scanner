@@ -23,7 +23,7 @@ export function captureSearchSignals(d:ExtractedWebsiteData):SearchSignals|undef
     return {agent,allowed:result.allowed,detail:`${path} · ${result.rule}`.slice(0,1200)};
   });
   return {version:1,httpStatus:e.httpStatus,titleCount:e.titleCount,descriptionCount:e.descriptionCount,
-    canonicals:e.canonicals.slice(0,8).map(s=>s.slice(0,4000)),googleDirectives:googleDirectives(e.robotsMeta,e.xRobotsTag),crawlers,
+    canonicals:e.canonicals.slice(0,8).map(s=>s.slice(0,4000)),googleDirectives:googleDirectives(d.officialSeoEvidence?.allRobotsMeta||e.robotsMeta,e.xRobotsTag),crawlers,
     schemaTypes:[...new Set(d.schemaTypes)].slice(0,40).map(s=>s.slice(0,150)),jsonLdErrors:e.jsonLdErrors,
     internalLinkCount:d.internalLinkCount,isJsHeavy:d.isJsHeavy,bodyTextLength:d.bodyTextLength};
 }

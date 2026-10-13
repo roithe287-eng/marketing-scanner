@@ -3,7 +3,7 @@ import {canonicalPage} from './geoComparison';
 import {growthPageEvidence} from './growthPlan';
 import {diagnosisAxes} from './diagnosisVisuals';
 
-export const DIAGNOSIS_METHOD='marketing-diagnosis-2026-10-v4';
+export const DIAGNOSIS_METHOD='marketing-diagnosis-2026-10-v5';
 export const DIAGNOSIS_COMPARISON_NOTE='같은 URL의 저장 결과를 비교합니다. 진단 점수는 AI 평가와 수집 범위에 따라 달라질 수 있으며 매출·노출 성과나 수정의 인과 효과가 아닙니다. 통과 전환도 실제 화면과 담당자 검토로 확인하세요.';
 const normal=(s:string)=>s.trim().replace(/\s+/g,' ').toLowerCase();
 export function diagnosisChecks(report:MarketingReport):DiagnosisCheck[] {
@@ -11,6 +11,7 @@ export function diagnosisChecks(report:MarketingReport):DiagnosisCheck[] {
  const p=growthPageEvidence(report);
  if(p)for(const [key,label,value] of [['title','검색 제목 존재',p.title],['description','메타 설명 존재',p.description],['h1','H1 존재',p.h1.join('\n')]] as const)rows.push({key:`html:${key}`,label,status:value?'pass':'warning',evidence:value||'수집한 정적 HTML에서 미감지 · 렌더링 결과 확인 필요',source:'정적 HTML 수집'});
  if(report.naverOptimization?.mode==='diagnosis'&&canonicalPage(report.naverOptimization.targetUrl)===canonicalPage(report.url))for(const c of report.naverOptimization.checks)rows.push({key:`naver:${c.id}`,label:c.title,status:c.status==='observed'?'pass':c.status==='action'?'warning':'review',evidence:c.evidence,source:'네이버 관측'});
+ if(report.officialSeoAudit?.mode==='diagnosis'&&canonicalPage(report.officialSeoAudit.targetUrl)===canonicalPage(report.url))for(const c of report.officialSeoAudit.checks)rows.push({key:`official:${report.officialSeoAudit.catalogVersion}:${c.id}`,label:c.title,status:c.status==='observed'?'pass':c.status==='action'?'warning':'review',evidence:c.evidence,source:'공식 검색 기준 관측'});
  for(const c of report.criticalIssues)rows.push({key:`issue:${normal(c.title)}`,label:c.title,status:c.priority==='high'?'fail':c.priority==='medium'?'warning':'review',evidence:c.problem,source:'핵심 이슈'});
  return rows;
 }
