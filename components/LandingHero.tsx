@@ -29,7 +29,6 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
                   </div>
                   <ol className="scanner-access-steps" aria-label="이용 절차"><li>이용 문의</li><li>승인 후 URL 입력</li><li>진단 시작</li></ol>
                 </div>}
-                <p className="scanner-before-notice">참고용 자동 진단 · 정확성·성과 보장 없음. <a href="/notice" target="_blank" rel="noopener noreferrer">이용 안내 ↗</a></p>
               </div>
             </div>
           </div>
@@ -37,7 +36,6 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
         </div>
       </div>
       <LandingReportFeatures />
-      <details className="scanner-scope-details"><summary>진단 범위와 확인할 점</summary><p>수집 가능한 공개 정보에 따라 결과 항목이 달라집니다. 경쟁사 비교·AI 답변 관측은 연결 상태와 응답에 따라 제공되지 않을 수 있습니다. 결과와 실행안은 참고용이며 실제 적용 전 사실과 적합성을 확인해 주세요.</p></details>
     </div>
   </section>;
 }

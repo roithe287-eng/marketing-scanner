@@ -34,7 +34,6 @@ function AiPreview() {
       <div><span className="scanner-ai-symbol" aria-hidden="true">↗</span><div><div className="scanner-ai-observation-title"><strong>자사 출처 인용</strong><b data-state="missing">미확인 예시</b></div><p>우리 URL이 근거로 연결됐는가</p></div></div>
     </div>
     <div className="scanner-panel-takeaway"><span>다음 행동</span><p>질문에 바로 답하는 문장과 확인 가능한 근거를 보강합니다.</p></div>
-    <p className="scanner-demo-note">실제 관측은 질문·시점·AI 응답과 연결 상태에 따라 달라집니다.</p>
   </div>;
 }
 
@@ -49,7 +48,6 @@ function CompetitionPreview() {
       <div className="scanner-map-x" aria-hidden="true">검색어 연결도 <span>→</span></div>
     </div>
     <p className="scanner-map-legend"><i aria-hidden="true"/> 원이 클수록 확인된 정보 단서가 많음</p>
-    <p className="scanner-demo-note">배치와 크기는 예시입니다. 검색어 연결도는 제목·설명과의 연결, 선택 정보 범위는 확인된 정보의 종류를 뜻합니다. 검색 순위·매출·시장점유율이 아닙니다.</p>
   </div>;
 }
 
@@ -61,7 +59,6 @@ function RewritePreview() {
     <div className="scanner-demo-flow"><span>고객</span><span>제공 범위</span><span>확인 가능한 근거</span></div>
     <div className="scanner-demo-after"><span>TO-BE · 사실을 채울 작성 틀</span><p><mark>[고객 유형]</mark>을 위한 <mark>[서비스 범위]</mark>를 제공합니다. <mark>[확인 가능한 사례]</mark>에서 진행 내용을 확인하세요.</p></div>
     <div className="scanner-rewrite-location"><span>수정 위치</span><strong>첫 화면의 제목 아래 소개 문장</strong></div>
-    <p className="scanner-demo-note">실제 결과에는 수집된 URL의 원문 근거와 단계별 실행 안내가 함께 나옵니다. 확인되지 않은 사실은 직접 채워 주세요.</p>
   </div>;
 }
 
@@ -77,6 +74,5 @@ export default function LivePreviewCard() {
     <div className="scanner-preview-content" id={panelId} aria-label={`${views.find(item=>item.key===view)?.label} 미리보기`}>
       {view==='overview'?<ReportPreview/>:view==='ai'?<AiPreview/>:view==='competition'?<CompetitionPreview/>:<RewritePreview/>}
     </div>
-    <div className="scanner-preview-footer"><small>실제 분석 결과가 아닌 구성·데이터 예시입니다.</small></div>
   </aside>;
 }

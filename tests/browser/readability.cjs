@@ -14,7 +14,7 @@ const origin='http://127.0.0.1:3019',server=spawn(process.execPath,['node_module
  await page.route('**/api/competitor',r=>r.fulfill({json:{competitorAnalysis:fixture.competitorAnalysis}}));
  await page.goto(origin);await page.getByLabel('분석할 웹사이트 URL',{exact:true}).fill(fixture.url);await page.getByRole('button',{name:'내 사이트 진단 시작',exact:true}).click();
  await page.getByText(fixture.oneLineSummary,{exact:true}).waitFor();
- if(!baseline)await page.locator('.report-evidence-guide').evaluate(e=>window.scrollTo(0,window.scrollY+e.getBoundingClientRect().top-100));await page.screenshot({path:folder+'/evidence-desktop.png'});
+ if(!baseline)await page.locator('.report-hero').evaluate(e=>window.scrollTo(0,window.scrollY+e.getBoundingClientRect().top-100));await page.screenshot({path:folder+'/evidence-desktop.png'});
  await page.getByText('핵심 이슈와 개선 예시',{exact:true}).click();await page.getByText('전체 키워드 빈도',{exact:true}).click();
  await page.locator('.report-issue').evaluate(e=>window.scrollTo(0,window.scrollY+e.getBoundingClientRect().top-170));await page.screenshot({path:folder+'/issue-desktop.png'});
  await page.locator('.report-radar').evaluate(e=>window.scrollTo(0,window.scrollY+e.getBoundingClientRect().top-170));await page.screenshot({path:folder+'/radar-desktop.png'});
@@ -39,7 +39,10 @@ const origin='http://127.0.0.1:3019',server=spawn(process.execPath,['node_module
  const issue=await page.locator('.report-issue').innerText();assert.ok(issue.includes(fixture.criticalIssues[0].problem));
  let expandedResult=null;
  if(!baseline){
-  await page.getByRole('heading',{name:'수집 관측',exact:true}).waitFor();
+  await page.locator('#report-notice-title').waitFor();
+  assert.equal(await page.locator('.report-evidence-types').count(),0);
+  const checks=page.locator('.report-evidence-details');
+  if(await checks.count()){await checks.locator('summary').click();assert.ok((await checks.innerText()).includes(fixture.integrity?.warnings?.length?'원문 재확인':'원문 대조 기록 없음'));}
   assert.doesNotMatch(await page.locator('body').innerText(),/Gemini|gemini|제미나이/);
   // Double text sizes with original line-height ratios retained, revealing fixed-box clipping.
   await page.locator('.report-v2').evaluate(root=>{const rows=[root,...root.querySelectorAll('*')].filter(e=>!(e instanceof SVGElement)).map(e=>{const s=getComputedStyle(e);return {e,size:parseFloat(s.fontSize),line:parseFloat(s.lineHeight)};});for(const {e,size,line} of rows){e.style.setProperty('font-size',size*2+'px','important');if(Number.isFinite(line))e.style.setProperty('line-height',line*2+'px','important');}});

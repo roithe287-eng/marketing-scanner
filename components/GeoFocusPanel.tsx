@@ -16,7 +16,7 @@ export default function GeoFocusPanel({report}: {report: MarketingReport}) {
     <div className="flex flex-wrap items-start justify-between gap-4">
       <div><p className="text-xs font-bold text-jm-red">GEO ACTION PLAN</p>
         <h2 className="mt-2 text-xl md:text-2xl font-black">먼저 실행할 GEO 과제</h2>
-        <p className="mt-2 text-sm text-jm-gray leading-6">현재 관측 근거로 고른 최대 3가지입니다. 완료 기준은 수정·확인 작업이며 인용률 상승을 보장하는 조건은 아닙니다.</p>
+        <p className="mt-2 text-sm text-jm-gray leading-6">현재 관측 근거로 고른 우선 과제와 완료 기준입니다.</p>
       </div>
       {focus.questions.length > 0 && <button type="button" onClick={copyQuestions} className="shrink-0 rounded-full border px-4 py-2 text-sm font-bold" data-hide-on-export>
         {copyState === 'copied' ? '질문 세트를 복사했습니다' : '같은 질문 세트 복사'}

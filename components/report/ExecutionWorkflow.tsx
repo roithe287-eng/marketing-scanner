@@ -15,7 +15,7 @@ export function CopyWork({text,label='작업 지시서 복사'}:{text:string;lab
 export function TodayWork({plan}:{plan:ExecutionPlan}) {
  return <section className="report-card report-workflow work-today" id="report-today" aria-label="오늘 먼저 할 일">
   <Heading eyebrow="START WITH THREE" title="오늘, 여기부터 바꿔 보세요" note="우선순위가 높은 작업을 3개로 추렸습니다. 작업을 열면 바꿀 위치, 수정 방법, 완료 기준을 함께 볼 수 있습니다."/>
-  {plan.first.length?<ol className="work-today-grid">{plan.first.map((t,i)=><li key={t.id}><div className="work-card-top"><span className="work-number">0{i+1}</span><span>{workOwners.find(o=>o.id===t.owner)!.label}</span></div><h4>{t.title}</h4><p className="work-card-location"><strong>바꿀 곳</strong>{t.location}</p><div className="work-card-action"><strong>할 일</strong><p>{t.action}</p></div><WorkLink id={t.anchor}>수정 방법과 근거 열기</WorkLink></li>)}</ol>:<p className="work-empty">현재 저장된 진단에 보완 항목이 없습니다. 추가 문제가 없다는 보장은 아니므로 실제 화면과 측정 상태를 함께 확인하세요.</p>}
+  {plan.first.length?<ol className="work-today-grid">{plan.first.map((t,i)=><li key={t.id}><div className="work-card-top"><span className="work-number">0{i+1}</span><span>{workOwners.find(o=>o.id===t.owner)!.label}</span></div><h4>{t.title}</h4><p className="work-card-location"><strong>바꿀 곳</strong>{t.location}</p><div className="work-card-action"><strong>할 일</strong><p>{t.action}</p></div><WorkLink id={t.anchor}>수정 방법과 근거 열기</WorkLink></li>)}</ol>:<p className="work-empty">현재 저장된 진단에 보완 항목이 없습니다.</p>}
  </section>;
 }
 export function PageEditPreview({report}:{report:MarketingReport}) {
@@ -31,9 +31,9 @@ export function PageWorkMap({plan}:{plan:ExecutionPlan}) {
  const [selected,setSelected]=useState<string>('hero'),id=useId(),zone=workZones.find(z=>z.id===selected)!;
  const tasks=plan.tasks.filter(t=>t.zone===selected);
  return <section className="report-card report-workflow" id="report-work-map" aria-label="페이지 수정 위치 안내">
-  <Heading eyebrow="WHERE TO EDIT" title="어디를 바꿀지, 위치로 살펴보세요" note="기존 보완 항목을 수정 위치별로 연결한 추천 구조도입니다. 실제 사이트의 화면·요소 좌표를 측정한 결과는 아닙니다."/>
+  <Heading eyebrow="WHERE TO EDIT" title="어디를 바꿀지, 위치로 살펴보세요" note="보완 항목을 수정 위치별로 연결한 추천 구조도입니다."/>
   <div className="work-map-layout"><div className="work-wireframe" role="group" aria-label="수정 위치 선택"><div className="work-window" aria-hidden="true"><i/><i/><i/><span>PAGE MAP</span></div>{workZones.map((z,i)=><button type="button" key={z.id} data-zone={z.id} aria-pressed={selected===z.id} aria-controls={id} onClick={()=>setSelected(z.id)}><span className="work-number">0{i+1}</span><strong>{z.label}<small>{z.hint}</small></strong><b>{plan.tasks.filter(t=>t.zone===z.id).length}<small>개</small></b></button>)}</div>
-   <div className="work-map-detail" id={id} aria-live="polite"><span className="work-kicker">선택한 위치</span><h4>{zone.label}</h4><p>{zone.hint}</p>{tasks.length?<ul>{tasks.map(t=><li key={t.id}><WorkLink id={t.anchor}>{t.title}</WorkLink><p>{workOwners.find(o=>o.id===t.owner)!.label} · {t.source}</p></li>)}</ul>:<p className="work-empty">이 위치로 분류된 보완 항목이 없습니다. 해당 영역의 존재·품질이 확인됐다는 뜻은 아닙니다.</p>}<div className="work-check"><strong>완료 확인</strong><p>{zone.check}</p></div></div>
+   <div className="work-map-detail" id={id} aria-live="polite"><span className="work-kicker">선택한 위치</span><h4>{zone.label}</h4><p>{zone.hint}</p>{tasks.length?<ul>{tasks.map(t=><li key={t.id}><WorkLink id={t.anchor}>{t.title}</WorkLink><p>{workOwners.find(o=>o.id===t.owner)!.label} · {t.source}</p></li>)}</ul>:<p className="work-empty">이 위치로 분류된 보완 항목이 없습니다.</p>}<div className="work-check"><strong>완료 확인</strong><p>{zone.check}</p></div></div>
   </div>
  </section>;
 }
