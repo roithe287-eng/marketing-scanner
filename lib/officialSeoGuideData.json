@@ -1,0 +1,5107 @@
+[
+  {
+    "id": "google-search-docs",
+    "engine": "google",
+    "title": "문서",
+    "url": "https://developers.google.com/search/docs?hl=ko",
+    "category": "검색 가이드",
+    "topic": "basics",
+    "guidance": [
+      "기본 요건·수집/색인·검색 노출·실적·서비스별 최적화를 나누어 적용합니다. 문서 적용 범위와 계정에서 확인할 사항을 먼저 정합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-essentials",
+    "engine": "google",
+    "title": "개요",
+    "url": "https://developers.google.com/search/docs/essentials?hl=ko",
+    "category": "검색 Essentials",
+    "topic": "basics",
+    "guidance": [
+      "기술 요건·스팸 정책·주요 권장사항을 함께 확인합니다. 검색 결과 참여에는 비용 지불이나 노출 보장이 없습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-fundamentals-seo-starter-guide",
+    "engine": "google",
+    "title": "SEO 기본 가이드",
+    "url": "https://developers.google.com/search/docs/fundamentals/seo-starter-guide?hl=ko",
+    "category": "기본",
+    "topic": "basics",
+    "guidance": [
+      "발견 가능한 링크·명확한 URL·중복 정리·유용한 콘텐츠·검색 제목과 설명·이미지/동영상·홍보를 함께 개선합니다. meta keywords·고정 단어 수·키워드 밀도를 합격선으로 쓰지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-essentials-technical",
+    "engine": "google",
+    "title": "기술 요구사항",
+    "url": "https://developers.google.com/search/docs/essentials/technical?hl=ko",
+    "category": "검색 Essentials",
+    "topic": "crawl",
+    "guidance": [
+      "Googlebot 접근, 정상 콘텐츠가 있는 HTTP 200, 색인 가능한 콘텐츠라는 최소 요건을 확인합니다. 충족 자체가 색인을 보장하지는 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-fundamentals-how-search-works",
+    "engine": "google",
+    "title": "Google 검색 작동 방식",
+    "url": "https://developers.google.com/search/docs/fundamentals/how-search-works?hl=ko",
+    "category": "기본",
+    "topic": "basics",
+    "guidance": [
+      "크롤링·색인 생성·검색결과 게재를 서로 다른 단계로 기록합니다. 언어·관련성·지역·기기 등의 선택 결과를 URL 접근 성공과 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-essentials-spam-policies",
+    "engine": "google",
+    "title": "스팸 정책",
+    "url": "https://developers.google.com/search/docs/essentials/spam-policies?hl=ko",
+    "category": "검색 Essentials",
+    "topic": "spam",
+    "guidance": [
+      "클로킹·도어웨이·만료 도메인·해킹·숨긴 링크·키워드 남용·링크 스팸·자동 트래픽·악의적 행위·사기·대량 콘텐츠·사이트 평판 악용·스크래핑·부적절한 이동·뒤로 가기 가로채기 등을 검토합니다. 정상적인 펼침 UI와 AI 사용 자체는 위반으로 단정하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-fundamentals-using-gen-ai-content",
+    "engine": "google",
+    "title": "생성형 AI 사용에 관한 가이드",
+    "url": "https://developers.google.com/search/docs/fundamentals/using-gen-ai-content?hl=ko",
+    "category": "기본",
+    "topic": "ai",
+    "guidance": [
+      "생성형 AI 결과의 정확성·품질·관련성을 검토하고 사용 맥락·작성 과정을 필요한 곳에 설명합니다. 대량 저가치 생성과 허위 메타데이터·리뷰를 피합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-fundamentals-get-started",
+    "engine": "google",
+    "title": "사이트의 검색엔진 최적화 유지",
+    "url": "https://developers.google.com/search/docs/fundamentals/get-started?hl=ko",
+    "category": "기본",
+    "topic": "basics",
+    "guidance": [
+      "일상 운영에서 접근·중복·리소스·사이트맵·다국어·이전·노출 유형과 콘텐츠 품질을 함께 관리합니다. 큰 변경 후 Search Console 결과를 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-fundamentals-ai-optimization-guide",
+    "engine": "google",
+    "title": "생성형 AI 최적화",
+    "url": "https://developers.google.com/search/docs/fundamentals/ai-optimization-guide?hl=ko",
+    "category": "기본",
+    "topic": "ai",
+    "guidance": [
+      "기존 검색 요건, 독창적인 답과 명확한 구조, 정확한 지역/상품 데이터를 유지합니다. llms.txt나 특별 AI 마크업을 필수로 만들지 않고 검색 AI 성과를 실제 보고서로 측정합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-fundamentals-creating-helpful-content",
+    "engine": "google",
+    "title": "유용하고 신뢰할 수 있는 사용자 중심 콘텐츠 제작하기",
+    "url": "https://developers.google.com/search/docs/fundamentals/creating-helpful-content?hl=ko",
+    "category": "기본",
+    "topic": "content",
+    "guidance": [
+      "누가·어떻게·왜 만들었는지, 독창성·경험·근거·독자 목적·충분한 답을 평가합니다. E-E-A-T를 단일 수치 또는 직접적인 점수로 환산하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-fundamentals-do-i-need-seo",
+    "engine": "google",
+    "title": "검색엔진 최적화가 필요한가요?",
+    "url": "https://developers.google.com/search/docs/fundamentals/do-i-need-seo?hl=ko",
+    "category": "기본",
+    "topic": "basics",
+    "guidance": [
+      "담당자의 작업 내용·근거·사례·소유 권한·변경 기록을 확인합니다. 1위 보장·비밀 기법·그림자 도메인·링크 조작과 광고 비용을 자연 검색 등록 비용으로 설명하는 제안을 거릅니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-fundamentals-third-party-seo",
+    "engine": "google",
+    "title": "서드 파티 검색엔진 최적화 도구 및 조언에 관한 안내",
+    "url": "https://developers.google.com/search/docs/fundamentals/third-party-seo?hl=ko",
+    "category": "기본",
+    "topic": "basics",
+    "guidance": [
+      "외부 도구의 점수·추정과 Google 공식 요건을 분리합니다. 조언의 근거·방법·사이트 적용성을 확인하고 도구 경고 자체를 검색 불이익으로 단정하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing",
+    "engine": "google",
+    "title": "개요",
+    "url": "https://developers.google.com/search/docs/crawling-indexing?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "crawl",
+    "guidance": [
+      "발견·크롤링·렌더링·색인·제외를 단계별로 확인합니다. 사이트 전체의 접근 상태는 로그와 Search Console에서 대조합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-fundamentals-get-started-developers",
+    "engine": "google",
+    "title": "Google 검색 개발자 가이드",
+    "url": "https://developers.google.com/search/docs/fundamentals/get-started-developers?hl=ko",
+    "category": "기본",
+    "topic": "javascript",
+    "guidance": [
+      "실제 링크, 텍스트 콘텐츠, JS 렌더링, 변경 알림, 대체 언어/모바일 버전, 색인 지시와 구조화 데이터를 개발 검수에 포함합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-links-crawlable",
+    "engine": "google",
+    "title": "링크",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/links-crawlable?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "links",
+    "guidance": [
+      "실제 a[href]와 간결하고 문맥에 맞는 앵커를 사용합니다. 이미지 링크에는 적절한 alt를 제공하고 중요 페이지를 다른 페이지에서 찾을 수 있게 연결합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-indexable-file-types",
+    "engine": "google",
+    "title": "Google에서 색인을 생성할 수 있는 파일 형식",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/indexable-file-types?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "index",
+    "guidance": [
+      "HTML 외 문서·텍스트·미디어의 지원 파일 형식과 색인 가능한 내용을 확인합니다. 파일명 확장자만으로 실제 응답 형식이나 색인 여부를 판단하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-url-structure",
+    "engine": "google",
+    "title": "URL 구조",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/url-structure?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "links",
+    "guidance": [
+      "표준 URL 인코딩·대소문자·하이픈·일반적인 매개변수 구분을 사용합니다. fragment로 독립 내용을 바꾸지 않고 세션·필터·무한 달력으로 URL이 폭증하는 것을 관리합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-sitemaps-overview",
+    "engine": "google",
+    "title": "사이트맵 알아보기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/overview?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "sitemap",
+    "guidance": [
+      "대규모·신규·링크가 적은 사이트와 미디어 페이지에서 사이트맵 필요성을 판단합니다. 작은 연결된 사이트의 사이트맵 부재를 자동 색인 실패로 보지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-sitemaps-image-sitemaps",
+    "engine": "google",
+    "title": "이미지 사이트맵",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/image-sitemaps?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "sitemap",
+    "guidance": [
+      "image 네임스페이스와 image:image/image:loc를 사용하고 URL당 최대 1,000개 이미지를 대조합니다. 외부 이미지 호스트 소유권·접근과 지원 중단된 태그를 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-sitemaps-news-sitemap",
+    "engine": "google",
+    "title": "뉴스 사이트맵",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/news-sitemap?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "sitemap",
+    "guidance": [
+      "최근 2일 뉴스만 남기고 파일당 뉴스 항목 최대 1,000개를 유지합니다. publication 이름/언어, publication_date, title과 뉴스 네임스페이스를 검증합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-sitemaps-large-sitemaps",
+    "engine": "google",
+    "title": "사이트맵 색인 파일로 사이트맵 관리",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/large-sitemaps?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "sitemap",
+    "guidance": [
+      "사이트맵 인덱스의 loc와 실제 수정일을 유지합니다. 인덱스의 파일 크기·항목 한도, 하위 파일의 위치/호스트·제출 권한을 확인하고 초과분을 나눕니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-sitemaps-build-sitemap",
+    "engine": "google",
+    "title": "사이트맵 제작 및 제출하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/build-sitemap?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "sitemap",
+    "guidance": [
+      "압축 해제 50MB·URL 50,000개 이하, UTF-8, 절대 대표 URL과 정확한 lastmod를 사용합니다. XML·텍스트·RSS/Atom 방식별 조건을 지키고 priority/changefreq를 순위 조절 수단으로 쓰지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-sitemaps-combine-sitemap-extensions",
+    "engine": "google",
+    "title": "사이트맵 확장 프로그램 통합",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/combine-sitemap-extensions?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "sitemap",
+    "guidance": [
+      "이미지·영상·뉴스·언어별 확장의 네임스페이스를 선언하고 각 확장 요소를 올바른 url 아래에 결합합니다. 한 확장을 추가했다고 다른 확장의 필수 항목을 생략하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-ask-google-to-recrawl",
+    "engine": "google",
+    "title": "Google에 URL 재크롤링 요청하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/ask-google-to-recrawl?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "index",
+    "guidance": [
+      "소수 URL은 소유 권한을 가진 URL 검사, 다수는 사이트맵으로 요청합니다. 반복 요청으로 속도를 보장하거나 수락을 색인 완료로 세지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-sitemaps-video-sitemaps",
+    "engine": "google",
+    "title": "동영상 사이트맵 및 대안",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/sitemaps/video-sitemaps?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "sitemap",
+    "guidance": [
+      "영상 네임스페이스와 썸네일·제목·설명·content_loc 또는 player_loc를 제공하고 안정적인 접근을 확인합니다. 기간·라이브·제한 등 선택 정보를 실제 영상 조건과 맞추고 mRSS 대안을 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-troubleshoot-crawling-errors",
+    "engine": "google",
+    "title": "크롤링 오류 문제 해결하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/troubleshoot-crawling-errors?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "crawl",
+    "guidance": [
+      "Page indexing·Crawl stats·URL 검사에서 DNS/연결·서버 응답·robots·이동·권한 오류를 구분합니다. 실제 Googlebot 응답과 스캐너의 한 번 수신 결과를 동일시하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-docs-crawlers-fetchers-overview-google-crawlers",
+    "engine": "google",
+    "title": "Google 크롤러 목록",
+    "url": "https://developers.google.com/crawling/docs/crawlers-fetchers/overview-google-crawlers?hl=ko",
+    "category": "크롤러 명세",
+    "topic": "crawl",
+    "guidance": [
+      "공통 크롤러·특수 목적 크롤러·사용자 요청 fetcher의 토큰·IP·robots 동작을 구분합니다. Google-Extended를 Google 검색용 Googlebot 제어로 혼동하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-googlebot",
+    "engine": "google",
+    "title": "Googlebot",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/googlebot?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "crawl",
+    "guidance": [
+      "Googlebot 스마트폰/데스크톱을 구분하고 실제 IP를 검증합니다. HTML·지원 텍스트는 압축 해제 첫 2MB, PDF는 첫 64MB 수집 한도를 고려하며 각 외부 리소스도 별도 한도가 있습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-docs-crawlers-fetchers-reduce-crawl-rate",
+    "engine": "google",
+    "title": "Google 크롤링 속도 낮추기",
+    "url": "https://developers.google.com/crawling/docs/crawlers-fetchers/reduce-crawl-rate?hl=ko",
+    "category": "크롤러 명세",
+    "topic": "crawl",
+    "guidance": [
+      "일시 과부하는 503/429 등 적절한 신호와 서버 수용량 조정을 검토합니다. 장기간 차단은 색인에 영향을 줄 수 있어 복구 후 크롤링과 오류를 모니터링합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-robots-intro",
+    "engine": "google",
+    "title": "Robots.txt 소개",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/robots/intro?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "crawl",
+    "guidance": [
+      "robots는 크롤링 제어이며 비공개 보호나 검색 삭제 도구가 아닙니다. 호스트별 루트 파일과 리소스 규칙, 다른 사이트가 링크한 차단 URL의 노출 가능성을 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-docs-crawlers-fetchers-verifying-googlebot",
+    "engine": "google",
+    "title": "Googlebot과 다른 Google 크롤러 확인",
+    "url": "https://developers.google.com/crawling/docs/crawlers-fetchers/verifying-googlebot?hl=ko",
+    "category": "크롤러 명세",
+    "topic": "crawl",
+    "guidance": [
+      "역방향 DNS의 공식 도메인과 정방향 IP를 대조하거나 공식 IP JSON 범위를 사용합니다. User-Agent 이름만으로 허용 목록에 추가하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-canonicalization",
+    "engine": "google",
+    "title": "URL 표준화의 정의",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/canonicalization?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "canonical",
+    "guidance": [
+      "중복 콘텐츠 그룹에서 대표 URL을 선택하는 신호와 실제 Google 선택 결과를 구분합니다. 대표 주소 지정이 명령이나 모든 URL의 필수 태그는 아닙니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-docs-robots-txt-robots-txt-spec",
+    "engine": "google",
+    "title": "Google에서 robots.txt 사양을 해석하는 방법",
+    "url": "https://developers.google.com/crawling/docs/robots-txt/robots-txt-spec?hl=ko",
+    "category": "크롤러 명세",
+    "topic": "crawl",
+    "guidance": [
+      "호스트·프로토콜·포트 범위, 가장 구체적인 user-agent/경로 규칙·동률 Allow, 인코딩·500KiB 한도·캐시·HTTP 오류별 처리와 sitemap 지시를 확인합니다. noindex를 robots.txt에 넣지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-canonicalization-troubleshooting",
+    "engine": "google",
+    "title": "표준화 문제 해결하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/canonicalization-troubleshooting?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "canonical",
+    "guidance": [
+      "URL 검사로 선언 주소와 Google 선택 주소를 비교합니다. 잘못된 태그·사이트 이전·HTTPS·언어·리디렉션·사이트맵 등 서로 충돌하는 신호를 일치시킵니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-consolidate-duplicate-urls",
+    "engine": "google",
+    "title": "rel=\"canonical\" 및 다른 메서드로 표준 URL을 지정하는 방법",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/consolidate-duplicate-urls?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "canonical",
+    "guidance": [
+      "리디렉션·head의 rel canonical·HTTP Link·사이트맵·내부 링크를 일치시킵니다. 절대 URL을 권장하되 상대 URL도 해석 가능하며 fragment·robots/noindex로 대표 주소를 지정하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-amp",
+    "engine": "google",
+    "title": "Google 검색에서의 AMP 정보",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/amp?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "special",
+    "guidance": [
+      "AMP를 운영하는 경우에만 AMP 유효성·일반 페이지와의 콘텐츠 동등성·연결·색인 가능성을 확인합니다. AMP 자체를 검색 순위의 필수 요건으로 보지 않습니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-mobile-mobile-sites-mobile-first-indexing",
+    "engine": "google",
+    "title": "모바일 사이트 및 모바일 중심 색인 생성",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "mobile",
+    "guidance": [
+      "모바일의 본문·메타·이미지/alt·영상·구조화 데이터가 데스크톱과 동등하고 봇이 접근 가능한지 확인합니다. 별도 m. 주소는 일대일 연결하고 기본 상호작용 없이 콘텐츠를 로드합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-amp-enhance-amp",
+    "engine": "google",
+    "title": "AMP 콘텐츠 개선하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/amp/enhance-amp?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "special",
+    "guidance": [
+      "AMP 캐시·이미지·구조화 데이터·페이지 동작과 관련 검색 기능 조건을 검증합니다. 일반 페이지와 브랜드·콘텐츠·메타 정보를 일치시킵니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-amp-validate-amp",
+    "engine": "google",
+    "title": "AMP 콘텐츠 유효성 검사하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/amp/validate-amp?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "special",
+    "guidance": [
+      "AMP 검증 도구 및 Search Console에서 문법 오류·리소스·필수 마크업을 확인합니다. 테스트 통과와 실제 검색 노출을 별도로 기록합니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-javascript-javascript-seo-basics",
+    "engine": "google",
+    "title": "자바스크립트 검색엔진 최적화의 기본사항 이해하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/javascript-seo-basics?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "javascript",
+    "guidance": [
+      "200 응답의 수집·렌더링·색인을 구분하고 head·본문·링크·canonical·리소스를 렌더링 결과에서 확인합니다. 초기 noindex나 JS 오류가 렌더링·색인을 막지 않도록 합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-amp-remove-amp",
+    "engine": "google",
+    "title": "AMP 콘텐츠 삭제하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/amp/remove-amp?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "migration",
+    "guidance": [
+      "AMP 제거 방식에 맞춰 canonical/amphtml·이동·오류 응답을 정리하고 캐시와 검색 재수집을 확인합니다. 대체 일반 페이지의 콘텐츠와 접근을 유지합니다."
+    ],
+    "applicability": "사이트 이전·실험·중단 등 해당 변경을 진행하는 경우",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-javascript-dynamic-rendering",
+    "engine": "google",
+    "title": "동적 렌더링을 사용하여 대처",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/dynamic-rendering?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "javascript",
+    "guidance": [
+      "동적 렌더링은 제한적 호환 문제의 우회책으로 검토합니다. 장기 구현은 SSR·정적 생성·하이드레이션 등을 검토하고 봇/사용자 콘텐츠의 동등성을 유지합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-javascript-fix-search-javascript",
+    "engine": "google",
+    "title": "검색 관련 자바스크립트 문제 해결하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/fix-search-javascript?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "javascript",
+    "guidance": [
+      "URL 검사·리치 결과 테스트의 렌더링 화면과 HTML·콘솔·차단 리소스를 확인합니다. JS 리디렉션·soft 404·캐시 버전·권한 및 기능 감지 문제를 실제 재현 후 수정합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-javascript-lazy-loading",
+    "engine": "google",
+    "title": "지연 로드 콘텐츠 문제 해결하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "javascript",
+    "guidance": [
+      "클릭·스크롤 같은 사용자 동작 없이 필요한 콘텐츠가 렌더링되도록 합니다. 지연 이미지의 src와 무한 스크롤의 개별 URL·링크를 제공하고 렌더링 화면에서 모두 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-valid-page-metadata",
+    "engine": "google",
+    "title": "페이지 메타데이터",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/valid-page-metadata?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "metadata",
+    "guidance": [
+      "head에는 유효한 메타데이터 요소만 두고 body용 이미지·iframe 등으로 head 파싱이 끝나기 전에 title·description·canonical을 배치합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-block-indexing",
+    "engine": "google",
+    "title": "noindex",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/block-indexing?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "index",
+    "guidance": [
+      "noindex를 메타 또는 X-Robots-Tag로 제공하고 Googlebot이 읽을 수 있게 합니다. robots 차단과 인증 기반 비공개 보호를 구분하고 URL 검사에서 처리 상태를 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-special-tags",
+    "engine": "google",
+    "title": "Google에서 지원하는 메타 태그 및 HTML 속성",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/special-tags?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "metadata",
+    "guidance": [
+      "Google 지원 메타와 data-nosnippet 등 HTML 속성만 목적에 맞게 사용합니다. meta keywords나 Content-Language/lang 단독을 순위·언어 판정 요건으로 만들지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-robots-meta-tag",
+    "engine": "google",
+    "title": "로봇 메타 태그, data-nosnippet 및 X-Robots-Tag",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "index",
+    "guidance": [
+      "generic robots와 Googlebot 전용 메타·HTTP 헤더의 가장 제한적인 유효 규칙을 적용합니다. head/body 메타를 모두 읽고 noindex·nosnippet·max-*·unavailable_after·indexifembedded의 목적·조건·값을 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-qualify-outbound-links",
+    "engine": "google",
+    "title": "rel 속성",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/qualify-outbound-links?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "links",
+    "guidance": [
+      "유료/제휴 링크는 sponsored(또는 nofollow), 사용자 작성 링크는 ugc로 표시하고 여러 rel을 함께 사용할 수 있습니다. 일반 인용 링크를 일괄 차단하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-prevent-images-on-your-page",
+    "engine": "google",
+    "title": "이미지 삭제",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/prevent-images-on-your-page?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "index",
+    "guidance": [
+      "이미지 파일의 로봇 접근·noindex 헤더·삭제 응답과 필요한 임시 삭제 도구를 구분합니다. 이미지 URL과 이미지를 담은 페이지 URL의 제외 범위를 혼동하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-remove-information",
+    "engine": "google",
+    "title": "페이지 삭제",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/remove-information?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "index",
+    "guidance": [
+      "소유 콘텐츠의 원본 삭제·인증·noindex와 임시 삭제 요청의 기간을 구분합니다. 다른 소유자의 콘텐츠는 해당 공식 요청 절차를 사용하고 robots만으로 영구 제거를 기대하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-keep-redacted-information-out",
+    "engine": "google",
+    "title": "수정된 정보",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/keep-redacted-information-out?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "index",
+    "guidance": [
+      "화면에서 가리는 것만으로 민감 정보가 제거되었다고 보지 않습니다. 원본 파일·메타데이터·이전 버전·텍스트 레이어를 정리하고 공개본과 검색 캐시 처리를 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-control-what-you-share",
+    "engine": "google",
+    "title": "Google과 공유하는 정보 관리하기",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/control-what-you-share?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "index",
+    "guidance": [
+      "공개 범위를 원본·인증·크롤링·색인·스니펫 단계별로 결정합니다. 정보 비공개에는 실제 인증을 적용하고 검색 지시를 접근 보안으로 사용하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-301-redirects",
+    "engine": "google",
+    "title": "리디렉션 및 Google 검색",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/301-redirects?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "migration",
+    "guidance": [
+      "영구 이동은 301/308, 임시는 302/303/307 등 목적에 맞는 서버 응답을 검토합니다. meta refresh·JS 이동보다 서버 이동을 우선하고 체인·루프·무관한 홈 이동을 피합니다."
+    ],
+    "applicability": "사이트 이전·실험·중단 등 해당 변경을 진행하는 경우",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-website-testing",
+    "engine": "google",
+    "title": "A/B 테스트",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/website-testing?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "migration",
+    "guidance": [
+      "A/B 테스트는 봇을 속이지 않고 대체 URL의 canonical과 임시 302를 사용합니다. 필요한 기간만 운영하고 종료 후 원래 URL·내용·링크를 정리합니다."
+    ],
+    "applicability": "사이트 이전·실험·중단 등 해당 변경을 진행하는 경우",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-site-move-with-url-changes",
+    "engine": "google",
+    "title": "URL이 변경되는 사이트 이동",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/site-move-with-url-changes?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "migration",
+    "guidance": [
+      "이전 전 권한·URL별 매핑·새 사이트를 준비하고 영구 이동·내부 링크·canonical·사이트맵을 갱신합니다. 리디렉션 최소 1년 유지 권장을 검토하고 이전/신규 URL의 실적·오류를 추적합니다."
+    ],
+    "applicability": "사이트 이전·실험·중단 등 해당 변경을 진행하는 경우",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-site-move-no-url-changes",
+    "engine": "google",
+    "title": "호스팅 변경",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/site-move-no-url-changes?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "migration",
+    "guidance": [
+      "새 호스팅의 복제·접근·TLS·성능을 확인한 뒤 DNS TTL과 레코드를 조정합니다. 두 서버 로그로 전환을 확인하고 기존 서버를 너무 일찍 종료하지 않습니다."
+    ],
+    "applicability": "사이트 이전·실험·중단 등 해당 변경을 진행하는 경우",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-ai-features",
+    "engine": "google",
+    "title": "AI 기능",
+    "url": "https://developers.google.com/search/docs/appearance/ai-features?hl=ko",
+    "category": "검색 노출",
+    "topic": "ai",
+    "guidance": [
+      "색인·스니펫 허용 등 검색 기본 요건과 Search Console의 생성형 AI 참여 및 상위 속성 상속을 확인합니다. 별도 AI 파일을 필수로 요구하지 않고 noindex/스니펫 지시와 계정 설정의 영향을 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-crawling-indexing-pause-online-business",
+    "engine": "google",
+    "title": "일시적으로 웹사이트 일시중지 또는 사용 중지",
+    "url": "https://developers.google.com/search/docs/crawling-indexing/pause-online-business?hl=ko",
+    "category": "크롤링·색인",
+    "topic": "migration",
+    "guidance": [
+      "단기 휴업은 정보 페이지를 유지하면서 주문·재고를 조정하는 방법을 검토합니다. 장기 503·전체 noindex·사이트 삭제의 영향을 구분하고 구조화 데이터·피드·사업 정보를 갱신합니다."
+    ],
+    "applicability": "사이트 이전·실험·중단 등 해당 변경을 진행하는 경우",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance",
+    "engine": "google",
+    "title": "개요",
+    "url": "https://developers.google.com/search/docs/appearance?hl=ko",
+    "category": "검색 노출",
+    "topic": "appearance",
+    "guidance": [
+      "검색 노출 유형별 요건·국가/언어·마크업·정책을 확인합니다. 유효한 구현이 항상 해당 표시를 보장하지는 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-publication-dates",
+    "engine": "google",
+    "title": "서명일",
+    "url": "https://developers.google.com/search/docs/appearance/publication-dates?hl=ko",
+    "category": "검색 노출",
+    "topic": "content",
+    "guidance": [
+      "눈에 보이는 게시/수정일과 datePublished/dateModified를 실제 변경·시간대에 맞춥니다. 행사 날짜나 미래 날짜를 게시일로 쓰거나 내용 변경 없이 날짜만 갱신하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-favicon-in-search",
+    "engine": "google",
+    "title": "파비콘",
+    "url": "https://developers.google.com/search/docs/appearance/favicon-in-search?hl=ko",
+    "category": "검색 노출",
+    "topic": "images",
+    "guidance": [
+      "호스트 홈페이지의 파비콘 링크와 Googlebot/Googlebot-Image 접근을 확인합니다. 실제 파일은 정사각형 8×8 이상, 48×48 초과 권장이며 안정된 URL·브랜드 적합성과 지원 형식을 유지합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-google-discover",
+    "engine": "google",
+    "title": "Google 디스커버",
+    "url": "https://developers.google.com/search/docs/appearance/google-discover?hl=ko",
+    "category": "검색 노출",
+    "topic": "media",
+    "guidance": [
+      "Discover 콘텐츠 정책·제목의 정확성·고유 가치를 확인합니다. 큰 대표 이미지는 너비 1,200px 이상과 max-image-preview:large 또는 AMP 허용을 검토하고 클릭을 유도하는 왜곡을 피합니다."
+    ],
+    "applicability": "해당 동영상·뉴스·스토리 기능을 운영하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-featured-snippets",
+    "engine": "google",
+    "title": "추천 스니펫",
+    "url": "https://developers.google.com/search/docs/appearance/featured-snippets?hl=ko",
+    "category": "검색 노출",
+    "topic": "appearance",
+    "guidance": [
+      "답이 명확한 본문을 제공하되 추천 스니펫을 강제 지정할 수는 없습니다. 표시 제한은 nosnippet·data-nosnippet·max-snippet의 효과와 한계를 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-flexible-sampling",
+    "engine": "google",
+    "title": "유연한 샘플링",
+    "url": "https://developers.google.com/search/docs/appearance/flexible-sampling?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "구독 서비스는 계량형 접근 또는 도입부 공개 중 모델을 정하고 신규 독자·전환 영향을 측정합니다. 공개/유료 콘텐츠 구분과 페이월 마크업을 실제 정책과 맞춥니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-top-places-list",
+    "engine": "google",
+    "title": "인기 장소 목록",
+    "url": "https://developers.google.com/search/docs/appearance/top-places-list?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "실제 장소 추천 목록에 고유한 편집 판단·설명과 정확한 장소 링크를 제공합니다. 자동 생성된 무관한 목록이나 광고를 선정 결과로 가장하지 않습니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-establish-business-details",
+    "engine": "google",
+    "title": "비즈니스 세부정보",
+    "url": "https://developers.google.com/search/docs/appearance/establish-business-details?hl=ko",
+    "category": "검색 노출",
+    "topic": "appearance",
+    "guidance": [
+      "홈페이지·Business Profile·Organization/LocalBusiness·공식 프로필의 이름·주소·전화·로고를 일치시킵니다. 소유권을 확인하고 실제 사업 정보의 변경을 반영합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-google-images",
+    "engine": "google",
+    "title": "이미지",
+    "url": "https://developers.google.com/search/docs/appearance/google-images?hl=ko",
+    "category": "검색 노출",
+    "topic": "images",
+    "guidance": [
+      "문맥에 맞는 이미지·파일 이름·alt·페이지 제목/설명, img src·반응형 대체, 사이트맵과 접근 가능한 원본을 확인합니다. 지원 형식·화질·속도·라이선스를 대조하고 CSS 배경만으로 핵심 이미지를 제공하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-core-web-vitals",
+    "engine": "google",
+    "title": "Core Web Vitals",
+    "url": "https://developers.google.com/search/docs/appearance/core-web-vitals?hl=ko",
+    "category": "검색 노출",
+    "topic": "mobile",
+    "guidance": [
+      "실사용자 데이터의 LCP ≤2.5초, INP ≤200ms, CLS ≤0.1을 기기·기간·75백분위 기준으로 확인합니다. 실험실 테스트나 HTML 수신 시간으로 실사용자 지표를 대체하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-avoid-intrusive-interstitials",
+    "engine": "google",
+    "title": "전면 광고 및 대화상자",
+    "url": "https://developers.google.com/search/docs/appearance/avoid-intrusive-interstitials?hl=ko",
+    "category": "검색 노출",
+    "topic": "mobile",
+    "guidance": [
+      "본문을 가리는 전면 광고·큰 팝업을 줄이고 작은 배너·명확한 닫기를 제공합니다. 법적 동의·연령 확인 등 필요한 예외를 보존하면서 사용성을 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-page-experience",
+    "engine": "google",
+    "title": "페이지 경험 이해하기",
+    "url": "https://developers.google.com/search/docs/appearance/page-experience?hl=ko",
+    "category": "검색 노출",
+    "topic": "mobile",
+    "guidance": [
+      "성능·HTTPS·모바일 사용·본문 접근·광고 방해 등 전반적 경험을 검토합니다. 단일 도구 점수를 순위의 보장 또는 유일한 요건으로 쓰지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-webmasters-answer-3035947",
+    "engine": "google",
+    "title": "지역 검색 결과 선택 해제",
+    "url": "https://support.google.com/webmasters/answer/3035947?hl=ko",
+    "category": "검색 가이드",
+    "topic": "special",
+    "guidance": [
+      "Search Console에서 지역 검색·Shopping·Flights·Hotels/공유숙박에 대한 표시 제외 설정을 확인합니다. 도메인 전체와 하위 도메인에 적용되며 개별 하위 도메인/디렉터리만 지정할 수 없습니다. 별도 도메인은 각각 설정하고 기존 표시는 설정 후 30일 이내 제거 안내를 확인합니다. 지역 검색에는 전 세계, 나머지 대상에는 google.com에서 제공하는 서비스 범위를 구분합니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed",
+    "reviewedUrl": "https://support.google.com/webmasters/answer/3035947?hl=en",
+    "reviewNote": "한국어 페이지의 요청 제한으로 동일 문서의 영문 공식 원문 대조"
+  },
+  {
+    "id": "google-appearance-preferred-sources",
+    "engine": "google",
+    "title": "선호하는 출처",
+    "url": "https://developers.google.com/search/docs/appearance/preferred-sources?hl=ko",
+    "category": "검색 노출",
+    "topic": "appearance",
+    "guidance": [
+      "지원되는 뉴스/검색 기능에서 독자가 출처를 선택하는 경로와 공식 링크·브랜드 사용 조건을 확인합니다. 독자의 선택을 사이트 운영자가 강제로 설정할 수는 없습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-ranking-systems-guide",
+    "engine": "google",
+    "title": "Google 검색 순위 시스템 가이드",
+    "url": "https://developers.google.com/search/docs/appearance/ranking-systems-guide?hl=ko",
+    "category": "검색 노출",
+    "topic": "content",
+    "guidance": [
+      "검색 시스템은 관련성·품질·신뢰·중복 제거·링크·원본성·최신성 등을 목적별로 조합합니다. 시스템 이름을 사이트가 설치해야 하는 태그나 고정 가중치 체크리스트로 바꾸지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-reviews-system",
+    "engine": "google",
+    "title": "리뷰 시스템",
+    "url": "https://developers.google.com/search/docs/appearance/reviews-system?hl=ko",
+    "category": "검색 노출",
+    "topic": "content",
+    "guidance": [
+      "실제 체험·시험·비교, 정량 근거·장단점·경쟁 대안·추천 이유를 제공합니다. 제품 설명 재서술이나 보상성·가짜 경험을 독립 리뷰로 표시하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-aggregator-features",
+    "engine": "google",
+    "title": "개요",
+    "url": "https://developers.google.com/search/docs/appearance/aggregator-features?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "EEA 등 대상 지역의 애그리게이터/공급업체 기능은 실제 업종·서비스·데이터·참여 조건을 먼저 확인합니다. 모든 사이트의 공통 필수 기능으로 적용하지 않습니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-spam-updates",
+    "engine": "google",
+    "title": "스팸 업데이트",
+    "url": "https://developers.google.com/search/docs/appearance/spam-updates?hl=ko",
+    "category": "검색 노출",
+    "topic": "spam",
+    "guidance": [
+      "업데이트 완료 여부와 정책 위반을 구분해 조사합니다. 원인을 제거하고 재크롤링·재평가를 기다리며 단기 등락을 자동 벌점이나 즉시 복구 기한으로 단정하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-core-updates",
+    "engine": "google",
+    "title": "핵심 업데이트",
+    "url": "https://developers.google.com/search/docs/appearance/core-updates?hl=ko",
+    "category": "검색 노출",
+    "topic": "monitoring",
+    "guidance": [
+      "업데이트 기간과 데이터 집계 조건을 확인한 뒤 페이지·검색어별 변화를 대조합니다. 작은 등락은 성급히 전면 수정하지 않고 큰 하락은 콘텐츠·수요·기술 원인을 분리합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-aggregator-unit",
+    "engine": "google",
+    "title": "애그리게이터 단위",
+    "url": "https://developers.google.com/search/docs/appearance/aggregator-unit?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "대상 지역의 애그리게이터 단위에 해당하는 콘텐츠·대상 업종·정책·참여 절차를 확인합니다. 일반 SEO와 기능 자격 심사를 구분합니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-supplier-unit",
+    "engine": "google",
+    "title": "공급업체 단위",
+    "url": "https://developers.google.com/search/docs/appearance/supplier-unit?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "직접 공급업체 여부·지원 지역/업종·사용 가능한 데이터 제출 방식과 참여 요건을 확인합니다. 자격 조건이 없는 사이트의 누락 오류로 표시하지 않습니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-job-sites",
+    "engine": "google",
+    "title": "채용 정보 사이트 기능",
+    "url": "https://developers.google.com/search/docs/appearance/job-sites?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "채용 사이트 기능의 대상 지역·제공 형태와 정책·참여 조건을 확인합니다. 개별 JobPosting 상세 마크업과 사이트 단위 자격을 구분합니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-ecosystem-carousel",
+    "engine": "google",
+    "title": "생태계 캐러셀",
+    "url": "https://developers.google.com/search/docs/appearance/ecosystem-carousel?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "해당 지역의 생태계 캐러셀에 참여할 때만 API·사이트 연결·콘텐츠 제공 요건을 확인합니다. 일반 구조화 데이터 캐러셀과 신청 경로를 혼동하지 않습니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-places-sites",
+    "engine": "google",
+    "title": "장소 사이트 기능",
+    "url": "https://developers.google.com/search/docs/appearance/places-sites?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "장소 사이트 기능의 지원 지역·실제 장소 콘텐츠·자격과 신청 조건을 확인합니다. 장소를 나열했다는 이유만으로 참여 완료로 보지 않습니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-site-names",
+    "engine": "google",
+    "title": "사이트 이름",
+    "url": "https://developers.google.com/search/docs/appearance/site-names?hl=ko",
+    "category": "검색 노출",
+    "topic": "appearance",
+    "guidance": [
+      "호스트 홈페이지의 WebSite name/url과 필요 시 alternateName을 실제 브랜드와 맞춥니다. 일관된 제목·OG·본문 신호를 제공하고 하위 디렉터리 이름을 별도 사이트 이름으로 강제하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-structured-data-carousels-beta",
+    "engine": "google",
+    "title": "구조화된 데이터 캐러셀(베타)",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/carousels-beta?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "베타 캐러셀의 지원 지역·기기·업종과 ItemList/개별 유형을 확인합니다. 목록의 3개 이상 항목·같은 도메인 상세 URL·이미지 및 필요한 가격/평점을 실제 콘텐츠와 맞춥니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "ItemList",
+        "required": [
+          "itemListElement",
+          "itemListElement.item",
+          "itemListElement.position"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "일반적인 목록 항목 속성(LocalBusiness, Product,, Event)",
+        "required": [
+          "image",
+          "name",
+          "url"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "일반적인 목록 항목 속성(LocalBusiness, Product,, Event)",
+        "required": [],
+        "recommended": [
+          "aggregateRating.bestRating",
+          "aggregateRating.ratingCount",
+          "aggregateRating.ratingValue"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "LocalBusiness(및 하위유형)",
+        "required": [],
+        "recommended": [
+          "amenityFeature",
+          "priceRange",
+          "servesCuisine"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Product",
+        "required": [],
+        "recommended": [
+          "offers",
+          "offers.highPrice",
+          "offers.lowPrice",
+          "offers.price",
+          "offers.priceCurrency"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Event",
+        "required": [],
+        "recommended": [
+          "offers",
+          "offers.highPrice",
+          "offers.lowPrice",
+          "offers.price",
+          "offers.priceCurrency"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-search-profiles",
+    "engine": "google",
+    "title": "프로필 검색",
+    "url": "https://developers.google.com/search/docs/appearance/search-profiles?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "프로필 검색 기능의 대상 사이트·공개 프로필·배지/브랜드 규정을 확인합니다. 일반 ProfilePage 마크업의 문법 유효성과 기능 참여를 구분합니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-south-africa-features",
+    "engine": "google",
+    "title": "남아프리카 공화국 기능",
+    "url": "https://developers.google.com/search/docs/appearance/south-africa-features?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "남아프리카 대상 플랫폼·업종별 기능과 표기 자격을 확인합니다. 지역 전용 기능을 한국 일반 사이트의 필수 태그로 요구하지 않습니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-structured-data-intro-structured-data",
+    "engine": "google",
+    "title": "구조화된 데이터의 작동 방식 이해",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/intro-structured-data?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 페이지를 설명하는 유형과 JSON-LD·Microdata·RDFa를 선택합니다. 구문과 정책·필수 속성을 각각 검증하며 마크업이 있어도 리치 결과 노출은 보장되지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-snippet",
+    "engine": "google",
+    "title": "스니펫",
+    "url": "https://developers.google.com/search/docs/appearance/snippet?hl=ko",
+    "category": "검색 노출",
+    "topic": "appearance",
+    "guidance": [
+      "페이지별 고유한 설명과 유용한 본문을 제공합니다. 검색어에 따라 설명이 달라질 수 있고 고정 글자 수 제한이 아니며 nosnippet·max-snippet·data-nosnippet의 범위를 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-sitelinks",
+    "engine": "google",
+    "title": "사이트링크",
+    "url": "https://developers.google.com/search/docs/appearance/sitelinks?hl=ko",
+    "category": "검색 노출",
+    "topic": "appearance",
+    "guidance": [
+      "명확한 사이트 구조·제목·내부 앵커와 중복 정리를 유지합니다. 사이트링크는 자동 생성이며 노출을 강제 지정하거나 임의의 마크업으로 예약할 수 없습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-structured-data-sd-policies",
+    "engine": "google",
+    "title": "구조화된 데이터 일반 가이드라인",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/sd-policies?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "마크업을 사용자가 볼 수 있는 최신·정확한 콘텐츠에만 적용하고 접근 가능한 이미지·필수/권장 속성·완전한 항목을 검증합니다. 직접 조치·허위 리뷰·특정 유형 정책을 별도로 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-structured-data-generate-structured-data-with-javascript",
+    "engine": "google",
+    "title": "자바스크립트로 구조화된 데이터 생성",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/generate-structured-data-with-javascript?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "GTM·직접 JS·맞춤 코드가 렌더링 뒤 올바른 JSON-LD를 만드는지 URL 기반 리치 결과 테스트로 확인합니다. 예제에 없는 실제 값·중첩 객체와 본문 변경 시 동기화를 점검합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-structured-data-search-gallery",
+    "engine": "google",
+    "title": "모든 구조화된 데이터 기능",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/search-gallery?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "지원 기능 목록에서 페이지 목적에 맞는 유형을 고르고 해당 상세 문서의 자격·필수/권장 속성을 적용합니다. 목록에 있는 모든 타입을 한 페이지에 추가하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-enriched-search-results",
+    "engine": "google",
+    "title": "인리치드 검색결과",
+    "url": "https://developers.google.com/search/docs/appearance/enriched-search-results?hl=ko",
+    "category": "검색 노출",
+    "topic": "schema",
+    "guidance": [
+      "인리치드 검색은 지원되는 유형의 상세 페이지·완전한 데이터·기술/콘텐츠 정책을 충족해야 합니다. 페이지가 올바른 대상과 관계를 설명하는지 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-structured-data-article",
+    "engine": "google",
+    "title": "기사",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/article?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "Article/NewsArticle/BlogPosting의 저자·이미지·제목·게시/수정일을 실제 기사와 맞춥니다. 필수 속성이 없는 유형이므로 권장 속성 누락을 일괄 실패로 처리하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "Article 객체",
+        "required": [],
+        "recommended": [
+          "author",
+          "author.name",
+          "author.url",
+          "dateModified",
+          "datePublished",
+          "headline",
+          "image"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-breadcrumb",
+    "engine": "google",
+    "title": "탐색경로",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/breadcrumb?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "최소 2개의 ListItem으로 실제 사용자 탐색 경로를 표현하고 position/name/item을 확인합니다. 마지막 항목의 item 예외와 여러 경로의 독립 목록을 구분합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "BreadcrumbList",
+        "required": [
+          "itemListElement"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "ListItem",
+        "required": [
+          "position"
+        ],
+        "recommended": [],
+        "conditional": [
+          "item",
+          "name"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-course",
+    "engine": "google",
+    "title": "과정 목록",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/course?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 교육과정 이름·설명·제공자를 표시하고 과정 목록은 최소 3개와 ItemList 연결을 확인합니다. 지원 언어 및 노출 조건을 확인하고 단순 행사·광고를 과정으로 표시하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "Course",
+        "required": [
+          "description",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Course",
+        "required": [],
+        "recommended": [
+          "provider"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "ItemList",
+        "required": [
+          "itemListElement",
+          "ListItem.position",
+          "ListItem.url"
+        ],
+        "recommended": [],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-carousel",
+    "engine": "google",
+    "title": "캐러셀",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/carousel?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "지원되는 동일 유형의 최소 2개 항목으로 요약+상세 또는 단일 목록 방식을 선택합니다. ItemList 위치·URL·item을 선택한 방식에 맞추고 각 항목의 타입별 요건도 충족합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "ItemList",
+        "required": [
+          "itemListElement"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "요약 페이지",
+        "required": [
+          "position",
+          "url"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "올인원 페이지",
+        "required": [
+          "item",
+          "item.name",
+          "item.url",
+          "position"
+        ],
+        "recommended": [],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-book",
+    "engine": "google",
+    "title": "도서 작업",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/book?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "참여 자격을 확인한 뒤 Book 저작물과 판본·ISBN 및 ReadAction/BorrowAction 대상 링크를 구분합니다. 도서관 피드의 조직/회원·형식·크기·전체성·갱신 조건도 검증합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "DataFeed 항목",
+        "required": [
+          "@context",
+          "@type",
+          "dateModified"
+        ],
+        "recommended": [],
+        "conditional": [
+          "dataFeedElement"
+        ]
+      },
+      {
+        "scope": "Book(Work)",
+        "required": [
+          "@context",
+          "@id",
+          "@type",
+          "author",
+          "name",
+          "url",
+          "workExample"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Book(Work)",
+        "required": [],
+        "recommended": [
+          "sameAs"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Book(Edition)",
+        "required": [
+          "@id",
+          "@type",
+          "isbn",
+          "potentialAction"
+        ],
+        "recommended": [],
+        "conditional": [
+          "bookFormat",
+          "inLanguage"
+        ]
+      },
+      {
+        "scope": "Book(Edition)",
+        "required": [],
+        "recommended": [
+          "author",
+          "bookEdition",
+          "datePublished",
+          "identifier",
+          "name",
+          "sameAs",
+          "url"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Person 또는 Organization(author)",
+        "required": [
+          "@type",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Person 또는 Organization(author)",
+        "required": [],
+        "recommended": [
+          "sameAs"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "PropertyValue(식별자)",
+        "required": [
+          "@type",
+          "value"
+        ],
+        "recommended": [],
+        "conditional": [
+          "propertyID"
+        ]
+      },
+      {
+        "scope": "ReadAction(potentialAction)",
+        "required": [
+          "@type",
+          "expectsAcceptanceOf",
+          "expectsAcceptanceOf.@type",
+          "expectsAcceptanceOf.eligibleRegion",
+          "expectsAcceptanceOf.eligibleRegion.@type",
+          "expectsAcceptanceOf.eligibleRegion.name",
+          "target",
+          "target.@type",
+          "target.urlTemplate"
+        ],
+        "recommended": [],
+        "conditional": [
+          "expectsAcceptanceOf.category",
+          "target.actionPlatform"
+        ]
+      },
+      {
+        "scope": "ReadAction(potentialAction)",
+        "required": [],
+        "recommended": [
+          "expectsAcceptanceOf.availabilityEnds",
+          "expectsAcceptanceOf.availabilityStarts",
+          "expectsAcceptanceOf.price",
+          "expectsAcceptanceOf.priceCurrency"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "BorrowAction(potentialAction)",
+        "required": [
+          "@type",
+          "lender",
+          "lender.@id",
+          "lender.@type",
+          "target",
+          "target.@type",
+          "target.urlTemplate"
+        ],
+        "recommended": [],
+        "conditional": [
+          "target.actionPlatform"
+        ]
+      },
+      {
+        "scope": "LibrarySystem",
+        "required": [
+          "@context",
+          "@id",
+          "@type",
+          "additionalProperty",
+          "additionalProperty.@type",
+          "additionalProperty.name",
+          "member",
+          "name",
+          "url"
+        ],
+        "recommended": [],
+        "conditional": [
+          "additionalProperty.value"
+        ]
+      },
+      {
+        "scope": "Library(member)",
+        "required": [
+          "@id",
+          "@type",
+          "location",
+          "location.@type",
+          "location.addressCountry",
+          "location.addressLocality",
+          "location.addressRegion",
+          "location.postalCode",
+          "location.streetAddress",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-employer-rating",
+    "engine": "google",
+    "title": "고용주 누계 평점",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/employer-rating?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 고용주에 대한 이용자 평가와 평가 수·척도를 표시합니다. 서로 다른 고용주나 일반 상품 평점을 합치지 않고 사용자에게 보이는 값과 일치시킵니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "EmployerAggregateRating",
+        "required": [
+          "itemReviewed",
+          "ratingValue"
+        ],
+        "recommended": [],
+        "conditional": [
+          "ratingCount",
+          "reviewCount"
+        ]
+      },
+      {
+        "scope": "EmployerAggregateRating",
+        "required": [],
+        "recommended": [
+          "bestRating",
+          "worstRating"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-dataset",
+    "engine": "google",
+    "title": "데이터 세트",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/dataset?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "Dataset 이름·설명과 실제 데이터 접근/다운로드, 출처·작성자·라이선스·식별자를 설명합니다. 데이터 카탈로그·분포/파일과 데이터 자체를 구분하고 수정일·공간/시간 범위의 정확성을 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "Dataset",
+        "required": [
+          "description",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Dataset",
+        "required": [],
+        "recommended": [
+          "alternateName",
+          "creator",
+          "citation",
+          "funder",
+          "identifier",
+          "isAccessibleForFree",
+          "keywords",
+          "license",
+          "measurementTechnique",
+          "sameAs",
+          "spatialCoverage",
+          "temporalCoverage",
+          "variableMeasured",
+          "version",
+          "url"
+        ],
+        "conditional": [
+          "hasPart"
+        ]
+      },
+      {
+        "scope": "DataCatalog",
+        "required": [],
+        "recommended": [
+          "includedInDataCatalog"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "DataDownload",
+        "required": [
+          "distribution.contentUrl"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "DataDownload",
+        "required": [],
+        "recommended": [
+          "distribution",
+          "distribution.encodingFormat"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-education-qa",
+    "engine": "google",
+    "title": "교육 Q&A",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/education-qa?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "지원되는 교육 Q&A/플래시카드에서 질문·답·학습 범위와 표준 연결을 실제 내용에 맞춥니다. 상업적 Q&A나 사용자 토론을 동일한 학습 유형으로 표시하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "퀴즈",
+        "required": [
+          "hasPart"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "퀴즈",
+        "required": [],
+        "recommended": [
+          "about",
+          "about.name",
+          "educationalAlignment",
+          "educationalAlignment.alignmentType",
+          "educationalAlignment.targetName"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "질문",
+        "required": [
+          "acceptedAnswer",
+          "eduQuestionType",
+          "text"
+        ],
+        "recommended": [],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-discussion-forum",
+    "engine": "google",
+    "title": "토론 포럼",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/discussion-forum?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 사용자 토론의 DiscussionForumPosting/SocialMediaPosting·작성자·게시일·본문/미디어와 댓글 관계를 표현합니다. 저자 URL·상호작용 수·Comment 중첩과 페이지의 실제 표시를 대조합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "DiscussionForumPosting (또는 SocialMediaPosting)",
+        "required": [
+          "author",
+          "author.name",
+          "datePublished"
+        ],
+        "recommended": [],
+        "conditional": [
+          "text"
+        ]
+      },
+      {
+        "scope": "datePublished",
+        "required": [],
+        "recommended": [
+          "author.url",
+          "comment",
+          "commentCount",
+          "creativeWorkStatus",
+          "dateModified",
+          "digitalSourceType",
+          "headline",
+          "image",
+          "interactionStatistic",
+          "isPartOf",
+          "sharedContent",
+          "text",
+          "url",
+          "video"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Comment",
+        "required": [
+          "author",
+          "datePublished"
+        ],
+        "recommended": [],
+        "conditional": [
+          "text"
+        ]
+      },
+      {
+        "scope": "datePublished",
+        "required": [],
+        "recommended": [
+          "author.url",
+          "comment",
+          "commentCount",
+          "creativeWorkStatus",
+          "dateModified",
+          "digitalSourceType",
+          "image",
+          "interactionStatistic",
+          "sharedContent",
+          "url",
+          "video"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "InteractionCounter",
+        "required": [
+          "userInteractionCount",
+          "interactionType"
+        ],
+        "recommended": [],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-factcheck",
+    "engine": "google",
+    "title": "사실확인",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/factcheck?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "ClaimReview의 검증 주장·대상·출처·검증 방법·작성 주체·평가 척도를 투명하게 제공합니다. 주장 원문과 평가 결과를 구분하고 URL/단일 검증 대상 및 현재 기능 제공 범위를 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "ClaimReview",
+        "required": [
+          "claimReviewed",
+          "reviewRating",
+          "url"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "ClaimReview",
+        "required": [],
+        "recommended": [
+          "author",
+          "name",
+          "url",
+          "itemReviewed"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Claim",
+        "required": [],
+        "recommended": [
+          "appearance",
+          "author",
+          "name",
+          "sameAs",
+          "datePublished",
+          "firstAppearance"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Rating",
+        "required": [
+          "alternateName"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Rating",
+        "required": [],
+        "recommended": [
+          "bestRating",
+          "name",
+          "ratingValue",
+          "worstRating"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-job-posting",
+    "engine": "google",
+    "title": "채용 정보",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/job-posting?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 한 개 공고 상세에서 직무·고용주·게시/마감·근무지 또는 완전 원격 조건을 명시합니다. 만료 공고를 제거/갱신하고 급여 단위·지원 경로·차별/허위 공고 정책을 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "JobPosting",
+        "required": [
+          "datePosted",
+          "description",
+          "hiringOrganization",
+          "title"
+        ],
+        "recommended": [],
+        "conditional": [
+          "jobLocation"
+        ]
+      },
+      {
+        "scope": "JobPosting",
+        "required": [],
+        "recommended": [
+          "applicantLocationRequirements",
+          "baseSalary",
+          "directApply",
+          "employmentType",
+          "identifier",
+          "jobLocationType",
+          "validThrough"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "교육 및 경력 속성(베타)",
+        "required": [],
+        "recommended": [
+          "educationRequirements",
+          "educationRequirements.credentialCategory",
+          "experienceRequirements",
+          "experienceRequirements.monthsOfExperience",
+          "experienceInPlaceOfEducation"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-event",
+    "engine": "google",
+    "title": "이벤트",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/event?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제로 참석 가능한 이벤트별 페이지에서 이름·시작·장소/온라인 방식·주최·티켓을 맞춥니다. 취소/연기/재조정 시 eventStatus·이전 날짜·새 날짜를 갱신하고 상시 영업시간을 이벤트로 표시하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "구조화된 데이터 유형 정의",
+        "required": [
+          "location",
+          "location.address",
+          "name",
+          "startDate"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "구조화된 데이터 유형 정의",
+        "required": [],
+        "recommended": [
+          "description",
+          "endDate",
+          "eventStatus",
+          "EventCancelled",
+          "EventPostponed",
+          "EventRescheduled",
+          "EventScheduled",
+          "image",
+          "location.name",
+          "offers",
+          "offers.availability",
+          "offers.price",
+          "offers.priceCurrency",
+          "offers.validFrom",
+          "offers.url",
+          "organizer",
+          "organizer.name",
+          "organizer.url",
+          "performer",
+          "performer.name",
+          "previousStartDate"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-image-license-metadata",
+    "engine": "google",
+    "title": "이미지 메타데이터",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/image-license-metadata?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "ImageObject 또는 IPTC에 원본 이미지·창작자·저작권·라이선스와 구매/권리 취득 URL을 제공합니다. 두 형식의 값이 충돌하지 않고 실제 이미지에 대한 권리를 표현하는지 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "구조화된 데이터 유형 정의",
+        "required": [
+          "contentUrl"
+        ],
+        "recommended": [],
+        "conditional": [
+          "creator"
+        ]
+      },
+      {
+        "scope": "구조화된 데이터 유형 정의",
+        "required": [],
+        "recommended": [
+          "acquireLicensePage",
+          "creator",
+          "creator.name",
+          "creditText",
+          "copyrightNotice",
+          "license"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "IPTC 사진 메타데이터",
+        "required": [],
+        "recommended": [
+          "Licensor",
+          "Web"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-math-solvers",
+    "engine": "google",
+    "title": "MathSolver",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/math-solvers?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 수학 문제 해결 기능에 MathSolver·potentialAction·지원 수학 유형·입력 target을 연결합니다. 사용 가능한 해법·단계 설명과 언어/기능 지원 및 현재 노출 조건을 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "MathSolver",
+        "required": [
+          "potentialAction",
+          "url",
+          "usageInfo",
+          "potentialAction.target"
+        ],
+        "recommended": [],
+        "conditional": [
+          "potentialAction.mathExpression-input"
+        ]
+      },
+      {
+        "scope": "MathSolver",
+        "required": [],
+        "recommended": [
+          "inLanguage",
+          "assesses",
+          "potentialAction.eduQuestionType"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "LearningResource",
+        "required": [
+          "learningResourceType"
+        ],
+        "recommended": [],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-movie",
+    "engine": "google",
+    "title": "영화 캐러셀",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/movie?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 영화의 이름·이미지·감독·개봉·리뷰를 확인하고 ItemList 캐러셀의 단일/분리 페이지 규칙을 적용합니다. 작품별 정보를 섞지 않고 최소 항목 수·지원 기능을 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "Movie",
+        "required": [
+          "image",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Movie",
+        "required": [],
+        "recommended": [
+          "aggregateRating",
+          "dateCreated",
+          "director",
+          "review"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-organization",
+    "engine": "google",
+    "title": "조직",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/organization?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "조직의 식별·연락·주소·로고·sameAs·법인/사업 식별자와 선택 정책을 실제 값으로 보완합니다. 공통 필수 속성이 없으므로 name/logo 등 권장 속성만으로 실패 처리하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "구조화된 데이터 유형 정의",
+        "required": [],
+        "recommended": [
+          "address",
+          "address.addressCountry",
+          "address.addressLocality",
+          "address.addressRegion",
+          "address.postalCode",
+          "address.streetAddress",
+          "alternateName",
+          "contactPoint",
+          "contactPoint.email",
+          "contactPoint.telephone",
+          "description",
+          "duns",
+          "email",
+          "foundingDate",
+          "globalLocationNumber",
+          "hasMerchantReturnPolicy",
+          "hasMemberProgram",
+          "hasShippingService",
+          "iso6523Code",
+          "legalName",
+          "leiCode",
+          "logo",
+          "naics",
+          "name",
+          "numberOfEmployees",
+          "sameAs",
+          "taxID",
+          "telephone",
+          "url",
+          "vatID"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-local-business",
+    "engine": "google",
+    "title": "현지 업체",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/local-business?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 지점의 name/address와 가장 구체적인 LocalBusiness 하위유형을 사용합니다. 전화·좌표·영업/예외 시간·메뉴·예약/부서 정보와 자사 리뷰 별점 제한을 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "LocalBusiness",
+        "required": [
+          "address",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "LocalBusiness",
+        "required": [],
+        "recommended": [
+          "aggregateRating",
+          "department",
+          "geo",
+          "geo.latitude",
+          "geo.longitude",
+          "menu",
+          "openingHoursSpecification",
+          "openingHoursSpecification.closes",
+          "openingHoursSpecification.dayOfWeek",
+          "openingHoursSpecification.opens",
+          "openingHoursSpecification.validFrom",
+          "openingHoursSpecification.validThrough",
+          "priceRange",
+          "review",
+          "servesCuisine",
+          "telephone",
+          "url"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "레스토랑 캐러셀(액세스 제한됨)",
+        "required": [
+          "image",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "레스토랑 캐러셀(액세스 제한됨)",
+        "required": [],
+        "recommended": [
+          "address",
+          "servesCuisine"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-product-snippet",
+    "engine": "google",
+    "title": "제품 스니펫",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/product-snippet?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "ecommerce",
+    "guidance": [
+      "Product name과 review/aggregateRating/offers 중 하나 이상이 필요합니다. Offer의 가격 경로와 통화, 리뷰의 실제 작성자·점수를 확인합니다. 장단점 기능은 전문가 리뷰의 긍정/부정 설명 합계 2개 이상 등 별도 조건을 적용합니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "Product",
+        "required": [
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Product",
+        "required": [],
+        "recommended": [
+          "aggregateRating",
+          "offers",
+          "review"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Review",
+        "required": [],
+        "recommended": [
+          "negativeNotes",
+          "positiveNotes"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "긍정/부정 설명에 사용하는 ItemList",
+        "required": [
+          "itemListElement",
+          "itemListElement.name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "긍정/부정 설명에 사용하는 ItemList",
+        "required": [],
+        "recommended": [
+          "itemListElement.position"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Offer",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "price"
+        ]
+      },
+      {
+        "scope": "Offer",
+        "required": [],
+        "recommended": [
+          "availability",
+          "priceValidUntil"
+        ],
+        "conditional": [
+          "priceCurrency"
+        ]
+      },
+      {
+        "scope": "UnitPriceSpecification",
+        "required": [
+          "price"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "UnitPriceSpecification",
+        "required": [],
+        "recommended": [
+          "priceCurrency"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "AggregateOffer",
+        "required": [
+          "lowPrice",
+          "priceCurrency"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "AggregateOffer",
+        "required": [],
+        "recommended": [
+          "highPrice",
+          "offerCount"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Product / Offer / 장단점",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "Product: review 또는 aggregateRating 또는 offers 중 1개 이상",
+          "Offer: price 또는 priceSpecification.price",
+          "장단점 기능 사용 시 positiveNotes/negativeNotes 합계 2개 이상"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-product-variants",
+    "engine": "google",
+    "title": "대안",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/product-variants?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "ecommerce",
+    "guidance": [
+      "ProductGroup의 제품군과 hasVariant/isVariantOf·옵션 속성·그룹 식별자를 일치시킵니다. 단일/다중 페이지 구조별 고유 옵션 ID·선택 가능한 URL·canonical 및 실제 옵션 가격/재고를 확인합니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "ProductGroup",
+        "required": [
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "ProductGroup",
+        "required": [],
+        "recommended": [
+          "aggregateRating",
+          "brand",
+          "brand.name",
+          "description",
+          "hasAdultConsideration",
+          "hasVariant",
+          "productGroupID",
+          "review",
+          "url",
+          "variesBy"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-product",
+    "engine": "google",
+    "title": "개요",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/product?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "ecommerce",
+    "guidance": [
+      "제품 스니펫과 직접 구매 가능한 판매자 등록정보의 용도를 구분합니다. Product·ProductGroup·판매자 센터 피드로 동일 상품 정보를 일치시킵니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-structured-data-merchant-listing",
+    "engine": "google",
+    "title": "판매자 등록정보",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/merchant-listing?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "ecommerce",
+    "guidance": [
+      "구매 가능한 개별 상품에 name/image/offers와 실제 가격·통화·판매 가능성을 제공합니다. 할인/기준 가격·옵션·배송·반품·회원가의 조건과 판매자 센터 우선순위를 확인합니다. 다른 상품의 필수값을 합산하지 않습니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "Product",
+        "required": [
+          "name",
+          "image",
+          "offers"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Product",
+        "required": [],
+        "recommended": [
+          "aggregateRating",
+          "audience",
+          "brand.name",
+          "category",
+          "color",
+          "description",
+          "gtin",
+          "hasAdultConsideration",
+          "hasCertification",
+          "inProductGroupWithID",
+          "isVariantOf",
+          "material",
+          "mpn",
+          "pattern",
+          "review",
+          "size",
+          "sku",
+          "subjectOf"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "3DModel",
+        "required": [
+          "encoding",
+          "encoding.contentUrl"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Offer",
+        "required": [
+          "priceSpecification"
+        ],
+        "recommended": [],
+        "conditional": [
+          "price",
+          "priceCurrency"
+        ]
+      },
+      {
+        "scope": "Offer",
+        "required": [],
+        "recommended": [
+          "availability",
+          "hasMerchantReturnPolicy",
+          "itemCondition",
+          "priceValidUntil",
+          "shippingDetails",
+          "url",
+          "validFrom",
+          "validThrough"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "UnitPriceSpecification",
+        "required": [
+          "price",
+          "priceCurrency"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "UnitPriceSpecification",
+        "required": [],
+        "recommended": [
+          "membershipPointsEarned",
+          "priceType",
+          "referenceQuantity",
+          "validForMemberTier",
+          "validFrom",
+          "validThrough"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "QuantitativeValue(단가 책정용)",
+        "required": [
+          "unitCode",
+          "value"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "QuantitativeValue(단가 책정용)",
+        "required": [],
+        "recommended": [
+          "valueReference"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "SizeSpecification",
+        "required": [],
+        "recommended": [
+          "name",
+          "sizeGroup",
+          "sizeSystem"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "PeopleAudience",
+        "required": [],
+        "recommended": [
+          "suggestedGender"
+        ],
+        "conditional": [
+          "suggestedMaxAge",
+          "suggestedMinAge"
+        ]
+      },
+      {
+        "scope": "Certification",
+        "required": [
+          "issuedBy",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Certification",
+        "required": [],
+        "recommended": [
+          "certificationIdentification",
+          "certificationRating"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "OfferShippingDetails",
+        "required": [
+          "deliveryTime",
+          "shippingDestination",
+          "shippingRate.currency"
+        ],
+        "recommended": [],
+        "conditional": [
+          "shippingRate",
+          "shippingRate.value"
+        ]
+      },
+      {
+        "scope": "DefinedRegion",
+        "required": [
+          "addressCountry"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "DefinedRegion",
+        "required": [],
+        "recommended": [
+          "addressRegion",
+          "postalCode"
+        ],
+        "conditional": [
+          "addressRegion"
+        ]
+      },
+      {
+        "scope": "ShippingDeliveryTime",
+        "required": [],
+        "recommended": [
+          "handlingTime",
+          "transitTime"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "QuantitativeValue(배송 시간)",
+        "required": [
+          "maxValue",
+          "minValue",
+          "unitCode"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "MerchantReturnPolicy",
+        "required": [
+          "applicableCountry",
+          "returnPolicyCategory"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "MerchantReturnPolicy",
+        "required": [],
+        "recommended": [
+          "merchantReturnDays",
+          "returnFees",
+          "returnMethod",
+          "returnShippingFeesAmount"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-shipping-policy",
+    "engine": "google",
+    "title": "판매자 배송 정책",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/shipping-policy?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "ecommerce",
+    "guidance": [
+      "조직의 ShippingService와 적용 국가/지역·배송 요금·주문 준비/배송 기간을 실제 정책대로 중첩합니다. 기간의 단위·영업일·마감·가격/무게별 조건과 상품 수준의 예외를 확인합니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "ShippingService(hasShippingService 속성을 사용하여 Organization 아래에 중첩됨)",
+        "required": [
+          "shippingConditions"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "ShippingService(hasShippingService 속성을 사용하여 Organization 아래에 중첩됨)",
+        "required": [],
+        "recommended": [
+          "name",
+          "description",
+          "fulfillmentType",
+          "handlingTime",
+          "validForMemberTier"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "ServicePeriod(주문 상품 준비 시간)",
+        "required": [],
+        "recommended": [
+          "businessDays",
+          "cutoffTime",
+          "duration"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "QuantitativeValue(배송 처리 기간)",
+        "required": [],
+        "recommended": [
+          "maxValue",
+          "minValue",
+          "unitCode",
+          "value"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "ShippingConditions(shippingConditions 속성을 사용하여 ShippingService 아래에 중첩됨)",
+        "required": [],
+        "recommended": [
+          "doesNotShip",
+          "numItems",
+          "orderValue",
+          "shippingDestination",
+          "shippingOrigin",
+          "seasonalOverride",
+          "shippingRate",
+          "transitTime",
+          "weight"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "DefinedRegion",
+        "required": [
+          "addressCountry"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "DefinedRegion",
+        "required": [],
+        "recommended": [
+          "addressRegion",
+          "postalCode"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "ServicePeriod(운송 기간)",
+        "required": [],
+        "recommended": [
+          "businessDays",
+          "duration"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "QuantitativeValue(배송 운송 기간)",
+        "required": [],
+        "recommended": [
+          "maxValue",
+          "minValue",
+          "unitCode",
+          "value"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "QuantitativeValue(배송 포장 크기 컨텍스트)",
+        "required": [],
+        "recommended": [
+          "maxValue",
+          "minValue",
+          "unitCode"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "MonetaryAmount(배송 조건 컨텍스트)",
+        "required": [
+          "currency",
+          "maxValue",
+          "minValue"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "MonetaryAmount(배송비 요율 컨텍스트)",
+        "required": [
+          "currency",
+          "maxValue",
+          "value"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "ShippingRateSettings(배송비 요율 컨텍스트)",
+        "required": [],
+        "recommended": [
+          "orderPercentage",
+          "weightPercentage"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "OpeningHoursSpecification(계절별 배송 재정의 컨텍스트)",
+        "required": [],
+        "recommended": [
+          "validFrom",
+          "validThrough"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-loyalty-program",
+    "engine": "google",
+    "title": "포인트 멤버십",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/loyalty-program?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "ecommerce",
+    "guidance": [
+      "실제 MemberProgram·등급 이름·혜택·가입 조건과 링크를 제공합니다. 유료 가입·회원가·포인트·배송/반품 혜택은 각 필드 조건과 지원 지역 및 판매자 센터 설정을 대조합니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "MemberProgram",
+        "required": [
+          "description",
+          "hasTiers",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "MemberProgram",
+        "required": [],
+        "recommended": [
+          "url"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "MemberProgramTier",
+        "required": [
+          "hasTierBenefit",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "MemberProgramTier",
+        "required": [],
+        "recommended": [
+          "hasTierRequirement",
+          "membershipPointsEarned",
+          "url"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-return-policy",
+    "engine": "google",
+    "title": "판매자 반품 정책",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/return-policy?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "ecommerce",
+    "guidance": [
+      "국가+반품 범주 방식 또는 merchantReturnLink 방식 중 실제 정책에 맞는 방법을 선택합니다. 유한 기간일 때 반품 일수, 반품 방법·수수료·배송비·계절 예외의 조건부 속성과 상품별 우선순위를 확인합니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "MerchantReturnPolicy(hasMerchantReturnPolicy 속성을 사용하여 Organization 아래에 중첩됨)",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "applicableCountry",
+          "returnPolicyCategory",
+          "merchantReturnLink"
+        ]
+      },
+      {
+        "scope": "유한 또는 무제한 반품 기간",
+        "required": [],
+        "recommended": [
+          "merchantReturnDays",
+          "returnFees",
+          "returnMethod",
+          "returnShippingFeesAmount"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "유한 또는 무제한 반품 기간",
+        "required": [],
+        "recommended": [
+          "customerRemorseReturnFees",
+          "customerRemorseReturnLabelSource",
+          "customerRemorseReturnShippingFeesAmount",
+          "itemCondition",
+          "itemDefectReturnFees",
+          "itemDefectReturnLabelSource",
+          "itemDefectReturnShippingFeesAmount",
+          "refundType",
+          "restockingFee",
+          "returnLabelSource",
+          "returnPolicyCountry"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "시즌 예외 속성",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "returnPolicySeasonalOverride",
+          "returnPolicySeasonalOverride.returnPolicyCategory"
+        ]
+      },
+      {
+        "scope": "시즌 예외 속성",
+        "required": [],
+        "recommended": [
+          "returnPolicySeasonalOverride.endDate",
+          "returnPolicySeasonalOverride.merchantReturnDays",
+          "returnPolicySeasonalOverride.startDate"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "MerchantReturnPolicy",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "방식 A: applicableCountry + returnPolicyCategory 또는 방식 B: merchantReturnLink",
+          "유한 기간: merchantReturnDays",
+          "요금·배송비·계절 예외: 실제 해당 조건의 속성"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-profile-page",
+    "engine": "google",
+    "title": "프로필 페이지",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/profile-page?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "특정 개인/조직에 초점을 맞춘 공개 프로필의 mainEntity와 이름·식별자·이미지·공식 링크를 연결합니다. 작성/수정 시각과 상호작용 수의 정의를 실제 프로필과 맞춥니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "ProfilePage",
+        "required": [
+          "mainEntity"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "ProfilePage",
+        "required": [],
+        "recommended": [
+          "dateCreated",
+          "dateModified"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Person 또는 Organization",
+        "required": [
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Person 또는 Organization",
+        "required": [],
+        "recommended": [
+          "agentInteractionStatistic",
+          "alternateName",
+          "description",
+          "identifier",
+          "image",
+          "interactionStatistic",
+          "sameAs"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-software-app",
+    "engine": "google",
+    "title": "소프트웨어 앱",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/software-app?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "SoftwareApplication name·offers.price와 aggregateRating/review 중 하나를 확인합니다. 무료 앱은 실제 가격 0을 표시하고 플랫폼·앱 종류·통화 및 중첩 평가 요건을 구분합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "SoftwareApplication",
+        "required": [
+          "name",
+          "offers.price"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "SoftwareApplication",
+        "required": [],
+        "recommended": [
+          "applicationCategory",
+          "operatingSystem"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "SoftwareApplication",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "aggregateRating 또는 review 중 1개 이상"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-recipe",
+    "engine": "google",
+    "title": "레시피",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/recipe?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "필수 name/image와 실제 음식·재료·분량·시간·단계를 맞춥니다. cookTime/prepTime의 짝, 칼로리/분량, HowToSection/Step 및 영상·평점·캐러셀을 사용할 때의 별도 필수 항목을 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "Recipe",
+        "required": [
+          "image",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Recipe",
+        "required": [],
+        "recommended": [
+          "aggregateRating",
+          "author",
+          "cookTime",
+          "datePublished",
+          "description",
+          "keywords",
+          "nutrition.calories",
+          "prepTime",
+          "recipeCategory",
+          "recipeCuisine",
+          "recipeIngredient",
+          "recipeInstructions",
+          "recipeYield",
+          "totalTime",
+          "video"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "HowToSection",
+        "required": [
+          "itemListElement",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "HowToStep",
+        "required": [
+          "itemListElement",
+          "text"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "HowToStep",
+        "required": [],
+        "recommended": [
+          "image",
+          "name",
+          "url",
+          "video"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "HowToDirection 및 HowToTip",
+        "required": [
+          "text"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "ItemList",
+        "required": [
+          "itemListElement",
+          "ListItem.position",
+          "ListItem.url"
+        ],
+        "recommended": [],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-review-snippet",
+    "engine": "google",
+    "title": "리뷰 스니펫",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/review-snippet?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "지원 유형의 실제 리뷰·대상·작성자·점수와 평가 척도를 검증합니다. aggregateRating은 ratingCount/reviewCount 중 하나 이상을 제공하고 중첩 시 itemReviewed 생략 조건·부모 name을 확인합니다. 자사 LocalBusiness/Organization 별점은 제한됩니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "Review",
+        "required": [
+          "author",
+          "reviewRating",
+          "reviewRating.ratingValue"
+        ],
+        "recommended": [],
+        "conditional": [
+          "itemReviewed"
+        ]
+      },
+      {
+        "scope": "Review",
+        "required": [],
+        "recommended": [
+          "datePublished",
+          "reviewRating.bestRating",
+          "reviewRating.worstRating"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "AggregateRating",
+        "required": [
+          "ratingValue"
+        ],
+        "recommended": [],
+        "conditional": [
+          "itemReviewed",
+          "ratingCount",
+          "reviewCount"
+        ]
+      },
+      {
+        "scope": "AggregateRating",
+        "required": [],
+        "recommended": [
+          "bestRating",
+          "worstRating"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "중첩·평가 건수",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "AggregateRating: ratingCount 또는 reviewCount 중 1개 이상",
+          "부모에 중첩한 Review/AggregateRating의 itemReviewed 생략 조건·부모 name 확인"
+        ]
+      },
+      {
+        "scope": "Review / AggregateRating",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "별도 객체: itemReviewed 필요",
+          "중첩 객체: 부모 name 또는 itemReviewed.name 필요"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-qapage",
+    "engine": "google",
+    "title": "Q&A",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/qapage?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "사용자가 답을 제출할 수 있는 한 질문 페이지에 Question과 answerCount·acceptedAnswer/suggestedAnswer를 맞춥니다. 다중 질문 FAQ·게시자가 혼자 답한 문서를 같은 타입으로 표시하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "QAPage",
+        "required": [
+          "mainEntity"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Question",
+        "required": [
+          "answerCount",
+          "acceptedAnswer",
+          "suggestedAnswer",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": [
+          "acceptedAnswer"
+        ]
+      },
+      {
+        "scope": "name",
+        "required": [],
+        "recommended": [
+          "author",
+          "author.url",
+          "comment",
+          "commentCount",
+          "dateModified",
+          "datePublished",
+          "digitalSourceType",
+          "image",
+          "text",
+          "upvoteCount",
+          "video"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Answer",
+        "required": [
+          "text"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "text",
+        "required": [],
+        "recommended": [
+          "author",
+          "author.url",
+          "comment",
+          "commentCount",
+          "dateModified",
+          "datePublished",
+          "digitalSourceType",
+          "image",
+          "upvoteCount",
+          "url",
+          "video"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "Comment",
+        "required": [
+          "text"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "text",
+        "required": [],
+        "recommended": [
+          "author",
+          "author.url",
+          "comment",
+          "commentCount",
+          "dateModified",
+          "datePublished",
+          "digitalSourceType",
+          "image",
+          "video"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-paywalled-content",
+    "engine": "google",
+    "title": "구독 및 페이월 콘텐츠",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/paywalled-content?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "지원 유형의 isAccessibleForFree와 hasPart/WebPageElement·CSS 선택자로 실제 유료 구역을 표시합니다. Googlebot이 콘텐츠를 읽는 방식과 AMP·AI·스니펫 노출 설정을 구분하고 클로킹으로 오해될 구현을 점검합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "지원되는 유형",
+        "required": [
+          "isAccessibleForFree"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "지원되는 유형",
+        "required": [],
+        "recommended": [
+          "hasPart.cssSelector",
+          "hasPart.@type",
+          "hasPart.isAccessibleForFree"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-vacation-rental",
+    "engine": "google",
+    "title": "공유숙박",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/vacation-rental?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "Hotel Center/담당자 등 기존 참여 자격부터 확인합니다. VacationRental의 단일 Accommodation·식별/주소/좌표·최소 8장(침실·욕실·공용 공간 포함) 사진과 수용 인원·편의시설을 실제 숙소와 맞춥니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "VacationRental",
+        "required": [
+          "containsPlace",
+          "containsPlace.occupancy",
+          "containsPlace.occupancy.value",
+          "identifier",
+          "image",
+          "name"
+        ],
+        "recommended": [],
+        "conditional": [
+          "latitude",
+          "longitude"
+        ]
+      },
+      {
+        "scope": "VacationRental",
+        "required": [],
+        "recommended": [
+          "additionalType",
+          "address",
+          "address.addressCountry",
+          "address.addressLocality",
+          "address.addressRegion",
+          "address.postalCode",
+          "address.streetAddress",
+          "aggregateRating",
+          "brand",
+          "checkinTime",
+          "checkoutTime",
+          "containsPlace.additionalType",
+          "containsPlace.amenityFeature",
+          "ac",
+          "airportShuttle",
+          "balcony",
+          "beachAccess",
+          "childFriendly",
+          "crib",
+          "elevator",
+          "fireplace",
+          "freeBreakfast",
+          "gymFitnessEquipment",
+          "heating",
+          "hotTub",
+          "instantBookable",
+          "ironingBoard",
+          "kitchen",
+          "microwave",
+          "outdoorGrill",
+          "ovenStove",
+          "patio",
+          "petsAllowed",
+          "pool",
+          "privateBeachAccess",
+          "selfCheckinCheckout",
+          "smokingAllowed",
+          "tv",
+          "washerDryer",
+          "wheelchairAccessible",
+          "wifi",
+          "internetType",
+          "parkingType",
+          "poolType",
+          "licenseNum",
+          "containsPlace.bed",
+          "containsPlace.bed.numberOfBeds",
+          "containsPlace.bed.typeOfBed",
+          "containsPlace.floorSize",
+          "containsPlace.numberOfBathroomsTotal",
+          "containsPlace.numberOfBedrooms",
+          "containsPlace.numberOfRooms",
+          "description",
+          "knowsLanguage",
+          "review",
+          "review.contentReferenceTime"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-speakable",
+    "engine": "google",
+    "title": "Speakable",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/speakable?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "지원 국가·언어의 뉴스 음성 기능에만 적용합니다. speakable의 cssSelector 또는 xPath 중 맞는 방법으로 짧고 명확한 낭독 구역을 지정하며 사진 설명·날짜·전체 본문을 무차별 선택하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "구조화된 데이터 유형 정의",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "cssSelector",
+          "xPath"
+        ]
+      },
+      {
+        "scope": "SpeakableSpecification",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "cssSelector 또는 xPath 중 1개 이상"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-structured-data-video",
+    "engine": "google",
+    "title": "동영상",
+    "url": "https://developers.google.com/search/docs/appearance/structured-data/video?hl=ko",
+    "category": "검색 노출 / 구조화 데이터",
+    "topic": "media",
+    "guidance": [
+      "VideoObject의 이름·썸네일·업로드일과 실제 설명·영상 접근을 확인합니다. Clip의 시작/종료·URL, SeekToAction의 시간 매개변수, 라이브 BroadcastEvent 및 제한·종료일·상호작용은 기능별 중첩 조건을 적용합니다."
+    ],
+    "applicability": "해당 동영상·뉴스·스토리 기능을 운영하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "VideoObject",
+        "required": [
+          "name",
+          "thumbnailUrl",
+          "uploadDate"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "VideoObject",
+        "required": [],
+        "recommended": [
+          "contentUrl",
+          "description",
+          "duration",
+          "embedUrl",
+          "expires",
+          "hasPart",
+          "ineligibleRegion",
+          "interactionStatistic",
+          "interactionStatistic.interactionType",
+          "interactionStatistic.userInteractionCount",
+          "publication",
+          "regionsAllowed"
+        ],
+        "conditional": [
+          "creator",
+          "creator.name",
+          "creator.url"
+        ]
+      },
+      {
+        "scope": "BroadcastEvent",
+        "required": [
+          "publication",
+          "publication.endDate",
+          "publication.isLiveBroadcast",
+          "publication.startDate"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Clip",
+        "required": [
+          "name",
+          "startOffset",
+          "url"
+        ],
+        "recommended": [],
+        "conditional": []
+      },
+      {
+        "scope": "Clip",
+        "required": [],
+        "recommended": [
+          "endOffset"
+        ],
+        "conditional": []
+      },
+      {
+        "scope": "SeekToAction",
+        "required": [
+          "potentialAction",
+          "potentialAction.startOffset-input",
+          "potentialAction.target"
+        ],
+        "recommended": [],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "google-appearance-title-link",
+    "engine": "google",
+    "title": "제목 링크",
+    "url": "https://developers.google.com/search/docs/appearance/title-link?hl=ko",
+    "category": "검색 노출",
+    "topic": "metadata",
+    "guidance": [
+      "페이지 주제를 설명하는 고유한 title·대표 제목·OG를 맞춥니다. 빈 조각·지난 연도·과도한 브랜드 반복·키워드 나열·언어 불일치를 수정하고 제목 표시가 자동 선택임을 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-ad-network-and-translation",
+    "engine": "google",
+    "title": "광고 네트워크 및 번역 관련 Google 검색 기능",
+    "url": "https://developers.google.com/search/docs/appearance/ad-network-and-translation?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "번역 프록시 URL에서 광고 네트워크가 원래 호스트를 식별하는 방식을 확인합니다. 공식 변환 규칙과 예제 테스트를 사용하고 일반 canonical·검색 번역 제외와 혼동하지 않습니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-video",
+    "engine": "google",
+    "title": "동영상",
+    "url": "https://developers.google.com/search/docs/appearance/video?hl=ko",
+    "category": "검색 노출",
+    "topic": "media",
+    "guidance": [
+      "영상별 전용 보기 페이지·안정된 파일/플레이어·썸네일·지원 형식·렌더링을 확인합니다. 영상이 주요 콘텐츠인지, 구조화 데이터와 사이트맵·제목/설명·타임스탬프가 일치하는지 대조합니다."
+    ],
+    "applicability": "해당 동영상·뉴스·스토리 기능을 운영하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-translated-results",
+    "engine": "google",
+    "title": "번역된 검색결과",
+    "url": "https://developers.google.com/search/docs/appearance/translated-results?hl=ko",
+    "category": "검색 노출",
+    "topic": "appearance",
+    "guidance": [
+      "지원 언어에서 자동 번역 결과와 원문 유입을 구분해 측정합니다. 제외가 필요할 때만 notranslate 지시를 적용하고 전체 색인 제외로 대체하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-web-stories-creation-best-practices",
+    "engine": "google",
+    "title": "웹 스토리 만들기 권장사항",
+    "url": "https://developers.google.com/search/docs/appearance/web-stories-creation-best-practices?hl=ko",
+    "category": "검색 노출",
+    "topic": "media",
+    "guidance": [
+      "완결된 시각 이야기·읽기 쉬운 짧은 텍스트·자막·품질 좋은 세로 영상/이미지·탐색과 연결을 검토합니다. 제목·포스터·게시자·AMP 유효성·색인을 확인하고 디자인 권장 수치를 일반 웹페이지 합격선으로 쓰지 않습니다."
+    ],
+    "applicability": "해당 동영상·뉴스·스토리 기능을 운영하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-web-stories-content-policy",
+    "engine": "google",
+    "title": "웹 스토리 콘텐츠 정책",
+    "url": "https://developers.google.com/search/docs/appearance/web-stories-content-policy?hl=ko",
+    "category": "검색 노출",
+    "topic": "media",
+    "guidance": [
+      "저작권·과도한 텍스트·저품질 이미지·부족하거나 미완결된 이야기·과도한 광고를 점검합니다. 텍스트 중심 페이지가 대다수인 스토리의 정책과 일반 디자인 권장사항을 구분합니다."
+    ],
+    "applicability": "해당 동영상·뉴스·스토리 기능을 운영하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-visual-elements-gallery",
+    "engine": "google",
+    "title": "시각적 요소 갤러리",
+    "url": "https://developers.google.com/search/docs/appearance/visual-elements-gallery?hl=ko",
+    "category": "검색 노출",
+    "topic": "appearance",
+    "guidance": [
+      "파비콘·사이트 이름·표시 URL·제목·스니펫·리치 기능 등 검색 UI의 의미를 구분합니다. 표시 요소의 예시를 모든 사이트에서 활성화해야 하는 기능으로 해석하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-enable-web-stories",
+    "engine": "google",
+    "title": "Google의 웹 스토리 사용 설정하기",
+    "url": "https://developers.google.com/search/docs/appearance/enable-web-stories?hl=ko",
+    "category": "검색 노출",
+    "topic": "media",
+    "guidance": [
+      "웹 스토리를 사용하는 경우 유효한 AMP·게시자 로고·포스터·제목 등 필수 메타데이터, self canonical·색인·사이트 링크를 검증합니다. 노출 지원 지역과 정책을 확인합니다."
+    ],
+    "applicability": "해당 동영상·뉴스·스토리 기능을 운영하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-search-console-start",
+    "engine": "google",
+    "title": "Search Console 시작하기",
+    "url": "https://developers.google.com/search/docs/monitor-debug/search-console-start?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "monitoring",
+    "guidance": [
+      "속성 소유권·권한을 확인하고 실적·색인·URL 검사·사이트맵·리치 결과·보안/직접 조치를 역할별로 검토합니다. 빈 데이터와 미수집·미설정 상태를 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-appearance-package-tracking",
+    "engine": "google",
+    "title": "배송 추적",
+    "url": "https://developers.google.com/search/docs/appearance/package-tracking?hl=ko",
+    "category": "검색 노출",
+    "topic": "special",
+    "guidance": [
+      "배송 추적 기능은 신규 파트너를 받지 않는 현재 상태를 먼저 확인합니다. 기존 참여자는 실제 운송장/배송 정보·안정성·평균 700ms/95백분위 1,000ms 응답 조건과 API 자격을 대조합니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-bubble-chart-analysis",
+    "engine": "google",
+    "title": "풍선형 차트로 검색엔진 최적화 개선하기",
+    "url": "https://developers.google.com/search/docs/monitor-debug/bubble-chart-analysis?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "monitoring",
+    "guidance": [
+      "같은 기간·국가·기기·검색유형의 클릭·노출·CTR·게재순위로 검색어 기회를 비교합니다. 차트 크기·축·필터가 의미하는 지표를 명시하고 낮은 CTR 원인을 실제 검색 의도와 대조합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-debugging-search-traffic-drops",
+    "engine": "google",
+    "title": "Google 검색 트래픽 감소 디버그",
+    "url": "https://developers.google.com/search/docs/monitor-debug/debugging-search-traffic-drops?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "monitoring",
+    "guidance": [
+      "데이터 집계·기술 오류·보안/스팸·업데이트·계절 수요·이전을 분리해 URL/검색어별 전후를 비교합니다. 검색 클릭 감소를 매출 감소나 단일 알고리즘 원인으로 단정하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-search-operators-all-search-site",
+    "engine": "google",
+    "title": "site: 검색 연산자",
+    "url": "https://developers.google.com/search/docs/monitor-debug/search-operators/all-search-site?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "monitoring",
+    "guidance": [
+      "site:는 특정 호스트/경로의 보조 검색으로 사용합니다. 전체 색인 목록·정확한 개수·대표 URL·자연 검색 순위는 이 결과만으로 확정하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-search-operators",
+    "engine": "google",
+    "title": "개요",
+    "url": "https://developers.google.com/search/docs/monitor-debug/search-operators?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "monitoring",
+    "guidance": [
+      "filetype·site·imagesize·src의 검색 범위를 목적에 맞게 사용합니다. 연산자 결과의 한계를 인식하고 소유 사이트의 정확한 상태는 Search Console에서 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-google-analytics-search-console",
+    "engine": "google",
+    "title": "SEO에 Search Console 및 Google 애널리틱스 데이터 활용하기",
+    "url": "https://developers.google.com/search/docs/monitor-debug/google-analytics-search-console?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "monitoring",
+    "guidance": [
+      "Search Console 클릭과 GA 세션/핵심 이벤트의 정의·시간대·필터·동의·추적 범위 차이를 확인합니다. Looker Studio에서도 같은 차원·기간으로 비교하며 수치 불일치를 곧바로 오류로 보지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-analyze-social-video-content",
+    "engine": "google",
+    "title": "소셜 및 동영상 플랫폼 콘텐츠 분석",
+    "url": "https://developers.google.com/search/docs/monitor-debug/analyze-social-video-content?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "monitoring",
+    "guidance": [
+      "소셜·영상의 접근 가능한 Search Console 보고서에서 검색어·24시간 추세·형식·재생목록·플랫폼별 실적을 비교합니다. 플랫폼 재생 수와 Google 검색 클릭을 같은 지표로 합치지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-security",
+    "engine": "google",
+    "title": "개요",
+    "url": "https://developers.google.com/search/docs/monitor-debug/security?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "spam",
+    "guidance": [
+      "Search Console 보안 문제·직접 조치와 실제 변조·다운로드·삽입 광고를 확인합니다. 원인 제거·취약점 수정·재검토를 진행하고 검색 지시만으로 보안을 해결하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-search-operators-image-search",
+    "engine": "google",
+    "title": "Google 이미지 검색 연산자",
+    "url": "https://developers.google.com/search/docs/monitor-debug/search-operators/image-search?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "monitoring",
+    "guidance": [
+      "src로 특정 이미지 URL, imagesize로 크기 조건을 좁힙니다. 이미지 검색 연산자는 전체 색인/권리/노출 보장 검증을 대신하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-prevent-abuse",
+    "engine": "google",
+    "title": "사용자 생성 스팸 예방",
+    "url": "https://developers.google.com/search/docs/monitor-debug/prevent-abuse?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "spam",
+    "guidance": [
+      "가입·게시·업로드 정책, 의심 계정 검토, 반복 스팸 차단·속도 제한과 지속 모니터링을 운영합니다. UGC 링크 표시와 사용자 신고/수동 승인 절차를 갖춥니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-security-malware",
+    "engine": "google",
+    "title": "멀웨어 및 원치 않는 소프트웨어",
+    "url": "https://developers.google.com/search/docs/monitor-debug/security/malware?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "spam",
+    "guidance": [
+      "다운로드와 설치 동의를 명확히 하고 원치 않는 변경·악성 실행·기만적 광고를 제거합니다. 사이트·확장 프로그램·앱별 정책과 보안 보고서의 재검토 조건을 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-security-social-engineering",
+    "engine": "google",
+    "title": "소셜 엔지니어링(피싱 및 사기성 사이트)",
+    "url": "https://developers.google.com/search/docs/monitor-debug/security/social-engineering?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "spam",
+    "guidance": [
+      "피싱·사칭·가짜 업데이트/버튼·악성 삽입 광고와 제3자 제공 콘텐츠까지 확인합니다. 원인을 제거하고 사용자를 속이는 브랜드·권한·결제/다운로드 요청을 수정합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-security-safe-browsing-repeat-offenders",
+    "engine": "google",
+    "title": "Google 세이프 브라우징 반복 위반자 관련 정책",
+    "url": "https://developers.google.com/search/docs/monitor-debug/security/safe-browsing-repeat-offenders?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "spam",
+    "guidance": [
+      "위반을 일시 제거했다 되풀이하지 않도록 근본 취약점을 수정합니다. 반복 위반의 재검토 제한·기간은 Safe Browsing 알림과 현재 정책에서 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-security-prevent-malware",
+    "engine": "google",
+    "title": "멀웨어 감염 방지하기",
+    "url": "https://developers.google.com/search/docs/monitor-debug/security/prevent-malware?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "spam",
+    "guidance": [
+      "CMS·플러그인·서버 업데이트, 최소 권한·강한 계정 인증·백업·파일/로그 감시와 제3자 광고를 관리합니다. 관리자 접근과 데이터 보호는 서버에서 검증합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-monitor-debug-trends-start",
+    "engine": "google",
+    "title": "Google 트렌드 시작하기",
+    "url": "https://developers.google.com/search/docs/monitor-debug/trends-start?hl=ko",
+    "category": "모니터링·문제 해결",
+    "topic": "monitoring",
+    "guidance": [
+      "지역·기간·카테고리·검색 유형을 맞춘 상대 검색 관심도를 비교해 계절성·콘텐츠 일정을 판단합니다. Trends 수치를 절대 검색량이나 자사 실제 클릭 수로 해석하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-ecommerce",
+    "engine": "google",
+    "title": "개요",
+    "url": "https://developers.google.com/search/docs/specialty/ecommerce?hl=ko",
+    "category": "업종·국제화",
+    "topic": "ecommerce",
+    "guidance": [
+      "제품 데이터·사이트 구조·URL·출시·리뷰·페이지네이션을 실제 구매 흐름과 맞춥니다. 상품 타입과 계정 연동을 각각 확인합니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-ecommerce-where-ecommerce-data-can-appear-on-google",
+    "engine": "google",
+    "title": "콘텐츠가 표시될 수 있는 위치",
+    "url": "https://developers.google.com/search/docs/specialty/ecommerce/where-ecommerce-data-can-appear-on-google?hl=ko",
+    "category": "업종·국제화",
+    "topic": "ecommerce",
+    "guidance": [
+      "검색·이미지·렌즈·쇼핑·Business Profile·지도별 콘텐츠와 참여 조건을 구분합니다. 카테고리·제품·비교·브랜드 정보로 구매 단계별 질문에 답합니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-ecommerce-share-your-product-data-with-google",
+    "engine": "google",
+    "title": "제품 데이터 공유",
+    "url": "https://developers.google.com/search/docs/specialty/ecommerce/share-your-product-data-with-google?hl=ko",
+    "category": "업종·국제화",
+    "topic": "ecommerce",
+    "guidance": [
+      "제품 마크업과 판매자 센터 피드를 함께 검토하며 가격·재고·옵션·정책을 일치시킵니다. 갱신 지연과 자동 업데이트·수집 시차를 모니터링합니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-ecommerce-include-structured-data-relevant-to-ecommerce",
+    "engine": "google",
+    "title": "구조화된 데이터 포함",
+    "url": "https://developers.google.com/search/docs/specialty/ecommerce/include-structured-data-relevant-to-ecommerce?hl=ko",
+    "category": "업종·국제화",
+    "topic": "ecommerce",
+    "guidance": [
+      "페이지 목적에 맞는 BreadcrumbList·LocalBusiness·Organization·Product/ProductGroup·Review·VideoObject를 선택합니다. 각각의 필수·권장·정책 조건을 따릅니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-ecommerce-write-high-quality-reviews",
+    "engine": "google",
+    "title": "수준 높은 리뷰 작성하기",
+    "url": "https://developers.google.com/search/docs/specialty/ecommerce/write-high-quality-reviews?hl=ko",
+    "category": "업종·국제화",
+    "topic": "content",
+    "guidance": [
+      "실제 사용 증거·정량 측정·장단점·경쟁 대안·발전 과정·구매 결정 요인과 추천 이유를 제공합니다. 제조사 설명 복제와 가짜/보상성 독립 리뷰를 피합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-ecommerce-designing-a-url-structure-for-ecommerce-sites",
+    "engine": "google",
+    "title": "URL 구조 설계",
+    "url": "https://developers.google.com/search/docs/specialty/ecommerce/designing-a-url-structure-for-ecommerce-sites?hl=ko",
+    "category": "업종·국제화",
+    "topic": "links",
+    "guidance": [
+      "상품·옵션·페이지네이션에 고유하고 일관된 URL과 표준 매개변수를 사용합니다. 세션/시간값·중복 필터를 관리하고 링크·canonical·사이트맵·피드의 주소를 맞춥니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-ecommerce-how-to-launch-an-ecommerce-website",
+    "engine": "google",
+    "title": "새 웹사이트 출시",
+    "url": "https://developers.google.com/search/docs/specialty/ecommerce/how-to-launch-an-ecommerce-website?hl=ko",
+    "category": "업종·국제화",
+    "topic": "ecommerce",
+    "guidance": [
+      "완전 공개·홈 우선·품절 상태·제한 공개 중 실제 준비도에 맞는 출시 방식을 선택합니다. 사전 noindex 제거·소유확인·사이트맵·상품 피드·재고 상태를 공개 일정과 맞춥니다."
+    ],
+    "applicability": "상품을 소개·판매하거나 상품 피드를 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-ecommerce-help-google-understand-your-ecommerce-site-structure",
+    "engine": "google",
+    "title": "이커머스 사이트 구조",
+    "url": "https://developers.google.com/search/docs/specialty/ecommerce/help-google-understand-your-ecommerce-site-structure?hl=ko",
+    "category": "업종·국제화",
+    "topic": "links",
+    "guidance": [
+      "홈→카테고리→하위 카테고리→상품의 실제 링크를 제공하고 검색창에만 상품 발견을 의존하지 않습니다. 중요 상품은 관련 페이지에서 연결하며 품절/단종 URL도 관리합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-international-managing-multi-regional-sites",
+    "engine": "google",
+    "title": "다지역 및 다국어 사이트 관리",
+    "url": "https://developers.google.com/search/docs/specialty/international/managing-multi-regional-sites?hl=ko",
+    "category": "업종·국제화",
+    "topic": "international",
+    "guidance": [
+      "언어별 URL과 사용자의 언어 선택을 제공하고 현지 콘텐츠·통화·지역 신호를 일치시킵니다. 도메인/하위 도메인/디렉터리 방식의 운영 차이와 중복 대표 URL을 확인합니다."
+    ],
+    "applicability": "다국어·다지역 버전을 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-international",
+    "engine": "google",
+    "title": "개요",
+    "url": "https://developers.google.com/search/docs/specialty/international?hl=ko",
+    "category": "업종·국제화",
+    "topic": "international",
+    "guidance": [
+      "언어·국가를 구분하고 실제 제공 버전·URL 구조·대체 링크·지역별 콘텐츠를 확인합니다. 단일 언어 사이트에 모든 국제화 태그를 요구하지 않습니다."
+    ],
+    "applicability": "다국어·다지역 버전을 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-ecommerce-pagination-and-incremental-page-loading",
+    "engine": "google",
+    "title": "페이지로 나누기, 점진적 페이지 로드, Google 검색",
+    "url": "https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading?hl=ko",
+    "category": "업종·국제화",
+    "topic": "javascript",
+    "guidance": [
+      "각 페이지에 고유 URL·self canonical·순차 a[href]를 제공하고 fragment나 사용자 클릭에만 의존하지 않습니다. 필터/정렬 변형은 별도 정책으로 관리하며 rel next/prev를 Google 필수 신호로 요구하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-international-localized-versions",
+    "engine": "google",
+    "title": "Google에 페이지의 현지화된 버전 알리기",
+    "url": "https://developers.google.com/search/docs/specialty/international/localized-versions?hl=ko",
+    "category": "업종·국제화",
+    "topic": "international",
+    "guidance": [
+      "HTML·HTTP Link·사이트맵 중 사용한 방식에 완전한 절대 URL·자기 자신·상호 링크와 지원 언어/지역 코드를 제공합니다. x-default는 필요한 기본 선택에 사용하며 같은 언어 canonical과 충돌하지 않게 합니다."
+    ],
+    "applicability": "다국어·다지역 버전을 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-international-locale-adaptive-pages",
+    "engine": "google",
+    "title": "Google에서 언어 적응형 페이지를 크롤링하는 방법",
+    "url": "https://developers.google.com/search/docs/specialty/international/locale-adaptive-pages?hl=ko",
+    "category": "업종·국제화",
+    "topic": "international",
+    "guidance": [
+      "IP·쿠키·Accept-Language만으로 버전을 바꾸면 일부 콘텐츠가 발견되지 않을 수 있습니다. 고유 URL과 언어 링크를 제공하고 지역 분산 크롤러의 실제 접근을 확인합니다."
+    ],
+    "applicability": "다국어·다지역 버전을 운영하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-explicit-troubleshooting",
+    "engine": "google",
+    "title": "사이트가 선정적인 콘텐츠로 잘못 신고된 경우 해결 방법",
+    "url": "https://developers.google.com/search/docs/specialty/explicit/troubleshooting?hl=ko",
+    "category": "업종·국제화",
+    "topic": "special",
+    "guidance": [
+      "SafeSearch 필터 여부를 확인한 뒤 성인 메타·영상 family_friendly·UGC·연령 확인·도메인 분리의 오설정을 조사합니다. 비선정적 페이지에 잘못 붙은 라벨을 수정하고 공식 재검토 절차를 확인합니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-basic-intro",
+    "engine": "naver",
+    "title": "검색엔진 최적화의 목적",
+    "url": "https://searchadvisor.naver.com/guide/seo-basic-intro",
+    "category": "검색 기초·고급",
+    "topic": "basics",
+    "guidance": [
+      "소유확인 → 로봇 접근 → 중복 정리 → 피드 제출 → 실제 검색 확인 순서로 진행합니다. 등록·수집 성공과 노출 완료는 별도로 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-basic-create",
+    "engine": "naver",
+    "title": "웹 사이트를 만들 때",
+    "url": "https://searchadvisor.naver.com/guide/seo-basic-create",
+    "category": "검색 기초·고급",
+    "topic": "basics",
+    "guidance": [
+      "호스트 이름의 밑줄을 피하고 동일 콘텐츠는 일관된 호스트·URL로 운영합니다. robots·사이트맵·오류 응답·모바일 사용성을 함께 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-basic-robots",
+    "engine": "naver",
+    "title": "robots.txt 설정하기",
+    "url": "https://searchadvisor.naver.com/guide/seo-basic-robots",
+    "category": "검색 기초·고급",
+    "topic": "crawl",
+    "guidance": [
+      "호스트 루트의 robots.txt, UTF-8 평문, HTTP 응답별 처리와 Yeti 규칙을 검증합니다. 파비콘·JS·CSS까지 허용 범위를 확인하고 실제 수집 결과를 도구에서 대조합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-basic-redirect",
+    "engine": "naver",
+    "title": "웹 페이지의 이동",
+    "url": "https://searchadvisor.naver.com/guide/seo-basic-redirect",
+    "category": "검색 기초·고급",
+    "topic": "migration",
+    "guidance": [
+      "영구 이동은 301, 일시는 302를 사용하고 JS 이동·연속 이동을 줄입니다. 이동 중간과 최종 URL도 수집 가능해야 하며 임시 부하는 트래픽 제한 기능을 검토합니다."
+    ],
+    "applicability": "사이트 이전·실험·중단 등 해당 변경을 진행하는 경우",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-basic-migration",
+    "engine": "naver",
+    "title": "웹 사이트 이전",
+    "url": "https://searchadvisor.naver.com/guide/seo-basic-migration",
+    "category": "검색 기초·고급",
+    "topic": "migration",
+    "guidance": [
+      "새 사이트 소유확인 후 기존 주소별 301 매핑을 적용하고 내부 링크·대표 주소·피드·검색 반영을 확인합니다. 리디렉션 없이 기존 사이트를 먼저 폐쇄하지 않습니다."
+    ],
+    "applicability": "사이트 이전·실험·중단 등 해당 변경을 진행하는 경우",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-basic-close",
+    "engine": "naver",
+    "title": "웹 사이트 운영을 그만둘 때",
+    "url": "https://searchadvisor.naver.com/guide/seo-basic-close",
+    "category": "검색 기초·고급",
+    "topic": "migration",
+    "guidance": [
+      "종료 안내와 개인정보·콘텐츠 정리를 진행하고 종료된 URL은 적절한 오류 응답 또는 읽을 수 있는 제외 지시로 처리합니다. 도메인이 만료되어 스팸 사이트로 재사용되는 위험도 관리합니다."
+    ],
+    "applicability": "사이트 이전·실험·중단 등 해당 변경을 진행하는 경우",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-basic-firewall",
+    "engine": "naver",
+    "title": "검색로봇 확인 방법",
+    "url": "https://searchadvisor.naver.com/guide/seo-basic-firewall",
+    "category": "검색 기초·고급",
+    "topic": "crawl",
+    "guidance": [
+      "Yeti User-Agent만으로 진위를 확정하지 않습니다. 공식 IP 확인 절차와 역방향·정방향 DNS를 대조한 뒤 방화벽 정책을 적용합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-basic-http",
+    "engine": "naver",
+    "title": "HTTP 규약(Protocol)",
+    "url": "https://searchadvisor.naver.com/guide/seo-basic-http",
+    "category": "검색 기초·고급",
+    "topic": "crawl",
+    "guidance": [
+      "200·301/302·403·404·5xx의 의미를 구분합니다. 존재하지 않는 주소가 정상 200 HTML을 반환하는 soft 404와 로그인·오류 페이지로의 일괄 이동을 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-advanced-javascript",
+    "engine": "naver",
+    "title": "자바스크립트 검색 최적화",
+    "url": "https://searchadvisor.naver.com/guide/seo-advanced-javascript",
+    "category": "검색 기초·고급",
+    "topic": "javascript",
+    "guidance": [
+      "렌더링에 필요한 JS/CSS를 열고 독립 콘텐츠는 fragment 대신 접근 가능한 URL로 제공합니다. SPA 자체를 미노출 사유로 단정하지 않고 실제 렌더링 콘텐츠를 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-advanced-url",
+    "engine": "naver",
+    "title": "검색 친화적인 URL 구축하기",
+    "url": "https://searchadvisor.naver.com/guide/seo-advanced-url",
+    "category": "검색 기초·고급",
+    "topic": "links",
+    "guidance": [
+      "짧고 이해할 수 있는 일관된 URL과 실제 a[href] 링크를 사용합니다. 세션·불필요한 매개변수·다중 주소가 동일 콘텐츠를 중복 생성하는지 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-advanced-indexing",
+    "engine": "naver",
+    "title": "사이트의 색인 효율성 개선하기",
+    "url": "https://searchadvisor.naver.com/guide/seo-advanced-indexing",
+    "category": "검색 기초·고급",
+    "topic": "index",
+    "guidance": [
+      "비어 있는 HTML, 의미 없는 오류 안내의 200 응답, 본문 없는 페이지를 정리합니다. 중요한 콘텐츠의 원본·렌더링 내용과 사이트의 색인 제외 사유를 대조합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-seo-help",
+    "engine": "naver",
+    "title": "SEO 기본 가이드",
+    "url": "https://searchadvisor.naver.com/guide/seo-help",
+    "category": "검색 기초·고급",
+    "topic": "metadata",
+    "guidance": [
+      "누락·복수 title, 누락·중복 description, 사이트 전체의 같은 제목, 복수 H1, alt 누락을 구분합니다. 길이는 내용·가독성과 함께 검토하고 임의의 글자 수로 실패 처리하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-resource-and-link",
+    "engine": "naver",
+    "title": "리소스와 링크 관리",
+    "url": "https://searchadvisor.naver.com/guide/resource-and-link",
+    "category": "리소스·링크",
+    "topic": "links",
+    "guidance": [
+      "robots·IP 차단 때문에 필요한 리소스를 읽지 못하는지 확인합니다. JS 호출만 있는 href와 HTTPS 페이지의 HTTP 내부 링크를 찾아 실제 탐색용 URL로 보완합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-content-abusing",
+    "engine": "naver",
+    "title": "웹 콘텐츠 스팸사례",
+    "url": "https://searchadvisor.naver.com/guide/content-abusing",
+    "category": "콘텐츠",
+    "topic": "spam",
+    "guidance": [
+      "클로킹·리디렉션 악용·링크/백링크 조작·만료 도메인·매크로·해킹·악성코드·숨긴 텍스트·키워드 남용·복제 콘텐츠 등 스팸 유형을 운영자가 검토합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-content-basic",
+    "engine": "naver",
+    "title": "콘텐츠 작성시 권장 사항",
+    "url": "https://searchadvisor.naver.com/guide/content-basic",
+    "category": "콘텐츠",
+    "topic": "content",
+    "guidance": [
+      "고유한 브랜드 URL과 정확한 제목·설명, 텍스트 정보를 제공합니다. 경험·전문성, 주제 일관성, 충분한 고유 정보, 지속 관리와 이용자에게 필요한 답을 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-markup-structure",
+    "engine": "naver",
+    "title": "선호 URL 및 로봇 메타 태그",
+    "url": "https://searchadvisor.naver.com/guide/markup-structure",
+    "category": "HTML 마크업",
+    "topic": "canonical",
+    "guidance": [
+      "canonical은 head에 절대 URL로 지정하고 동일 문서 변형을 통합합니다. noindex·nofollow 등 로봇 메타의 목적과 조합을 점검하고 검색 제외와 접근 보안을 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-markup-content",
+    "engine": "naver",
+    "title": "콘텐츠 마크업",
+    "url": "https://searchadvisor.naver.com/guide/markup-content",
+    "category": "HTML 마크업",
+    "topic": "metadata",
+    "guidance": [
+      "페이지마다 주제를 표현하는 제목·설명을 작성하고 OG·소셜 정보와 맞춥니다. OG 대표 이미지는 150×150 초과·5,000바이트 이상·가로세로 비 3:1 이내를 실제 파일에서 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-markup-mobile",
+    "engine": "naver",
+    "title": "모바일 사용성",
+    "url": "https://searchadvisor.naver.com/guide/markup-mobile",
+    "category": "HTML 마크업",
+    "topic": "mobile",
+    "guidance": [
+      "반응형 viewport와 실제 휴대전화 화면을 검증합니다. 별도 모바일 주소는 페이지별 PC/모바일 대응·대표/대체 URL 및 기기 이동을 일관되게 유지합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-markup-favicon",
+    "engine": "naver",
+    "title": "파비콘 (Favicon)",
+    "url": "https://searchadvisor.naver.com/guide/markup-favicon",
+    "category": "HTML 마크업",
+    "topic": "images",
+    "guidance": [
+      "정사각형 16px 이상(32px 이상 권장), 지원 파일 형식, 절대 href와 봇 접근을 확인합니다. 같은 rel의 중복 선언을 줄이고 shortcut icon → icon → /favicon.ico → apple 계열의 적용 우선순위를 검토합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-request-crawl",
+    "engine": "naver",
+    "title": "수집요청 및 검색제외",
+    "url": "https://searchadvisor.naver.com/guide/request-crawl",
+    "category": "검색 연동",
+    "topic": "index",
+    "guidance": [
+      "변경 URL을 수집 요청하되 수락·수집·색인을 구분합니다. 검색 제외 지시를 읽게 한 뒤 처리 상태를 확인하고 robots 차단만으로 삭제 완료를 기대하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-request-feed",
+    "engine": "naver",
+    "title": "RSS 및 사이트맵 제출",
+    "url": "https://searchadvisor.naver.com/guide/request-feed",
+    "category": "검색 연동",
+    "topic": "sitemap",
+    "guidance": [
+      "소유확인한 동일 도메인의 RSS/사이트맵을 제출합니다. 10MB 미만, 사이트맵 URL 50,000개 미만과 XML 형식을 확인하며 RSS는 본문과 1개 이상의 item을 포함합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-diagnose-site",
+    "engine": "naver",
+    "title": "사이트 간단 체크",
+    "url": "https://searchadvisor.naver.com/guide/diagnose-site",
+    "category": "검증",
+    "topic": "crawl",
+    "guidance": [
+      "사이트 간단 체크의 로봇 접근·메타·콘텐츠 결과를 실제 URL의 HTTP·robots·noindex와 대조합니다. 이 결과를 전체 사이트 색인 또는 순위로 해석하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-url-inspection",
+    "engine": "naver",
+    "title": "URL 검사",
+    "url": "https://searchadvisor.naver.com/guide/url-inspection",
+    "category": "검증",
+    "topic": "index",
+    "guidance": [
+      "URL 검사에서 색인 상태·마지막 수집·Meta·SEO를 확인합니다. 수정한 현재 HTML과 검색엔진이 마지막으로 수집한 버전의 시차를 분리합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-report-expose-ctr",
+    "engine": "naver",
+    "title": "콘텐츠 노출 및 클릭",
+    "url": "https://searchadvisor.naver.com/guide/report-expose-ctr",
+    "category": "SEO 리포트",
+    "topic": "monitoring",
+    "guidance": [
+      "네이버 웹 검색의 노출·클릭·CTR과 TOP 30을 같은 기준일로 비교합니다. 광고·블로그 실적과 구분하고 90일 보관 및 집계 지연을 고려합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-report-diagnosis",
+    "engine": "naver",
+    "title": "사이트 진단",
+    "url": "https://searchadvisor.naver.com/guide/report-diagnosis",
+    "category": "SEO 리포트",
+    "topic": "monitoring",
+    "guidance": [
+      "색인·수집 제한·색인 제외·SEO와 진단 이력을 나누어 확인합니다. 세부 URL 사례를 수정하고 데이터 부족·수집 시차 때문에 리포트가 비어 있는지도 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-report-seo",
+    "engine": "naver",
+    "title": "사이트 최적화",
+    "url": "https://searchadvisor.naver.com/guide/report-seo",
+    "category": "SEO 리포트",
+    "topic": "monitoring",
+    "guidance": [
+      "수집 가능성, 제목·설명 관리, HTML 구조·앵커, 사이트 활성화를 각각 개선합니다. 최적화 리포트 값이 높아도 검색 노출과 순위를 보장하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-report-crawl-refine",
+    "engine": "naver",
+    "title": "수집 현황",
+    "url": "https://searchadvisor.naver.com/guide/report-crawl-refine",
+    "category": "SEO 리포트",
+    "topic": "monitoring",
+    "guidance": [
+      "수집 현황과 색인 현황은 별도 지표입니다. 일별 변동을 서버 오류·변경량·크롤링 제한과 비교하고 수집 건수를 노출 완료 건수로 세지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-site-summary",
+    "engine": "naver",
+    "title": "사이트 상태",
+    "url": "https://searchadvisor.naver.com/guide/site-summary",
+    "category": "사이트 상태",
+    "topic": "crawl",
+    "guidance": [
+      "보안 인증서의 유효성·호스트 일치와 HTTPS 이동, 사이트맵 상태를 확인합니다. URL 한 번의 정상 응답만으로 모든 인증서·만료·내부 링크 문제를 통과 처리하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-structured-data-intro",
+    "engine": "naver",
+    "title": "구조화된 데이터 소개",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-intro",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "schema.org 유형과 JSON-LD·Microdata·RDFa 중 구현 방식을 확인합니다. 공개 콘텐츠와 일치하는 마크업을 공식 테스트 도구로 검증합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-structured-data-channel",
+    "engine": "naver",
+    "title": "사이트 연관채널",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-channel",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "홈페이지의 Organization/Person과 실제 공식 채널 sameAs를 연결합니다. 제3자 채널을 소유 채널로 표시하거나 관련 없는 채널을 대량 연결하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "사이트 연관 채널 마크업",
+        "required": [
+          "name",
+          "url",
+          "sameAs"
+        ],
+        "recommended": [],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-job",
+    "engine": "naver",
+    "title": "채용정보",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-job",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "사전 제휴 협의·소유확인·수집요청 API 자격을 확인합니다. 실제 채용 상세 페이지에 게시·마감 날짜, 근무지/원격 근무, 고용 형태·경력·근무 시간과 급여 형식을 맞춥니다. 종료된 채용 공고의 상태와 필수 항목을 갱신합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "JobPosting · 제휴 협의 후 적용 / 최소 예제와 항목별 명세 대조",
+        "required": [
+          "title",
+          "datePosted",
+          "employmentType",
+          "experienceRequirements",
+          "jobLocation",
+          "description",
+          "hiringOrganization.name",
+          "hiringOrganization.sameAs",
+          "identifier.propertyID",
+          "identifier.value"
+        ],
+        "recommended": [
+          "baseSalary",
+          "workHours",
+          "educationRequirements",
+          "qualifications",
+          "hiringOrganization.logo",
+          "hiringOrganization.description"
+        ],
+        "conditional": [
+          "validThrough: 실제 마감일이 있을 때 · 상시/채용시 마감은 생략",
+          "jobLocationType: 재택근무이면 TELECOMMUTE",
+          "baseSalary.value: 고정 value 또는 minValue/maxValue 범위 · 숫자형",
+          "currency: ISO 4217 · unitText: HOUR/DAY/WEEK/MONTH/YEAR 또는 한글 단위",
+          "hiringOrganization.hiringtype: 서치펌이면 headhunting",
+          "해외 근무지: addressCountry는 ISO alpha2",
+          "description 문단: 줄바꿈 또는 br 사용 · 다른 HTML 태그 의존 금지"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-address",
+    "engine": "naver",
+    "title": "주소 (Address)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-address",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 주소를 PostalAddress의 국가·지역·도로명·우편번호로 구분하고 본문 정보와 일치시킵니다. 임의 주소를 만들어 넣지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "주소 (Address) 마크업",
+        "required": [
+          "streetAddress"
+        ],
+        "recommended": [
+          "postalCode",
+          "addressRegion",
+          "addressLocality"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-breadcrumb",
+    "engine": "naver",
+    "title": "사이트 이동 경로 (BreadcrumbList)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-breadcrumb",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "페이지의 실제 탐색 경로를 BreadcrumbList의 ListItem 위치·이름·URL로 표현합니다. 순서를 맞추고 현재 페이지를 포함한 경로가 사용자 탐색과 일치하는지 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "BreadcrumbList.itemListElement → ListItem / item",
+        "required": [
+          "name"
+        ],
+        "recommended": [
+          "position"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-howto",
+    "engine": "naver",
+    "title": "하우투 (HowTo)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-howto",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "목적·완료 결과와 순차 단계를 실제 본문과 맞춥니다. 각 HowToStep의 text와 원본·고유 이미지를 사용하고 로고·깨진 이미지·지나치게 적은 단계를 피합니다. 네이버 안내에서는 Recipe 하위에 HowTo를 넣지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "HowTo.step → HowToStep",
+        "required": [
+          "text"
+        ],
+        "recommended": [
+          "image",
+          "url"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-carousel",
+    "engine": "naver",
+    "title": "캐러셀 (ListItem)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-carousel",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "하나의 일관된 유형을 나열하는 목록에서 ListItem의 위치·항목·URL을 맞춥니다. 목록과 상세 페이지의 관계 및 대표 이미지 조건을 확인합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "타입 및 속성",
+        "required": [
+          "image"
+        ],
+        "recommended": [
+          "name",
+          "url",
+          "item",
+          "position"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-rating",
+    "engine": "naver",
+    "title": "평점 (AggregateRating)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-rating",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 평가 대상과 ratingValue·평가/리뷰 건수·최고/최저 척도를 함께 검증합니다. 서로 다른 대상의 평가를 합치거나 근거 없는 점수를 생성하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "타입 및 속성",
+        "required": [
+          "ratingValue"
+        ],
+        "recommended": [
+          "bestRating"
+        ],
+        "conditional": [
+          "ratingCount",
+          "reviewCount"
+        ]
+      },
+      {
+        "scope": "AggregateRating",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "ratingCount 또는 reviewCount 중 1개 이상 · 둘 다 있으면 ratingCount 우선",
+          "ratingValue: 0 이상 숫자 · bestRating ≥ ratingValue"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-recipe",
+    "engine": "naver",
+    "title": "레시피 (Recipe)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-recipe",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 음식의 이름·이미지·재료·조리 단계와 시간·분량·영양 수치의 단위를 맞춥니다. 완성 음식과 관련된 접근 가능한 이미지를 사용합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "타입 및 속성",
+        "required": [
+          "recipeInstruction"
+        ],
+        "recommended": [
+          "name",
+          "image",
+          "recipeYield",
+          "totalTime",
+          "recipeIngredient"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-review",
+    "engine": "naver",
+    "title": "리뷰 (Review)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-review",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 대상·작성자·리뷰 본문·점수·날짜를 대조하고 중첩된 평가 대상과 척도를 확인합니다. 광고 문구를 사용자 리뷰로 가장하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "타입 및 속성",
+        "required": [
+          "reviewBody"
+        ],
+        "recommended": [
+          "ratingValue",
+          "bestRating"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-restaurant",
+    "engine": "naver",
+    "title": "식당 (Restaurant)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-restaurant",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 음식점의 이름·주소·전화·영업 시간·메뉴·가격대와 이미지/평점을 확인합니다. 폐업·휴무·지점별 정보를 정확히 구분합니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "타입 및 속성",
+        "required": [
+          "name",
+          "openingHours"
+        ],
+        "recommended": [
+          "telephone",
+          "image",
+          "url",
+          "servesCuisine",
+          "priceRange",
+          "description"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-tvseries",
+    "engine": "naver",
+    "title": "TV 시리즈 (TVSeries)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-tvseries",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "실제 시리즈의 이름·설명·이미지·제작/출연·시즌/에피소드 정보를 본문과 맞춥니다. 동영상 채널 제휴의 Person 타입과 혼용하지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "타입 및 속성",
+        "required": [
+          "name",
+          "actor"
+        ],
+        "recommended": [
+          "creator",
+          "genre",
+          "image",
+          "description"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-movie",
+    "engine": "naver",
+    "title": "영화 (Movie)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-movie",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "영화 이름·개봉·감독/출연·포스터·설명과 실제 평가를 대조합니다. 동명의 다른 작품이나 회차·시리즈 정보를 같은 객체로 합치지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "타입 및 속성",
+        "required": [
+          "name",
+          "actor"
+        ],
+        "recommended": [
+          "director",
+          "genre",
+          "image",
+          "description"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-software",
+    "engine": "naver",
+    "title": "소프트웨어 (Software)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-software",
+    "category": "구조화 데이터",
+    "topic": "schema",
+    "guidance": [
+      "name과 applicationCategory를 제공하고 지원 운영체제·절대 다운로드 URL·스크린샷·설명을 실제 앱과 맞춥니다. Google의 별도 가격·평점 요건을 네이버 필수로 섞지 않습니다."
+    ],
+    "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "타입 및 속성",
+        "required": [
+          "name",
+          "applicationCategory"
+        ],
+        "recommended": [
+          "operatingSystem",
+          "url",
+          "screenshot",
+          "description"
+        ],
+        "conditional": []
+      }
+    ]
+  },
+  {
+    "id": "naver-structured-data-video",
+    "engine": "naver",
+    "title": "동영상 검색 (Video Search)",
+    "url": "https://searchadvisor.naver.com/guide/structured-data-video",
+    "category": "구조화 데이터",
+    "topic": "media",
+    "guidance": [
+      "제휴 영상은 최상위 VideoObject 1개, 채널은 최상위 Person 1개로 작성하며 @graph를 쓰지 않습니다. cid·creator.name/url을 채널과 맞추고 날짜에 초·시간대를 포함합니다. 영상 설명·URL·썸네일·재생 시간을 실제 페이지와 맞추며 무료 영상에는 offers를 넣지 않습니다. 시청 등급·adultYn·모바일 확장·상호작용 객체와 사전 제휴 신청도 확인합니다."
+    ],
+    "applicability": "해당 동영상·뉴스·스토리 기능을 운영하는 페이지",
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "Video",
+        "required": [
+          "@type",
+          "name",
+          "description",
+          "url",
+          "uploadDate",
+          "duration",
+          "cid",
+          "creator.@type",
+          "creator.name",
+          "creator.url"
+        ],
+        "recommended": [
+          "mobileUrl",
+          "mobileChannelUrl",
+          "keywords",
+          "width",
+          "height",
+          "additionalType",
+          "interactionStatistic[].userInteractionCount"
+        ],
+        "conditional": [
+          "contentRating",
+          "offers",
+          "thumbnailUrl 또는 og:image · 원문 대체 조건"
+        ]
+      },
+      {
+        "scope": "Channel",
+        "required": [
+          "@type",
+          "name",
+          "url",
+          "cid",
+          "description",
+          "mainEntityOfPage.dateCreated",
+          "mainEntityOfPage.dateModified"
+        ],
+        "recommended": [
+          "keywords",
+          "additionalType",
+          "interactionStatistic[].userInteractionCount"
+        ],
+        "conditional": [
+          "adultYn"
+        ]
+      },
+      {
+        "scope": "제휴·무료 영상·채널 연결",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "thumbnailUrl 미제공 시 og:image 대체 조건 확인",
+          "무료 영상: offers 미기재(0원도 유료로 분류)",
+          "contentRating: 연령 제한 시",
+          "adultYn: 성인 채널 조건",
+          "VideoObject.cid/creator.name/creator.url ↔ Person.cid/name/url 일치"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "naver-crawl-request-api",
+    "engine": "naver",
+    "title": "수집요청 API 명세 및 연동",
+    "url": "https://searchadvisor.naver.com/guide/crawl-request-api",
+    "category": "제휴 API",
+    "topic": "indexnow",
+    "guidance": [
+      "제휴 자격·소유확인·accessToken·할당량·robots를 확인합니다. 최종 랜딩 대표 URL을 요청하며 일반 공개 IndexNow API와 인증·제한을 혼동하지 않습니다."
+    ],
+    "applicability": "변경 알림 또는 제휴 수집 API를 사용하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-indexnow-about",
+    "engine": "naver",
+    "title": "IndexNow 소개",
+    "url": "https://searchadvisor.naver.com/guide/indexnow-about",
+    "category": "IndexNow",
+    "topic": "indexnow",
+    "guidance": [
+      "생성·수정·삭제된 URL을 검색엔진에 알리는 선택 기능입니다. 알림 수락이 수집·색인·노출 완료를 뜻하지 않습니다."
+    ],
+    "applicability": "변경 알림 또는 제휴 수집 API를 사용하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-indexnow-api-key",
+    "engine": "naver",
+    "title": "API Key 생성하기",
+    "url": "https://searchadvisor.naver.com/guide/indexnow-api-key",
+    "category": "IndexNow",
+    "topic": "indexnow",
+    "guidance": [
+      "네이버 가이드 기준으로 UTF-8 키 파일과 8~128자 a-f/A-F/0-9/하이픈 키를 준비합니다. 호스트별 소유권과 keyLocation 디렉터리 범위를 확인합니다."
+    ],
+    "applicability": "변경 알림 또는 제휴 수집 API를 사용하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-indexnow-request",
+    "engine": "naver",
+    "title": "페이지 갱신 요청하기",
+    "url": "https://searchadvisor.naver.com/guide/indexnow-request",
+    "category": "IndexNow",
+    "topic": "indexnow",
+    "guidance": [
+      "단일 GET 또는 같은 호스트의 URL 최대 10,000개 POST로 변경을 알립니다. 200/202·400·403·422·429·5xx를 별도 처리하고 잘못된 URL·키·과도한 재시도를 수정합니다."
+    ],
+    "applicability": "변경 알림 또는 제휴 수집 API를 사용하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-indexnow-faq",
+    "engine": "naver",
+    "title": "IndexNow - FAQ",
+    "url": "https://searchadvisor.naver.com/guide/indexnow-faq",
+    "category": "IndexNow",
+    "topic": "indexnow",
+    "guidance": [
+      "사이트맵·RSS를 유지하면서 실제 변경분을 알립니다. 404·301·302 변경도 알릴 수 있지만 변하지 않은 과거 전체 URL을 반복 제출하지 않습니다."
+    ],
+    "applicability": "변경 알림 또는 제휴 수집 API를 사용하는 사이트",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-education-basic",
+    "engine": "naver",
+    "title": "네이버 웹 검색의 기초",
+    "url": "https://searchadvisor.naver.com/guide/education-basic",
+    "category": "교육",
+    "topic": "basics",
+    "guidance": [
+      "검색의 발견·수집·색인·노출 단계, 브랜드 이름/주소, 웹 표준과 꾸준한 콘텐츠 관리를 확인합니다. 교육 PDF의 옛 서비스명·제목 15자/설명 45자 권장 예시는 현재의 강제 합격선이나 처리 기한으로 사용하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-education-wmt-advanced",
+    "engine": "naver",
+    "title": "웹마스터도구 활용 가이드",
+    "url": "https://searchadvisor.naver.com/guide/education-wmt-advanced",
+    "category": "교육",
+    "topic": "monitoring",
+    "guidance": [
+      "로봇·콘텐츠·사이트 구조·활성화·스팸 관리와 웹마스터도구의 상태를 함께 점검합니다. 교육 자료의 화면·소요 시간 예시는 현재 HTML 가이드와 대조해 적용합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-faq-serpedit",
+    "engine": "naver",
+    "title": "검색노출 제목 및 설명문 갱신",
+    "url": "https://searchadvisor.naver.com/guide/faq-serpedit",
+    "category": "FAQ",
+    "topic": "appearance",
+    "guidance": [
+      "제목·설명·OG·대표 이미지·대표 URL을 수정하고 재수집 상태를 확인합니다. 검색엔진이 문맥에 따라 선택하는 제목과 설명을 태그 값 그대로 표시하도록 강제할 수는 없습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-faq-serpmissing",
+    "engine": "naver",
+    "title": "웹 검색 미노출",
+    "url": "https://searchadvisor.naver.com/guide/faq-serpmissing",
+    "category": "FAQ",
+    "topic": "index",
+    "guidance": [
+      "site: 보조 검색 후 URL 검사에서 색인·차단·중복·본문 상태를 확인합니다. 같은 키워드 미노출과 사이트 전체 색인 부재를 구분합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-faq-serpremove",
+    "engine": "naver",
+    "title": "웹 검색 제외",
+    "url": "https://searchadvisor.naver.com/guide/faq-serpremove",
+    "category": "FAQ",
+    "topic": "index",
+    "guidance": [
+      "소유 페이지는 읽을 수 있는 noindex 또는 실제 삭제/오류 응답으로 제외합니다. 먼저 robots·네트워크를 차단하지 않고 접근할 수 없는 타사 페이지는 공식 제외 절차를 확인합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-faq-sublink",
+    "engine": "naver",
+    "title": "서브링크 노출",
+    "url": "https://searchadvisor.naver.com/guide/faq-sublink",
+    "category": "FAQ",
+    "topic": "appearance",
+    "guidance": [
+      "표준 HTML·구조화된 탐색·사이트맵을 유지하고 서브링크 자동 선택을 확인합니다. 제외 목적일 때만 페이지의 nosublink 및 사이트 nosublinks 지시의 정확한 위치와 범위를 적용합니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "naver-faq-start-register",
+    "engine": "naver",
+    "title": "사이트 등록 및 소유확인",
+    "url": "https://searchadvisor.naver.com/guide/faq-start-register",
+    "category": "FAQ",
+    "topic": "index",
+    "guidance": [
+      "소유확인 파일·head 메타 태그를 올바른 호스트에 제공하고 인증 과정의 이동은 서버 방식으로 처리합니다. JS·쿠키·프레임·본문의 태그에 의존하지 않습니다."
+    ],
+    "applicability": "공개 검색 대상 페이지·사이트 운영",
+    "status": "reviewed"
+  },
+  {
+    "id": "google-specialty-explicit-guidelines",
+    "engine": "google",
+    "title": "선정적인 콘텐츠가 포함된 사이트 가이드라인",
+    "url": "https://developers.google.com/search/docs/specialty/explicit/guidelines?hl=ko",
+    "category": "업종·국제화",
+    "topic": "special",
+    "guidance": [
+      "실제 성인 콘텐츠에 정확한 라벨을 적용하고 별도 호스트/구역·안전한 UGC 검토·유해 콘텐츠 방지를 운영합니다. 법적 연령/동의 절차를 유지하며 적법한 크롤러 접근 및 정책별 제외 요건을 검토합니다."
+    ],
+    "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
+    "status": "reviewed"
+  }
+]

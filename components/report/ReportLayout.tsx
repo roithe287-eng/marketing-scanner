@@ -29,6 +29,7 @@ import GeoComparisonPanel from '@/components/GeoComparisonPanel';
 import GeoFocusPanel from '@/components/GeoFocusPanel';
 import AdWasteCalculator from '@/components/AdWasteCalculator';
 import NaverOptimizationPanel from './NaverOptimizationPanel';
+import OfficialSeoPanel from './OfficialSeoPanel';
 import KeywordRankCard from '@/components/KeywordRankCard';
 import IndustryBenchmarkCard from '@/components/IndustryBenchmarkCard';
 import Disclaimer from '@/components/Disclaimer';
@@ -94,6 +95,7 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
     <Chapter id="search" number="03" title="검색과 페이지의 연결" note="SEO·GEO·AEO의 근거를 확인하고, 해당 URL에서 실행할 작업을 정하세요."><SiteGuidebookOverview report={report}/><PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><PageWorkMap plan={execution}/><GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><KeywordOpportunities data={data}/><Disclosure title="반복 표현을 문장으로 고치기" note="단어별 상세 수정안과 작성 틀"><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/></Disclosure>
       {report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}
       <NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>
+      <OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>
       {report.keywordFrequency&&<Disclosure title="전체 키워드 빈도" note={report.keywordFrequency.methodVersion===2?'수집 본문 기준 · 집계 범위·포함 여부 확인':'이전 방식의 저장 집계 · 재진단 권장'}><KeywordFrequencyCard frequency={report.keywordFrequency}/></Disclosure>}
       {!!report.checklist?.length&&<Disclosure title="기본 진단 체크리스트" note={`${report.checklist.length}개 항목의 통과·보완·미충족 근거`}><DiagnosisChecklist checklist={report.checklist}/></Disclosure>}
     </Chapter>

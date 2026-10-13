@@ -1,5 +1,6 @@
 import {websiteHttp} from './security/safeFetch';
 import { blocksAllCrawling, type RobotsObservation } from "./robotsRules";
+import {collectOfficialSeoEvidence,type OfficialSeoEvidence} from './officialSeoEvidence';
 import {observeRobots} from "./observeRobots";
 import { getScannerContactUrl } from "./siteConfig";
 import * as cheerio from "cheerio";
@@ -8,6 +9,7 @@ import {captureSiteEditing} from './captureSiteEditing';
 import type {SiteEditing} from './siteEditingSchema';
 
 export type ExtractedWebsiteData = {
+  officialSeoEvidence?:OfficialSeoEvidence;
   siteEditing?:SiteEditing;
   seoEvidence?: {
     capturedAt:string; titleCount:number; descriptionCount:number; canonicals:string[];
@@ -378,7 +380,7 @@ export async function extractWebsite(
     contentTypeHeader
   );
 
-  if (!html || html.length < 100) {
+  if (!html.trim()) {
     throw new Error(
       "사이트가 빈 페이지를 반환했습니다. JavaScript로만 렌더링되는 SPA 사이트일 가능성이 높습니다."
     );
@@ -387,6 +389,7 @@ export async function extractWebsite(
   const finalUrl = res.url || fetchedUrl;
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
+  const officialSeoEvidence=collectOfficialSeoEvidence($,finalUrl,res.headers);
   const titleCount = $("title").length;
   const descriptionCount = $('meta[name="description" i]').length;
   const canonicals = $('link[rel~="canonical" i]').map((_, el) => $(el).attr("href") || "").get();
@@ -668,8 +671,8 @@ export async function extractWebsite(
   const isJsHeavy =
     bodyText.length < 300 && scriptCountFromHtml > 5;
 
-  // 본문 텍스트가 너무 짧으면 SPA로 추정
-  if (bodyText.length < 50 && imageAlts.length < 3) {
+  // A short page can be valid. Reject only when the response has no usable content signals.
+  if (!bodyText.trim() && !title.trim() && !description.trim() && imageAlts.length === 0) {
     throw new Error(
       "사이트에서 충분한 콘텐츠를 추출하지 못했습니다. JavaScript로만 렌더링되는 SPA 사이트(React/Vue/Angular)이거나 봇 접근이 차단되었을 수 있습니다."
     );
@@ -692,6 +695,7 @@ export async function extractWebsite(
     url,
     finalUrl,
     siteEditing,
+    officialSeoEvidence,
     seoEvidence: {capturedAt:new Date().toISOString(),titleCount,descriptionCount,canonicals,robotsMeta,xRobotsTag:res.headers.get("x-robots-tag")||"",htmlLang:$("html").attr("lang")||"",jsonLdErrors,microdataCount,rdfaCount,imagesMissingAlt:imageWithoutAlt,imagesEmptyAlt,robots,httpStatus:res.status},
     detectedEncoding,
     title,
