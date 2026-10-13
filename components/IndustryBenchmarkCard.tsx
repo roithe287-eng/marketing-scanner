@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * v45-W3: 수집 표본 참고 비교 리더보드 카드
+ * v45-W3: 수집 표본 비교 리더보드 카드
  * - 자동 감지된 업종에 대한 익명 집계 비교
  * - 표본 10개 미만이면 안내 메시지 표시
  * - 지표별 3열 비교 (수집 표본 평균 · 표본 90백분위 · 우리)
@@ -134,7 +134,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
           <div className="flex items-center gap-2 mb-2">
             <span className="text-[20px] md:text-[22px]">🏆</span>
             <h3 className="text-[20px] md:text-[24px] lg:text-[26px] font-extrabold text-neutral-900 leading-tight">
-              수집 표본 참고 비교
+              수집 표본 비교
             </h3>
           </div>
           <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
@@ -152,9 +152,6 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
               <p className="text-[13px] md:text-[14px] text-amber-800 leading-relaxed break-words">
                 {summary}
               </p>
-              <p className="text-[12px] md:text-[13px] text-amber-700/80 mt-2 leading-relaxed">
-                표본 수가 늘어도 업계 대표성이나 실제 사업 성과를 보장하지 않습니다.
-              </p>
             </div>
           </div>
         </div>
@@ -169,7 +166,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
         <div className="flex items-center gap-2 mb-2">
           <span className="text-[20px] md:text-[22px]">🏆</span>
           <h3 className="text-[20px] md:text-[24px] lg:text-[26px] font-extrabold text-neutral-900 leading-tight">
-            수집 표본 참고 비교
+            수집 표본 비교
           </h3>
         </div>
         <p className="text-[13px] md:text-[15px] text-neutral-500 leading-relaxed">
@@ -214,16 +211,6 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
         )}
       </div>
 
-      {/* 표본 비교 안내 */}
-      <div className="rounded-2xl border border-neutral-200 bg-white p-4 md:p-5 mb-5 md:mb-6">
-        <div className="text-[12px] md:text-[13px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">
-          표본 비교 안내
-        </div>
-        <p className="text-[14px] md:text-[15px] text-neutral-900 font-semibold leading-snug break-words">
-          {summary}
-        </p>
-      </div>
-
       {/* 지표별 비교 리스트 */}
       {metrics && metrics.length > 0 && (
         <div className="space-y-2 md:space-y-3 mb-5 md:mb-6">
@@ -258,9 +245,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
         </div>
       )}
 
-      <p className="mt-4 text-[11px] md:text-[12px] text-neutral-400 leading-relaxed">
-        {benchmark.scopeNote || "집계 방법이 확인된 표본만 제공합니다."} 표본 90백분위는 점수를 오름차순으로 정렬했을 때 90% 위치의 값이며, 업계 상위 10%를 인증하는 수치가 아닙니다.
-      </p>
+      <details className="mt-4 rounded-xl border border-neutral-200 p-4"><summary className="cursor-pointer font-bold">표본 집계 기준</summary><p className="mt-3 text-sm leading-7">{benchmark.scopeNote || "집계 방법이 확인된 표본만 제공합니다."} 표본 90백분위는 점수를 오름차순으로 정렬했을 때 90% 위치의 값입니다.</p></details>
     </section>
   );
 }

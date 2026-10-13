@@ -10,7 +10,7 @@ export default function CompetitorComparison({competitorAnalysis,ourUrl,ourTitle
   const competitors=competitorAnalysis.competitors||[],ourDomain=getDomainFromUrl(ourUrl);
   const [deepDiveTarget,setDeepDiveTarget]=useState<{url:string;domain:string}|null>(null);
   return (<div className="competitor-report">
-    <p className="report-note">비교 번호는 목록 순서입니다. 검색 응답 순서와 실제 경쟁 관계는 각 후보의 근거에서 구분해 확인하세요. 아래는 저장된 전체 원문이며 AI 해석이 있으면 별도로 표시합니다.</p>
+    <p className="report-note">비교 후보의 원문과 AI 분석을 확인하세요.</p>
     <div className="competitor-report-body">
         {/* ===== ⑤ 경쟁사 상세 카드 ===== */}
         <div>

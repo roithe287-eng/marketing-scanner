@@ -26,6 +26,5 @@ export default function LandingReportFeatures() {
       <FeatureGraphic kind={feature.kind}/>
       <p className="scanner-feature-eyebrow">{feature.eyebrow}</p><h3>{feature.title}</h3><p className="scanner-feature-description">{feature.description}</p><p className="scanner-feature-detail">{feature.detail}</p>
     </article>)}</div>
-    <p className="scanner-feature-availability">수집된 정보·연동 상태·이용 권한에 따라 제공 항목이 달라집니다. KPI는 성과 예측이나 보장이 아닌 목표 설정·검증을 위한 지표입니다.</p>
   </section>;
 }

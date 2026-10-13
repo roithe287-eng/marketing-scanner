@@ -16,7 +16,7 @@
 .report-v2 summary { min-height:44px; }
 .report-v2 .report-readiness-grid>button>span:first-child { font-size:16px; line-height:1.7; }
 .report-v2 .report-readiness-grid>button>span:nth-child(2) { flex-wrap:wrap; gap:6px; }
-.report-evidence-guide { padding:26px; margin:22px 0; background:#fff; border:1px solid #c7d5ed; border-radius:20px; }
+.report-evidence-guide { padding:0 18px; margin:12px 0; background:#fff; border:1px solid #c7d5ed; border-radius:14px; }
 .report-evidence-guide>header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:20px; }
 .report-evidence-guide h2 { font-size:26px; font-weight:850; line-height:1.5; color:#1a2945; }
 .report-evidence-types { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
@@ -27,7 +27,8 @@
 .report-evidence-types h3 { font-size:23px; font-weight:850; line-height:1.5; margin:8px 0; }
 .report-evidence-types p { font-size:16px; line-height:1.8; margin-bottom:18px; }
 .report-evidence-types strong { display:block; font-size:14px; line-height:1.8; margin-top:auto; border-top:1px solid #ffffff; padding-top:12px; width:100%; }
-.report-evidence-details { margin-top:18px; border-top:1px solid #d4deed; padding-top:8px; }
+.report-evidence-details { margin:0; padding:0; }
+.report-evidence-details[open] { padding-bottom:16px; }
 .report-evidence-details summary { display:flex; align-items:center; justify-content:space-between; gap:12px; font-size:16px; font-weight:750; padding:12px 0; cursor:pointer; }
 .report-evidence-details[open] summary>span { transform:rotate(45deg); }
 .report-evidence-details :is(p,li) { font-size:16px; line-height:1.85; color:#374860; }
@@ -61,7 +62,8 @@
 .keyword-included[data-included=true] { background:#e1f2eb; color:#156249; }
 .keyword-cell-label { display:none; }
 @media(max-width:767px) {
- .report-evidence-guide,.keyword-frequency { padding:20px 16px; }
+ .report-evidence-guide { padding:0 16px; }
+ .keyword-frequency { padding:20px 16px; }
  .report-evidence-guide h2,.keyword-frequency h3 { font-size:24px; }
  .report-evidence-types { grid-template-columns:minmax(0,1fr); }
  .report-evidence-types>section { padding:18px; }
