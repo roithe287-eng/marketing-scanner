@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import type { Account, Inquiry, Features } from "@/lib/saas/types";
 import { DEFAULT_FEATURES } from "@/lib/saas/types";
+import { inquiryServiceLabels } from '@/lib/inquiry';
+import { inquiryPlanLabel } from '@/lib/pricing';
 import AdminActivityDashboard from './AdminActivityDashboard';
 import { NETWORK_ACTIVITY_ID } from '@/lib/saas/activityTypes';
 import UserActivityView, {koreanTime} from './UserActivityView';
@@ -223,6 +225,7 @@ export default function AdminView() {
               <summary>
                 <span>
                   <strong>{item.name}</strong> {item.company}
+                  {!!item.services?.length && <span className="admin-inquiry-services">{inquiryServiceLabels(item.services).map(label => <span key={label}>{label}</span>)}</span>}
                 </span>
                 <span>
                   {
@@ -235,6 +238,10 @@ export default function AdminView() {
                 </span>
               </summary>
               <div>
+                {(item.planId || !!item.services?.length) && <dl className="admin-inquiry-selections">
+                  {inquiryPlanLabel(item.planId) && <div><dt>선택한 이용 안내</dt><dd>{inquiryPlanLabel(item.planId)}</dd></div>}
+                  {!!item.services?.length && <div><dt>광고대행 문의</dt><dd>{inquiryServiceLabels(item.services).join(' · ')}</dd></div>}
+                </dl>}
                 <p className="access-detail">
                   {item.email} · {item.contact}
                   <br />

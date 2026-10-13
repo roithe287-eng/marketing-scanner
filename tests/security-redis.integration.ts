@@ -289,19 +289,36 @@ test("HTTP handlers complete inquiry → approval → activation → login → p
           email: "routes@example.com",
           contact: "test only",
           consent: true,
+          services: ['naver-ads', 'meta-ads'],
+          planId: 'agency',
         }),
       )
     ).status,
     200,
   );
+  for (const [email, services] of [['one-service@example.com', ['naver-ads']], ['no-service@example.com', []]] as const) {
+    const submitted = await lead.POST(request('/api/lead', {
+      name: 'Optional services', email, contact: 'test only', consent: true, services,
+    }));
+    assert.equal(submitted.status, 200);
+  }
   const adminList = await management.GET(
     request("/api/admin", undefined, adminCookie, true),
   );
   assert.equal(adminList.status, 200);
-  const inquiry = (await adminList.json()).inquiries.find(
+  const savedInquiries = (await adminList.json()).inquiries;
+  assert.deepEqual(savedInquiries.find((i: any) => i.email === 'one-service@example.com').services, ['naver-ads']);
+  assert.deepEqual(savedInquiries.find((i: any) => i.email === 'no-service@example.com').services, []);
+  const inquiry = savedInquiries.find(
     (i: any) => i.email === "routes@example.com",
   );
   assert.ok(inquiry);
+  assert.deepEqual(inquiry.services, ['naver-ads', 'meta-ads']);
+  assert.equal(inquiry.planId, 'agency');
+  const storedInquiry = await db().get<{services: string[]; planId: string}>(key('inquiry:' + inquiry.id));
+  assert.deepEqual(storedInquiry?.services, ['naver-ads', 'meta-ads']);
+  assert.equal(storedInquiry?.planId, 'agency');
+  assert.ok(Number(await db().ttl(key('inquiry:' + inquiry.id))) > 0);
   const grant = {
     expiresAt: Date.now() + 86400000,
     monthlyLimit: 3,

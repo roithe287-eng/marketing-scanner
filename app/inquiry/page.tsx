@@ -21,7 +21,7 @@ export default async function InquiryPage({ searchParams }: { searchParams: Prom
           <b>03</b> 계정 활성화
         </li>
       </ol>
-      <InquiryForm selectedPlan={selectedPlan} />
+      <InquiryForm selectedPlan={selectedPlan} selectedPlanId={selectedPlan && typeof plan === 'string' ? plan : undefined} />
     </AccessShell>
   );
 }

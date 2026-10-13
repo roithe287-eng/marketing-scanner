@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { inquiryServiceIds } from '../inquiry';
+import { inquiryPlanLabel } from '../pricing';
 export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 export const passwordSchema = z.string().min(12).max(128);
 export const featuresSchema = z
@@ -24,6 +26,9 @@ export const inquirySchema = z.object({
   contact: z.string().trim().min(3).max(80),
   url: z.string().trim().max(2048).default(""),
   message: z.string().trim().max(2000).default(""),
+  services: z.array(z.enum(inquiryServiceIds)).max(2).default([])
+    .transform(services => [...new Set(services)]),
+  planId: z.string().max(40).refine(id => !!inquiryPlanLabel(id)).optional(),
   consent: z.literal(true),
   website: z.string().max(0).optional(),
 });
