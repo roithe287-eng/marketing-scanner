@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-export default function InquiryForm() {
+export default function InquiryForm({ selectedPlan }: { selectedPlan?: string }) {
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -49,6 +49,7 @@ export default function InquiryForm() {
     );
   return (
     <form onSubmit={submit} className="access-form">
+      {selectedPlan ? <p className="scanner-inquiry-plan"><span>선택한 이용 안내</span><strong>{selectedPlan}</strong><a href="/pricing">다른 이용권 보기</a></p> : null}
       <div className="access-form-grid">
         <label>
           이름 <b>필수</b>
@@ -96,6 +97,7 @@ export default function InquiryForm() {
           name="message"
           rows={4}
           maxLength={2000}
+          defaultValue={selectedPlan ? `[이용 문의] ${selectedPlan}\n` : ''}
           placeholder="검색 노출, AI 답변에서의 브랜드 언급, 경쟁사 비교 등"
         />
       </label>
