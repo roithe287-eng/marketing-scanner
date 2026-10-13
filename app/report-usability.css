@@ -13,7 +13,7 @@
 .work-card-action>p { display:-webkit-box; -webkit-line-clamp:4; -webkit-box-orient:vertical; overflow:hidden; font-size:16px; line-height:1.85; }
 .report-v2 .work-today-grid .work-link { margin-top:8px; background:#1647bd; border-color:#1647bd; color:#fff; align-self:end; }
 .report-v2 .report-priority-trio>li { grid-template-rows:1fr auto; align-content:stretch; }
-.report-v2 .report-priority-trio>li>button { align-self:end; border:1px solid #b9ccec; width:100%; text-align:center; }
+.report-v2 .report-priority-trio>li>button { grid-column:1 / -1; align-self:end; border:1px solid #b9ccec; width:100%; text-align:center; }
 .report-v2 .report-priority-trio>li>span { background:#e8efff; }
 .report-v2 .report-axis-detail { scroll-margin-top:190px; }
 .report-v2 .report-next-action { white-space:normal; }
@@ -108,3 +108,50 @@
 .work-related-task { margin:16px 0; }
 .work-related-task>div { padding:0 18px 18px; }
 .work-related-task p>strong { display:block; font-size:14px; color:#526681; margin:12px 0 4px; }
+
+/* Official checks have three cells; the Naver checklist also has a leading icon. */
+.report-v2 .official-seo .naver-check>summary { grid-template-columns:minmax(0,1fr) max-content 20px; align-items:start; }
+.report-v2 .official-seo .naver-check-main { grid-column:1; grid-row:auto; min-width:0; }
+.report-v2 .official-seo .naver-check-main strong { word-break:keep-all; overflow-wrap:break-word; }
+.report-v2 .official-seo .naver-badge { grid-column:2; grid-row:1; justify-self:end; width:auto; }
+.report-v2 .official-seo .naver-check>summary>span:last-child { grid-column:3; grid-row:1; text-align:center; }
+.report-v2 .official-seo>.report-card-heading { display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:20px; }
+.report-v2 .official-seo>.report-card-heading>div:first-child { flex:1 1 260px; min-width:0; }
+.report-v2 .official-seo .naver-reviewed { display:flex; flex-direction:column; gap:2px; margin:0; padding:12px 16px; line-height:1.6; white-space:nowrap; text-align:left; }
+.report-v2 .naver-reviewed time { color:var(--report-ink); font-size:15px; font-weight:700; }
+.report-v2 .discoverability-actions { margin-top:24px; border:1px solid #ccd6e5; border-radius:12px; background:#fff; }
+.report-v2 .discoverability-actions>summary { cursor:pointer; padding:20px 24px; font-size:17px; line-height:1.7; font-weight:750; }
+.report-v2 .discoverability-actions>div { border-top:1px solid #dce3ec; padding:0 24px 24px; }
+.report-review-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:20px 0; }
+.report-review-stats>div { padding:18px; border:1px solid #cbd6e5; border-radius:12px; background:#f8faff; }
+.report-review-stats dt { color:#52647b; font-size:14px; }
+.report-review-stats dd { margin-top:8px; font-size:30px; font-weight:800; color:#193e83; }
+.report-review-stats small { font-size:14px; margin-left:6px; font-weight:500; }
+.report-explanation { border-left:4px solid #2454c6; padding:16px 20px; background:#f5f8ff; line-height:1.85; }
+.report-reason-list { list-style:disc; padding-left:22px; margin:16px 0; line-height:1.9; }
+.report-excluded-sources li { display:grid; gap:6px; padding:16px 0; border-bottom:1px solid #dce3ec; overflow-wrap:anywhere; }
+.report-excluded-sources small { color:#53647b; }
+.keyword-workspace-nav { display:flex; flex-wrap:wrap; gap:8px; border-bottom:1px solid #ccd6e5; padding-bottom:16px; margin-bottom:24px; }
+.keyword-workspace-nav button { flex:1 1 160px; border:1px solid #bbcbe2; border-radius:10px; background:#fff; color:#294665; padding:13px 16px; min-height:48px; font-weight:750; font-size:16px; }
+.keyword-workspace-nav button[aria-pressed=true] { color:#fff; border-color:#2454c6; background:#2454c6; }
+.report-v2 .keyword-panel-content { border:0; border-radius:0; box-shadow:none; padding:0; margin:0; min-width:0; }
+.report-v2 .keyword-panel-content h4 { font-size:21px; line-height:1.65; margin:0 0 14px; }
+.keyword-panel-heading { margin-bottom:24px; }
+.keyword-held-list { display:grid; gap:12px; margin-top:16px; }
+.keyword-held-list li { padding:16px; border-radius:10px; background:#f7f9fc; }
+.keyword-held-list p { color:#53647b; font-size:14px; line-height:1.8; margin-top:6px; }
+.keyword-workspace [hidden] { display:none; }
+@media(max-width:767px){
+ .report-v2 .official-seo .naver-check>summary { grid-template-columns:minmax(0,1fr) 20px; gap:10px; }
+ .report-v2 .official-seo .naver-check-main { grid-column:1; grid-row:1; }
+ .report-v2 .official-seo .naver-badge { grid-column:1; grid-row:2; justify-self:start; }
+ .report-v2 .official-seo .naver-check>summary>span:last-child { grid-column:2; grid-row:1; }
+ .report-review-stats { gap:8px; }
+ .report-review-stats>div { padding:12px 10px; }
+ .report-review-stats dt { font-size:12px; }
+ .report-review-stats dd { font-size:26px; }
+ .report-v2 .discoverability-actions>summary { padding:18px; }
+ .report-v2 .discoverability-actions>div { padding:0 18px 18px; }
+ .keyword-workspace-nav { gap:6px; }
+ .keyword-workspace-nav button { flex-basis:100%; text-align:left; }
+}

@@ -9,10 +9,11 @@ import DiagnosisComparisonPanel from './DiagnosisComparisonPanel';
 import {buildExecutionPlan} from '@/lib/reportExecution';
 import React,{useEffect,useMemo,useRef,useState} from 'react';
 import type {MarketingReport,DiagnosisBaseline} from '@/lib/reportSchema';
+import {reportForPresentation} from '@/lib/reportPresentation';
 import {buildReportInsights} from '@/lib/reportInsights';
-import {CollectionCoverage,ConversionPath,AnswerPageMap,BrandReview,SourceDirectory,MessageMap,KeywordOpportunities} from './InsightPanels';
+import {CollectionCoverage,ConversionPath,AnswerPageMap,BrandReview,SourceDirectory,MessageMap} from './InsightPanels';
 import ScoreRadar from '@/components/ScoreRadar';
-import KeywordRewritePanel from './KeywordRewritePanel';
+import KeywordWorkspace from './KeywordWorkspace';
 import DiagnosisCard from '@/components/DiagnosisCard';
 import PriorityMatrix from '@/components/PriorityMatrix';
 import FinalCTA from '@/components/FinalCTA';
@@ -21,7 +22,6 @@ import CompetitorStatusNotice from '@/components/CompetitorStatusNotice';
 import DiagnosisChecklist from '@/components/DiagnosisChecklist';
 import QuickWinsFlow from '@/components/QuickWinsFlow';
 import CopyImprovement from '@/components/CopyImprovement';
-import KeywordFrequencyCard from '@/components/KeywordFrequencyCard';
 import DiscoverabilityPanel from '@/components/DiscoverabilityPanel';
 import LlmCitationCard from '@/components/LlmCitationCard';
 import GeoIntroduction from '@/components/GeoIntroduction';
@@ -38,7 +38,8 @@ import GrowthKpiPanel from './GrowthKpiPanel';
 const chapters=[['overview','핵심 요약'],['geo','AI·GEO'],['search','검색·페이지'],['competition','경쟁사'],['actions','실행 과제']] as const;
 function Chapter({id,number,title,note,children}:{id:string;number:string;title:string;note:string;children:React.ReactNode}) {return <section id={`report-${id}`} className="report-chapter" data-chapter={id} aria-labelledby={`report-title-${id}`}><div className="report-chapter-heading"><span>{number}</span><div><h2 id={`report-title-${id}`}>{title}</h2><p>{note}</p></div></div><div className="report-stack">{children}</div></section>;}
 function Disclosure({title,note,children}:{title:string;note:string;children:React.ReactNode}) {return <details className="report-disclosure"><summary><span><strong>{title}</strong><small>{note}</small></span><b aria-hidden="true">+</b></summary><div className="report-legacy">{children}</div></details>;}
-export default function ReportLayout({report,actions,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
+export default function ReportLayout({report:storedReport,actions,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
+  const report=useMemo(()=>reportForPresentation(storedReport),[storedReport]);
   const expiry=Math.min(...[report.sharedRetention?.expiresAt,report.diagnosisBaseline?.expiresAt,report.geoBaseline?.expiresAt].filter((v):v is number=>typeof v==='number'));
   const [expired,setExpired]=useState(false);
   useEffect(()=>{
@@ -92,11 +93,10 @@ export default function ReportLayout({report,actions,competitorLoading=false,onR
       {report.llmCitationTest&&<LlmCitationCard citation={report.llmCitationTest}/>}
       <AnswerPageMap data={data}/><BrandReview data={data}/><SourceDirectory data={data}/><GeoComparisonPanel report={report}/>
     </Chapter>
-    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="SEO·GEO·AEO의 근거를 확인하고, 해당 URL에서 실행할 작업을 정하세요."><SiteGuidebookOverview report={report}/><PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><PageWorkMap plan={execution}/><GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><KeywordOpportunities data={data}/><Disclosure title="반복 표현을 문장으로 고치기" note="단어별 상세 수정안과 작성 틀"><KeywordRewritePanel key={`${report.url}:${report.pageEvidence?.capturedAt||report.meta?.ogDescription||'legacy'}`} report={report}/></Disclosure>
+    <Chapter id="search" number="03" title="검색과 페이지의 연결" note="SEO·GEO·AEO의 근거를 확인하고, 해당 URL에서 실행할 작업을 정하세요."><SiteGuidebookOverview report={report}/><PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><PageWorkMap plan={execution}/><GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/><KeywordWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} data={data}/>
       {report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}
       <NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>
       <OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>
-      {report.keywordFrequency&&<Disclosure title="전체 키워드 빈도" note={report.keywordFrequency.methodVersion===2?'수집 본문 기준 · 집계 범위·포함 여부 확인':'이전 방식의 저장 집계 · 재진단 권장'}><KeywordFrequencyCard frequency={report.keywordFrequency}/></Disclosure>}
       {!!report.checklist?.length&&<Disclosure title="기본 진단 체크리스트" note={`${report.checklist.length}개 항목의 통과·보완·미충족 근거`}><DiagnosisChecklist checklist={report.checklist}/></Disclosure>}
     </Chapter>
     <Chapter id="competition" number="04" title="비교 후보에서 찾는 차이" note="검색된 비교 후보의 서비스·고객층·페이지 표현을 살펴보세요.">

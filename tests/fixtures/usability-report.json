@@ -1270,5 +1270,44 @@
         "metaDescription": "신상품과 브랜드 이야기를 소개합니다."
       }
     ]
+  },
+  "officialSeoAudit": {
+    "version": 1,
+    "catalogVersion": "2026-10-13",
+    "targetUrl": "https://example.com",
+    "mode": "diagnosis",
+    "checks": [
+      {
+        "id": "naver-title",
+        "title": "페이지 제목이 대표 상품과 서비스의 내용을 구체적으로 설명하는지 확인",
+        "topic": "metadata",
+        "engines": [
+          "naver"
+        ],
+        "status": "action",
+        "evidence": "검수용 자료: 수집한 제목에는 브랜드명만 있고 제공하는 서비스 설명이 없습니다.",
+        "interpretation": "브랜드명과 실제 제공하는 서비스를 함께 설명할 여지가 있습니다.",
+        "steps": [
+          "페이지의 SEO 제목 설정에서 현재 문구를 확인하세요.",
+          "실제로 제공하는 상품과 서비스를 반영하고 중복 표현을 덜어내세요."
+        ],
+        "completion": "새 제목이 실제 페이지 내용과 일치하는지 확인하세요."
+      },
+      {
+        "id": "google-images",
+        "title": "이미지 설명과 실제 이미지 내용의 일치 여부",
+        "topic": "images",
+        "engines": [
+          "google"
+        ],
+        "status": "action",
+        "evidence": "검수용 자료: 상품 사진의 대체 텍스트가 비어 있습니다.",
+        "interpretation": "상품을 설명하는 사진인지 장식용 사진인지 먼저 구분해야 합니다.",
+        "steps": [
+          "실제 이미지를 확인하고 필요한 설명을 작성하세요."
+        ],
+        "completion": "이미지 설명이 실제 상품과 일치하는지 확인하세요."
+      }
+    ]
   }
 }

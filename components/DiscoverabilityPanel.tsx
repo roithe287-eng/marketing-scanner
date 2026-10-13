@@ -20,6 +20,6 @@ export default function DiscoverabilityPanel({discoverability}:{discoverability?
       <p className="text-xs font-bold text-jm-gray">선택한 점검 항목</p><h4 className="mt-2 text-lg font-black">{active.label} <span className="ml-2 text-sm font-normal">{active.score}점 · {readinessLabels[active.status]}</span></h4>
       <EvidenceFlow items={[{label:'현재',content:active.currentValue},{label:'진단',content:active.diagnosis},{label:'개선',content:active.guide}]}/>{active.status!=='pass'&&<Guidebook title={active.label} current={active.currentValue} evidence={active.diagnosis} proposal={active.guide}/>}
     </article>
-    <details className="mt-4 rounded-xl border p-4"><summary className="cursor-pointer text-sm font-bold">종합 해석과 우선 실행 액션</summary><p className="mt-3 text-sm leading-7">{discoverability.summary}</p><ol className="mt-3 space-y-2">{discoverability.priorityActions?.map((a,i)=><li key={i} className="flex gap-3 text-sm leading-6"><span className="font-bold text-jm-red">{i+1}.</span><span>{a}</span></li>)}</ol></details>
+    <details className="discoverability-actions"><summary>종합 해석과 우선 실행 액션</summary><div><p className="mt-3 text-sm leading-7">{discoverability.summary}</p><ol className="mt-3 space-y-2">{discoverability.priorityActions?.map((a,i)=><li key={i} className="flex gap-3 text-sm leading-6"><span className="font-bold text-jm-red">{i+1}.</span><span>{a}</span></li>)}</ol></div></details>
   </section>;
 }
