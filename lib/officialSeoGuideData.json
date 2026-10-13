@@ -925,12 +925,13 @@
   {
     "id": "google-webmasters-answer-3035947",
     "engine": "google",
-    "title": "지역 검색 결과 선택 해제",
+    "title": "지역 검색 결과 및 기타 Google 서비스에 표시 중지하기",
     "url": "https://support.google.com/webmasters/answer/3035947?hl=ko",
     "category": "검색 가이드",
     "topic": "special",
     "guidance": [
-      "Search Console에서 지역 검색·Shopping·Flights·Hotels/공유숙박에 대한 표시 제외 설정을 확인합니다. 도메인 전체와 하위 도메인에 적용되며 개별 하위 도메인/디렉터리만 지정할 수 없습니다. 별도 도메인은 각각 설정하고 기존 표시는 설정 후 30일 이내 제거 안내를 확인합니다. 지역 검색에는 전 세계, 나머지 대상에는 google.com에서 제공하는 서비스 범위를 구분합니다."
+      "Googlebot이 수집한 콘텐츠의 지역 검색·쇼핑·항공편·호텔 및 공유숙박 노출을 Search Console에서 선택 해제할 수 있습니다. 기존 콘텐츠의 삭제는 선택 해제 후 30일 이내에 이루어집니다.",
+      "선택 해제는 하위 도메인을 포함한 도메인 전체에 적용하며, 개별 하위 도메인이나 디렉터리만 지정할 수 없습니다. 추가 도메인은 각각 설정합니다. 지역 검색은 전 세계, 나머지 대상 서비스는 google.com에 호스팅된 서비스에 적용되므로 일반 웹 검색 제외와 혼동하지 않습니다. 실제 설정은 권한 있는 계정에서 확인합니다."
     ],
     "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
     "status": "reviewed",
