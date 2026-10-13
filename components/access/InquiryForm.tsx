@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-export default function InquiryForm({ selectedPlan }: { selectedPlan?: string }) {
+import { inquiryServices } from '@/lib/inquiry';
+export default function InquiryForm({ selectedPlan, selectedPlanId }: { selectedPlan?: string; selectedPlanId?: string }) {
   const [done, setDone] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -16,6 +17,8 @@ export default function InquiryForm({ selectedPlan }: { selectedPlan?: string })
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...Object.fromEntries(form),
+          services: form.getAll('services'),
+          planId: selectedPlanId,
           consent: form.get("consent") === "on",
         }),
       });
@@ -38,8 +41,8 @@ export default function InquiryForm({ selectedPlan }: { selectedPlan?: string })
         <span aria-hidden="true">✓</span>
         <h2>이용 문의가 접수되었습니다</h2>
         <p>
-          입력한 연락처로 이용 목적과 조건을 확인합니다. 승인 후 담당자가 계정
-          활성화 링크를 안내해 드립니다.
+          입력한 연락처로 선택하신 서비스와 문의 내용을 확인한 뒤 안내해 드립니다.
+          마케팅스캐너 이용 승인이 필요한 경우 계정 활성화 링크를 함께 안내합니다.
         </p>
         <p>문의 접수만으로 진단이나 결제가 시작되지 않습니다.</p>
         <a href="/" className="jm-button">
@@ -50,6 +53,18 @@ export default function InquiryForm({ selectedPlan }: { selectedPlan?: string })
   return (
     <form onSubmit={submit} className="access-form">
       {selectedPlan ? <p className="scanner-inquiry-plan"><span>선택한 이용 안내</span><strong>{selectedPlan}</strong><a href="/pricing">다른 이용권 보기</a></p> : null}
+      <fieldset className="access-inquiry-services" aria-describedby="inquiry-services-help">
+        <legend>광고대행도 궁금하신가요?</legend>
+        <p id="inquiry-services-help">선택 사항이며, 두 항목을 함께 선택할 수 있습니다.</p>
+        <div>
+          {inquiryServices.map(service => (
+            <label key={service.id}>
+              <input type="checkbox" name="services" value={service.id} />
+              <span>{service.label}</span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="access-form-grid">
         <label>
           이름 <b>필수</b>
@@ -107,7 +122,7 @@ export default function InquiryForm({ selectedPlan }: { selectedPlan?: string })
       </label>
       <div className="access-consent">
         <p>
-          수집 항목: 이름·이메일·연락처 및 입력한 회사명·URL·문의 내용. 이용
+          수집 항목: 이름·이메일·연락처 및 입력한 회사명·URL·문의 내용·선택한 이용권과 광고대행 항목. 이용
           목적: 상담, 이용 심사 및 계정 안내. 문의 내용은 접수일부터 90일간 보관
           후 자동 삭제합니다. 동의하지 않을 수 있으나 문의 접수는 제한됩니다.
         </p>

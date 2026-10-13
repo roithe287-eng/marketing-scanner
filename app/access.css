@@ -121,6 +121,24 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
 }
+.access-inquiry-services {
+  min-width: 0;
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.access-inquiry-services legend { font-size: 15px; font-weight: 700; line-height: 1.6; }
+.access-inquiry-services > p { margin: 5px 0 12px; color: var(--scanner-muted); font-size: 13px; line-height: 1.7; }
+.access-inquiry-services > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.access-form .access-inquiry-services label { display: flex; align-items: center; gap: 10px; padding: 13px 14px; border: 1px solid var(--scanner-line); border-radius: 12px; cursor: pointer; font-size: 14px; color: var(--scanner-ink); }
+.access-inquiry-services label:has(input:checked) { background: #edf2fc; border-color: var(--scanner-cobalt); }
+.access-form .access-inquiry-services input { margin: 0; }
+.admin-inquiry-services { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+.admin-inquiry-services > span { font-size: 12px; font-weight: 650; color: var(--scanner-cobalt); background: #edf2fc; border-radius: 6px; padding: 3px 8px; }
+.admin-inquiry-selections { display: grid; gap: 12px; padding: 16px; margin-bottom: 20px; background: #f3f6fc; border-radius: 12px; }
+.admin-inquiry-selections dt { font-size: 12px; font-weight: 700; color: var(--scanner-muted); margin-bottom: 5px; }
+.admin-inquiry-selections dd { font-size: 14px; color: var(--scanner-ink); line-height: 1.7; }
+@media (max-width: 640px) { .access-inquiry-services > div { grid-template-columns: 1fr; } }
 .access-form .access-checkbox,
 .access-consent label,
 .access-features label {

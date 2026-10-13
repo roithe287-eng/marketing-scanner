@@ -1,3 +1,5 @@
+import type { InquiryService } from '../inquiry';
+
 export type Features = {
   competitor: boolean;
   deepdive: boolean;
@@ -31,6 +33,8 @@ export type Inquiry = {
   contact: string;
   url: string;
   message: string;
+  services?: InquiryService[];
+  planId?: string;
   consent: true;
   createdAt: number;
   status: "pending" | "approved" | "closed";
