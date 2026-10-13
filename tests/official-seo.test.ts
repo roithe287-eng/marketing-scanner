@@ -17,25 +17,26 @@ import {buildReportInsights} from '../lib/reportInsights';
 import {buildReportDocument} from '../lib/reportDocument';
 import {diagnosisChecks} from '../lib/diagnosisComparison';
 import {buildReadingSections,buildReadingPdfPages} from '../lib/reportReadingPdf';
+import {buildInsightsPdfPages} from '../lib/reportInsightsPdf';
 import {PDF_PAGE,type PdfTextStyle} from '../lib/pdfLayout';
 import OfficialSeoPanel from '../components/report/OfficialSeoPanel';
 import {fixture} from './fixtures/report';
 async function extract(t:TestContext,head='',body='',headers:Record<string,string>={},robots='User-agent: *\nAllow: /'){
- t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>String(input).endsWith('/robots.txt')?new Response(robots):new Response(`<!doctype html><html lang="ko"><head><title>ACME</title><meta name="description" content="서비스 안내">${head}</head><body><h1>서비스</h1><p>서비스를 확인하고 원하는 상품과 정보를 찾아보세요. 제품별 주요 기능, 이용 방법, 가격과 문의 절차를 상세하게 소개합니다. 고객이 필요로 하는 정보를 비교하고 선택할 수 있도록 제공합니다.</p>${body}</body></html>`,{headers:{'content-type':'text/html',...headers}}));
+ t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>String(input).endsWith('/robots.txt')?new Response(robots):new Response(`<!doctype html><html lang="ko"><head><title>ACME</title><meta name="description" content="서비스 안내">${head}</head><body><h1>서비스</h1><p>서비스를 확인하고 원하는 상품과 정보를 찾아보세요.</p>${body}</body></html>`,{headers:{'content-type':'text/html',...headers}}));
  t.mock.method(globalThis,'fetch',async()=>new Response(robots));
  return extractWebsite('https://fixture.example/product');
 }
 const check=(d:ExtractedWebsiteData,id:string)=>analyzeOfficialSeo(d).checks.find(c=>c.id===id)!;
 const json=(value:unknown)=>`<script type="application/ld+json">${JSON.stringify(value)}</script>`;
 
-test('both captured sidebars are covered, recovered source is reviewed, no unrelated resources become criteria',()=>{
+test('both captured sidebars are covered; an official English fallback is recorded; unrelated resources are excluded',()=>{
  const manifest=JSON.parse(readFileSync(new URL('./fixtures/official-seo-sidebar-20261013.json',import.meta.url),'utf8'));
  assert.equal(manifest.entries.length,221);assert.equal(new Set(OFFICIAL_SEO_GUIDES.map(g=>g.url)).size,221);
  assert.deepEqual(new Set(OFFICIAL_SEO_GUIDES.map(g=>g.url)),new Set(manifest.entries.map((g:{url:string})=>g.url)));
  assert.equal(OFFICIAL_SEO_GUIDES.filter(g=>g.engine==='naver').length,55);
  assert.equal(OFFICIAL_SEO_GUIDES.filter(g=>g.engine==='google').length,166);
  assert.equal(OFFICIAL_SEO_GUIDES.filter(g=>g.status==='unavailable').length,0);
- assert.ok(OFFICIAL_SEO_GUIDES.find(g=>g.url.includes('3035947'))?.guidance.join(' ').includes('도메인 전체'));
+ assert.ok(OFFICIAL_SEO_GUIDES.find(g=>g.url.includes('3035947'))?.reviewedUrl?.endsWith('?hl=en'));
  for(const g of OFFICIAL_SEO_GUIDES){assert.ok(MANUAL_SEO_TOPICS.some(t=>t.topic===g.topic));assert.ok(g.guidance.length&&g.applicability);assert.match(g.url,/^https:\/\/(searchadvisor.naver.com|developers.google.com|support.google.com)\//);assert.ok(!manifest.excludedResources.some((r:{url:string})=>r.url===g.url));}
 });
 test('required, optional, alternative and nested schema requirements stay distinct',()=>{
@@ -90,14 +91,23 @@ test('stored schema, tasks, comparison, report UI and full PDF preserve the new 
  const d=await extract(t,'<link rel="canonical" href="#wrong">');const audit=analyzeOfficialSeo(d);
  const report=MarketingReportSchema.parse({...fixture,url:d.url,officialSeoAudit:audit});const restored=MarketingReportSchema.parse(JSON.parse(JSON.stringify(report)));
  assert.deepEqual(restored.officialSeoAudit,audit);assert.ok(buildReportInsights(restored).tasks.some(x=>x.id==='official-google-canonical'));assert.ok(diagnosisChecks(restored).some(c=>c.key.includes('official:2026-10-13:google-canonical')));
- const ui=renderToStaticMarkup(React.createElement(OfficialSeoPanel,{audit,targetUrl:d.url}));assert.match(ui,/공식 검색 기준 재검증/);assert.match(ui,/전체 문서 기준/);assert.match(ui,/Google 대표 URL/);assert.match(ui,/원문 재확인 필요/);
- const text=buildReportDocument(restored).map(b=>b.text).join('\n');assert.match(text,/무료 영상/);assert.match(text,/merchantReturnLink/);assert.match(text,/3035947/);assert.match(text,/마지막 페이지 확인 문구/);
+ const ui=renderToStaticMarkup(React.createElement(OfficialSeoPanel,{audit,targetUrl:d.url}));assert.match(ui,/공식 검색 기준 재검증/);assert.match(ui,/전체 문서 기준/);assert.match(ui,/Google 대표 URL/);assert.match(ui,/교육 PDF 2종/);
+ const text=buildReportDocument(restored).map(b=>b.text).join('\n');assert.match(text,/무료 영상/);assert.match(text,/merchantReturnLink/);assert.match(text,/3035947/);assert.match(text,/마지막 페이지 확인 문구/);assert.match(text,/진단 결과 이용 안내 및 책임 범위/);assert.match(text,/법정 권리/);
  const measure=(s:string,style:PdfTextStyle)=>Array.from(s).reduce((n,c)=>n+(/[ -~]/.test(c)?.5:1)*style.size,0);
- const pages=buildReadingPdfPages(buildReadingSections(restored),measure);
+ const pages=[...buildReadingPdfPages(buildReadingSections(restored),measure),...buildInsightsPdfPages(restored,measure)];
  assert.ok(pages.length>10);for(const p of pages)for(const line of p.lines){assert.ok(line.y+line.lineHeight<=PDF_PAGE.contentBottom+.01);assert.ok(line.x+line.width<=744.01);}
  assert.ok(pages.flatMap(p=>p.lines).some(l=>l.href?.includes('structured-data/return-policy')));
 });
 test('legacy reports expose a guide, never freshly inferred observed passes',()=>{
  const report=analyzeOfficialSeo(null,fixture.url);assert.equal(report.mode,'guide');assert.ok(report.checks.every(c=>c.status==='manual'));
  const old=MarketingReportSchema.parse(fixture);assert.equal(old.officialSeoAudit,undefined);assert.ok(!diagnosisChecks(old).some(c=>c.key.startsWith('official:')));
+});
+
+
+test('short valid pages remain analyzable while wholly empty responses are rejected',async(t)=>{
+ const d=await extract(t);assert.ok(d.bodyTextLength<50);assert.equal(analyzeOfficialSeo(d).mode,'diagnosis');
+ t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>String(input).endsWith('/robots.txt')?new Response('User-agent: *\nAllow: /'):new Response('<html><head></head><body></body></html>',{headers:{'content-type':'text/html'}}));
+ await assert.rejects(()=>extractWebsite('https://fixture.example/empty'),/콘텐츠를 추출하지 못했습니다/);
+ t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>String(input).endsWith('/robots.txt')?new Response('User-agent: *\nAllow: /'):new Response('<h1>짧지만 유효한 안내</h1>',{headers:{'content-type':'text/html'}}));
+ const minimal=await extractWebsite('https://fixture.example/minimal');assert.equal(minimal.h1[0],'짧지만 유효한 안내');
 });

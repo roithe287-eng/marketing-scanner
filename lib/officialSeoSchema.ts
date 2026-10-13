@@ -20,5 +20,6 @@ export type OfficialSeoGuide={
   id:string;engine:OfficialSeoEngine;title:string;url:string;category:string;
   topic:string;guidance:string[];applicability:string;
   status:'reviewed'|'unavailable';
+  reviewedUrl?:string;reviewNote?:string;
   properties?:OfficialGuidePropertyGroup[];
 };

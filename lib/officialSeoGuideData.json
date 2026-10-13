@@ -934,7 +934,9 @@
       "선택 해제는 하위 도메인을 포함한 도메인 전체에 적용하며, 개별 하위 도메인이나 디렉터리만 지정할 수 없습니다. 추가 도메인은 각각 설정합니다. 지역 검색은 전 세계, 나머지 대상 서비스는 google.com에 호스팅된 서비스에 적용되므로 일반 웹 검색 제외와 혼동하지 않습니다. 실제 설정은 권한 있는 계정에서 확인합니다."
     ],
     "applicability": "지역·업종·기능·제휴 조건에 해당하는 사이트",
-    "status": "reviewed"
+    "status": "reviewed",
+    "reviewedUrl": "https://support.google.com/webmasters/answer/3035947?hl=en",
+    "reviewNote": "한국어 페이지의 요청 제한으로 동일 문서의 영문 공식 원문 대조"
   },
   {
     "id": "google-appearance-preferred-sources",
@@ -4503,10 +4505,44 @@
     "category": "구조화 데이터",
     "topic": "schema",
     "guidance": [
-      "실제 채용 상세 페이지에 게시·마감 날짜, 근무지/원격 근무, 고용 형태·경력·근무 시간과 급여 형식을 맞춥니다. 종료된 채용 공고의 상태와 필수 항목을 갱신합니다."
+      "사전 제휴 협의·소유확인·수집요청 API 자격을 확인합니다. 실제 채용 상세 페이지에 게시·마감 날짜, 근무지/원격 근무, 고용 형태·경력·근무 시간과 급여 형식을 맞춥니다. 종료된 채용 공고의 상태와 필수 항목을 갱신합니다."
     ],
     "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
-    "status": "reviewed"
+    "status": "reviewed",
+    "properties": [
+      {
+        "scope": "JobPosting · 제휴 협의 후 적용 / 최소 예제와 항목별 명세 대조",
+        "required": [
+          "title",
+          "datePosted",
+          "employmentType",
+          "experienceRequirements",
+          "jobLocation",
+          "description",
+          "hiringOrganization.name",
+          "hiringOrganization.sameAs",
+          "identifier.propertyID",
+          "identifier.value"
+        ],
+        "recommended": [
+          "baseSalary",
+          "workHours",
+          "educationRequirements",
+          "qualifications",
+          "hiringOrganization.logo",
+          "hiringOrganization.description"
+        ],
+        "conditional": [
+          "validThrough: 실제 마감일이 있을 때 · 상시/채용시 마감은 생략",
+          "jobLocationType: 재택근무이면 TELECOMMUTE",
+          "baseSalary.value: 고정 value 또는 minValue/maxValue 범위 · 숫자형",
+          "currency: ISO 4217 · unitText: HOUR/DAY/WEEK/MONTH/YEAR 또는 한글 단위",
+          "hiringOrganization.hiringtype: 서치펌이면 headhunting",
+          "해외 근무지: addressCountry는 ISO alpha2",
+          "description 문단: 줄바꿈 또는 br 사용 · 다른 HTML 태그 의존 금지"
+        ]
+      }
+    ]
   },
   {
     "id": "naver-structured-data-address",
@@ -4549,7 +4585,7 @@
     "status": "reviewed",
     "properties": [
       {
-        "scope": "타입 및 속성",
+        "scope": "BreadcrumbList.itemListElement → ListItem / item",
         "required": [
           "name"
         ],
@@ -4568,13 +4604,13 @@
     "category": "구조화 데이터",
     "topic": "schema",
     "guidance": [
-      "목적·완료 결과와 순차 단계를 실제 본문과 맞춥니다. 필요한 준비물·소요 시간·단계별 이미지와 이미지 접근 조건을 확인하고 광고를 단계로 넣지 않습니다."
+      "목적·완료 결과와 순차 단계를 실제 본문과 맞춥니다. 각 HowToStep의 text와 원본·고유 이미지를 사용하고 로고·깨진 이미지·지나치게 적은 단계를 피합니다. 네이버 안내에서는 Recipe 하위에 HowTo를 넣지 않습니다."
     ],
     "applicability": "이 문서의 콘텐츠 유형을 사용하는 페이지",
     "status": "reviewed",
     "properties": [
       {
-        "scope": "타입 및 속성",
+        "scope": "HowTo.step → HowToStep",
         "required": [
           "text"
         ],
@@ -4630,14 +4666,24 @@
       {
         "scope": "타입 및 속성",
         "required": [
-          "ratingValue",
-          "ratingCount",
-          "reviewCount"
+          "ratingValue"
         ],
         "recommended": [
           "bestRating"
         ],
-        "conditional": []
+        "conditional": [
+          "ratingCount",
+          "reviewCount"
+        ]
+      },
+      {
+        "scope": "AggregateRating",
+        "required": [],
+        "recommended": [],
+        "conditional": [
+          "ratingCount 또는 reviewCount 중 1개 이상 · 둘 다 있으면 ratingCount 우선",
+          "ratingValue: 0 이상 숫자 · bestRating ≥ ratingValue"
+        ]
       }
     ]
   },
