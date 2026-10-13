@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { ACTIVITY_LABELS, NETWORK_ACTIVITY_ID, type ActivityAction, type ActivityStats, type AdminOverview } from '@/lib/saas/activityTypes';
+import { ACTIVITY_LABELS, type ActivityAction, type ActivityStats, type AdminOverview, type ActivityPeriod } from '@/lib/saas/activityTypes';
+import AdminUsageTable from './AdminUsageTable';
 import { koreanTime } from './activityFormat';
 const groups={owner:'관리자 본인',customers:'고객 계정',network:'허용 네트워크 · 비로그인'} as const;
 const n=(value?:number)=>Number(value||0).toLocaleString('ko-KR');
@@ -17,7 +18,7 @@ export function ActivityMetrics({stats}:{stats:ActivityStats}){
 }
 export default function AdminActivityDashboard({revision,pending,onSelect}:{revision:number;pending:number;onSelect:(id:string)=>void}){
   const [data,setData]=useState<AdminOverview|null>(null),[error,setError]=useState('');
-  const [period,setPeriod]=useState('30'),[group,setGroup]=useState('all');
+  const [period,setPeriod]=useState<ActivityPeriod>('30'),[group,setGroup]=useState('all');
   useEffect(()=>{
     const controller=new AbortController();
     async function load(){
@@ -47,11 +48,11 @@ export default function AdminActivityDashboard({revision,pending,onSelect}:{revi
       <div className="access-admin-stats">
         <article><strong>{n(data.accounts.approved)}</strong><span>승인 고객 계정 · 활성화 대기 {n(data.accounts.unactivated)}</span></article>
         <article><strong>{n(data.accounts.inactive)}</strong><span>중지·기간 종료 계정</span></article>
-        <article><strong>{n(pending)}</strong><span>이용 문의 검토 대기</span></article>
+        <article><strong>{n(pending)}</strong><span>최근 문의 검토 대기</span></article>
       </div>
-      <div className="admin-dashboard-controls"><label>집계 기간 <select value={period} onChange={e=>setPeriod(e.target.value)}><option value="1">오늘</option><option value="7">최근 7일</option><option value="30">최근 30일</option><option value="all">누적 전체</option></select></label><label>이용 주체 <select value={group} onChange={e=>setGroup(e.target.value)}><option value="all">전체 이용</option>{rows.map(row=><option key={row.name} value={row.name}>{groups[row.name]}</option>)}</select></label><span className="access-muted">한국시간 · 전체 계정 기준</span></div>
+      <div className="admin-dashboard-controls"><label>집계 기간 <select value={period} onChange={e=>setPeriod(e.target.value as ActivityPeriod)}><option value="1">오늘</option><option value="7">최근 7일</option><option value="30">최근 30일</option><option value="all">누적 전체</option></select></label><label>이용 주체 <select value={group} onChange={e=>setGroup(e.target.value)}><option value="all">전체 이용</option>{rows.map(row=><option key={row.name} value={row.name}>{groups[row.name]}</option>)}</select></label><span className="access-muted">한국시간 · 전체 계정 기준</span></div>
       <ActivityMetrics stats={stats}/>
-      <div className="admin-table-scroll" tabIndex={0} role="region" aria-label="이용 주체별 집계"><table className="admin-event-table"><thead><tr><th>이용 주체</th><th>URL 호출</th><th>호출 완료 / 실패</th><th>PDF 생성</th><th>다운로드 요청</th><th>저장 완료 확인</th></tr></thead><tbody>{rows.map(({name,stats:s})=><tr key={name}><td>{name==='network'?<button className="admin-text-button" onClick={()=>onSelect(NETWORK_ACTIVITY_ID)}>{groups[name]} ↗</button>:groups[name]}</td><td>{n(s.analyze_started)}</td><td>{n(s.analyze_success)} / {n(s.analyze_failed)}</td><td>{n(s.pdf_ready)}</td><td>{n(s.pdf_save)}</td><td>{n(s.pdf_saved)}</td></tr>)}</tbody></table></div>
+      <AdminUsageTable customers={data.customers} period={period} groups={{owner:statsFor('owner'),customers:statsFor('customers'),network:statsFor('network')}} at={data.updatedAt} onSelect={onSelect}/>
       <p className="access-muted admin-counting-note">계정 수에는 관리자 본인을 제외하며, 이용 수에는 포함합니다. 각 단계가 발생한 날짜로 집계합니다. 파일 저장 완료는 지원 브라우저의 저장 완료 보고이며, 일반 다운로드는 요청으로 구분합니다. 신규 지표와 비로그인 기록은 이번 적용 이후부터 쌓입니다.</p>
     </>}
   </section>;

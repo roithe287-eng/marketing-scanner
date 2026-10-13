@@ -30,4 +30,9 @@ export type PdfPhase = 'ready' | 'failed' | 'save' | 'open' | 'save_started' | '
 export type PdfMetrics = {durationMs?:number; pages?:number; bytes?:number};
 export type ActivitySite = {target:string; counts:ActivityStats};
 export type ActivitySeries = {totals:ActivityStats; daily:{day:string;counts:ActivityStats}[]};
-export type AdminOverview = {updatedAt:number; accounts:{approved:number;inactive:number;unactivated:number;total:number}; groups:Record<'owner'|'customers'|'network',ActivitySeries>};
+export type ActivityPeriod = '1' | '7' | '30' | 'all';
+export type AdminCustomerActivity = {
+  id:string;name:string;email:string;company:string;status:'approved'|'suspended';expiresAt:number;activated:boolean;
+  periods:Record<ActivityPeriod,ActivityStats>;
+};
+export type AdminOverview = {updatedAt:number; customers:AdminCustomerActivity[]; accounts:{approved:number;inactive:number;unactivated:number;total:number}; groups:Record<'owner'|'customers'|'network',ActivitySeries>};

@@ -34,7 +34,14 @@ test('overview counts all account pages, and separates owner, customers and logi
   const data=await response.json();assert.deepEqual(data.accounts,{approved:103,inactive:2,unactivated:1,total:105});
   assert.equal(data.groups.owner.totals.analyze_success,3);assert.equal(data.groups.customers.totals.analyze_success,9);assert.equal(data.groups.network.totals.analyze_success,2);
   assert.equal(data.groups.customers.daily.at(-1).counts.analyze_success,9);assert.equal(data.groups.owner.daily.length,30);
-  assert.doesNotMatch(JSON.stringify(data),/passwordHash|test-only|@example.com/);
+  assert.doesNotMatch(JSON.stringify(data),/passwordHash|test-only|approvedBy|version/);
+  assert.equal(data.customers.length,105);assert.equal(new Set(data.customers.map((c:{id:string})=>c.id)).size,105);
+  const first=data.customers.find((c:{id:string})=>c.id===customers[3].id),last=data.customers.find((c:{id:string})=>c.id===customers[104].id);
+  assert.equal(first.name,last.name,'same names stay separate');assert.notEqual(first.id,last.id);
+  assert.equal(first.email,customers[3].email);assert.equal(first.periods.all.analyze_success,4);assert.equal(last.periods.all.analyze_success,5);
+  for(const period of ['1','7','30','all'])assert.equal(data.customers.reduce((sum:number,c:{periods:Record<string,{analyze_success?:number}>})=>sum+(c.periods[period].analyze_success||0),0),9);
+  assert.equal(data.customers.find((c:{id:string})=>c.id===customers[2].id).activated,false);
+  assert.ok(!data.customers.some((c:{id:string})=>c.id===owner.id||c.id===NETWORK_ACTIVITY_ID));
 });
 test('all admin read modes deny customers, unlogged networks, outside owner sessions, cross-site and forged forwarding requests',async()=>{
   for(const path of ['/api/admin','/api/admin?view=overview','/api/admin?id='+NETWORK_ACTIVITY_ID,'/api/admin?id='+customers[3].id]){
@@ -86,5 +93,17 @@ test('URL totals survive timeline truncation and old-day retention remains absol
   const oldKey=key(`activity-sites:${accountId}:${activityDay(old)}`),ttl=Number(await db().ttl(oldKey));assert.ok(ttl>0&&ttl<=2*86400);
   await recordActivity(accountId,'analyze_success',h,{target:'old.example.com'});assert.ok(Number(await db().ttl(oldKey))<=ttl);
   await deleteAccount(accountId,1,owner.id);assert.equal((await activityDetail(accountId)).sites.length,0);
-  const overview=await (await admin.GET(req('/api/admin?view=overview'))).json();assert.equal(overview.accounts.total,104);assert.equal(overview.groups.customers.totals.analyze_success,9,'deleted activity is excluded');
+  const overview=await (await admin.GET(req('/api/admin?view=overview'))).json();assert.equal(overview.accounts.total,104);assert.equal(overview.groups.customers.totals.analyze_success,9,'deleted activity is excluded');assert.ok(!overview.customers.some((c:{id:string})=>c.id===accountId));
+});
+
+test('individual customer periods and IDs preserve earlier records after profile changes',async t=>{
+  const user=customers[4],now=Date.now();
+  t.mock.method(Date,'now',()=>now-8*86400000);await recordActivity(user.id,'analyze_success',req('/').headers,{target:'customer.example.com'});t.mock.restoreAll();
+  await db().set(key('account:'+user.id),{...user,name:'변경된 고객 이름',company:'회사 변경'});
+  const data=await (await admin.GET(req('/api/admin?view=overview'))).json();
+  const row=data.customers.find((c:{id:string})=>c.id===user.id);
+  assert.equal(row.name,'변경된 고객 이름');assert.equal(row.email,user.email);assert.equal(row.id,user.id);
+  assert.equal(row.periods.all.analyze_success,1);assert.equal(row.periods['30'].analyze_success,1);
+  assert.equal(row.periods['7'].analyze_success||0,0);assert.equal(row.periods['1'].analyze_success||0,0);
+  const detail=await (await admin.GET(req('/api/admin?id='+row.id))).json();assert.equal(detail.account.id,row.id);assert.equal(detail.totals.analyze_success,1);
 });
