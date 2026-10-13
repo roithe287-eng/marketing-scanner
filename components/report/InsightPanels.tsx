@@ -4,7 +4,7 @@ import EvidenceFlow from './EvidenceFlow';
 import ReportJumpLink from './ReportJumpLink';
 import {Guidebook} from './SiteGuidebook';
 import DiagnosisIcon from './DiagnosisIcon';
-import {contentBrief,insightNotes,messageThemes,type ReportInsights} from '@/lib/reportInsights';
+import {contentBrief,insightNotes,sourceReferenceGuide,messageThemes,type ReportInsights} from '@/lib/reportInsights';
 
 function Heading({label,title,note}:{label:string;title:string;note?:string}) {return <div className="report-card-heading"><p className="report-eyebrow">{label}</p><h3>{title}</h3>{note&&<p className="report-note">{note}</p>}</div>;}
 function Empty({children}:{children:React.ReactNode}) {return <p className="report-empty">{children}</p>;}
@@ -34,6 +34,7 @@ export function SourceDirectory({data}:{data:ReportInsights}) {
   const [filter,setFilter]=useState('all'),[expanded,setExpanded]=useState(false);
   const filtered=data.eligibleSources.filter(s=>filter==='all'||s.ownership===filter),shown=expanded?filtered:filtered.slice(0,6);
   return <article className="report-card" aria-label="AI 출처 검토함"><Heading label="SOURCE DIRECTORY" title="검토할 외부 출처" note={insightNotes.sources}/>
+    {!!data.eligibleSources.length&&<aside className="report-source-guide"><h4>{sourceReferenceGuide.title}</h4><p>{sourceReferenceGuide.purpose}</p><p>{sourceReferenceGuide.examples}</p><p className="report-note">{sourceReferenceGuide.check}</p></aside>}
     <div className="report-filter-row" role="group" aria-label="출처 구분 필터">{([['all','전체'],['external','외부 도메인 확인'],['unresolved','도메인 미확인']] as const).map(([key,label])=><button type="button" key={key} aria-pressed={filter===key} onClick={()=>{setFilter(key);setExpanded(false);}}>{label}</button>)}<span role="status">{filtered.length}개 URL</span></div>
     {shown.length?<div className="report-source-grid">{shown.map(s=><div className="report-source-item" key={s.url}><div className="report-source-meta"><span className="report-pill">{s.ownership==='unresolved'?'도메인 미확인':'외부'}</span><span>{s.observations.length}건의 관측</span></div><h4><Link url={s.url}>{s.title}</Link></h4><p className="report-note">{s.domain}</p><details><summary>연결된 질문 {s.questions.length}개</summary><ul>{s.questions.map(q=><li key={q}>{q}</li>)}</ul></details></div>)}</div>:<Empty>{data.excludedSources.length?'자사몰·대형몰 등을 제외한 뒤 이 조건에 남는 출처가 없습니다. 아래 제외 내역에서 수집 여부를 확인할 수 있습니다.':data.reviewSummary.verified?'이 조건에 해당하는 출처 URL이 답변에 저장되지 않았습니다.':'검색·출처 확인이 완료된 답변이 없어 표시할 외부 출처가 없습니다.'}</Empty>}
     {filtered.length>6&&<button type="button" className="report-secondary-button mt-4" onClick={()=>setExpanded(!expanded)}>{expanded?'출처 접기':`전체 ${filtered.length}개 출처 보기`}</button>}

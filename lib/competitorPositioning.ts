@@ -1,8 +1,8 @@
 import {positionProfile,defaultPositionIndustry} from './industryPositioning';
 import type {MarketingReport,IndustryCategory} from './reportSchema';
-import {queryMatches,COMPETITOR_API_NOTE,COMPETITOR_VOLUME_NOTE} from './competitorResearch';
+import {queryMatches,COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE} from './competitorResearch';
 import {safeHttpUrl} from './citationMeasurement';
-export const POSITION_METHOD='industry-evidence-v4';
+export const POSITION_METHOD='industry-evidence-v5';
 export const POSITION_AXES={x:'상품·서비스 설명',y:'선택·이용 근거'};
 export const POSITION_NOTE='동일하게 페이지 제목·메타 설명만 비교합니다. 좌표는 표현 탐지 지표이며 가격 수준·품질·시장점유율·검색 순위·성과를 평가한 점수가 아닙니다.';
 export const POSITION_CRITERIA=positionProfile('etc').criteria;
@@ -12,11 +12,23 @@ export function positionCoordinates(x:number,y:number){return {left:22+x*.56,top
 export function positionDiameter(signals:number,mobile=false){const max=mobile?64:80;return Math.sqrt(44**2+(max**2-44**2)*Math.max(0,Math.min(8,signals))/8);}
 function positiveExpressions(text:string,pattern:RegExp) {
   const found=new Map<string,string>();
-  for(const match of text.matchAll(new RegExp(pattern.source,'gi'))) {
-    const after=text.slice((match.index||0)+match[0].length);
-    if(!/^\s*(?:[은는이가을를]\s*)?(?:없|미제공|미보유|미지원|불가|예정|준비\s*중|제공하지|지원하지|확인되지)/.test(after))found.set(match[0].toLocaleLowerCase().replace(/\s/g,''),match[0]);
+  const excluded:{expression:string;context:string}[]=[];
+  // Match spacing variants, but retain offsets into the original saved text for inspection.
+  const offsets:number[]=[];
+  for(let i=0;i<text.length;i++)if(!/\s/.test(text[i]))offsets.push(i);
+  const compact=offsets.map(i=>text[i]).join('');
+  for(const match of compact.matchAll(new RegExp(pattern.source,'gi'))) {
+    const start=match.index!,end=start+match[0].length;
+    const expression=text.slice(offsets[start],offsets[end-1]+1);
+    const negative=/^(?:[은는이가을를도])?(?:없|미제공|미보유|미지원|불가|예정|준비중|제공하지|지원하지|확인되지)/.exec(compact.slice(end));
+    if(negative){
+      const negativeEnd=offsets[end+negative[0].length-1]+1;
+      const tail=text.slice(negativeEnd).match(/^[^\n,;.!?·|。！？，；]{0,48}/)?.[0]||'';
+      const context=(text.slice(offsets[start],negativeEnd)+tail).trim();
+      if(!excluded.some(e=>e.context===context))excluded.push({expression,context});
+    }else found.set(match[0].toLocaleLowerCase(),expression);
   }
-  return [...found.values()];
+  return {matches:[...found.values()],excluded};
 }
 export function scorePosition(input:Input,keyword:string,category:IndustryCategory='etc') {
   const title=(input.title||'').trim(),description=(input.description||'').trim();
@@ -25,7 +37,7 @@ export function scorePosition(input:Input,keyword:string,category:IndustryCatego
   const eligible=!input.fetchError&&fieldsPresent===2&&match.terms.length>0;
   const termFields=fields.map(f=>({...f,matched:queryMatches(keyword,f.text).matched}));
   const profile=positionProfile(category);
-  const checks=profile.criteria.map(c=>{const sources=fields.map(f=>({...f,matches:positiveExpressions(f.text,c.pattern)}));const field=sources.find(f=>f.matches.length);const distinct=new Map<string,string>();for(const source of sources)for(const text of source.matches)distinct.set(text.toLocaleLowerCase().replace(/\s/g,''),text);const signals=[...distinct.values()];return {...c,found:!!field,field:field?.label||'',excerpt:field?.text||'',matched:field?.matches[0]||'',signals,signalCount:Math.min(2,signals.length)};});
+  const checks=profile.criteria.map(c=>{const sources=fields.map(f=>({...f,...positiveExpressions(f.text,c.pattern)}));const field=sources.find(f=>f.matches.length);const distinct=new Map<string,string>();for(const source of sources)for(const text of source.matches)distinct.set(text.toLocaleLowerCase().replace(/\s/g,''),text);const signals=[...distinct.values()];return {...c,sources,found:!!field,field:field?.label||'',excerpt:field?.text||'',matched:field?.matches[0]||'',signals,signalCount:Math.min(2,signals.length)};});
   const signalCount=eligible?checks.reduce((sum,c)=>sum+c.signalCount,0):null;
   const keywordScore=eligible?Math.round(termFields.reduce((sum,f)=>sum+f.matched.length,0)/(match.terms.length*2)*100):null;
   const x=eligible?(checks[0].signalCount+checks[1].signalCount)*25:null;
@@ -34,6 +46,23 @@ export function scorePosition(input:Input,keyword:string,category:IndustryCatego
     reason:eligible?'':input.fetchError?'페이지 수집 실패 · 검색 요약으로 좌표를 대신 계산하지 않음':!match.terms.length?'비교할 검색어 구성 단어를 확인할 수 없음':`제목·메타 설명 ${fieldsPresent}/2개 확인 · 같은 범위로 비교하기 위해 판정 보류`};
 }
 export type PositionRow=ReturnType<typeof scorePosition>;
+export type PositionCheck=PositionRow['checks'][number];
+export function positionFieldFinding(source:PositionCheck['sources'][number]) {
+  if(!source.text)return '원문 미확보 · 표현 유무를 확인할 수 없음';
+  const excluded=source.excluded.length?`제외한 표현: ${source.excluded.map(e=>`“${e.context}”`).join(' · ')} (없음·미제공·예정 등의 인접 표현)` : '';
+  return [source.matches.length?`확인: ${source.matches.join(' · ')}`:'반영 가능한 표현 없음',excluded].filter(Boolean).join(' / ');
+}
+export function positionCheckReason(row:PositionRow,check:PositionCheck) {
+  if(row.x===null)return `${row.reason}. 아래 원문 기록만 확인하며 이 항목을 미탐지나 0점으로 처리하지 않습니다.`;
+  if(check.found)return `${check.sources.filter(s=>s.matches.length).map(s=>`${s.label}에서 ${s.matches.join(' · ')}`).join(' / ')} 표현을 확인했습니다. 중복을 제외하고 ${check.signalCount}/2개를 좌표·버블 크기에 반영합니다.`;
+  if(check.sources.some(s=>s.excluded.length))return '관련 단어는 있지만 바로 뒤에 없음·미제공·예정 등의 표현이 있어, 현재 제공 정보로 세지 않았습니다. 아래에서 제외한 원문을 확인하세요.';
+  return '제목과 메타 설명 두 곳을 확인했지만 아래 기준 표현과 일치하는 단어가 없었습니다. 본문·이미지에만 있거나 다른 말로 표현된 정보는 이 결과에 반영되지 않습니다.';
+}
+export function positionCheckNextStep(row:PositionRow,check:PositionCheck) {
+  if(row.x===null)return '페이지 제목과 메타 설명을 모두 확보한 뒤 다시 비교하세요. 수집 오류와 실제 설명 누락을 먼저 구분해 주세요.';
+  if(check.found)return '표현이 실제 제공 조건과 맞는지, 본문에서 구체적인 내용을 확인할 수 있는지 대조하세요.';
+  return `${check.description}이 실제로 제공되는지 본문에서 확인하세요. 제목·설명에도 필요한 정보라면 사실에 맞게 요약하고, 해당하지 않는 내용은 추가하지 마세요.`;
+}
 export function positionGroups(rows:PositionRow[]) {
   const groups=new Map<string,{x:number;y:number;rows:PositionRow[]}>();
   for(const row of rows)if(row.x!==null&&row.y!==null){const key=`${row.x}:${row.y}`;const group=groups.get(key)||{x:row.x,y:row.y,rows:[]};group.rows.push(row);groups.set(key,group);}
@@ -53,12 +82,14 @@ export function positioningActions(row:PositionRow) {
   if(row.x===null)return [{title:'먼저 비교할 원문 확보',evidence:row.reason,action:'해당 URL의 페이지 제목과 메타 설명이 실제로 제공되는지 확인하고 다시 분석하세요. 수집 제한과 설명 부재는 별도로 점검합니다.',template:'원문 수집 후 같은 키워드·같은 두 필드로 비교',metric:'동일 범위로 비교 가능한 원문 2/2개 확보'}];
   const tasks=[];
   if((row.keywordScore??0)<100)tasks.push({title:'대표 검색어와 페이지 주제 연결',evidence:row.termFields.map(f=>`${f.label}에서 미탐지: ${row.terms.filter(t=>!f.matched.includes(t)).join(' · ')||'없음'}`).join(' / '),action:'이 검색어가 실제 주력 상품·서비스와 맞는지 먼저 확인하세요. 맞으면 제목과 설명에 자연스럽게 반영하고, 다르면 주력 상품을 설명하는 입력 페이지로 다시 진단합니다.',template:`[실제 제공하는 서비스·제품] | [브랜드]`,metric:'대상 URL의 검색 노출·클릭·CTR을 같은 검색어·기간으로 전후 비교'});
-  row.checks.filter(c=>!c.found).slice(0,2).forEach(c=>tasks.push({title:`${c.label} 설명 검토`,evidence:'수집된 제목·메타 설명에서는 관련 표현을 탐지하지 못했습니다. 페이지 본문에는 있을 수 있습니다.',action:c.action,template:c.template,metric:c.id==='process'?'문의 버튼 클릭률·문의 완료 세션 비율을 전후 비교':'해당 URL의 CTR·유입 후 문의 완료 세션 비율을 전후 비교'}));
+  row.checks.filter(c=>!c.found).slice(0,2).forEach(c=>tasks.push({title:`${c.label} 설명 검토`,evidence:positionCheckReason(row,c)+` 확인 기준: ${c.examples.join(' · ')}.`,action:positionCheckNextStep(row,c),template:c.template,metric:c.id==='process'?'문의 버튼 클릭률·문의 완료 세션 비율을 전후 비교':'해당 URL의 CTR·유입 후 문의 완료 세션 비율을 전후 비교'}));
   if(!tasks.length)tasks.push({title:'현재 표현의 사실성과 연결 페이지 점검',evidence:'검색어와 업종별 네 가지 정보 표현을 모두 탐지했습니다.',action:'표현을 더 늘리기보다 가격 조건·사례 원문·진행 안내가 실제 페이지에 연결되어 있는지 점검하고 고객 질문에 맞춰 내용을 보완하세요.',template:'[설명 속 약속] → [실제로 확인 가능한 근거·안내 페이지]',metric:'CTR·문의 완료 세션 비율·문의 내용의 적합성을 함께 비교'});
   return tasks.slice(0,3);
 }
 export function positioningBrief(report:MarketingReport,row:PositionRow) {
-  return [`검색 메시지 포지셔닝 · ${row.name}`,row.url,`대표 키워드: ${report.competitorAnalysis?.searchKeyword||''}`,POSITION_NOTE,POSITION_SIZE_NOTE,COMPETITOR_API_NOTE,COMPETITOR_VOLUME_NOTE,
+  return [`검색 메시지 포지셔닝 · ${row.name}`,row.url,`대표 키워드: ${report.competitorAnalysis?.searchKeyword||''}`,POSITION_NOTE,POSITION_SIZE_NOTE,COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE,
     row.x===null?row.reason:`${row.profile.label} 기준 · X 상품·서비스 설명 ${row.x}/100 · Y 선택·이용 근거 ${row.y}/100 · 버블 단서 ${row.signalCount}/8개`,
+    `페이지 제목: ${row.title||'원문 미확보'}`,`메타 설명: ${row.description||'원문 미확보'}`,
+    ...row.checks.flatMap(c=>[`${c.label}: ${positionCheckReason(row,c)}`,`확인 기준 표현: ${c.examples.join(' · ')}`, ...c.sources.map(s=>`${s.label}: ${positionFieldFinding(s)}`)]),
     ...positioningActions(row).flatMap((t,i)=>[`\n${i+1}. ${t.title}`,`근거: ${t.evidence}`,`실행: ${t.action}`,`작성 틀: ${t.template}`,`확인 지표: ${t.metric}`])].join('\n');
 }

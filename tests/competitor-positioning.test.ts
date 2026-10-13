@@ -68,7 +68,8 @@ test('new API snapshot preserves query provenance, absolute response position an
 test('full report and brief retain method, complete evidence and actions without inventing performance uplift',()=>{
   const long='상담 조건과 실제 사례를 자세히 설명합니다. '.repeat(15);
   const r={...report,competitorAnalysis:{...report.competitorAnalysis!,competitors:[{...competitor,metaDescription:long+'마지막 문장'}]}};
-  const text=buildReportDocument(r).map(b=>b.text).join('\n');for(const expected of ['검색 메시지 포지셔닝','검색량 미측정','100','TO-BE 작성 틀','마지막 문장','웹문서 검색 응답 순서: 3'])assert.ok(text.includes(expected),expected);
+  const text=buildReportDocument(r).map(b=>b.text).join('\n');for(const expected of ['검색 메시지 포지셔닝','원문 비교 가능','100','TO-BE 작성 틀','마지막 문장','웹문서 검색 응답 순서: 3'])assert.ok(text.includes(expected),expected);
+  assert.doesNotMatch(text,/검색량 미측정/);
   assert.ok(text.includes(long));assert.match(positioningBrief(report,buildCompetitorPositioning(report)!.own),/상승률|성과/);
   const $=load(renderToStaticMarkup(React.createElement(CompetitorLandscape,{report:r})));assert.equal($('.position-site-list button').length,2);assert.equal($('script').length,0);
 });

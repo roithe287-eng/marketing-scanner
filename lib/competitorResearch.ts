@@ -35,7 +35,7 @@ export function keywordCandidates(site:QuerySite) {
     .map(v=>{const evidence=keywordEvidence(v,site);return {...evidence,weightedSupport:evidence.weightedSupport+(keywordSeeds.has(normalizeSearchText(v))?3:0)-(evidence.evidence.length===1&&evidence.evidence[0].field==='페이지 제목'?3:0)};}).sort((a,b)=>b.weightedSupport-a.weightedSupport||a.keyword.length-b.keyword.length).slice(0,5);
 }
 export const COMPETITOR_API_NOTE='네이버 웹문서 API의 제한된 응답에서 찾은 비교 후보입니다. 응답 순서는 네이버 통합검색 순위·검색량·매출 순위가 아닙니다.';
-export const COMPETITOR_VOLUME_NOTE='검색량 미측정 · 제목·설명·주요 제목의 주제 관련성으로 대표 키워드를 선택합니다. 페이지 안의 반복 횟수와 시장의 검색 수요는 다릅니다.';
+export const COMPETITOR_KEYWORD_NOTE='대표 키워드는 수집된 페이지 제목·설명·주요 제목의 주제 관련성으로 선택합니다. 페이지 안의 반복 횟수는 시장의 검색 수요를 뜻하지 않습니다.';
 export const COMPETITOR_SOURCES=[
   {title:'네이버 웹문서 검색 API · 응답 항목과 범위',url:'https://developers.naver.com/docs/serviceapi/search/web/web.md'},
   {title:'네이버 검색광고 API · 별도 검색량 확인 경로',url:'https://naver.github.io/searchad-apidoc/'},
