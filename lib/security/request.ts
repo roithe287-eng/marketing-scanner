@@ -31,9 +31,7 @@ export function clientIp(
 ) {
   if (env.VERCEL !== "1") return "";
   return normalizeIp(
-    headers.get("x-vercel-forwarded-for") ||
-      headers.get("x-forwarded-for") ||
-      "",
+    headers.get("x-vercel-forwarded-for") || "",
   );
 }
 export function isInternal(

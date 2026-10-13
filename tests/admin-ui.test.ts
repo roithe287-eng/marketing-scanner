@@ -13,9 +13,9 @@ const data:ActivityDetailData={
 };
 test('admin activity panel retains identifiers, distinct PDF semantics, and escapes user-controlled content',()=>{
   const html=renderToStaticMarkup(React.createElement(UserActivityPanel,{data}));
-  for(const label of ['test@example.com',data.account.id,'203.0.113.20','PDF 파일 저장 클릭','브라우저 보고','기기에 파일이 실제 저장됐는지는 확인할 수 없습니다','공유 링크 상태'])assert.ok(html.includes(label),label);
+  for(const label of ['test@example.com',data.account.id,'203.0.113.20','PDF 브라우저 다운로드 요청','브라우저 보고','저장 완료는 파일 쓰기·닫기 성공','공유 링크 상태'])assert.ok(html.includes(label),label);
   assert.ok(html.includes('&lt;script&gt;보고서&lt;/script&gt;'));assert.ok(!html.includes('<script>'));assert.ok(!html.includes('<img src=x'));
-  assert.ok(html.includes('진행·결과 미확인 1'));assert.ok(html.includes('href="/r/test123"'));assert.ok(html.includes('전체 PDF'));
+  assert.ok(html.includes('결과 미확인 1'));assert.ok(html.includes('href="/r/test123"'));assert.ok(html.includes('전체 PDF'));
 });
 test('admin empty states remain explicit instead of inventing IP, activity or old usage',()=>{
   const html=renderToStaticMarkup(React.createElement(UserActivityPanel,{data:{...data,totals:{},activity:{...data.activity,events:[],ips:[]},reports:[]}}));

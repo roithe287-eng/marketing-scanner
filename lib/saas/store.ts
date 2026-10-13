@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { getRedisClient } from "../redisClient";
 import { AccessError, digest, clientIp } from "../security/request";
+import { NETWORK_ACTIVITY_ID } from './activityTypes';
 import { captureActivity, targetHost, activityStorageKeys } from './activity';
 import {
   Account,
@@ -144,12 +145,12 @@ redis.call('HINCRBY',KEYS[2],action,1);redis.call('EXPIRE',KEYS[2],6048000);retu
 export const FINISH_SCRIPT = `if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
 redis.call('DEL',KEYS[1]);if ARGV[2]=='refund' then local n=tonumber(redis.call('HGET',KEYS[2],ARGV[3]) or '0');if n>0 then redis.call('HINCRBY',KEYS[2],ARGV[3],-1) end end;return 1`;
 export async function reserve(principal: Principal, action: UsageAction, context?: { headers: Headers; url: string }) {
-  if(principal.kind==='internal')return async (_refund=false)=>{};
-  const requestId=randomUUID();
+  const requestId=randomUUID(),startedAt=Date.now();
+  const activityId=principal.kind==='internal'?NETWORK_ACTIVITY_ID:principal.account.id;
   const track=async(phase:'started'|'success'|'failed')=>{
-    if(context)await captureActivity(principal.account.id,`${action}_${phase}`,context.headers,{target:targetHost(context.url)},requestId);
+    if(context)await captureActivity(activityId,`${action}_${phase}`,context.headers,{target:targetHost(context.url),...(phase==='started'?{}:{durationMs:Date.now()-startedAt})},requestId);
   };
-  if (principal.account.role === "admin") {
+  if (principal.kind === "internal" || principal.account.role === "admin") {
     await track('started');
     let completed=false;
     return async (refund=false)=>{if(completed)return;completed=true;await track(refund?'failed':'success');};
