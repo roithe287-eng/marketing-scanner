@@ -16,12 +16,29 @@ const concreteTemplates:Record<string,string>={
 };
 const tidy=(s:string)=>s.toLowerCase().replace(/[\s·|.,!?]/g,'');
 function brandMatch(word:string,brand:string){const a=tidy(word),b=tidy(brand);return b.length>=2&&(a===b||['은','는','이','가','을','를','의','에서','와','과'].some(p=>a===b+p));}
-export type KeywordRewrite={id:string;item:KeywordFreqItem;kind:RewriteKind;reason:string;action:string;template:string;placement:string;check:string;source:string|null;sourceLabel:string;isPhrase:boolean};
+/** Frequency is an observation, never evidence that a brand/code is a useful search term. */
+export function keywordReviewReason(word:string,meta?:MarketingReport['meta']):string|null {
+  const value=word.trim();
+  const tokens=(s:string)=>(s.toLowerCase().match(/[a-z0-9]+/g)||[]).join(' ');
+  const term=tokens(value);
+  const supported=!!term&&[meta?.ogTitle,meta?.ogDescription].some(text=>text&&` ${tokens(text)} `.includes(` ${term} `));
+  if(/^[\d\s._-]+$/.test(value)||(/^[a-z\d_-]*\d[a-z\d_-]*$/i.test(value)&&!supported))return '숫자·상품 코드 형태의 표현입니다. 상품 식별자와 고객이 검색하는 주제를 구분할 근거가 부족합니다.';
+  if(/^[a-z\s._-]+$/i.test(value)) {
+    if(!supported)return '영문 브랜드·메뉴명·약어일 수 있으며, 저장된 제목·설명에서 사업 주제와의 연결을 확인하지 못했습니다.';
+  }
+  return null;
+}
+export function isKeywordPlacementCandidate(item:KeywordFreqItem,meta?:MarketingReport['meta']) {
+  return !item.keyword.split(/\s+/).every(isGenericKeyword)&&!brandMatch(item.keyword,meta?.siteName||'')&&!keywordReviewReason(item.keyword,meta)&&(!item.inTitle||!item.inMetaDescription);
+}
+export type KeywordRewrite={id:string;item:KeywordFreqItem;kind:RewriteKind;reason:string;action:string;template:string;placement:string;check:string;source:string|null;sourceLabel:string;isPhrase:boolean;reviewOnly?:boolean};
 export function keywordRewrite(item:KeywordFreqItem,meta:MarketingReport['meta'],isPhrase=false):KeywordRewrite {
   const word=item.keyword.trim(),brand=meta?.siteName||'';
   const entry=([['저장된 제목',meta?.ogTitle],['저장된 설명',meta?.ogDescription]] as const).find(([,v])=>v&&v.toLowerCase().includes(word.toLowerCase()));
   const base={id:`${isPhrase?'phrase':'word'}:${word}`,item,isPhrase,source:entry?.[1]||null,sourceLabel:entry?.[0]||'문장 원문 미저장'};
   if(brandMatch(word,brand))return {...base,kind:'유지',reason:'등록된 사이트명과 일치하는 표현입니다. 브랜드 식별에 필요한 반복일 수 있습니다.',action:'첫 소개·제목·연락처에는 정확한 브랜드명을 유지하세요. 같은 문단에서 주어만 되풀이한 부분은 문장을 합칠지 검토하세요.',template:'[확인된 공식 브랜드명]은(는) [대상 고객]에게 [실제 제공 서비스]를 제공합니다.',placement:'제목·첫 소개·문의 정보',check:'줄인 문장에서도 업체의 주체가 분명하고 공식 명칭이 유지되는가'};
+  const reviewReason=keywordReviewReason(word,meta);
+  if(reviewReason)return {...base,kind:'문맥 검토',reviewOnly:true,reason:reviewReason,action:'등장 횟수는 원문 집계에 보존합니다. 상품명·브랜드·메뉴 중 무엇인지 확인하기 전에는 제목 보강이나 삭제를 권하지 않습니다.',template:'[원문에서 확인한 의미] · [브랜드·상품·메뉴 구분] · [이 페이지의 주제와 관련된 근거]',placement:'원문과 상품·브랜드 정보 확인',check:'실제 의미와 페이지 주제를 확인했는가. 빈도만을 근거로 검색 제목을 수정하지 않았는가'};
   if(/않습니다|없습니다|불가|금지|제외|않는/.test(word))return {...base,kind:'문맥 검토',reason:'부정·제외 조건이 들어 있어 기계적으로 삭제하면 의미가 달라질 수 있습니다.',action:'같은 제한을 여러 번 설명하는 경우 조건 안내에 모으되, 부정 표현과 예외 조건을 보존하세요.',template:'[해당 조건]에서는 [제공하지 않는 항목]을 제공하지 않습니다. 예외: [확인된 예외 조건].',placement:'이용 조건·예외 안내',check:'부정·예외·제공 범위가 원문과 같은가'};
   if(word.split(/\s+/).every(isGenericKeyword))return {...base,kind:'정리',reason:'핵심 서비스명보다 문장 연결·수식에 쓰이는 일반 표현입니다.',action:'문장마다 반복되는 수식·연결어를 덜고 하나의 문장에 하나의 정보를 남기세요. 이 표현을 제목에 추가할 필요는 없습니다.',template:'[핵심 주체]가 [구체적인 행동]을 수행합니다. [필요한 조건]을 이어서 설명합니다.',placement:'본문의 반복 문장',check:'삭제 전후의 의미와 필요한 조건이 유지되는가'};
   if(/^(?:운영|진행|제공|지원|관리|분석|서비스|범위)(?:을|를|이|가|는|은|의|에서)?$/.test(word))return {...base,kind:'구체화',reason:'여러 업무를 가리킬 수 있는 넓은 표현입니다. 고객이 실제로 받는 내용을 함께 설명할 여지가 있습니다.',action:`“${word}”의 반복을 [무엇을]·[어떻게]·[어떤 산출물로 확인하는지]로 풀어 쓰세요. 제공하지 않는 업무는 추가하지 마세요.`,template:concreteTemplates[word.replace(/(?:에서|을|를|이|가|는|은|의)$/,'')]||concreteTemplates.서비스,placement:'서비스 설명·업무 범위',check:'대상·업무·제공 범위를 실제 계약·운영 내용으로 확인했는가'};

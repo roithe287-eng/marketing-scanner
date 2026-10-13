@@ -20,16 +20,16 @@ function FrequencyTable({items,caption}:{items:KeywordFreqItem[];caption:string}
     </tr>)}</tbody>
   </table>;
 }
-export default function KeywordFrequencyCard({frequency}:{frequency?:KeywordFrequency|null}) {
+export default function KeywordFrequencyCard({frequency,compact=false}:{frequency?:KeywordFrequency|null;compact?:boolean}) {
   const [tab,setTab]=useState<'singles'|'phrases'>('singles'),id=useId();
   if(!frequency)return null;
   const phrase=tab==='phrases';
-  return <section className="jm-card keyword-frequency" aria-labelledby={`${id}-title`}>
-    <header><p className="report-eyebrow">CONTENT SIGNALS</p><h3 id={`${id}-title`}>키워드 분포 리포트</h3><p>{keywordFrequencyScope(frequency)}</p></header>
+  return <section className={compact?"keyword-frequency keyword-panel-content":"jm-card keyword-frequency"} aria-labelledby={`${id}-title`}>
+    <header>{compact?<h4 id={`${id}-title`}>수집한 표현의 등장 횟수</h4>:<><p className="report-eyebrow">CONTENT SIGNALS</p><h3 id={`${id}-title`}>수집한 표현의 등장 횟수</h3></>}<p>{keywordFrequencyScope(frequency)}</p><p>브랜드명·상품 코드·메뉴도 포함한 원문 집계입니다. 자주 등장한 표현이 곧 추천 검색어인 것은 아닙니다.</p></header>
     <dl className="keyword-stats">{[[frequency.totalTokens,'집계한 단어 수'],[frequency.uniqueSingles,'서로 다른 단어'],[frequency.uniquePhrases,'서로 다른 연속어구']].map(([value,label])=><div key={label}><dt>{label}</dt><dd>{value.toLocaleString()}</dd></div>)}</dl>
     <div className="keyword-controls" role="group" aria-label="빈도 집계 단위"><button type="button" aria-pressed={!phrase} aria-controls={`${id}-results`} onClick={()=>setTab('singles')}>단어 단위</button><button type="button" aria-pressed={phrase} aria-controls={`${id}-results`} onClick={()=>setTab('phrases')}>연속어구 단위</button></div>
     <p className="keyword-method">{keywordDensityNote(frequency,phrase)}</p>
     <div id={`${id}-results`}><FrequencyTable items={phrase?frequency.phrases:frequency.singles} caption={`${phrase?'연속어구':'단어'} · 서로 다른 표현 ${phrase?frequency.uniquePhrases:frequency.uniqueSingles}종 중 2회 이상 반복된 표현`}/></div>
-    <p className="keyword-footnote">검색 제목·메타 설명의 포함 여부는 같은 단어 형태를 기준으로 확인합니다. 조사·띄어쓰기·동의어 차이를 직접 확인하세요. 비중만으로 과잉 반복이나 검색 성과를 판단하지 않으며, 수정 방향은 ‘반복 표현, 어떻게 바꿀까요?’에서 확인할 수 있습니다.</p>
+    <p className="keyword-footnote">검색 제목·메타 설명의 포함 여부는 같은 단어 형태를 기준으로 확인합니다. 조사·띄어쓰기·동의어 차이를 직접 확인하세요. 비중만으로 과잉 반복이나 검색 성과를 판단하지 않으며, 수정 방향은 ‘표현별 검토·수정’에서 확인할 수 있습니다.</p>
   </section>;
 }

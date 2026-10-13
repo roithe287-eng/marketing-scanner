@@ -89,6 +89,7 @@ export function buildExecutableRewrites(report:MarketingReport) {
 }
 export function rewriteInstruction(plan:ExecutableRewrite,values:RewriteValues={}):string {
   const g=plan.guide,preview=fillRewriteTemplate(plan.template,values),remaining=rewriteFields(preview).length;
+  if(plan.reviewOnly)return [`표현 의미 확인 · ${g.site}`,`검토 URL: ${g.url||'유효한 URL 미확인'}`,`대상 표현: ${plan.item.keyword} · ${plan.item.count}회`,plan.reason,plan.action,`근거 범위: ${g.coverage}`,...g.evidence.map(e=>`${e.label}: ${e.text}`),`확인할 내용: ${plan.check}`].join('\n\n');
   return [`수정 작업 지시서 · ${g.site}`,`검토 URL: ${g.url||'유효한 URL 미확인'}`,`대상 표현: ${plan.item.keyword} · ${plan.kind}`,`권장 위치: ${g.location}`,`근거 범위: ${g.coverage}`,
     ...g.evidence.map(e=>`${e.label}: ${e.text}`),...(!g.evidence.length?['일치하는 문장 원문 없음 · 위치 확인 후 수정']:[]),
     ...g.steps.map((s,i)=>`${i+1}. ${s.title}\n${s.detail}`),

@@ -18,7 +18,7 @@ export default function OfficialSeoPanel({audit,targetUrl}:{audit?:OfficialSeoAu
  const pages=Math.max(1,Math.ceil(filtered.length/20)),current=Math.min(page,pages-1);
  function showTopic(next:string){setTopic(next);setQuery('');setPage(0);setCatalogOpen(true);}
  return <section className="report-card official-seo" id="official-seo" aria-labelledby="official-seo-title">
-  <div className="report-card-heading"><div><p className="report-eyebrow">NAVER · GOOGLE · OFFICIAL SEO</p><h3 id="official-seo-title">공식 검색 기준 재검증</h3></div><span className="naver-reviewed">기준 확인일<br/><strong>{report.catalogVersion}</strong></span></div>
+  <div className="report-card-heading"><div><p className="report-eyebrow">NAVER · GOOGLE · OFFICIAL SEO</p><h3 id="official-seo-title">공식 검색 기준 재검증</h3></div><div className="naver-reviewed"><span>기준 확인일</span><time dateTime={report.catalogVersion}>{report.catalogVersion}</time></div></div>
   <div className="official-seo-coverage"><strong>네이버 {OFFICIAL_SEO_COVERAGE.naver} · Google {OFFICIAL_SEO_COVERAGE.google} 문서</strong><span>반영 {OFFICIAL_SEO_COVERAGE.reviewed}개 · 교육 PDF 2종{OFFICIAL_SEO_COVERAGE.unavailable>0?` · 원문 재확인 필요 ${OFFICIAL_SEO_COVERAGE.unavailable}개`:null}</span></div>
   <p className="report-note">{OFFICIAL_SEO_SCOPE}</p>
   {report.mode==='guide'?<p className="naver-legacy">이전 보고서입니다. 현재 URL의 추가 검사는 재진단 후 표시됩니다.</p>:<div className="naver-counts">{(['action','observed','manual'] as const).map(key=><div key={key} data-state={key}><span>{OFFICIAL_SEO_STATUS[key]}</span><strong>{counts[key]}<small>개</small></strong></div>)}</div>}

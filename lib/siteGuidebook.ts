@@ -58,6 +58,7 @@ export function editorRoute(platform:PlatformId|undefined,topic:GuideTopic,url:s
 export function elementLink(url:string,e:PageElement){
  const safe=safeHttpUrl(url);if(!safe)return null;
  const u=new URL(safe);
+ if(['title','description'].includes(e.kind))return null;
  if(e.anchor){u.hash=encodeURIComponent(e.anchor);return u.href;}
  // Metadata, alt text and generated form labels are not visible page text.
  if(['title','description','image','form'].includes(e.kind)||e.truncated||e.text.trim().length<4)return null;

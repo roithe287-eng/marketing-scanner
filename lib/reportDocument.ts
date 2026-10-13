@@ -1,3 +1,4 @@
+import {reportForPresentation} from './reportPresentation';
 import {buildOfficialSeoDocument} from './officialSeoDocument';
 import {retentionTime} from './reportRetention';
 import {activeCitationReport} from './activeCitation';
@@ -33,7 +34,7 @@ const values:Record<string,string> = {chatgpt:'OpenAI',true:'예',false:'아니�
 Object.assign(labels, {evidenceStatus:'근거 상태',evidenceNote:'근거 재확인 안내',methodVersion:'집계 방식 버전',scope:'집계 범위',sourceLength:'집계한 본문 글자 수',bodyTruncated:'본문 일부만 집계',totalPhrases:'집계 대상 인접 단어쌍 수',windowDays:'집계 기간(일)',scoringMethod:'진단 방식',scopeNote:'비교 범위',measurementProtocol:'비교 측정 규칙',brandName:'브랜드 판정 기준',requestFingerprint:'요청 설정 식별자',filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
 Object.assign(values, {body:'수집 본문',review:'재확인 필요',keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
 export function buildReportDocument(report:MarketingReport):ReportBlock[] {
-  report=activeCitationReport(report);
+  report=reportForPresentation(activeCitationReport(report));
   const blocks:ReportBlock[] = [
     {kind:'title',text:`${report.meta?.siteName || report.meta?.domain || '웹사이트'} 마케팅 진단 리포트`},
     ...(report.sharedRetention?[{kind:'body' as const,text:`공유 페이지 열람 종료: ${retentionTime(report.sharedRetention.expiresAt)} · 다운로드한 파일은 자동 회수되지 않습니다.`}]:[]),

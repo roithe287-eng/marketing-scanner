@@ -1,7 +1,9 @@
+import {reportForPresentation} from './reportPresentation';
 import {OFFICIAL_SEO_COVERAGE} from './officialSeoCatalog';
 import {buildCompetitorPositioning} from './competitorPositioning';
 import {NAVER_CATEGORIES,naverCounts} from './naverKnowledge';
-import {isGenericKeyword} from './keywordRewrite';
+import {isKeywordPlacementCandidate,keywordReviewReason} from './keywordRewrite';
+import {excludedPlatformReason} from './competitorSelection';
 import type {MarketingReport} from './reportSchema';
 import {safeHttpUrl,ownHost} from './citationMeasurement';
 import {buildObservationVisual,engineNames,engines,observationState,readinessItems} from './reportVisuals';
@@ -18,13 +20,14 @@ export const messageThemes=[
 ] as const;
 export const insightNotes={
   stages:'각 단계에 연결한 기존 진단 점수입니다. 실제 방문·구매 전환율이나 이탈률을 측정한 퍼널이 아닙니다.',
-  sources:'검색·출처 판정이 완료된 단일 관측의 URL만 모았습니다. 링크의 현재 접속 상태와 내용의 사실 여부는 별도 확인이 필요합니다.',
-  reviews:'브랜드 언급이 있고 자사 출처 없이 외부 출처가 연결된 답변입니다. 오답 확정이 아닌 내용 대조 대상이며, 자사 출처가 있어도 정확성을 보장하지 않습니다.',
+  sources:'AI 답변에 연결된 외부 출처 중 자사몰·대형몰·포털·SNS를 제외했습니다. 비교 업체로 확정한 목록은 아니므로 실제 상품·서비스의 관련성을 확인하세요.',
+  reviews:'브랜드를 언급하면서 외부 출처만 연결한 답변을 우선 검토합니다. 업체명·서비스 범위·가격과 조건을 대조하세요. 자사 출처가 연결된 답변도 해당 페이지의 최신 정보와 함께 확인하세요.',
   messages:'저장된 페이지 제목·메타 설명의 표현만 비교합니다. 미탐지는 서비스 부재를 뜻하지 않으며 수집하지 못한 항목은 미확인입니다.',
   questions:'사이트 전체를 탐색한 결과가 아닙니다. 자사 인용 URL이 없으면 입력 페이지를 검토 후보로 연결합니다.',
   tasks:'기존 진단에서 보완이 필요한 항목을 모았습니다. 같은 문제가 여러 진단에서 발견되면 각각의 근거가 남을 수 있습니다.',
 };
 export function buildReportInsights(report:MarketingReport) {
+  report=reportForPresentation(report);
   const obs=buildObservationVisual(report.llmCitationTest);
   const uniqueRows=obs?.questions.flatMap(q=>engines.flatMap(e=>q.cells[e].rows.length===1?q.cells[e].rows:[]))||[];
   const verified=uniqueRows.filter(r=>['cited','uncited'].includes(observationState(r)));
@@ -39,7 +42,14 @@ export function buildReportInsights(report:MarketingReport) {
     sourceMap.set(key,entry);
   }
   const sources=[...sourceMap.values()].sort((a,b)=>b.observations.length-a.observations.length||a.url.localeCompare(b.url));
+  const sourceExclusion=(s:SourceEntry)=>ownHost(s.url,report.url)?'자사 도메인':excludedPlatformReason(s.domain);
+  const eligibleSources=sources.filter(s=>!sourceExclusion(s));
+  const excludedSources=sources.flatMap(s=>{const reason=sourceExclusion(s);return reason?[{...s,reason}]:[];});
   const reviews=verified.filter(r=>r.brandMentioned===true && (r.sources||[]).some(s=>s.ownership!=='unresolved'&&!!safeHttpUrl(s.url)&&!ownHost(s.url,report.url)) && !(r.sources||[]).some(s=>s.ownership!=='unresolved'&&!!safeHttpUrl(s.url)&&ownHost(s.url,report.url))).map(r=>({question:r.question,engine:engineNames.chatgpt,answer:r.responseText||r.responseSnippet||'답변 원문이 저장되지 않았습니다.',sources:(r.sources||[]).filter(s=>safeHttpUrl(s.url)),measuredAt:r.measuredAt}));
+  const brandRows=verified.filter(r=>r.brandMentioned===true);
+  const ownSource=brandRows.filter(r=>(r.sources||[]).some(s=>s.ownership!=='unresolved'&&!!safeHttpUrl(s.url)&&ownHost(s.url,report.url))).length;
+  const reviewSummary={total:obs?.total||0,verified:verified.length,unavailable:(obs?.total||0)-verified.length,brandMentioned:brandRows.length,noBrand:verified.filter(r=>r.brandMentioned===false).length,unknownMention:verified.filter(r=>typeof r.brandMentioned!=='boolean').length,ownSource,missingSource:brandRows.length-ownSource-reviews.length};
+  const reviewExplanation=!obs?'이전 형식의 보고서에는 답변별 브랜드 언급·출처 확인 기록이 없어 대조 대상을 판정하지 않았습니다. 새 진단으로 해당 기록을 수집하세요.':!obs.total?'저장된 AI 답변이 없어 대조할 원문이 없습니다. AI 관측을 다시 실행해 주세요.':!verified.length?'검색 실행·출처 확인이 완료된 답변이 없어 대조 대상을 계산하지 않았습니다. 위의 AI 답변 관측에서 오류·중복·검색 및 출처 확인 상태를 확인한 뒤 재진단하세요.':reviews.length?`출처 확인이 완료된 ${verified.length}건 중 외부 출처만 연결한 브랜드 언급 답변 ${reviews.length}건을 우선 대조합니다.`:!brandRows.length?`출처 확인이 완료된 ${verified.length}건 중 브랜드 언급이 확인된 답변이 없어 우선 대조 대상은 0건입니다. 브랜드 언급 여부 미확인 ${reviewSummary.unknownMention}건은 별도 확인이 필요합니다.`:`브랜드 언급 답변 ${brandRows.length}건 중 자사 출처 연결 ${ownSource}건, 대조 가능한 외부 출처 미확인 ${reviewSummary.missingSource}건입니다. 외부 출처만 연결한 답변이 없어 우선 대조 대상은 0건입니다.`;
   const questions=obs?.questions.map(q=>{
     const rows=verified.filter(r=>r.question.trim()===q.question);
     const owned=rows.flatMap(r=>r.sources||[]).find(s=>s.ownership!=='unresolved'&&!!safeHttpUrl(s.url)&&ownHost(s.url,report.url));
@@ -57,7 +67,8 @@ export function buildReportInsights(report:MarketingReport) {
     return ownMessage?.available && !ownMessage.cells[i].match && present.length?[{label:theme.label,count:present.length,total:known.length}]:[];
   });
   const stages=[{label:'첫인상',key:'firstView' as const,action:'제안의 핵심과 첫 화면 문구 확인'},{label:'신뢰 형성',key:'trust' as const,action:'검증 가능한 사례·후기·근거 확인'},{label:'행동 유도',key:'cta' as const,action:'버튼 문구·위치·다음 행동 확인'},{label:'전환 흐름',key:'conversionFlow' as const,action:'문의·신청 과정의 마찰 확인'}].map(s=>({...s,score:report.diagnosis[s.key]}));
-  const gaps=(report.keywordFrequency?.singles||[]).slice(0,20).filter(k=>!isGenericKeyword(k.keyword)&&(!k.inTitle||!k.inMetaDescription)).slice(0,8);
+  const gaps=(report.keywordFrequency?.singles||[]).filter(k=>isKeywordPlacementCandidate(k,report.meta)).slice(0,8);
+  const heldKeywords=(report.keywordFrequency?.singles||[]).flatMap(k=>{const reason=keywordReviewReason(k.keyword,report.meta);return reason?[{...k,reason}]:[];});
   const tasks:FollowupTask[]=[];
   const push=(group:string,source:string,rows:{label:string;status:'pass'|'warning'|'fail';currentValue:string;guide:string}[])=>rows.filter(r=>r.status!=='pass').forEach((r,i)=>tasks.push({id:`${source}-${i}`,group,title:r.label,status:r.status as 'warning'|'fail',evidence:r.currentValue,current:r.currentValue,action:r.guide,source}));
   report.criticalIssues.forEach((r,i)=>tasks.push({id:`critical-${i}`,group:'핵심 개선',title:r.title,status:r.evidenceStatus==='review'?'review':r.priority==='high'?'fail':r.priority==='medium'?'warning':'review',evidence:r.problem,current:r.badExample,action:r.recommendation,source:'AI 진단'}));
@@ -78,7 +89,7 @@ export function buildReportInsights(report:MarketingReport) {
     {label:'AI 출처 판정',value:obs?`${obs.sourceTotal} / ${obs.total}건`:'—',state:!obs?'미확인':obs.sourceTotal===obs.total&&obs.total?'판정 완료':obs.sourceTotal?'일부 판정':'판정 불가',detail:'분모는 OpenAI 관측'},
     {label:'경쟁사 수집',value:`${metadataCount} / ${competitors.length}개`,state:report.competitorStatus?.status==='pending'?'진행 중':competitors.length?(metadataCount===competitors.length?'저장됨':'일부 미확인'):'미확인',detail:'후보 중 상세 항목이 있는 사이트'},
   ];
-  return {obs,sources,reviews,questions,messageRows,messageOpportunities,stages,gaps,tasks,coverage,metadataCount,competitorCount:competitors.length};
+  return {obs,sources,eligibleSources,excludedSources,reviews,reviewSummary,reviewExplanation,questions,messageRows,messageOpportunities,stages,gaps,heldKeywords,tasks,coverage,metadataCount,competitorCount:competitors.length};
 }
 export type ReportInsights=ReturnType<typeof buildReportInsights>;
 export function contentBrief(question:string,target:string|null) {

@@ -1,0 +1,22 @@
+import type {MarketingReport} from './reportSchema';
+import {excludedPlatformReason} from './competitorSelection';
+import {ownHost,safeHttpUrl} from './citationMeasurement';
+
+/** Reapply candidate policy to saved reports without mutating their observations. */
+export function reportForPresentation(report:MarketingReport):MarketingReport {
+  const analysis=report.competitorAnalysis;if(!analysis)return report;
+  const excluded:NonNullable<typeof analysis.filtering>['excluded']=[];
+  const competitors=analysis.competitors.filter(c=>{
+    const url=safeHttpUrl(c.link);
+    const reason=!url?'유효한 웹페이지 주소 미확인':ownHost(url,report.url)?'자사 도메인':excludedPlatformReason(new URL(url).hostname);
+    if(!reason)return true;
+    excluded.push({domain:c.domain,link:c.link,title:c.title,reason});return false;
+  });
+  if(!excluded.length)return report;
+  const recorded=analysis.filtering?.excluded||[];
+  return {...report,competitorAnalysis:{...analysis,competitors:competitors.map((c,i)=>({...c,rank:i+1})),filtering:{
+    policyVersion:1,reviewedCount:analysis.filtering?.reviewedCount??analysis.competitors.length,
+    metadataCheckedCount:analysis.filtering?.metadataCheckedCount??analysis.competitors.filter(c=>!!(c.metaTitle||c.metaDescription||c.h1||c.fetchError)).length,
+    excluded:[...recorded,...excluded.filter(c=>!recorded.some(e=>e.link===c.link))],
+  }}};
+}

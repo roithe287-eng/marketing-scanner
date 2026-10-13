@@ -14,6 +14,7 @@ const excludedHosts = [
   'naver.com', 'daum.net', 'google.com', 'namu.wiki', 'wikipedia.org',
   'coupang.com', 'gmarket.co.kr', 'auction.co.kr', '11st.co.kr', 'tmon.co.kr', 'wemakeprice.com', 'interpark.com',
   'ssg.com', 'lotteon.com', 'emart.com', 'hmall.com', 'hyundaihmall.com', 'akmall.com', 'galleria.co.kr', 'shinsegae.com',
+  'lfmall.co.kr', 'lotteimall.com', 'gsshop.com', 'cjmall.com', 'cjonstyle.com', 'nsmall.com', 'ssgdfm.com',
   'enuri.com', 'danawa.com', 'bestkeyword.co.kr', 'oliveyoung.co.kr', 'musinsa.com', 'ablyrocks.com', 'zigzag.kr',
   'a-bly.com', 'brandi.co.kr', 'kakaomakers.com', 'kakaomakers.co.kr', 'market.kakao.com',
   'aliexpress.com', 'amazon.com', 'amazon.co.jp', 'taobao.com', 'tmall.com',
@@ -21,6 +22,9 @@ const excludedHosts = [
   'twitter.com', 'x.com', 'threads.net', 'pinterest.com',
 ];
 const belongsTo = (domain: string, parent: string) => domain === parent || domain.endsWith(`.${parent}`);
+export function excludedPlatformReason(domain:string):string|undefined {
+  return excludedHosts.some(host=>belongsTo(domain.toLowerCase().replace(/\.$/,''),host))?'포털·대형몰·SNS·백과사전':undefined;
+}
 export function stripSearchHtml(html: string): string {
   return html.replace(/<[^>]*>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&')
     .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').trim();
@@ -53,7 +57,7 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
     const title = stripSearchHtml(item.title);
     let reason = own && (belongsTo(domain, own) || belongsTo(own, domain)) ? '자사 도메인' : undefined;
     if (!reason && seen.has(domain)) reason = '이미 수집한 도메인의 중복 페이지';
-    if (!reason && excludedHosts.some(host => belongsTo(domain, host))) reason = '포털·대형몰·SNS·백과사전';
+    if (!reason) reason = excludedPlatformReason(domain);
     if (!reason) reason = nonProviderReason(title, query, stripSearchHtml(item.description));
     if (reason) { excluded.push({domain, link: item.link, title, reason}); return; }
     seen.add(domain);
