@@ -1,6 +1,7 @@
 import UrlForm from '@/components/UrlForm';
 import LivePreviewCard from '@/components/LivePreviewCard';
 import LandingReportFeatures from '@/components/LandingReportFeatures';
+import LandingPricing from '@/components/LandingPricing';
 
 type Props = { onSubmit: (url: string, questions?: string[], baselineId?: string) => void; loading: boolean; allowed?: boolean; checking?: boolean };
 const questions = [
@@ -36,6 +37,7 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
         </div>
       </div>
       <LandingReportFeatures />
+      <LandingPricing />
     </div>
   </section>;
 }

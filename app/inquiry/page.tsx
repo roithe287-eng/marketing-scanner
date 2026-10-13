@@ -1,6 +1,9 @@
 import AccessShell from "@/components/access/AccessShell";
 import InquiryForm from "@/components/access/InquiryForm";
-export default function InquiryPage() {
+import { inquiryPlanLabel } from '@/lib/pricing';
+export default async function InquiryPage({ searchParams }: { searchParams: Promise<{ plan?: string | string[] }> }) {
+  const { plan } = await searchParams;
+  const selectedPlan = inquiryPlanLabel(typeof plan === 'string' ? plan : undefined);
   return (
     <AccessShell
       eyebrow="START WITH YOUR GOAL"
@@ -18,7 +21,7 @@ export default function InquiryPage() {
           <b>03</b> 계정 활성화
         </li>
       </ol>
-      <InquiryForm />
+      <InquiryForm selectedPlan={selectedPlan} />
     </AccessShell>
   );
 }

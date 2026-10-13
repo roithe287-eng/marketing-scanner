@@ -1,0 +1,81 @@
+/* Quiet pricing entry below the feature cards; reuse the existing landing palette. */
+.scanner-pricing-summary { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:20px 28px; margin-top:24px; padding:24px 26px; border:1px solid #d1dcea; border-radius:18px; background:#fff; }
+.scanner-pricing-summary-copy h2 { font-size:14px; font-weight:800; color:var(--scanner-muted); margin:0 0 5px; }
+.scanner-pricing-summary-copy>p { font-size:17px; line-height:1.6; color:var(--scanner-ink); }
+.scanner-pricing-summary-copy strong { font-weight:800; }
+.scanner-pricing-summary-copy>p>span { margin:0 6px; color:#8894aa; }
+.scanner-pricing-summary-copy small { display:block; margin-top:4px; font-size:12px; color:var(--scanner-muted); }
+.scanner-pricing-benefit { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:750; line-height:1.6; color:var(--scanner-indigo); word-break:keep-all; }
+.scanner-pricing-benefit>span { flex-shrink:0; display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:#f0f5ce; color:#40561d; }
+.scanner-pricing-summary-link { display:inline-flex; align-items:center; justify-content:center; gap:20px; min-height:44px; padding:11px 17px; border:1px solid #c7d4e9; border-radius:999px; color:var(--scanner-indigo); font-size:13px; font-weight:800; white-space:nowrap; }
+.scanner-pricing-summary-link:hover { background:#f3f6fc; }
+.scanner-pricing-page { min-height:100vh; background:var(--scanner-ivory); }
+.scanner-pricing-content { padding-top:30px; padding-bottom:64px; }
+.scanner-pricing-back { display:inline-block; font-size:13px; font-weight:650; color:var(--scanner-muted); padding:8px 0; }
+.scanner-pricing-intro { text-align:center; padding:34px 0 32px; }
+.scanner-pricing-eyebrow { color:var(--scanner-cobalt); font-size:12px; font-weight:800; letter-spacing:.12em; }
+.scanner-pricing-intro h1 { margin:13px 0 17px; font-size:clamp(30px,4vw,46px); line-height:1.3; letter-spacing:-.05em; font-weight:850; word-break:keep-all; }
+.scanner-pricing-intro h1 em { font-style:normal; color:var(--scanner-cobalt); }
+.scanner-pricing-intro>p:not(.scanner-pricing-eyebrow) { font-size:16px; line-height:1.8; color:var(--scanner-muted); word-break:keep-all; }
+.scanner-pricing-intro>span { display:block; margin-top:14px; font-size:12px; color:var(--scanner-muted); }
+.scanner-pricing-mobile-break { display:none; }
+.scanner-pricing-agency { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:23px 28px; margin-bottom:24px; border:1px solid #d9e2b9; border-radius:18px; background:#f0f4de; }
+.scanner-pricing-agency-label { font-size:12px; font-weight:750; color:#48602d; }
+.scanner-pricing-agency h2 { margin:5px 0; font-size:22px; font-weight:800; letter-spacing:-.035em; line-height:1.5; word-break:keep-all; }
+.scanner-pricing-agency p { font-size:14px; line-height:1.7; color:var(--scanner-muted); word-break:keep-all; }
+.scanner-pricing-agency>a { display:inline-flex; justify-content:center; align-items:center; gap:18px; flex-shrink:0; min-height:44px; font-size:14px; font-weight:800; color:var(--scanner-indigo); padding:11px 17px; background:#fff; border:1px solid #d4debc; border-radius:999px; }
+.scanner-pricing-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; }
+.scanner-plan { display:flex; flex-direction:column; min-width:0; padding:26px; background:#fff; border:1px solid #d1dcea; border-radius:18px; }
+.scanner-plan--recommended { border-color:var(--scanner-cobalt); box-shadow:inset 0 3px 0 var(--scanner-cobalt); }
+.scanner-plan-top { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; }
+.scanner-plan-top h2 { font-size:19px; font-weight:800; letter-spacing:-.035em; line-height:1.5; }
+.scanner-plan-top>span { padding:4px 9px; font-size:11px; line-height:1.5; font-weight:750; background:#f0f4fa; color:#455d7c; border-radius:6px; }
+.scanner-plan--recommended .scanner-plan-top>span { color:var(--scanner-cobalt); background:#eaf0ff; }
+.scanner-plan-description { min-height:48px; margin-top:14px; color:var(--scanner-muted); font-size:14px; line-height:1.75; word-break:keep-all; }
+.scanner-plan-price { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px; margin-top:20px; color:var(--scanner-ink); }
+.scanner-plan-price strong { font-size:36px; font-weight:850; line-height:1.3; letter-spacing:-.05em; font-variant-numeric:tabular-nums; }
+.scanner-plan-price>span { font-size:14px; font-weight:650; }
+.scanner-plan-unit { min-height:36px; margin-top:7px; font-size:12px; line-height:1.6; color:var(--scanner-muted); word-break:keep-all; }
+.scanner-plan ul { display:grid; gap:10px; margin:20px 0 24px; padding-top:20px; border-top:1px solid #e0e6ef; }
+.scanner-plan li { display:flex; gap:9px; color:#415573; font-size:13px; line-height:1.65; word-break:keep-all; }
+.scanner-plan li>span { color:var(--scanner-cobalt); font-weight:800; flex-shrink:0; }
+.scanner-plan-link { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:auto; min-height:46px; padding:12px 16px; border:1px solid #c7d4e9; border-radius:10px; font-size:14px; font-weight:800; color:var(--scanner-indigo); }
+.scanner-plan-link:hover { background:#f0f4ff; }
+.scanner-plan--recommended .scanner-plan-link { background:var(--scanner-cobalt); border-color:var(--scanner-cobalt); color:#fff; }
+.scanner-plan--recommended .scanner-plan-link:hover { background:var(--scanner-cobalt-dark); }
+.scanner-pricing-faq { display:grid; grid-template-columns:minmax(0,.8fr) minmax(0,1.5fr); gap:36px; margin-top:56px; padding-top:36px; border-top:1px solid var(--scanner-line); }
+.scanner-pricing-faq h2 { margin-top:8px; font-size:25px; font-weight:800; letter-spacing:-.04em; line-height:1.5; word-break:keep-all; }
+.scanner-pricing-faq details { border-bottom:1px solid var(--scanner-line); }
+.scanner-pricing-faq summary { display:flex; align-items:center; justify-content:space-between; gap:18px; list-style:none; padding:19px 0; cursor:pointer; font-size:15px; font-weight:750; line-height:1.6; word-break:keep-all; }
+.scanner-pricing-faq summary::-webkit-details-marker { display:none; }
+.scanner-pricing-faq summary>span { flex-shrink:0; font-size:19px; color:var(--scanner-cobalt); }
+.scanner-pricing-faq details[open] summary>span { transform:rotate(45deg); }
+.scanner-pricing-faq details>p { padding:0 24px 21px 0; font-size:14px; line-height:1.9; color:var(--scanner-muted); word-break:keep-all; }
+.scanner-inquiry-plan { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:15px 17px; border:1px solid #cbd8ee; background:#f0f4ff; border-radius:10px; font-size:13px; line-height:1.7; }
+.scanner-inquiry-plan>span { color:var(--scanner-muted); }
+.scanner-inquiry-plan strong { color:var(--scanner-indigo); font-weight:800; }
+.scanner-inquiry-plan>a { font-size:12px; text-decoration:underline; text-underline-offset:3px; }
+@media (max-width:1023px) {
+  .scanner-pricing-summary { gap:16px 24px; }
+  .scanner-pricing-benefit { order:3; flex-basis:100%; padding-top:16px; border-top:1px solid #e0e6ef; }
+  .scanner-pricing-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .scanner-pricing-faq { grid-template-columns:1fr; gap:18px; }
+}
+@media (max-width:639px) {
+  .scanner-pricing-summary { padding:20px; gap:16px; }
+  .scanner-pricing-summary-copy { width:100%; }
+  .scanner-pricing-summary-copy>p { font-size:16px; }
+  .scanner-pricing-benefit { order:initial; flex-basis:100%; padding-top:14px; font-size:13px; }
+  .scanner-pricing-summary-link { width:100%; }
+  .scanner-pricing-content { padding-top:16px; padding-bottom:40px; }
+  .scanner-pricing-intro { padding:24px 0; }
+  .scanner-pricing-intro>p:not(.scanner-pricing-eyebrow) { font-size:14px; }
+  .scanner-pricing-mobile-break { display:block; }
+  .scanner-pricing-agency { align-items:stretch; flex-direction:column; gap:16px; padding:22px; }
+  .scanner-pricing-agency h2 { font-size:21px; }
+  .scanner-pricing-agency p { font-size:13px; }
+  .scanner-pricing-grid { grid-template-columns:1fr; }
+  .scanner-plan { padding:24px; }
+  .scanner-plan-description,.scanner-plan-unit { min-height:0; }
+  .scanner-pricing-faq { margin-top:36px; padding-top:28px; }
+}

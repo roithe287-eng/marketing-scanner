@@ -5,6 +5,7 @@ import "./access.css";
 import "./visual-theme.css";
 import "./diagnosis-graphics.css";
 import "./landing-preview.css";
+import "./pricing.css";
 import "./report-layout-refinements.css";
 import "./report-workflow.css";
 import "./report-guidebook.css";

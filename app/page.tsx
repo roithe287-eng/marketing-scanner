@@ -159,6 +159,7 @@ export default function HomePage() {
             © {new Date().getFullYear()} 진짜마케팅 · 마케팅스캐너
           </div>
           <div className="flex flex-wrap gap-4">
+            <a href="/pricing" className="hover:text-jm-black">이용요금</a>
             <a href="/notice" className="hover:text-jm-black">진단 이용 안내</a>
             <a
               href={process.env.NEXT_PUBLIC_BRAND_URL || "https://prorealmkt.com"}
