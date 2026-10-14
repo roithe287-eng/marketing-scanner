@@ -1,6 +1,6 @@
 import {z} from 'zod';
 
-export const SMARTSTORE_NOTICE = '스마트스토어·브랜드스토어는 네이버가 운영하는 별도 플랫폼이므로 일반 웹사이트와 동일한 수준의 SEO 진단을 제공하지 못합니다. 공개 페이지에서 확인 가능한 정보만 제한적으로 분석하며, 미적용 항목은 예시 화면과 블러 안내로 표시합니다. 수집할 수 없는 항목은 점수나 감점에 반영하지 않습니다.';
+export const SMARTSTORE_NOTICE = '현재 진단 방식에서는 스토어 콘텐츠 대부분을 분석할 수 없습니다. 스마트스토어·브랜드스토어는 네이버가 운영하는 별도 플랫폼으로, 제목·설명 등 일부 공개 정보만 확인할 수 있으며 수집이 제한되면 URL과 업체 식별자만 표시됩니다. 일반 웹사이트 수준의 SEO·GEO·경쟁사 분석 결과는 제공되지 않습니다. 블러 화면은 실제 분석값이 아닌 예시이며, 확인할 수 없는 항목은 감점하지 않습니다.';
 const HOSTS = new Set(['smartstore.naver.com','m.smartstore.naver.com','brand.naver.com','m.brand.naver.com']);
 export function isSmartstoreUrl(input:string) {
   try {return HOSTS.has(new URL(/^https?:\/\//i.test(input.trim())?input.trim():`https://${input.trim()}`).hostname.toLowerCase().replace(/\.$/,''));} catch {return false;}

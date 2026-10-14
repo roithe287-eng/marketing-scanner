@@ -1561,7 +1561,7 @@ button,input,textarea,select { font-family:inherit; }
 @media(max-width:640px){.official-seo-controls label{min-width:0;flex:1}.official-seo-controls>span{width:100%;padding:0}.official-seo-guide>summary{padding:12px;gap:8px}.official-seo-guide>div{padding:0 12px 12px}.official-seo-coverage{display:grid;gap:6px}}
 
 /* Platform-scoped results never inherit generic website scores or edit instructions. */
-.smartstore-notice{margin-top:16px;padding:18px 20px;border:1px solid #bed6ce;border-radius:16px;background:#eff8f4;color:#17483c;text-align:left;font-size:14px;line-height:1.8}
+.smartstore-notice{margin-top:16px;padding:18px 20px;border:1px solid #e7b8bd;border-radius:16px;background:#fff4f4;color:#7d2530;text-align:left;font-size:14px;line-height:1.8;overflow-wrap:anywhere}
 .smartstore-notice strong{display:block;font-size:15px}.smartstore-notice p{margin:6px 0 0}
 .smartstore-report{display:grid;gap:22px;padding-top:20px;color:#142345}
 .smartstore-report .report-card{padding:32px;min-width:0}

@@ -26,7 +26,7 @@ let logs='';server.stdout.on('data',data=>logs+=data);server.stderr.on('data',da
   const input=page.getByLabel('분석할 웹사이트 URL',{exact:true});
   for(const [host,label] of [['smartstore','스마트스토어'],['brand','브랜드스토어']]){
     await input.fill(`https://${host}.naver.com`);
-    await page.getByText(`${label} · 제한 분석 안내`,{exact:true}).waitFor();
+    await page.locator('#smartstore-url-notice strong').filter({hasText:`${label} · 콘텐츠 분석 대부분 제한`}).waitFor();
     await page.getByRole('button',{name:'스토어 제한 분석 시작',exact:true}).click();
     await page.getByRole('alert').filter({hasText:'업체 식별자가 포함된'}).waitFor();assert.equal(requests.length,0);
   }
