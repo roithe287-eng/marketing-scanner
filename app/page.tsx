@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import {useAccess} from '@/components/access/useAccess';
 import AccessBar from '@/components/access/AccessBar';
+import SmartstoreReportView from '@/components/report/SmartstoreReport';
+import {SmartstoreReportSchema,type SmartstoreReport} from '@/lib/smartstore';
 import ReportLayout from '@/components/report/ReportLayout';
 import BrandHeader from "@/components/BrandHeader";
 import LandingHero from "@/components/LandingHero";
@@ -15,6 +17,8 @@ export default function HomePage() {
   const {access,refresh}=useAccess();
   const allowed=access.kind==='internal'||access.kind==='account';
   const [report, setReport] = useState<MarketingReport | null>(null);
+  const [storeReport,setStoreReport]=useState<SmartstoreReport|null>(null);
+  const hasReport=Boolean(report||storeReport);
   const [loading, setLoading] = useState(false);
   const [competitorLoading, setCompetitorLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,9 +82,17 @@ export default function HomePage() {
         method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({url,geoQuestions,baselineId}),signal:controller.signal,
       },65000);
+      if(data.kind==='smartstore'){
+        const result=SmartstoreReportSchema.parse(data);
+        if(!current())return;
+        setStoreReport(result);setReport(null);
+        scrollTimer.current=setTimeout(()=>{if(current())document.getElementById('report-area')?.scrollIntoView({behavior:'smooth',block:'start'});},150);
+        return;
+      }
       const parsed=MarketingReportSchema.safeParse(data);
       if(!parsed.success)throw new Error('진단 결과의 필수 항목을 확인하지 못했습니다. 다시 시도해 주세요.');
       if(!current())return;
+      setStoreReport(null);
       const canAnalyzeCompetitors=Boolean(data._hasCompetitor&&data._websiteHints);
       setReport({...parsed.data,competitorStatus:{status:canAnalyzeCompetitors?'pending':'unavailable',message:canAnalyzeCompetitors?'경쟁사 비교를 분석하고 있습니다.':'현재 경쟁사 비교 결과를 제공할 수 없습니다.'}});
       scrollTimer.current=setTimeout(()=>{
@@ -96,11 +108,11 @@ export default function HomePage() {
   }
 
   return (
-    <main className={report && !loading ? "report-page" : undefined}>
-      <BrandHeader showInquiry={!report || loading} />
+    <main className={hasReport && !loading ? "report-page" : undefined}>
+      <BrandHeader showInquiry={!hasReport || loading} />
       <AccessBar access={access}/>
 
-      {report && !loading ? <details className="scanner-retry">
+      {hasReport && !loading ? <details className="scanner-retry">
         <summary className="jm-container"><span>진단 결과가 준비됐습니다</span><strong>다른 URL 진단하기 <b aria-hidden="true">＋</b></strong></summary>
         <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'}/>
       </details> : <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'}/>}
@@ -127,12 +139,14 @@ export default function HomePage() {
       {error && !loading && (
         <section className="jm-container pb-20">
           <div className="jm-card p-8 text-center border-jm-red">
-            <p className="text-xl font-black text-jm-red">{report?'새 진단을 완료하지 못했습니다':'분석을 완료하지 못했습니다'}</p>
+            <p className="text-xl font-black text-jm-red">{hasReport?'새 진단을 완료하지 못했습니다':'분석을 완료하지 못했습니다'}</p>
             <p className="mt-3 text-jm-gray text-sm">{error}</p>
-            {report&&<p className="mt-3 font-semibold">이전에 완료한 진단 결과는 아래에 유지됩니다.</p>}
+            {hasReport&&<p className="mt-3 font-semibold">이전에 완료한 진단 결과는 아래에 유지됩니다.</p>}
           </div>
         </section>
       )}
+
+      {storeReport&&!loading&&<section className="jm-container pb-24"><SmartstoreReportView report={storeReport}/></section>}
 
       {/* Report */}
       {report && !loading && (

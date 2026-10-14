@@ -148,13 +148,13 @@ redis.call('DEL',KEYS[1]);if ARGV[2]=='refund' then local n=tonumber(redis.call(
 export async function reserve(principal: Principal, action: UsageAction, context?: { headers: Headers; url: string }) {
   const requestId=randomUUID(),startedAt=Date.now();
   const activityId=principal.kind==='internal'?NETWORK_ACTIVITY_ID:principal.account.id;
-  const track=async(phase:'started'|'success'|'failed')=>{
-    if(context)await captureActivity(activityId,`${action}_${phase}`,context.headers,{target:targetHost(context.url),...(phase==='started'?{}:{durationMs:Date.now()-startedAt})},requestId);
+  const track=async(phase:'started'|'success'|'failed',limited=false)=>{
+    if(context)await captureActivity(activityId,limited&&action==='analyze'?'analyze_limited':`${action}_${phase}`,context.headers,{target:targetHost(context.url),...(phase==='started'?{}:{durationMs:Date.now()-startedAt})},requestId);
   };
   if (principal.kind === "internal" || principal.account.role === "admin") {
     await track('started');
     let completed=false;
-    return async (refund=false)=>{if(completed)return;completed=true;await track(refund?'failed':'success');};
+    return async (refund=false,limited=false)=>{if(completed)return;completed=true;await track(refund?'failed':'success',limited);};
   }
   const user = principal.account;
   const reservation = token();
@@ -179,7 +179,7 @@ export async function reserve(principal: Principal, action: UsageAction, context
     );
   let finished = false;
   await track('started');
-  return async (refund = false) => {
+  return async (refund = false, limited = false) => {
     if (finished) return;
     await db().eval(
       FINISH_SCRIPT,
@@ -187,7 +187,7 @@ export async function reserve(principal: Principal, action: UsageAction, context
       [reservation, refund ? "refund" : "complete", action],
     );
     finished = true;
-    await track(refund?'failed':'success');
+    await track(refund?'failed':'success',limited);
   };
 }
 export async function audit(actor: string, action: string, target: string) {

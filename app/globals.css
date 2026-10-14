@@ -1559,3 +1559,24 @@ button,input,textarea,select { font-family:inherit; }
 .official-seo-pagination button{border:1px solid #dce3eb;background:#fff;border-radius:6px;padding:7px 12px}
 .official-seo-pagination button:disabled{opacity:.4;cursor:default}
 @media(max-width:640px){.official-seo-controls label{min-width:0;flex:1}.official-seo-controls>span{width:100%;padding:0}.official-seo-guide>summary{padding:12px;gap:8px}.official-seo-guide>div{padding:0 12px 12px}.official-seo-coverage{display:grid;gap:6px}}
+
+/* Platform-scoped results never inherit generic website scores or edit instructions. */
+.smartstore-notice{margin-top:16px;padding:18px 20px;border:1px solid #bed6ce;border-radius:16px;background:#eff8f4;color:#17483c;text-align:left;font-size:14px;line-height:1.8}
+.smartstore-notice strong{display:block;font-size:15px}.smartstore-notice p{margin:6px 0 0}
+.smartstore-report{display:grid;gap:22px;padding-top:20px;color:#142345}
+.smartstore-report .report-card{padding:32px;min-width:0}
+.smartstore-tag{display:inline-block;border-radius:100px;background:#e0f3ea;color:#19614a;padding:8px 12px;font-size:12px;font-weight:800;letter-spacing:.06em}
+.smartstore-report h1{font-size:clamp(25px,3.5vw,40px);line-height:1.4;font-weight:900;margin:20px 0 12px}
+.smartstore-report h2{font-size:22px;font-weight:800;line-height:1.5}.smartstore-report h3{font-size:16px;font-weight:800}
+.smartstore-result-url{overflow-wrap:anywhere;font-size:16px;font-weight:700}
+.smartstore-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:24px}
+.smartstore-facts>div{background:#f6f7fa;padding:18px;border-radius:14px}.smartstore-facts dt{font-size:12px;color:#58647c}.smartstore-facts dd{margin-top:8px;font-size:20px;font-weight:800;overflow-wrap:anywhere}
+.smartstore-time{margin-top:16px;color:#647086;font-size:12px}.smartstore-reason{margin:12px 0 22px;line-height:1.9;color:#4b5871;font-size:15px}
+.smartstore-observations,.smartstore-exclusions{display:grid;gap:16px;margin:22px 0}
+.smartstore-observations section,.smartstore-exclusions section{padding:20px;border:1px solid #e1e5ec;border-radius:14px;min-width:0}
+.smartstore-observations p,.smartstore-exclusions p,.smartstore-next p,.smartstore-empty p{margin-top:8px;line-height:1.9;font-size:14px;color:#536078;overflow-wrap:anywhere}
+.smartstore-observations .smartstore-value{color:#142345;font-size:17px;font-weight:650;white-space:pre-wrap}
+.smartstore-empty{background:#f7f8fb;padding:22px;border-radius:14px;margin-bottom:22px;line-height:1.7}
+.smartstore-report .report-secondary-button{display:inline-flex}.smartstore-next{padding-left:22px;list-style:decimal;display:grid;gap:20px;margin-top:22px}.smartstore-links{display:flex;flex-wrap:wrap;gap:16px;margin-top:24px;font-size:14px;text-decoration:underline}.smartstore-footer{font-size:12px;color:#67738a;line-height:1.8;padding:0 8px}
+.admin-event-table .admin-store-target{white-space:normal;overflow-wrap:anywhere;min-width:160px;max-width:340px}
+@media(max-width:640px){.smartstore-report .report-card{padding:22px 18px}.smartstore-facts{grid-template-columns:1fr;gap:10px}.smartstore-facts>div{display:flex;align-items:center;justify-content:space-between;gap:18px}.smartstore-facts dd{margin:0;font-size:17px}.smartstore-notice{padding:15px}.smartstore-report h2{font-size:20px}}

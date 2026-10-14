@@ -4,7 +4,7 @@ import {NETWORK_ACTIVITY_ID, type ActivityStats, type ActivityPeriod, type Admin
 const number=(value?:number)=>Number(value||0).toLocaleString('ko-KR');
 const PAGE_SIZE=20;
 function Counts({stats:s}:{stats:ActivityStats}){
-  return <><td>{number(s.analyze_started)}</td><td>{number(s.analyze_success)} / {number(s.analyze_failed)}</td><td>{number(s.pdf_ready)}</td><td>{number(s.pdf_save)}</td><td>{number(s.pdf_saved)}</td></>;
+  return <><td>{number(s.analyze_started)}</td><td>{number(s.analyze_success)} / {number(s.analyze_failed)}{!!s.analyze_limited&&<small>제한 분석 {number(s.analyze_limited)}</small>}</td><td>{number(s.pdf_ready)}</td><td>{number(s.pdf_save)}</td><td>{number(s.pdf_saved)}</td></>;
 }
 export function customerActivityPage(customers:AdminCustomerActivity[],search:string,page:number){
   const query=search.trim().toLowerCase();
