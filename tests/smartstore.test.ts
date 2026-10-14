@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import {test,type TestContext} from 'node:test';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
-import {isSmartstoreUrl,parseSmartstoreUrl,SmartstoreReportSchema,type SmartstoreReport} from '../lib/smartstore';
+import {isSmartstoreUrl,parseSmartstoreUrl,storePlatformLabel,SmartstoreReportSchema,type SmartstoreReport} from '../lib/smartstore';
+import {load} from 'cheerio';
+import GrowthKpiPanel from '../components/report/GrowthKpiPanel';
 import {analyzeSmartstore,inspectSmartstoreHtml} from '../lib/analyzeSmartstore';
 import {targetHost} from '../lib/saas/activity';
 import {websiteHttp} from '../lib/security/safeFetch';
@@ -70,11 +72,37 @@ test('redirects to login, another tenant or private IP are never followed',async
     const result=await analyzeSmartstore(base.url);assert.equal(result.observations.length,0);assert.equal(count,2);mock.mock.restore();
   }
 });
-test('limited UI explains exclusions, keeps store ID and does not render general report charts',()=>{
+test('limited UI keeps five chapters and isolates every example from actual observations and controls',()=>{
   const output=renderToStaticMarkup(React.createElement(SmartstoreReportView,{report:{...base,reason:'수집 제한'}}));
   for(const label of ['wodkq','네이버가 운영하는 별도 플랫폼','0점이나 개선 필요로 표시하지 않습니다','진단 한도에서 차감하지 않습니다'])assert.ok(output.includes(label),label);
-  assert.ok(!output.includes('recharts'));assert.ok(!output.includes('PDF'));
+  const $=load(output);
+  assert.deepEqual($('[data-chapter]').map((_,el)=>$(el).attr('data-chapter')).get(),['overview','geo','search','competition','actions']);
+  assert.equal($('.store-unavailable').length,27);
+  $('.store-unavailable').each((_,el)=>{const card=$(el);assert.equal(card.find('.store-example-blur[inert][aria-hidden="true"]').length,1);assert.equal(card.find('input,button,a,select,textarea').length,0);assert.match(card.find('.store-unavailable-overlay').text(),/스마트스토어·브랜드스토어는 미적용/);assert.match(card.find('.store-demo-label').text(),/이 스토어의 분석값이 아닙니다/);});
+  assert.equal($('[data-store-section="metadata"]').attr('data-applicability'),'unavailable-data');
+  assert.equal($('[data-applicability="manual"] input').length,7);
+  assert.equal($('.store-example-blur').text().includes('wodkq'),false);
   const escaped=renderToStaticMarkup(React.createElement(SmartstoreReportView,{report:inspectSmartstoreHtml(base,html.replace('우리가게 공식 스토어','&lt;script&gt;alert(1)&lt;/script&gt;'))}));assert.ok(!escaped.includes('<script>'));
+});
+test('Brandstore home and mobile product identities select the same scoped UI with their own label',()=>{
+  for(const url of ['https://brand.naver.com/dongwon','https://m.brand.naver.com/dongwon/products/456?NaPm=secret']){
+    const target=parseSmartstoreUrl(url)!;assert.equal(storePlatformLabel(url),'브랜드스토어');assert.equal(target.host,'brand.naver.com');assert.equal(target.storeId,'dongwon');assert.equal(targetHost(url),'brand.naver.com/dongwon');
+    const report=inspectSmartstoreHtml({...base,...target},html);
+    const $=load(renderToStaticMarkup(React.createElement(SmartstoreReportView,{report})));
+    assert.match($('.smartstore-tag').text(),/브랜드스토어/);assert.equal($('.smartstore-result-url').text(),target.url);
+    assert.equal($('[data-store-section="metadata"]').attr('data-applicability'),'observed');
+    assert.match($('[data-store-section="metadata"]').text(),/우리가게 공식 스토어/);
+    assert.equal($('.store-example-blur').text().includes('우리가게'),false);
+    assert.equal($('.store-unavailable').length,27);
+  }
+  assert.throws(()=>parseSmartstoreUrl('https://brand.naver.com'),/brand.naver.com\/dongwon/);
+  assert.equal(storePlatformLabel('https://brand.naver.com.evil.example/dongwon'),null);
+});
+test('manual store goal calculator uses store context while website defaults remain unchanged',()=>{
+  const store=renderToStaticMarkup(React.createElement(GrowthKpiPanel,{targetUrl:base.url,platform:'naver-store'}));
+  assert.match(store,/스토어 통계와 연동하지 않습니다/);assert.ok(!store.includes('GA4'));assert.ok(!store.includes('Google 자연 검색'));
+  const website=renderToStaticMarkup(React.createElement(GrowthKpiPanel,{targetUrl:'https://example.com'}));
+  assert.match(website,/GA4/);assert.match(website,/Google 자연 검색/);
 });
 test('admin lists distinct stores and limited outcomes without counting them as pending',()=>{
   const metrics=renderToStaticMarkup(React.createElement(ActivityMetrics,{stats:{analyze_started:2,analyze_limited:2}}));assert.ok(metrics.includes('결과 미확인 0'));assert.ok(metrics.includes('제한 분석 2'));
@@ -109,8 +137,10 @@ test('API selects limited mode without OpenAI, validates store paths and preserv
   t.mock.method(websiteHttp,'fetch',async()=>new Response('User-agent: *\nDisallow: /'));
   const request=(url:string,ip='203.0.113.10')=>new NextRequest('https://scanner.example/api/analyze',{method:'POST',headers:{origin:'https://scanner.example','content-type':'application/json','x-vercel-forwarded-for':ip},body:JSON.stringify({url})});
   const response=await POST(request(base.url));assert.equal(response.status,200);assert.equal((await response.json()).kind,'smartstore');assert.match(response.headers.get('cache-control')!,/no-store/);
+  const brandResponse=await POST(request('https://brand.naver.com/dongwon/products/456?NaPm=private'));assert.equal(brandResponse.status,200);const brand=await brandResponse.json();assert.equal(brand.kind,'smartstore');assert.equal(brand.url,'https://brand.naver.com/dongwon/products/456');assert.equal(brand.storeId,'dongwon');assert.equal(brand.status,'limited');assert.deepEqual(brand.observations,[]);assert.equal(brand.diagnosis,undefined);
   assert.ok(calls.some(c=>String(c.args[1]).includes('analyze_limited')));
   assert.equal((await POST(request('https://smartstore.naver.com'))).status,400);
+  assert.equal((await POST(request('https://brand.naver.com'))).status,400);
   assert.equal((await POST(request(base.url,'203.0.113.11'))).status,401);
   assert.equal((await POST(request('https://example.com'))).status,500,'normal sites retain their existing OpenAI pipeline');
 });

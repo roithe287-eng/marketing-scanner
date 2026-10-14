@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { AD_BUDGET_NOTE, calculateAdBudget } from '@/lib/adBudgetScenario';
 const fields = [['spend', '동일 기간 광고비 (원)'], ['conversions', '동일 기간 전환 수 (건)'], ['targetCpa', '직접 정한 목표 CPA (원)']] as const;
 const money = (value: number | null) => value === null ? '입력 후 계산' : `${Math.round(value).toLocaleString('ko-KR')}원`;
