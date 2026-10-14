@@ -13,7 +13,7 @@ export default function SmartstoreReport({report}:{report:Report}) {
       <span className="smartstore-tag">{platform} · 제한 분석</span>
       <h1 id="smartstore-result-title">확인한 정보는 그대로,<br/>분석 범위는 명확하게.</h1>
       <p className="smartstore-result-url">{report.url}</p>
-      <div className="smartstore-notice"><strong>{platform} · 일반 웹사이트와 분석 범위가 다릅니다</strong><p>{SMARTSTORE_NOTICE}</p></div>
+      <div className="smartstore-notice"><strong><span aria-hidden="true">⚠️ </span>{platform} · 콘텐츠 분석 대부분 제한</strong><p>{SMARTSTORE_NOTICE}</p></div>
       <dl className="smartstore-facts">
         <div><dt>업체 식별자</dt><dd>{report.storeId}</dd></div>
         <div><dt>분석 대상</dt><dd>{report.productId?`상품 ${report.productId}`:'스토어 홈'}</dd></div>
