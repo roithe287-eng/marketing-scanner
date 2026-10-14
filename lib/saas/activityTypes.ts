@@ -1,7 +1,7 @@
 export const ACTIVITY_LABELS = {
   login: '로그인 성공', login_failed: '로그인 실패', logout: '로그아웃',
   activated: '계정 활성화', owner_created: '관리자 등록',
-  analyze_started: '사이트 진단 요청', analyze_success: '사이트 진단 완료', analyze_failed: '사이트 진단 실패', analyze_limited: '스마트스토어 제한 분석',
+  analyze_started: '사이트 진단 요청', analyze_success: '사이트 진단 완료', analyze_failed: '사이트 진단 실패', analyze_limited: '스마트스토어·브랜드스토어 제한 분석',
   competitor_started: '경쟁사 비교 요청', competitor_success: '경쟁사 비교 완료', competitor_failed: '경쟁사 비교 실패',
   deepdive_started: '상세 분석 요청', deepdive_success: '상세 분석 완료', deepdive_failed: '상세 분석 실패',
   pdf_requested: 'PDF 생성 요청', pdf_ready: 'PDF 생성 완료', pdf_failed: 'PDF 생성 실패',

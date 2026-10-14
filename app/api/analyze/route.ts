@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
     let store;
     try {store=parseSmartstoreUrl(url);}catch(error){return NextResponse.json({message:error instanceof Error?error.message:'스토어 주소를 확인해 주세요.'},{status:400});}
     if(store){
-      if(body.baselineId!==undefined)return NextResponse.json({message:'스마트스토어 제한 분석은 일반 웹사이트 보고서와 점수를 비교하지 않습니다. 비교를 해제하고 다시 입력해 주세요.'},{status:400});
+      if(body.baselineId!==undefined)return NextResponse.json({message:'스마트스토어·브랜드스토어 제한 분석은 일반 웹사이트 보고서와 점수를 비교하지 않습니다. 비교를 해제하고 다시 입력해 주세요.'},{status:400});
       finish=await reserve(principal,'analyze',{headers:req.headers,url:store.url});
       const result=await analyzeSmartstore(store.url);
       // No content means no charged analysis. Record the limited outcome separately.

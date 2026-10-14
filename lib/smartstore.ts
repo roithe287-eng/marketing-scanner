@@ -1,9 +1,14 @@
 import {z} from 'zod';
 
-export const SMARTSTORE_NOTICE = '스마트스토어는 네이버가 운영하는 별도 플랫폼이므로 일반 웹사이트와 동일한 수준의 SEO 진단을 제공하지 못합니다. 공개 페이지에서 확인 가능한 정보만 제한적으로 분석하며, 수집할 수 없는 항목은 점수나 감점에 반영하지 않습니다.';
+export const SMARTSTORE_NOTICE = '스마트스토어·브랜드스토어는 네이버가 운영하는 별도 플랫폼이므로 일반 웹사이트와 동일한 수준의 SEO 진단을 제공하지 못합니다. 공개 페이지에서 확인 가능한 정보만 제한적으로 분석하며, 미적용 항목은 예시 화면과 블러 안내로 표시합니다. 수집할 수 없는 항목은 점수나 감점에 반영하지 않습니다.';
 const HOSTS = new Set(['smartstore.naver.com','m.smartstore.naver.com','brand.naver.com','m.brand.naver.com']);
 export function isSmartstoreUrl(input:string) {
   try {return HOSTS.has(new URL(/^https?:\/\//i.test(input.trim())?input.trim():`https://${input.trim()}`).hostname.toLowerCase().replace(/\.$/,''));} catch {return false;}
+}
+export function storePlatformLabel(input:string) {
+  if(!isSmartstoreUrl(input))return null;
+  const host=new URL(/^https?:\/\//i.test(input.trim())?input.trim():`https://${input.trim()}`).hostname.toLowerCase().replace(/\.$/,'').replace(/^m\./,'');
+  return host==='brand.naver.com'?'브랜드스토어':'스마트스토어';
 }
 /** Keep the store/product path, but never tracking parameters or credentials. */
 export function parseSmartstoreUrl(input:string) {
@@ -11,7 +16,7 @@ export function parseSmartstoreUrl(input:string) {
   const u=new URL(/^https?:\/\//i.test(input.trim())?input.trim():`https://${input.trim()}`);
   if(u.username||u.password||u.port)throw new Error('스토어의 공개 HTTPS 주소를 입력해 주세요.');
   const match=u.pathname.match(/^\/([a-zA-Z0-9_-]{1,100})(?:\/products\/(\d+))?\/?$/);
-  if(!match||['home','main','login','products','i','error','captcha'].includes(match[1].toLowerCase()))throw new Error('업체 식별자가 포함된 스토어 주소를 입력해 주세요. 예: https://smartstore.naver.com/wodkq');
+  if(!match||['home','main','login','products','i','error','captcha'].includes(match[1].toLowerCase()))throw new Error(`업체 식별자가 포함된 스토어 주소를 입력해 주세요. 예: https://${storePlatformLabel(input)==='브랜드스토어'?'brand.naver.com/dongwon':'smartstore.naver.com/wodkq'}`);
   const host=u.hostname.toLowerCase().replace(/\.$/,'').replace(/^m\./,'');
   const storeId=match[1],productId=match[2];
   return {host,storeId,productId,url:`https://${host}/${storeId}${productId?`/products/${productId}`:''}`,storeUrl:`https://${host}/${storeId}`};

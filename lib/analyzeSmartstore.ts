@@ -9,7 +9,7 @@ import {parseSmartstoreUrl,type SmartstoreReport} from './smartstore';
 /** No browser impersonation, cookies, private APIs, alternate hosts, or retry loops. */
 export async function analyzeSmartstore(input:string):Promise<SmartstoreReport> {
   const target=parseSmartstoreUrl(input);
-  if(!target)throw new Error('스마트스토어 주소가 아닙니다.');
+  if(!target)throw new Error('스마트스토어·브랜드스토어 주소가 아닙니다.');
   const base:SmartstoreReport={kind:'smartstore',version:1,url:target.url,storeUrl:target.storeUrl,storeId:target.storeId,productId:target.productId,observedAt:new Date().toISOString(),status:'limited',reason:'',observations:[]};
   const limited=(reason:string,httpStatus?:number):SmartstoreReport=>({...base,reason,httpStatus});
   const ua=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;

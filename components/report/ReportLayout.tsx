@@ -35,8 +35,7 @@ import IndustryBenchmarkCard from '@/components/IndustryBenchmarkCard';
 import Disclaimer from '@/components/Disclaimer';
 import GrowthPlanPanel from './GrowthPlanPanel';
 import GrowthKpiPanel from './GrowthKpiPanel';
-const chapters=[['overview','핵심 요약'],['geo','AI·GEO'],['search','검색·페이지'],['competition','경쟁사'],['actions','실행 과제']] as const;
-function Chapter({id,number,title,note,children}:{id:string;number:string;title:string;note:string;children:React.ReactNode}) {return <section id={`report-${id}`} className="report-chapter" data-chapter={id} aria-labelledby={`report-title-${id}`}><div className="report-chapter-heading"><span>{number}</span><div><h2 id={`report-title-${id}`}>{title}</h2><p>{note}</p></div></div><div className="report-stack">{children}</div></section>;}
+import {REPORT_CHAPTERS as chapters,ReportChapter as Chapter} from './ReportChapter';
 function Disclosure({title,note,children}:{title:string;note:string;children:React.ReactNode}) {return <details className="report-disclosure"><summary><span><strong>{title}</strong><small>{note}</small></span><b aria-hidden="true">+</b></summary><div className="report-legacy">{children}</div></details>;}
 export default function ReportLayout({report:storedReport,actions,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
   const report=useMemo(()=>reportForPresentation(storedReport),[storedReport]);
