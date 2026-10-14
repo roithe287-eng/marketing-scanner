@@ -4,11 +4,13 @@ import {useEffect, useRef, useState} from 'react';
 import {GeoBaselineSchema, DiagnosisBaselineSchema, type DiagnosisBaseline, type GeoBaseline} from '@/lib/reportSchema';
 import {baselineQuestions, comparisonTime, parseReportReference} from '@/lib/geoComparison';
 import {retentionTime} from '@/lib/reportRetention';
+import {isSmartstoreUrl,parseSmartstoreUrl,SMARTSTORE_NOTICE} from '@/lib/smartstore';
 import {requestJson} from '@/lib/client/request';
 
 type Props = {onSubmit:(url:string, geoQuestions?:string[], baselineId?:string)=>void;loading:boolean};
 export default function UrlForm({onSubmit,loading}:Props) {
   const [url,setUrl]=useState('');
+  const smartstore=isSmartstoreUrl(url);
   const [questions,setQuestions]=useState('');
   const [reference,setReference]=useState('');
   const [baseline,setBaseline]=useState<DiagnosisBaseline|null>(null);
@@ -36,6 +38,7 @@ export default function UrlForm({onSubmit,loading}:Props) {
   function handleSubmit(e:React.FormEvent) {
     e.preventDefault();if (loading||baselineLoading) return;
     if (!url.trim()) {setMessage('분석할 URL을 입력해 주세요.');return;}
+    if(smartstore){try{parseSmartstoreUrl(url);}catch(error){setMessage(error instanceof Error?error.message:'스토어 주소를 확인해 주세요.');return;}setMessage('');onSubmit(url.trim());return;}
     const rows=questions.split('\n').map(s=>s.trim()).filter(Boolean);
     if (rows.length>5||rows.some(s=>s.length<5||s.length>250)) {setMessage('질문은 한 줄에 하나씩 최대 5개, 각 5~250자로 입력해 주세요.');return;}
     setMessage('');onSubmit(url.trim(),rows.length?rows:undefined,baseline?.reportId);
@@ -43,11 +46,12 @@ export default function UrlForm({onSubmit,loading}:Props) {
   return <form onSubmit={handleSubmit} className="scanner-url-form">
     <label htmlFor="scanner-url" className="scanner-url-label">진단할 웹사이트 URL</label>
     <div className="scanner-url-row">
-      <input id="scanner-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="예: https://prorealmkt.com" aria-label="분석할 웹사이트 URL" className="scanner-url-input" disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby="scanner-url-help"/>
-      <button type="submit" disabled={loading||baselineLoading} className="jm-button scanner-submit">{loading?'분석 중...':baseline?'같은 URL로 재진단·비교':'내 사이트 진단 시작'}</button>
+      <input id="scanner-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="예: https://prorealmkt.com" aria-label="분석할 웹사이트 URL" className="scanner-url-input" disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby={smartstore?'scanner-url-help smartstore-url-notice':'scanner-url-help'}/>
+      <button type="submit" disabled={loading||baselineLoading} className="jm-button scanner-submit">{loading?'분석 중...':smartstore?'스토어 제한 분석 시작':baseline?'같은 URL로 재진단·비교':'내 사이트 진단 시작'}</button>
     </div>
-    <p id="scanner-url-help" className="scanner-url-help">홈페이지·서비스 소개·광고 랜딩 URL을 입력해 주세요.</p>
-    <details className="scanner-advanced">
+    <p id="scanner-url-help" className="scanner-url-help">홈페이지·서비스 소개·광고 랜딩·스마트스토어 URL을 입력해 주세요.</p>
+    {smartstore&&<aside id="smartstore-url-notice" className="smartstore-notice" role="status"><strong>스마트스토어 · 제한 분석 안내</strong><p>{SMARTSTORE_NOTICE}</p><p>업체 식별자까지 입력해 주세요. 예: smartstore.naver.com/wodkq · 상품 상세 주소도 지원합니다.</p></aside>}
+    {!smartstore&&<details className="scanner-advanced">
       <summary>GEO 질문·이전 보고서 비교 <span>(선택)</span></summary>
     <details className="px-4 py-3 text-left text-sm">
       <summary className="cursor-pointer font-bold">이전 보고서와 재진단 비교하기</summary>
@@ -64,7 +68,7 @@ export default function UrlForm({onSubmit,loading}:Props) {
       <label htmlFor="geo-questions" className="my-2 block text-xs text-jm-gray">{geoBaseline?'기준 질문을 그대로 사용합니다. 편집하려면 비교를 해제해 주세요.':'한 줄에 질문 하나씩 최대 5개. 비워두면 사이트에 맞춰 생성합니다.'}</label>
       <textarea id="geo-questions" value={questions} onChange={e=>setQuestions(e.target.value)} disabled={loading||baselineLoading} readOnly={!!geoBaseline} rows={4} maxLength={1254} className="w-full rounded-xl border p-3" placeholder="고객이 실제 상담에서 물어보는 질문을 입력하세요."/>
     </details>
-    </details>
+    </details>}
     {message && <p role="alert" className="px-4 py-2 text-left text-sm text-red-700">{message}</p>}
   </form>;
 }

@@ -6,10 +6,10 @@ import { koreanTime } from './activityFormat';
 const groups={owner:'관리자 본인',customers:'고객 계정',network:'허용 네트워크 · 비로그인'} as const;
 const n=(value?:number)=>Number(value||0).toLocaleString('ko-KR');
 export function ActivityMetrics({stats}:{stats:ActivityStats}){
-  const pending=Math.max(0,(stats.analyze_started||0)-(stats.analyze_success||0)-(stats.analyze_failed||0));
+  const pending=Math.max(0,(stats.analyze_started||0)-(stats.analyze_success||0)-(stats.analyze_failed||0)-(stats.analyze_limited||0));
   return <div className="admin-metrics admin-flow-metrics">
     <article><span>URL 진단 호출</span><strong>{n(stats.analyze_started)}<small>회</small></strong><p>서버가 접수한 진단 요청</p></article>
-    <article><span>호출 완료</span><strong>{n(stats.analyze_success)}<small>회</small></strong><p>실패 {n(stats.analyze_failed)} · 결과 미확인 {n(pending)}</p></article>
+    <article><span>호출 완료</span><strong>{n(stats.analyze_success)}<small>회</small></strong><p>제한 분석 {n(stats.analyze_limited)} · 실패 {n(stats.analyze_failed)} · 결과 미확인 {n(pending)}</p></article>
     <article><span>PDF 생성 완료</span><strong>{n(stats.pdf_ready)}<small>회</small></strong><p>요청 {n(stats.pdf_requested)} · 실패 {n(stats.pdf_failed)}</p></article>
     <article><span>브라우저 다운로드</span><strong>{n(stats.pdf_save)}<small>회</small></strong><p>다운로드 요청 전달 · 열기 {n(stats.pdf_open)}</p></article>
     <article><span>PDF 저장 완료 확인</span><strong>{n(stats.pdf_saved)}<small>회</small></strong><p>파일 쓰기·닫기 완료 보고</p></article>

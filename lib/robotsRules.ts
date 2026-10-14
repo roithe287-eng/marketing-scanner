@@ -24,7 +24,7 @@ type Rule={allow:boolean;path:string};
  * Ads-Naver intentionally ignores the general wildcard group (NAVER advertising FAQ).
  * Unsupported percent-encoded rules are left for manual inspection rather than guessed.
  */
-export function evaluateRobots(text:string,agent:'Yeti'|'Ads-Naver'|'Googlebot'|'OAI-SearchBot',path:string):{allowed:boolean|null;rule:string;explicit:boolean} {
+export function evaluateRobots(text:string,agent:'Yeti'|'Ads-Naver'|'Googlebot'|'OAI-SearchBot'|'JinjjaScanner',path:string):{allowed:boolean|null;rule:string;explicit:boolean} {
   const groups:{agents:string[];rules:Rule[]}[]=[];
   let group:{agents:string[];rules:Rule[]}|undefined;
   let directives=false;

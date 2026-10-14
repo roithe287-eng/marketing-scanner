@@ -1,3 +1,4 @@
+import {parseSmartstoreUrl} from '../smartstore';
 import { randomUUID } from 'node:crypto';
 import { db, key, token, decode } from './store';
 import { AccessError, clientIp, digest } from '../security/request';
@@ -17,7 +18,13 @@ function deviceLabel(headers: Headers) {
   return `${browser} / ${os}`;
 }
 export function targetHost(value?: string) {
-  try { return value ? new URL(value).hostname.slice(0,253) : undefined; } catch { return undefined; }
+  try {
+    if(!value)return undefined;
+    const url=new URL(value);
+    if(!/^https?:$/.test(url.protocol)||url.username||url.password)return undefined;
+    try {const store=parseSmartstoreUrl(value);if(store)return `${store.host}/${store.storeId}`;}catch{/* Incomplete platform addresses retain their host. */}
+    return url.hostname.slice(0,253);
+  } catch { return undefined; }
 }
 export type Details = Pick<Partial<ActivityEvent>, 'target' | 'reportId' | 'expiresAt' | 'scope' | 'subjectId' | 'source' | 'durationMs' | 'pages' | 'bytes'>;
 // Each day has an absolute expiry. Repeated access cannot extend old IP records.

@@ -1,3 +1,5 @@
+import {parseSmartstoreUrl} from '@/lib/smartstore';
+import {analyzeSmartstore} from '@/lib/analyzeSmartstore';
 import {analyzeOfficialSeo} from '@/lib/analyzeOfficialSeo';
 import {withBudget,optionalStage,remainingBudget} from '@/lib/runtime/budget';
 import {requirePrincipal} from '@/lib/saas/auth';
@@ -26,7 +28,7 @@ export const maxDuration = 60;
 function normalizeUrl(input: string) {
   const trimmed = input.trim();
   if (!trimmed) return trimmed;
-  if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
+  if (!/^https?:\/\//i.test(trimmed)) {
     return `https://${trimmed}`;
   }
   return trimmed;
@@ -43,7 +45,7 @@ function isValidUrl(url: string) {
 
 export async function POST(req: NextRequest) {
   const startedAt=Date.now();
-  let finish:((refund?:boolean)=>Promise<void>)|undefined;
+  let finish:((refund?:boolean,limited?:boolean)=>Promise<void>)|undefined;
   try {
     const principal=await requirePrincipal(req,true);
     const body = await readJson(req);
@@ -66,6 +68,18 @@ export async function POST(req: NextRequest) {
         { message: "올바른 URL 형식이 아닙니다." },
         { status: 400 }
       );
+    }
+
+    publicUrl(url);
+    let store;
+    try {store=parseSmartstoreUrl(url);}catch(error){return NextResponse.json({message:error instanceof Error?error.message:'스토어 주소를 확인해 주세요.'},{status:400});}
+    if(store){
+      if(body.baselineId!==undefined)return NextResponse.json({message:'스마트스토어 제한 분석은 일반 웹사이트 보고서와 점수를 비교하지 않습니다. 비교를 해제하고 다시 입력해 주세요.'},{status:400});
+      finish=await reserve(principal,'analyze',{headers:req.headers,url:store.url});
+      const result=await analyzeSmartstore(store.url);
+      // No content means no charged analysis. Record the limited outcome separately.
+      await finish(result.observations.length===0,true);
+      return NextResponse.json(result,{headers:{'Cache-Control':'private, no-store'}});
     }
 
     let geoBaseline: GeoBaseline | undefined;
