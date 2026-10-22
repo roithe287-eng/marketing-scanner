@@ -298,15 +298,16 @@ export async function analyzeCompetitors(siteData: {
     console.log(`[경쟁사] 키워드: "${keyword}" (${keywordSource})`);
 
     // Inspect more search items without increasing the eight-page collection budget.
-    const attemptedKeywords=[keyword];
-    let response = await searchNaverWeb(keyword, 30);
     const commerce=productContext?.discovery==='public_catalog';
+    const searchQuery=(term:string)=>commerce?`${term} 쇼핑몰`:term;
+    const attemptedKeywords=[searchQuery(keyword)];
+    let response = await searchNaverWeb(searchQuery(keyword), 30);
     let selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce);
     if (selection.candidates.length === 0 && keywordSource === "ai") {
       const fallbackKeyword = marketKeywordCandidates(querySite).find(k=>k.keyword!==keyword)?.keyword;
       if (fallbackKeyword && fallbackKeyword !== keyword) {
-        attemptedKeywords.push(fallbackKeyword);
-        response = await searchNaverWeb(fallbackKeyword, 30);
+        attemptedKeywords.push(searchQuery(fallbackKeyword));
+        response = await searchNaverWeb(searchQuery(fallbackKeyword), 30);
         keyword = fallbackKeyword;
         keywordSource = "fallback";
         selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce);
