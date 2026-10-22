@@ -21,6 +21,8 @@ import { analyzeBenchmark } from "@/lib/analyzeBenchmark";
 import { analyzeKeywordFrequency } from "@/lib/analyzeKeywordFreq";
 import {analyzeNaverOptimization} from "@/lib/analyzeNaverOptimization";
 import {capturePageEvidence} from '@/lib/pageEvidence';
+import {analyzeAnswerContent} from '@/lib/analyzeAnswerContent';
+import {buildAnswerContentPlan} from '@/lib/answerContent';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -120,12 +122,13 @@ export async function POST(req: NextRequest) {
     //    - Keyword Rank (v45-W2)
     const t1 = Date.now();
     const optionalBudget=Math.max(1,remainingBudget()-2500);
-    const [report, discoverability, llmCitation, keywordRank, category] = await Promise.all([
+    const [report, discoverability, llmCitation, keywordRank, category, answerContent] = await Promise.all([
       analyzeMarketing(websiteData),
       optionalStage('discoverability','AI 검색 준비도',Math.min(34_000,optionalBudget),()=>analyzeDiscoverability(websiteData)),
       optionalStage('citation','GEO 답변·출처 관측',Math.min(34_000,optionalBudget),()=>analyzeCitation(websiteData,geoQuestions?.map((q:string)=>q.trim()),{fixedQuestions,fresh:!!geoBaseline})),
       optionalStage('keywords','네이버 키워드 관측',Math.min(30_000,optionalBudget),()=>analyzeKeywordRank(websiteData)),
       optionalStage('category','업종 분류',Math.min(5000,optionalBudget),()=>classifyIndustry(websiteData)),
+      optionalStage('answerContent','네이버 대응 콘텐츠 개선안',Math.min(26_000,optionalBudget),()=>analyzeAnswerContent(websiteData)),
     ]);
     console.log(`[타이밍] AI 병렬 분석: ${Date.now() - t1}ms`);
 
@@ -138,6 +141,7 @@ export async function POST(req: NextRequest) {
     report.llmCitationTest = llmCitation.value;
     if (geoBaseline) report.geoBaseline = geoBaseline;
     report.keywordRankTracking = keywordRank.value;
+    report.answerContentPlan = answerContent.value||buildAnswerContentPlan(websiteData);
 
     report.adWasteSimulation=null; // Page scores cannot establish ad waste or savings.
 
@@ -151,7 +155,7 @@ export async function POST(req: NextRequest) {
     report.keywordFrequency = analyzeKeywordFrequency(websiteData);
     const benchmark=await optionalStage('benchmark','업종 비교 데이터',Math.max(1,Math.min(2500,remainingBudget()-500)),()=>category.value?analyzeBenchmark(websiteData,report.diagnosis,category.value,report.diagnosisMethod!):Promise.resolve(null));
     report.industryBenchmark=benchmark.value;
-    report.analysisWarnings=[discoverability,llmCitation,keywordRank,category,benchmark].flatMap(stage=>stage.warning?[stage.warning]:[]);
+    report.analysisWarnings=[discoverability,llmCitation,keywordRank,category,benchmark,answerContent].flatMap(stage=>stage.warning?[stage.warning]:[]);
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 

@@ -3,6 +3,7 @@ import {activeCitation} from './activeCitation';
 import { z } from "zod";
 import { citationFailureCodes } from './citationFailure';
 import {SiteEditingSchema} from './siteEditingSchema';
+import {AnswerContentPlanSchema} from './answerContentSchema';
 import {NaverOptimizationSchema} from './naverSchema';
 import {SearchSignalsSchema} from './growthSchema';
 import {CompetitorResearchSchema,CompetitorOwnSiteSchema} from './competitorSchema';
@@ -494,6 +495,7 @@ export const MarketingReportSchema = z.object({
   keywordRankTracking: KeywordRankTrackingSchema.nullable().optional(),
   naverOptimization:NaverOptimizationSchema.nullable().optional(),
   officialSeoAudit:OfficialSeoAuditSchema.nullable().optional(),
+  answerContentPlan:AnswerContentPlanSchema.nullable().optional(),
 
   // v45-W3: 업종별 벤치마크
   industryBenchmark: IndustryBenchmarkSchema.nullable().optional(),
