@@ -4,6 +4,7 @@ import CompetitorLandscape from './CompetitorLandscape';
 import ReportHeader from './ReportHeader';
 import ReportRetentionNotice from './ReportRetentionNotice';
 import ReportEvidenceGuide from './ReportEvidenceGuide';
+import AnswerContentPanel from './AnswerContentPanel';
 import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
 import DiagnosisComparisonPanel from './DiagnosisComparisonPanel';
 import {buildExecutionPlan} from '@/lib/reportExecution';
@@ -87,6 +88,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
     <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} aria-current={active===id?'location':undefined} onClick={()=>setActive(id)}><span>0{i+1}</span>{label}</a>)}<div className="report-reading-track" aria-hidden="true"><div ref={readingProgress}/></div></nav>
     <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="전체 상태를 확인하고, 점수가 낮은 단계부터 상세 근거를 살펴보세요."><TodayWork plan={execution}/><ScoreRadar diagnosis={report.diagnosis} plan={execution}/>{report.diagnosisBaseline&&<DiagnosisComparisonPanel report={report}/>}<ConversionPath data={data}/><CollectionCoverage data={data}/></Chapter>
     <Chapter id="geo" number="02" title="AI가 브랜드를 읽는 방식" note="페이지 준비도, 실제 답변, 출처를 각각 확인합니다.">
+      <AnswerContentPanel plan={report.answerContentPlan}/>
       {(report.discoverability||report.llmCitationTest)&&<GeoIntroduction/>}
       {report.discoverability&&<DiscoverabilityPanel discoverability={report.discoverability}/>}
       {report.llmCitationTest&&<LlmCitationCard citation={report.llmCitationTest}/>}

@@ -1,5 +1,6 @@
 import {reportForPresentation} from './reportPresentation';
 import {buildOfficialSeoDocument} from './officialSeoDocument';
+import {buildAnswerContentDocument} from './answerContentDocument';
 import {retentionTime} from './reportRetention';
 import {activeCitationReport} from './activeCitation';
 import {keywordFrequencyScope,keywordDensityNote} from './keywordFrequencyPresentation';
@@ -141,6 +142,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   }
   blocks.push(...buildNaverReportDocument(report));
   blocks.push(...buildOfficialSeoDocument(report));
+  blocks.push(...buildAnswerContentDocument(report));
   blocks.push({kind:'heading',text:REPORT_NOTICE_TITLE},{kind:'body',text:REPORT_NOTICE_LEAD});
   for(const item of REPORT_NOTICE_ITEMS) blocks.push({kind:'subheading',text:item.title},{kind:'body',text:item.text});
   blocks.push({kind:'body',text:REPORT_NOTICE_END});
