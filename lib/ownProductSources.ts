@@ -5,7 +5,7 @@ import {observeRobots} from './observeRobots';
 import {evaluateRobots,type RobotsObservation} from './robotsRules';
 import {withBudget} from './runtime/budget';
 import {getScannerContactUrl} from './siteConfig';
-import {searchNaverWeb} from './naverWebSearch';
+import {searchNaverWeb,searchNaverShop} from './naverWebSearch';
 import {OWN_PRODUCT_NOTE,type OwnProductContext,type OwnProductSource} from './ownProductSchema';
 
 const UA=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
@@ -100,10 +100,25 @@ export async function collectOwnProductContext(url:string):Promise<OwnProductCon
     if(candidates.length)context.discovery='public_links';
     else{
       context.discovery='naver_web';
-      const results=await searchNaverWeb(`site:${host(base)}`,30);
+      const discover=async(provider:'naver_web'|'naver_shop',query:string)=>{
+        try{
+          const results=await (provider==='naver_web'?searchNaverWeb(query,30):searchNaverShop(query));
+          const items=results.items.filter(item=>!!ownProductUrl(item.link,input.url));
+          (context.discoveryAttempts??=[]).push({provider,status:'ok',returnedCount:results.items.length,productLinkCount:items.length});
+          return items;
+        }catch{
+          (context.discoveryAttempts??=[]).push({provider,status:'unavailable',returnedCount:0,productLinkCount:0});return [];
+        }
+      };
+      let items=await discover('naver_web',`site:${host(base)}`);
+      const brand=$('meta[property="og:site_name"]').attr('content')||$('title').text().split(/[|·:–—]/)[0].trim().slice(0,80);
+      if(!items.length&&brand.length>=2){
+        const [web,shop]=await Promise.all([discover('naver_web',brand),discover('naver_shop',brand)]);
+        items=[...web,...shop];if(shop.length)context.discovery='naver_shop';
+      }
       // API titles only diversify URL selection. They are never evidence or AI input.
       const groups=new Set<string>();
-      candidates=results.items.flatMap(item=>{
+      candidates=items.flatMap(item=>{
         const own=ownProductUrl(item.link,input.url);if(!own)return [];
         const text=cheerio.load(item.title).text().replaceAll($('title').text().trim(),'').replace(/^[\s|–-]+|[\s|–-]+$/g,'');
         const key=(text.match(/[가-힣a-zA-Z]{2,}/g)||[]).slice(0,2).join(' ').toLowerCase();
