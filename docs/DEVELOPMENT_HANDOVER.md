@@ -1,3 +1,5 @@
+> Latest competitor fix: [경쟁사 후보 관련성 교정](COMPETITOR_RELEVANCE_2026-10-22.md).
+
 > Latest content guidance: [URL별 네이버 대응 콘텐츠 개선안](ANSWER_CONTENT_HANDOVER_2026-10-22.md).
 
 > Latest PDF work: [Visual results and readable full-detail export](PDF_READABILITY_HANDOVER_2026-10-06.md).

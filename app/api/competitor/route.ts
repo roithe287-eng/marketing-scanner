@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
   try {
     const principal=await requirePrincipal(req,true);
     const hint=z.string().max(2000);
-    const body = z.object({url:z.string().min(1).max(2048),hints:z.object({title:hint.optional(),ogTitle:hint.optional(),ogDescription:hint.optional(),description:hint.optional(),h1:z.array(hint).max(50).optional(),h2:z.array(hint).max(100).optional(),keywords:hint.optional()})}).parse(await readJson(req,32_768));
+    const body = z.object({url:z.string().min(1).max(2048),hints:z.object({title:hint.optional(),ogTitle:hint.optional(),ogDescription:hint.optional(),description:hint.optional(),h1:z.array(hint).max(50).optional(),h2:z.array(hint).max(100).optional(),keywords:hint.optional(),bodyText:z.string().max(8000).optional()})}).parse(await readJson(req,49_152));
     const { url, hints } = body || {};
 
     if (!url || typeof url !== "string") {
@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
       h1: Array.isArray(hints.h1) ? hints.h1 : [],
       h2: Array.isArray(hints.h2) ? hints.h2 : [],
       keywords: hints.keywords || "",
+      bodyText:hints.bodyText||'',
     }),req.signal);
 
     console.log(`[타이밍] 경쟁사 분석 (단독): ${Date.now() - t0}ms`);

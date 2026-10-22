@@ -3,7 +3,7 @@ import {buildCompetitorPositioning,positionGroups,positionCoordinates,positionDi
 import {wrapPdfText,type TextMeasurer,type PdfTextStyle} from './pdfLayout';
 import type {VisualPdfPage} from './reportVisualPdf';
 export function buildCompetitorVisualPage(report:MarketingReport,measure:TextMeasurer):VisualPdfPage|null {
-  const model=buildCompetitorPositioning(report);if(!model)return null;
+  const model=buildCompetitorPositioning(report);if(!model||!model.analysis.competitors.length)return null;
   const page:VisualPdfPage={lines:[],shapes:[]};
   const rect=(x:number,y:number,width:number,height:number,color:string,radius=8)=>page.shapes.push({kind:'rect',x,y,width,height,color,radius});
   function text(value:string,x:number,y:number,width:number,size=14,color='#334155',weight=400){const s:PdfTextStyle={size,lineHeight:size*1.6,color,weight};for(const line of wrapPdfText(value,s,measure,width)){page.lines.push({...s,text:line.text,x,y,width:measure(line.text,s)});y+=s.lineHeight;}return y;}

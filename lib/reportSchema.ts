@@ -522,7 +522,7 @@ export const MarketingReportSchema = z.object({
       research:CompetitorResearchSchema.optional(),
       ourSite:CompetitorOwnSiteSchema.optional(),
       filtering: z.object({
-        policyVersion: z.literal(1),
+        policyVersion: z.union([z.literal(1),z.literal(2)]),
         reviewedCount: z.number().int().nonnegative(),
         metadataCheckedCount: z.number().int().nonnegative(),
         excluded: z.array(z.object({domain: z.string(), link: z.string(), title: z.string(), reason: z.string()})),

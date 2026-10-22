@@ -16,14 +16,16 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
   const active=rows.find(r=>r.id===selected)||own,actions=positioningActions(own);
   const choose=(value:string)=>{setSelected(value);setStatus('');setFallback('');};
   async function copy(){const text=positioningBrief(report,own)+'\n\n'+actions.map(a=>guideInstruction(buildSiteGuide(report,{title:a.title,evidence:a.evidence,proposal:a.template}))).join('\n\n');try{await navigator.clipboard.writeText(text);setStatus('자사 개선 작업을 복사했습니다.');setFallback('');}catch{setStatus('아래 내용을 직접 복사하세요.');setFallback(text);}}
+  if(!analysis.competitors.length)return <section className="report-card competitor-landscape" aria-label="검색 메시지 포지셔닝"><p className="report-eyebrow">COMPETITOR RELEVANCE</p><h3>경쟁사 선정을 보류했습니다</h3><p className="report-note">{research?.selectionMessage||'대상 상품·서비스와 관련성을 확인한 비교 후보가 없습니다. 관련 없는 업체로 비교표를 채우지 않았습니다.'}</p>{analysis.searchKeyword&&<p>검토한 검색어: <strong>{analysis.searchKeyword}</strong></p>}{analysis.filtering?.policyVersion!==2&&<p className="report-note">이전 선정 기준의 보고서입니다. 채용·기업정보 등 명확히 관련 없는 페이지를 제외했습니다. 최신 상품·서비스 관련성 검증을 적용하려면 URL을 재진단해 주세요.</p>}{!!analysis.filtering?.excluded.length&&<details className="position-method"><summary>제외한 페이지와 이유</summary><ul>{analysis.filtering.excluded.map((c,i)=><li key={`${c.domain}-${i}`}><strong>{c.domain}</strong> · {c.reason}</li>)}</ul></details>}<p className="report-note">상품 분류·서비스 소개가 실제 텍스트로 제공되는 상세 URL을 사용하면 비교 근거를 더 정확히 확인할 수 있습니다.</p></section>;
   return <section className="report-card competitor-landscape" aria-label="검색 메시지 포지셔닝">
     <div className="report-card-heading"><p className="report-eyebrow">SEARCH CONTEXT → MESSAGE → ACTION</p><h3>같은 검색어에서, 고객에게 무엇을 설명하고 있나요?</h3><p className="report-note">검색에서 발견한 후보와 자사의 설명을 비교해 다음 수정 작업을 정합니다.</p></div>
     <div className="position-query"><div><span>이번 비교의 대표 키워드</span><strong>{analysis.searchKeyword||'미저장'}</strong></div><span className="position-tag" title="외부 후보 중 제목·메타 설명을 모두 확보하고 동일한 기준으로 계산 가능한 업체 수">원문 비교 가능 {known.length}/{analysis.competitors.length}곳</span></div>
     <p className="position-lead">{COMPETITOR_API_NOTE}</p>
+    {analysis.filtering?.policyVersion!==2&&<p className="report-note">이전 선정 기준의 보고서입니다. 최신 상품·서비스 관련성 검증을 적용하려면 재진단해 주세요.</p>}
     <ol className="position-selection-flow" aria-label="경쟁사 선정 과정">
       <li><span>01 · 키워드 선정</span><strong>페이지의 주제</strong><p>주력 상품·서비스 표현에서 선택</p></li>
       <li><span>02 · 검색 응답</span><strong>{research?`${research.returnedCount}건`:analysis.filtering?`${analysis.filtering.reviewedCount}건`:'기록 미저장'}</strong><p>네이버 웹문서 API 응답</p></li>
-      <li><span>03 · 후보 정리</span><strong>{analysis.filtering?`${analysis.filtering.excluded.length}건 제외`:'상세 기록 미저장'}</strong><p>자사·중복·대형몰·포털 등 제외</p></li>
+      <li><span>03 · 관련성 검증</span><strong>{analysis.filtering?`${analysis.filtering.excluded.length}건 제외`:'상세 기록 미저장'}</strong><p>채용·기업정보·원문 미확인 등 제외</p></li>
       <li><span>04 · 비교 후보</span><strong>{analysis.competitors.length}개</strong><p>원문으로 좌표 계산 가능 {known.length}개</p></li>
     </ol>
     <details className="position-method"><summary>이 키워드와 후보를 고른 이유</summary><div>
@@ -33,7 +35,7 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
         <h4>입력 페이지에서 확인한 근거</h4>{research.keywordEvidence.map((e,i)=><blockquote key={i}><strong>{e.field} · {e.matched.join(' · ')}</strong><p>{e.text}</p></blockquote>)}
         {!!research.alternatives.length&&<><h4>원문에 있는 다른 비교 키워드 후보</h4><ul>{research.alternatives.map(a=><li key={a.keyword}><strong>{a.keyword}</strong> · {a.fields.join(' / ')}</li>)}</ul><p>대체 후보는 아직 조회하지 않았으며 검색량·경쟁 적합성이 검증된 순위가 아닙니다.</p></>}
       </>}
-      <p>대형몰 등은 알려진 도메인 목록과 페이지 역할 규칙으로 제외합니다. 모든 대형 사업자와 같은 회사의 다른 도메인을 자동 식별하는 기능은 아닙니다. 직접 경쟁 관계는 상품·서비스, 지역, 고객층, 판매 방식을 함께 대조하세요.</p>
+      <p>채용·연봉·기업정보·기사 페이지를 역할에 따라 제외하고, 신규 보고서는 후보 페이지의 제목·설명·H1에서 상품·서비스 검색어 일치를 확인합니다. 수집 실패·관련성 부족으로 후보가 5곳 미만이거나 0곳일 수 있습니다. 직접 경쟁 관계는 상품·서비스, 지역, 고객층, 판매 방식을 함께 대조하세요.</p>
       {analysis.filtering?.excluded.length?<><h4>제외한 페이지와 이유</h4><ul>{analysis.filtering.excluded.map((c,i)=><li key={`${c.domain}-${i}`}><strong>{c.domain}</strong> · {c.reason}<p>{c.title}</p></li>)}</ul></>:null}
       <div className="position-sources">{COMPETITOR_SOURCES.map(s=><a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>)}</div>
     </div></details>

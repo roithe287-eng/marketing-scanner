@@ -2,6 +2,7 @@ import {positionProfile,defaultPositionIndustry} from './industryPositioning';
 import type {MarketingReport,IndustryCategory} from './reportSchema';
 import {queryMatches,COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE} from './competitorResearch';
 import {safeHttpUrl} from './citationMeasurement';
+import {competitorDisplay} from './competitorDisplay';
 export const POSITION_METHOD='industry-evidence-v5';
 export const POSITION_AXES={x:'상품·서비스 설명',y:'선택·이용 근거'};
 export const POSITION_NOTE='동일하게 페이지 제목·메타 설명만 비교합니다. 좌표는 표현 탐지 지표이며 가격 수준·품질·시장점유율·검색 순위·성과를 평가한 점수가 아닙니다.';
@@ -69,7 +70,7 @@ export function positionGroups(rows:PositionRow[]) {
   return [...groups.values()].map(g=>({...g,signalCount:g.rows.reduce((sum,r)=>sum+(r.signalCount||0),0)/g.rows.length}));
 }
 export function buildCompetitorPositioning(report:MarketingReport,industry?:IndustryCategory) {
-  const analysis=report.competitorAnalysis;if(!analysis)return null;
+  const storedAnalysis=report.competitorAnalysis;if(!storedAnalysis)return null;const analysis=competitorDisplay(storedAnalysis);
   const detected=defaultPositionIndustry(report),category=industry||detected.category,profile=positionProfile(category);
   const samePage=(a:string,b:string)=>{try{const x=new URL(a),y=new URL(b);return x.hostname.replace(/^www\./,'')===y.hostname.replace(/^www\./,'')&&x.pathname.replace(/\/$/,'')===y.pathname.replace(/\/$/,'')&&x.search===y.search;}catch{return false;}};
   const page=report.pageEvidence&&samePage(report.pageEvidence.requestedUrl,report.url)?report.pageEvidence:undefined;

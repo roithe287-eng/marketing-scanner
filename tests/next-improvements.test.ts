@@ -31,7 +31,7 @@ test('metadata can exclude an inventory page; selection order and original respo
   const candidates = selection.candidates.map(c => ({...c, description:'', metaTitle:c.domain === 'busan.test'?'광고문의 > 정보공개 > 부산교통공사':c.title}));
   const final = finalizeSearchCandidates(candidates,query,selection.excluded);
   assert.equal(final[0].domain,'agency.test'); assert.equal(final[0].rank,1); assert.equal(final[0].searchRank,3);
-  assert.equal(final[1].relevance,'needs_review'); assert.equal(selection.excluded[0].domain,'busan.test');
+  assert.equal(final.length,1);assert.ok(selection.excluded.some(c=>c.domain==='first.test'));assert.ok(selection.excluded.some(c=>c.domain==='busan.test'));
 });
 
 test('an agency-themed drama episode is excluded by page role while an actual service page and entertainment query remain eligible', () => {
@@ -100,7 +100,7 @@ test('failed competitor fetch retains search provenance without invented strengt
 
 test('candidate exclusions, evidence and response order survive shared schema and the PDF', () => {
   const selection=selectSearchCandidates([item('humetro.busan.kr','광고문의 > 정보공개 > 부산교통공사'),item('agency.test')],'example.com',query);
-  const report=MarketingReportSchema.parse({...fixture,competitorAnalysis:{searchKeyword:query,competitors:finalizeSearchCandidates(selection.candidates,query,selection.excluded),filtering:{policyVersion:1,reviewedCount:2,metadataCheckedCount:1,excluded:selection.excluded}}});
+  const report=MarketingReportSchema.parse({...fixture,competitorAnalysis:{searchKeyword:query,competitors:finalizeSearchCandidates(selection.candidates.map(c=>({...c,metaTitle:c.title,metaDescription:c.description})),query,selection.excluded),filtering:{policyVersion:2,reviewedCount:2,metadataCheckedCount:1,excluded:selection.excluded}}});
   const restored=MarketingReportSchema.parse(JSON.parse(JSON.stringify(report)));
   assert.deepEqual(restored.competitorAnalysis,report.competitorAnalysis);
   const text=buildReportDocument(restored).map(block=>block.text).join('\n');

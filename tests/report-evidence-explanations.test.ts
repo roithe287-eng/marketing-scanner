@@ -38,7 +38,7 @@ test('search-volume placeholder is replaced by evidence-backed comparable extern
   const $=load(renderToStaticMarkup(React.createElement(CompetitorLandscape,{report:sample})));
   assert.equal($('.position-query .position-tag').text(),'원문 비교 가능 1/2곳');assert.doesNotMatch($.text(),/검색량 미측정/);
   const empty={...sample,competitorAnalysis:{...sample.competitorAnalysis!,competitors:[]}};
-  assert.match(renderToStaticMarkup(React.createElement(CompetitorLandscape,{report:empty})),/원문 비교 가능 0\/0곳/);
+  assert.match(renderToStaticMarkup(React.createElement(CompetitorLandscape,{report:empty})),/경쟁사 선정을 보류/);
   assert.match(buildCompetitorDocument(sample).map(b=>b.text).join('\n'),/원문 비교 가능 1\/2곳/);
 });
 

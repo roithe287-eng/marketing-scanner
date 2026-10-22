@@ -1,3 +1,5 @@
+import {queryMatches} from './competitorResearch';
+import {unrelatedPageReason} from './competitorRoles';
 export type SearchItem = { title: string; link: string; description: string };
 export type SearchCandidate = SearchItem & {
   domain: string;
@@ -58,14 +60,17 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
     let reason = own && (belongsTo(domain, own) || belongsTo(own, domain)) ? '자사 도메인' : undefined;
     if (!reason && seen.has(domain)) reason = '이미 수집한 도메인의 중복 페이지';
     if (!reason) reason = excludedPlatformReason(domain);
+    if (!reason) reason = unrelatedPageReason({domain,link:item.link,title,description:stripSearchHtml(item.description)},query);
     if (!reason) reason = nonProviderReason(title, query, stripSearchHtml(item.description));
     if (reason) { excluded.push({domain, link: item.link, title, reason}); return; }
     seen.add(domain);
     eligibleCount++;
-    if (candidates.length < limit) candidates.push({rank: candidates.length + 1, searchRank: i + 1,
+    candidates.push({rank: candidates.length + 1, searchRank: i + 1,
       title, link: item.link, description: stripSearchHtml(item.description), domain});
   });
-  return {candidates, excluded, reviewedCount: items.length,eligibleCount,budgetDeferredCount:Math.max(0,eligibleCount-candidates.length)};
+  const coverage=(c:SearchCandidate)=>queryMatches(query,`${c.title} ${c.description}`).matched.length;
+  const selected=candidates.sort((a,b)=>coverage(b)-coverage(a)||a.searchRank-b.searchRank).slice(0,limit).map((c,i)=>({...c,rank:i+1}));
+  return {candidates:selected, excluded, reviewedCount: items.length,eligibleCount,budgetDeferredCount:Math.max(0,eligibleCount-selected.length)};
 }
 
 export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?: string; metaDescription?: string; h1?: string; fetchError?: string}>(
@@ -73,19 +78,17 @@ export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?
 ) {
   const kept: T[] = [];
   const normalize = (text: string) => text.toLowerCase().replace(/\s+/g, '');
-  const tokens = query.split(/\s+/).filter(t => t.length >= 2).map(normalize);
   for (const candidate of candidates) {
     const title = candidate.metaTitle || candidate.title;
-    const reason = nonProviderReason(`${candidate.title} ${title}`, query, `${candidate.description} ${candidate.metaDescription || ''}`);
+    const reason = unrelatedPageReason({domain:candidate.domain,link:candidate.link,title:`${candidate.title} ${title}`,description:candidate.metaDescription||candidate.description},query)||nonProviderReason(`${candidate.title} ${title}`, query, `${candidate.description} ${candidate.metaDescription || ''}`);
     if (reason) { excluded.push({domain: candidate.domain, link: candidate.link, title, reason}); continue; }
     const hasPage=!candidate.fetchError&&!!(candidate.metaTitle||candidate.metaDescription||candidate.h1);
     const text = normalize((hasPage?[candidate.metaTitle,candidate.metaDescription,candidate.h1]:[candidate.title,candidate.description]).join(' '));
-    const matchedTerms=tokens.filter(token=>text.includes(token));
-    const matches = tokens.length > 0 && matchedTerms.length===tokens.length;
-    kept.push({...candidate, relevance: matches && hasPage ? 'keyword_match' : 'needs_review',
-      matchedTerms,relevanceBasis:hasPage?'page_metadata':'search_snippet',
-      selectionEvidence: matches ? `${hasPage?'페이지 제목·설명·H1':'검색 결과 요약'}에서 검색어 “${query}” 관련 표현 확인. 실제 상품·서비스·지역·고객층의 일치는 별도 확인 필요.`
-        : `검색 결과로 수집했으나 “${query}”와의 상품·서비스 일치는 추가 검토 필요.`});
+    const match=queryMatches(query,text),matchedTerms=match.matched;
+    const matches = match.terms.length > 0 && matchedTerms.length===match.terms.length;
+    if(!hasPage||!matches){excluded.push({domain:candidate.domain,link:candidate.link,title,reason:!hasPage?'페이지 수집·원문 근거 부족: 검색 요약만으로 경쟁 관계를 확정하지 않음':'후보 페이지 제목·설명·H1에서 대상 상품·서비스 검색어 일치를 확인하지 못함'});continue;}
+    kept.push({...candidate, relevance: 'keyword_match',matchedTerms,relevanceBasis:'page_metadata',
+      selectionEvidence:`페이지 제목·설명·H1에서 상품·서비스 검색어 “${query}”의 관련 표현을 확인했습니다. 실제 상품·서비스·지역·고객층·판매 방식은 별도로 대조해 주세요.`});
   }
   return kept.sort((a, b) => Number(b.relevance === 'keyword_match') - Number(a.relevance === 'keyword_match') || a.searchRank - b.searchRank)
     .slice(0, limit).map((candidate, i) => ({...candidate, rank: i + 1}));

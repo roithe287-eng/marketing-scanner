@@ -7,5 +7,6 @@ export const CompetitorResearchSchema=z.object({
   alternatives:z.array(z.object({keyword:z.string(),fields:z.array(z.string())})),
   attemptedKeywords:z.array(z.string()),eligibleCount:z.number().int().nonnegative(),budgetDeferredCount:z.number().int().nonnegative(),
   successfulPages:z.number().int().nonnegative(),selectedCount:z.number().int().nonnegative(),
+  selectionStatus:z.enum(['matched','no_relevant_candidates','insufficient_source']).optional(),selectionMessage:z.string().optional(),
 });
 export const CompetitorOwnSiteSchema=z.object({url:z.string().optional(),domain:z.string(),title:z.string(),metaDescription:z.string(),h1:z.string()});
