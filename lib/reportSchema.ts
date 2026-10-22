@@ -7,6 +7,7 @@ import {AnswerContentPlanSchema} from './answerContentSchema';
 import {NaverOptimizationSchema} from './naverSchema';
 import {SearchSignalsSchema} from './growthSchema';
 import {CompetitorResearchSchema,CompetitorOwnSiteSchema} from './competitorSchema';
+import {OwnProductContextSchema} from './ownProductSchema';
 
 // 12가지 마케팅 진단 체크리스트
 export const ChecklistItemSchema = z.object({
@@ -393,6 +394,7 @@ export const MarketingReportSchema = z.object({
   analysisWarnings:z.array(z.object({key:z.string().max(40),label:z.string().max(80),status:z.enum(["timeout","unavailable","error"])})).max(10).optional(),
   url: z.string(),
   pageEvidence:PageEvidenceSchema.optional(),
+  productContext:OwnProductContextSchema.optional(),
   diagnosisMethod:z.string().max(100).optional(),
   diagnosisBaseline:DiagnosisBaselineSchema.optional(),
   overallScore: z.number().min(0).max(100),

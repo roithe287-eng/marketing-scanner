@@ -9,6 +9,11 @@ import {MarketingReportSchema} from '../lib/reportSchema';
 import {buildCompetitorDocument} from '../lib/competitorDocument';
 import CompetitorLandscape from '../components/report/CompetitorLandscape';
 import {fixture} from './fixtures/report';
+import {loadPublicProductCatalog} from '../lib/publicProductCatalog';
+import {extractWebsite} from '../lib/extractWebsite';
+import {capturePageEvidence} from '../lib/pageEvidence';
+import {buildPrompt} from '../lib/analyzeMarketing';
+import {classifyIndustry} from '../lib/industryClassifier';
 
 beforeEach(t=>{(t as TestContext).mock.method(websiteHttp,'fetch',(u:string|URL,init?:RequestInit)=>globalThis.fetch(u,init));});
 const html=(body:string)=>new Response(body,{headers:{'content-type':'text/html;charset=utf-8'}});
@@ -109,4 +114,49 @@ test('unavailable robots or blocked responses produce a collection limitation, n
   const context=await collectOwnProductContext(own.url);assert.equal(context.status,'unavailable');assert.deepEqual(context.sources,[]);
   const restore=env();delete process.env.OPENAI_API_KEY;
   try{const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'');assert.equal(result.research.selectionStatus,'insufficient_source');assert.match(result.research.selectionMessage!,/상품이 없거나 사이트에 정보가 부족하다는 판정은 아닙니다/);}finally{restore();}
+});
+
+test('the public main-page catalog retains displayed product fields only, without credentials or private commerce data',async t=>{
+  const requests:string[]=[];
+  t.mock.method(globalThis,'fetch',async(input:unknown,init?:RequestInit)=>{
+    const u=new URL(String(input));requests.push(u.href);assert.equal(u.hostname,'api.onnuristore.com');
+    const headers=new Headers(init?.headers);assert.equal(headers.get('authorization'),null);assert.equal(headers.get('cookie'),null);
+    if(u.pathname==='/robots.txt')return new Response('',{status:404});
+    assert.equal(u.pathname,'/api/v1/open/main/brand-pages');
+    return Response.json({data:Array.from({length:15},(_,i)=>({brandName:`브랜드 ${i}`,customer:{secret:'CUSTOMER_SECRET'},mainDisplayProductItems:[{productItemId:i+100,displayName:'숨긴 상품',isDisplay:false},{productItemId:i+200,displayName:`공개 비타민 ${i}`,isDisplay:true,isActive:true,stockCount:'STOCK_SECRET',costPrice:'COST_SECRET',commission:'COMMISSION_SECRET',orderProductCount:'ORDER_SECRET'}]}))});
+  });
+  const products=await loadPublicProductCatalog(own.url);assert.equal(products.length,12);assert.equal(products[0].url,own.url+'/goods/200');assert.equal(products[0].kind,'catalog_product');
+  assert.doesNotMatch(JSON.stringify(products),/SECRET|숨긴 상품|stock|cost|commission|order/i);assert.equal(requests.length,2);
+});
+
+test('catalog evidence survives unavailable detail pages and avoids dependence on search-engine indexing',async t=>{
+  const requests:string[]=[];
+  t.mock.method(globalThis,'fetch',async(input:unknown)=>{
+    const u=new URL(String(input));requests.push(u.href);assert.notEqual(u.hostname,'openapi.naver.com');
+    if(u.pathname==='/robots.txt')return u.hostname==='api.onnuristore.com'?new Response('',{status:404}):new Response('User-agent: *\nAllow: /');
+    if(u.hostname==='api.onnuristore.com')return Response.json({data:Array.from({length:6},(_,i)=>({mainDisplayProductItems:[{productItemId:i+100,displayName:`공개 비타민 ${i}`,isDisplay:true}]}))});
+    if(u.pathname==='/')return html('<title>온누리스토어</title><main>dynamic</main>');
+    return new Response('Unavailable',{status:503});
+  });
+  const context=await collectOwnProductContext(own.url);assert.equal(context.status,'observed');assert.equal(context.discovery,'public_catalog');assert.equal(context.sources.length,6);assert.equal(context.attemptedPages,5);
+  assert.equal(requests.filter(u=>u.includes('/goods/')).length,4);assert.equal(new Set(context.sources.map(s=>s.url)).size,6);
+});
+
+test('the catalog adapter never probes unrelated sites or bypasses a robots restriction',async t=>{
+  let calls=0;t.mock.method(globalThis,'fetch',async(input:unknown)=>{calls++;assert.equal(new URL(String(input)).pathname,'/robots.txt');return new Response('User-agent: *\nDisallow: /api/');});
+  assert.deepEqual(await loadPublicProductCatalog('https://onnuristore.com.other.example'),[]);assert.equal(calls,0);
+  assert.deepEqual(await loadPublicProductCatalog(own.url),[]);assert.equal(calls,1);
+});
+
+test('main diagnosis sees real product context while raw SEO observations remain unchanged and shared/PDF reports preserve the source',async t=>{
+  t.mock.method(globalThis,'fetch',async(input:unknown)=>String(input).endsWith('/robots.txt')?new Response('User-agent: *\nAllow: /'):html('<title>온누리스토어</title><main>동적 상품 영역</main>'));
+  const data=await extractWebsite(own.url);
+  const raw=capturePageEvidence(data);
+  data.productContext={status:'observed',discovery:'public_catalog',attemptedPages:0,note:'공개 상품 목록 표본 · HTML SEO와 별도',sources:[{url:own.url+'/goods/123',name:'프레스샷 액상비타민',description:'',categories:[],kind:'catalog_product'}]};
+  assert.match(buildPrompt(data),/프레스샷 액상비타민/);assert.match(buildPrompt(data),/판매 상품 부재·사이트 전체 상품 정보 부족으로 진단하지 않는다/);
+  assert.deepEqual({...capturePageEvidence(data),capturedAt:raw.capturedAt},raw);assert.deepEqual(data.h1,[]);assert.ok(!data.schemaTypes.includes('Product'));assert.doesNotMatch(data.bodyText,/비타민/);
+  assert.equal(await classifyIndustry(data),'ecommerce');
+  const report=MarketingReportSchema.parse({...fixture,productContext:data.productContext});
+  assert.equal(report.productContext?.sources[0].name,'프레스샷 액상비타민');
+  const {buildReportDocument}=await import('../lib/reportDocument');assert.match(buildReportDocument(report).map(b=>b.text).join('\n'),/상품 정보 보완 · 공개 상품 표본 1개/);
 });
