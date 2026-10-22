@@ -10,6 +10,10 @@ import {buildCompetitorDocument} from '../lib/competitorDocument';
 import CompetitorLandscape from '../components/report/CompetitorLandscape';
 import {fixture} from './fixtures/report';
 import {loadPublicProductCatalog} from '../lib/publicProductCatalog';
+import {extractWebsite} from '../lib/extractWebsite';
+import {capturePageEvidence} from '../lib/pageEvidence';
+import {buildPrompt} from '../lib/analyzeMarketing';
+import {classifyIndustry} from '../lib/industryClassifier';
 
 beforeEach(t=>{(t as TestContext).mock.method(websiteHttp,'fetch',(u:string|URL,init?:RequestInit)=>globalThis.fetch(u,init));});
 const html=(body:string)=>new Response(body,{headers:{'content-type':'text/html;charset=utf-8'}});
@@ -142,4 +146,17 @@ test('the catalog adapter never probes unrelated sites or bypasses a robots rest
   let calls=0;t.mock.method(globalThis,'fetch',async(input:unknown)=>{calls++;assert.equal(new URL(String(input)).pathname,'/robots.txt');return new Response('User-agent: *\nDisallow: /api/');});
   assert.deepEqual(await loadPublicProductCatalog('https://onnuristore.com.other.example'),[]);assert.equal(calls,0);
   assert.deepEqual(await loadPublicProductCatalog(own.url),[]);assert.equal(calls,1);
+});
+
+test('main diagnosis sees real product context while raw SEO observations remain unchanged and shared/PDF reports preserve the source',async t=>{
+  t.mock.method(globalThis,'fetch',async(input:unknown)=>String(input).endsWith('/robots.txt')?new Response('User-agent: *\nAllow: /'):html('<title>온누리스토어</title><main>동적 상품 영역</main>'));
+  const data=await extractWebsite(own.url);
+  const raw=capturePageEvidence(data);
+  data.productContext={status:'observed',discovery:'public_catalog',attemptedPages:0,note:'공개 상품 목록 표본 · HTML SEO와 별도',sources:[{url:own.url+'/goods/123',name:'프레스샷 액상비타민',description:'',categories:[],kind:'catalog_product'}]};
+  assert.match(buildPrompt(data),/프레스샷 액상비타민/);assert.match(buildPrompt(data),/판매 상품 부재·사이트 전체 상품 정보 부족으로 진단하지 않는다/);
+  assert.deepEqual({...capturePageEvidence(data),capturedAt:raw.capturedAt},raw);assert.deepEqual(data.h1,[]);assert.ok(!data.schemaTypes.includes('Product'));assert.doesNotMatch(data.bodyText,/비타민/);
+  assert.equal(await classifyIndustry(data),'ecommerce');
+  const report=MarketingReportSchema.parse({...fixture,productContext:data.productContext});
+  assert.equal(report.productContext?.sources[0].name,'프레스샷 액상비타민');
+  const {buildReportDocument}=await import('../lib/reportDocument');assert.match(buildReportDocument(report).map(b=>b.text).join('\n'),/상품 정보 보완 · 공개 상품 표본 1개/);
 });

@@ -24,6 +24,8 @@ import {capturePageEvidence} from '@/lib/pageEvidence';
 import {analyzeAnswerContent} from '@/lib/analyzeAnswerContent';
 import {buildAnswerContentPlan} from '@/lib/answerContent';
 import {competitorOwnText} from '@/lib/competitorResearch';
+import {loadPublicProductCatalog} from '@/lib/publicProductCatalog';
+import {OWN_PRODUCT_NOTE} from '@/lib/ownProductSchema';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -113,6 +115,8 @@ export async function POST(req: NextRequest) {
 
     // 1. 사이트 추출
     const websiteData = await withBudget(14_000,()=>extractWebsite(url),undefined,"페이지 수집 시간이 초과되었습니다. 최종 페이지 URL을 확인한 뒤 다시 시도해 주세요.");
+    const products=await withBudget(4500,()=>loadPublicProductCatalog(websiteData.finalUrl)).catch(()=>[]);
+    if(products.length)websiteData.productContext={status:'observed',discovery:'public_catalog',attemptedPages:0,sources:products,note:OWN_PRODUCT_NOTE};
     const pageEvidence=capturePageEvidence(websiteData);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
@@ -135,6 +139,7 @@ export async function POST(req: NextRequest) {
 
     report.url = url;
     report.pageEvidence=pageEvidence;
+    if(websiteData.productContext)report.productContext=websiteData.productContext;
     report.diagnosisMethod=`${DIAGNOSIS_METHOD}:${process.env.OPENAI_MODEL||'gpt-4.1-mini'}`;
     if(diagnosisBaseline)report.diagnosisBaseline=diagnosisBaseline;
     report.competitorAnalysis = null;

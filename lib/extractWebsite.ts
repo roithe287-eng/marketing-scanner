@@ -7,8 +7,10 @@ import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 import {captureSiteEditing} from './captureSiteEditing';
 import type {SiteEditing} from './siteEditingSchema';
+import type {OwnProductContext} from './ownProductSchema';
 
 export type ExtractedWebsiteData = {
+  productContext?:OwnProductContext;
   officialSeoEvidence?:OfficialSeoEvidence;
   siteEditing?:SiteEditing;
   seoEvidence?: {

@@ -63,6 +63,7 @@ const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
  * 키워드 기반 빠른 예비 분류 (AI 호출 전 힌트)
  */
 function quickClassify(data: ExtractedWebsiteData): IndustryCategory | null {
+  if(data.productContext?.discovery==='public_catalog'&&data.productContext.sources.length)return 'ecommerce';
   const text = [
     data.title,
     data.description,
