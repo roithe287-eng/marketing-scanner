@@ -50,6 +50,12 @@ test('API failure uses basic guidance without failing the report or fetching Nav
   try{const plan=await analyzeAnswerContent(answerPage);assert.equal(plan.mode,'basic');assert.equal(plan.questions.length,3);assert.ok(urls.every(u=>u.includes('api.openai.com')));}
   finally{if(saved===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=saved;}
 });
+test('valid structured API output produces grounded tailored questions',async t=>{
+  const saved=process.env.OPENAI_API_KEY;process.env.OPENAI_API_KEY='test-local-only';let request:any;
+  t.mock.method(globalThis,'fetch',async(_input:unknown,init:RequestInit)=>{request=JSON.parse(String(init.body));return new Response(JSON.stringify({choices:[{message:{content:JSON.stringify(answerSuggestion())},finish_reason:'stop'}]}),{status:200,headers:{'Content-Type':'application/json'}});});
+  try{const plan=await analyzeAnswerContent(answerPage);assert.equal(request.response_format.type,'json_schema');assert.equal(request.response_format.json_schema.strict,true);assert.equal(plan.mode,'ai-assisted');assert.match(plan.questions[0].draft,/15영업일/);}
+  finally{if(saved===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=saved;}
+});
 test('saved reports, full PDF text and copied drafts retain provenance and missing fields',()=>{
   const plan=answerPlan();const report=MarketingReportSchema.parse({...fixture,answerContentPlan:plan});
   assert.deepEqual(report.answerContentPlan,plan);assert.ok(MarketingReportSchema.safeParse(fixture).success);
