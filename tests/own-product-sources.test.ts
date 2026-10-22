@@ -174,7 +174,7 @@ test('repeated concrete product names override one broad category and merchant s
     if(u.hostname==='health-info.example')return html('<title>비타민 안내센터</title><meta name="description" content="비타민 권장량 안내">');
     assert.equal(u.hostname,'vitamin-shop.example');return html('<title>비타민 전문몰</title><meta name="description" content="비타민 상품 쇼핑몰"><button>구매하기</button>');
   });
-  try{const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'비타민');assert.equal(result.keywordSource,'fallback');assert.deepEqual(queries,['비타민']);assert.deepEqual(result.competitors.map(c=>c.domain),['vitamin-shop.example']);assert.ok(result.filtering.excluded.some(c=>c.domain==='health-info.example'&&c.reason.includes('구매')));}finally{restore();}
+  try{const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'비타민');assert.equal(result.keywordSource,'fallback');assert.deepEqual(queries,['비타민 쇼핑몰']);assert.equal(result.research.attemptedKeywords[0],'비타민 쇼핑몰');assert.deepEqual(result.competitors.map(c=>c.domain),['vitamin-shop.example']);assert.ok(result.filtering.excluded.some(c=>c.domain==='health-info.example'&&c.reason.includes('구매')));}finally{restore();}
 });
 
 test('merchant research inspects late shopping candidates before information pages while preserving API rank',()=>{
