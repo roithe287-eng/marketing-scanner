@@ -7,6 +7,18 @@ import {POSITION_INDUSTRIES} from '@/lib/industryPositioning';
 import type {MarketingReport,IndustryCategory} from '@/lib/reportSchema';
 import {buildCompetitorPositioning,POSITION_AXES,POSITION_NOTE,POSITION_CRITERIA,positioningActions,positioningBrief,positionCoordinates,positionDiameter,POSITION_SIZE_NOTE} from '@/lib/competitorPositioning';
 import {COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE,COMPETITOR_SOURCES} from '@/lib/competitorResearch';
+import type {OwnProductContext} from '@/lib/ownProductSchema';
+import {safeHttpUrl} from '@/lib/citationMeasurement';
+
+function ProductCollection({context}:{context?:OwnProductContext}){
+  if(!context)return null;
+  const labels={observed:'자사 상품 원문 확인',not_observed:'공개 경로에서 상품 원문 미확인',unavailable:'상품 원문 추가 수집 제한',blocked:'상품 원문 접근 규칙에 따라 수집 중단'};
+  return <details className="position-method" open><summary>{labels[context.status]}{context.sources.length?` · 표본 ${context.sources.length}개`:''}</summary><div>
+    <p>{context.discovery==='naver_web'?(context.sources.length?'네이버 공식 웹문서 API로 자사 상품 URL을 찾고, 해당 사이트에서 상품 원문을 직접 읽었습니다. 검색 요약은 상품 근거나 AI 입력으로 사용하지 않았습니다.':'네이버 공식 웹문서 API를 통한 자사 상품 URL 검색과 상품 원문 수집을 시도했습니다.'):context.discovery==='public_links'?'홈페이지에 연결된 공개 상품 페이지의 원문 수집을 시도했습니다.':'입력 페이지의 공개 구조화 데이터와 상품 정보를 수집하도록 시도했습니다.'}</p>
+    <p>{context.note}</p>
+    {context.sources.length?<ul>{context.sources.map((s,i)=><li key={`${s.url}-${i}`}><strong>{s.name}</strong>{s.categories.length?` · ${s.categories.join(' / ')}`:''}{safeHttpUrl(s.url)&&<p><a href={safeHttpUrl(s.url)!} target="_blank" rel="noopener noreferrer">상품 원문 확인</a></p>}</li>)}</ul>:<p>상품이 없다는 뜻이 아닙니다. 동적 로딩·접근 규칙·검색 API 범위 때문에 원문을 확인하지 못할 수 있습니다.</p>}
+  </div></details>;
+}
 
 export default function CompetitorLandscape({report}:{report:MarketingReport}) {
   const [selected,setSelected]=useState('own'),[status,setStatus]=useState(''),[fallback,setFallback]=useState('');const id=useId();
@@ -16,10 +28,11 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
   const active=rows.find(r=>r.id===selected)||own,actions=positioningActions(own);
   const choose=(value:string)=>{setSelected(value);setStatus('');setFallback('');};
   async function copy(){const text=positioningBrief(report,own)+'\n\n'+actions.map(a=>guideInstruction(buildSiteGuide(report,{title:a.title,evidence:a.evidence,proposal:a.template}))).join('\n\n');try{await navigator.clipboard.writeText(text);setStatus('자사 개선 작업을 복사했습니다.');setFallback('');}catch{setStatus('아래 내용을 직접 복사하세요.');setFallback(text);}}
-  if(!analysis.competitors.length)return <section className="report-card competitor-landscape" aria-label="검색 메시지 포지셔닝"><p className="report-eyebrow">COMPETITOR RELEVANCE</p><h3>경쟁사 선정을 보류했습니다</h3><p className="report-note">{research?.selectionMessage||'대상 상품·서비스와 관련성을 확인한 비교 후보가 없습니다. 관련 없는 업체로 비교표를 채우지 않았습니다.'}</p>{analysis.searchKeyword&&<p>검토한 검색어: <strong>{analysis.searchKeyword}</strong></p>}{analysis.filtering?.policyVersion!==2&&<p className="report-note">이전 선정 기준의 보고서입니다. 채용·기업정보 등 명확히 관련 없는 페이지를 제외했습니다. 최신 상품·서비스 관련성 검증을 적용하려면 URL을 재진단해 주세요.</p>}{!!analysis.filtering?.excluded.length&&<details className="position-method"><summary>제외한 페이지와 이유</summary><ul>{analysis.filtering.excluded.map((c,i)=><li key={`${c.domain}-${i}`}><strong>{c.domain}</strong> · {c.reason}</li>)}</ul></details>}<p className="report-note">상품 분류·서비스 소개가 실제 텍스트로 제공되는 상세 URL을 사용하면 비교 근거를 더 정확히 확인할 수 있습니다.</p></section>;
+  if(!analysis.competitors.length)return <section className="report-card competitor-landscape" aria-label="검색 메시지 포지셔닝"><p className="report-eyebrow">COMPETITOR RELEVANCE</p><h3>경쟁사 선정을 보류했습니다</h3><p className="report-note">{research?.selectionMessage||'대상 상품·서비스와 관련성을 확인한 비교 후보가 없습니다. 관련 없는 업체로 비교표를 채우지 않았습니다.'}</p><ProductCollection context={research?.productContext}/>{analysis.searchKeyword&&<p>검토한 검색어: <strong>{analysis.searchKeyword}</strong></p>}{analysis.filtering?.policyVersion!==2&&<p className="report-note">이전 선정 기준의 보고서입니다. 채용·기업정보 등 명확히 관련 없는 페이지를 제외했습니다. 최신 상품·서비스 관련성 검증을 적용하려면 URL을 재진단해 주세요.</p>}{!!analysis.filtering?.excluded.length&&<details className="position-method"><summary>제외한 페이지와 이유</summary><ul>{analysis.filtering.excluded.map((c,i)=><li key={`${c.domain}-${i}`}><strong>{c.domain}</strong> · {c.reason}</li>)}</ul></details>}<p className="report-note">추가 수집 기록과 확인한 원문을 먼저 검토하세요. 접근 가능한 상품·서비스 상세 URL로도 재진단할 수 있습니다.</p></section>;
   return <section className="report-card competitor-landscape" aria-label="검색 메시지 포지셔닝">
     <div className="report-card-heading"><p className="report-eyebrow">SEARCH CONTEXT → MESSAGE → ACTION</p><h3>같은 검색어에서, 고객에게 무엇을 설명하고 있나요?</h3><p className="report-note">검색에서 발견한 후보와 자사의 설명을 비교해 다음 수정 작업을 정합니다.</p></div>
-    <div className="position-query"><div><span>이번 비교의 대표 키워드</span><strong>{analysis.searchKeyword||'미저장'}</strong></div><span className="position-tag" title="외부 후보 중 제목·메타 설명을 모두 확보하고 동일한 기준으로 계산 가능한 업체 수">원문 비교 가능 {known.length}/{analysis.competitors.length}곳</span></div>
+    <div className="position-query"><div><span>{research?.productContext?.sources.length?'확인한 상품군의 비교 키워드':'이번 비교의 대표 키워드'}</span><strong>{analysis.searchKeyword||'미저장'}</strong></div><span className="position-tag" title="외부 후보 중 제목·메타 설명을 모두 확보하고 동일한 기준으로 계산 가능한 업체 수">원문 비교 가능 {known.length}/{analysis.competitors.length}곳</span></div>
+    <ProductCollection context={research?.productContext}/>
     <p className="position-lead">{COMPETITOR_API_NOTE}</p>
     {analysis.filtering?.policyVersion!==2&&<p className="report-note">이전 선정 기준의 보고서입니다. 최신 상품·서비스 관련성 검증을 적용하려면 재진단해 주세요.</p>}
     <ol className="position-selection-flow" aria-label="경쟁사 선정 과정">
@@ -32,7 +45,7 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
       <p>{research?.keywordReason||'이전 보고서에는 키워드 선정 근거와 검색 시각이 저장되지 않았습니다. 현재 저장된 키워드와 후보만 비교하며, 새 기준의 선정 기록은 재진단 시 추가됩니다.'}</p><p>{COMPETITOR_KEYWORD_NOTE}</p>
       {research&&<><p>검색 시각: {new Date(research.capturedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} (한국시간) · 요청 {research.requestedCount}건 · 시작 위치 {research.apiStart}</p><p>1차 통과 {research.eligibleCount}개 중 {analysis.filtering?.metadataCheckedCount??0}개 페이지 수집 시도 · 수집 성공 {research.successfulPages}개 · 수집 한도로 보류 {research.budgetDeferredCount}개. 성공은 HTTP 응답 기준이며 설명 필드 확보와는 다릅니다. 최종 최대 5개를 관련 표현 확인 여부, API 응답 순서로 정렬합니다.</p>
         {research.attemptedKeywords.length>1&&<p>조회한 키워드: {research.attemptedKeywords.join(' → ')}. 도표는 마지막 키워드 결과만 사용합니다.</p>}
-        <h4>입력 페이지에서 확인한 근거</h4>{research.keywordEvidence.map((e,i)=><blockquote key={i}><strong>{e.field} · {e.matched.join(' · ')}</strong><p>{e.text}</p></blockquote>)}
+        <h4>자사 원문에서 확인한 키워드 근거</h4>{research.keywordEvidence.map((e,i)=><blockquote key={i}><strong>{e.field} · {e.matched.join(' · ')}</strong><p>{e.text}</p></blockquote>)}
         {!!research.alternatives.length&&<><h4>원문에 있는 다른 비교 키워드 후보</h4><ul>{research.alternatives.map(a=><li key={a.keyword}><strong>{a.keyword}</strong> · {a.fields.join(' / ')}</li>)}</ul><p>대체 후보는 아직 조회하지 않았으며 검색량·경쟁 적합성이 검증된 순위가 아닙니다.</p></>}
       </>}
       <p>채용·연봉·기업정보·기사 페이지를 역할에 따라 제외하고, 신규 보고서는 후보 페이지의 제목·설명·H1에서 상품·서비스 검색어 일치를 확인합니다. 수집 실패·관련성 부족으로 후보가 5곳 미만이거나 0곳일 수 있습니다. 직접 경쟁 관계는 상품·서비스, 지역, 고객층, 판매 방식을 함께 대조하세요.</p>

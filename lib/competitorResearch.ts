@@ -1,7 +1,8 @@
 /** Page relevance is evidence for a query, never keyword search volume. */
 import type {ExtractedWebsiteData} from './extractWebsite';
+import type {OwnProductSource} from './ownProductSchema';
 import {isEmploymentQuery} from './competitorRoles';
-export type QuerySite = {title?:string;ogTitle?:string;description?:string;ogDescription?:string;keywords?:string;h1?:string[];h2?:string[];bodyText?:string};
+export type QuerySite = {title?:string;ogTitle?:string;description?:string;ogDescription?:string;keywords?:string;h1?:string[];h2?:string[];bodyText?:string;productSources?:OwnProductSource[]};
 /** Reuse the already collected page; omit known navigation, footer and licence-only text. */
 export function competitorOwnText(data:Pick<ExtractedWebsiteData,'bodyText'|'siteEditing'>):string {
   const elements=data.siteEditing?.elements||[];
@@ -23,7 +24,8 @@ export function queryFields(site:QuerySite) {
     ...(site.h1||[]).slice(0,3).map(text=>({label:'H1',text,weight:4})),
     ...(site.h2||[]).slice(0,8).map(text=>({label:'H2',text,weight:1})),
     {label:'메타 키워드',text:site.keywords||'',weight:1},
-    {label:'수집된 본문',text:site.bodyText||'',weight:1}].filter(f=>f.text.trim());
+    {label:'수집된 본문',text:site.bodyText||'',weight:1},
+    ...(site.productSources||[]).flatMap(p=>[{label:`상품명 · ${new URL(p.url).pathname}`,text:p.name,weight:2},{label:`상품 분류 · ${new URL(p.url).pathname}`,text:p.categories.join(' · '),weight:3},{label:`상품 설명 · ${new URL(p.url).pathname}`,text:p.description,weight:1}])].filter(f=>f.text.trim());
 }
 export function keywordEvidence(keyword:string,site:QuerySite) {
   const fields=queryFields(site),terms=queryTerms(keyword),joined=fields.map(f=>f.text).join(' ');
@@ -45,13 +47,13 @@ export function keywordEvidence(keyword:string,site:QuerySite) {
 export function keywordCandidates(site:QuerySite,limit=5) {
   const keywordSeeds=new Set((site.keywords||'').split(/[,;|]/).map(normalizeSearchText));
   const values=[...(site.keywords||'').split(/[,;|]/),...(site.h1||[]).flatMap(t=>t.split(/[|·:]/)),
-    ...(site.h2||[]).flatMap(t=>t.split(/[|·:]/)),...(site.title||site.ogTitle||'').split(/[|·:–—]/)];
+    ...(site.h2||[]).flatMap(t=>t.split(/[|·:]/)),...(site.productSources||[]).flatMap(p=>p.categories),...(site.title||site.ogTitle||'').split(/[|·:–—]/)];
   const seen=new Set<string>();
   return values.map(v=>v.trim()).filter(v=>v.length>=2&&v.length<=30&&!/^(홈|메인|공식|홈페이지|사이트|쇼핑|인터넷|비즈니스|문의|상담|고객센터|공지사항|로그인|회원가입|개인정보|이용약관)(\s|$)/i.test(v))
     .filter(v=>{const key=normalizeSearchText(v);if(seen.has(key))return false;seen.add(key);return true;})
     .map(v=>{const evidence=keywordEvidence(v,site);return {...evidence,weightedSupport:evidence.weightedSupport+(keywordSeeds.has(normalizeSearchText(v))?3:0)-(evidence.evidence.length===1&&evidence.evidence[0].field==='페이지 제목'?3:0)};}).sort((a,b)=>b.weightedSupport-a.weightedSupport||a.keyword.length-b.keyword.length).slice(0,limit);
 }
-const marketTerms=['건강기능식품','건강식품','영양제','비타민','유산균','오메가3','단체복','과잠바','유니폼','의류','화장품','스킨케어','생활용품','반려동물용품','반려동물 사료','식품','밀키트','와인','가구','인테리어','마케팅 컨설팅','광고대행','광고 대행','메타광고','기업 교육','온라인 강의','채용 플랫폼','구인구직','소프트웨어','세무 상담','법률 상담'];
+const marketTerms=['건강기능식품','건강식품','영양제','비타민','유산균','오메가3','구강청결제','칫솔','캔디','사료','세탁세제','단체복','과잠바','유니폼','의류','화장품','스킨케어','생활용품','반려동물용품','반려동물 사료','식품','밀키트','와인','가구','인테리어','마케팅 컨설팅','광고대행','광고 대행','메타광고','기업 교육','온라인 강의','채용 플랫폼','구인구직','소프트웨어','세무 상담','법률 상담'];
 /** A company-name lookup is not a market query, even when its title repeats. */
 export function usableMarketKeyword(query:string,site:QuerySite):boolean {
   const q=normalizeSearchText(query),evidence=keywordEvidence(query,site);
@@ -64,7 +66,7 @@ export function usableMarketKeyword(query:string,site:QuerySite):boolean {
   if(isEmploymentQuery(query)&&!isEmploymentQuery([site.title,site.ogTitle,site.description,site.ogDescription,...site.h1||[]].join(' ')))return false;
   // A category embedded in a brand (e.g. 온누리식품) is insufficient on its own.
   const exactCategoryHeading=known&&queryFields(site).some(f=>['페이지 제목','H1','H2'].includes(f.label)&&normalizeSearchText(f.text)===q);
-  return exactCategoryHeading||evidence.evidence.some(e=>['메타 설명','메타 키워드','수집된 본문'].includes(e.field));
+  return exactCategoryHeading||evidence.evidence.some(e=>['메타 설명','메타 키워드','수집된 본문'].includes(e.field)||/^상품(?:명| 분류| 설명) · /.test(e.field));
 }
 export function marketKeywordCandidates(site:QuerySite){
   const existing=keywordCandidates(site,20),extra=marketTerms.filter(t=>keywordEvidence(t,site).grounded).map(t=>keywordEvidence(t,site));

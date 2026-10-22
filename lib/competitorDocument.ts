@@ -8,6 +8,7 @@ export function buildCompetitorDocument(report:MarketingReport):ReportBlock[] {
   const b:ReportBlock[]=[];const add=(kind:ReportBlock['kind'],text:string,href?:string)=>{b.push({kind,text,href});};
   const {analysis,rows,own}=model,r=analysis.research;
   if(r?.selectionMessage)add('body',r.selectionMessage);
+  if(r?.productContext){const p=r.productContext;add('subheading',`자사 상품 원문 추가 확인 · 표본 ${p.sources.length}개`);add('body',p.note);add('body',`수집 상태: ${p.status} · URL 발견 경로: ${p.discovery} · HTML 수집 시도 ${p.attemptedPages}개. 검색 요약은 AI 입력이나 상품 근거로 사용하지 않습니다.`);for(const s of p.sources){add('body',`${s.name} · ${s.categories.join(' / ')}`);add('body',s.url,safeHttpUrl(s.url)||undefined);}}
   if(analysis.filtering?.policyVersion!==2)add('body','이전 선정 기준의 보고서입니다. 채용·기업정보 등 명확히 관련 없는 페이지는 비교에서 제외했으며, 최신 상품·서비스 관련성 검증은 URL 재진단이 필요합니다.');
   add('subheading','검색 메시지 포지셔닝');add('body',POSITION_NOTE);add('body',POSITION_SIZE_NOTE);add('body',COMPETITOR_API_NOTE);add('body',COMPETITOR_KEYWORD_NOTE);
   add('body',`대표 키워드: ${analysis.searchKeyword} · 산정 규칙: ${POSITION_METHOD}`);
