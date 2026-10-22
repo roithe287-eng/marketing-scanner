@@ -1,3 +1,5 @@
+> Latest storefront follow-up: [동적 상품 진단·질문 연결](STOREFRONT_SCOPE_2026-10-22.md).
+
 > Latest competitor fix: [경쟁사 후보 관련성 교정](COMPETITOR_RELEVANCE_2026-10-22.md).
 
 > Latest content guidance: [URL별 네이버 대응 콘텐츠 개선안](ANSWER_CONTENT_HANDOVER_2026-10-22.md).

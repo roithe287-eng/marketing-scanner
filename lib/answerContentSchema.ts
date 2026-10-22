@@ -3,8 +3,8 @@ import {z} from 'zod';
 export const AnswerIntentSchema=z.enum(['definition','price','delivery','minimum','process','scope','choice','care','comparison','location','eligibility','proof']);
 export const AnswerSourceSchema=z.object({
   id:z.string().max(30),text:z.string().min(1).max(700),
-  kind:z.enum(['title','description','heading','body']),
-  location:z.string().max(300),selector:z.string().max(1000).optional(),
+  kind:z.enum(['title','description','heading','body','product']),
+  location:z.string().max(300),selector:z.string().max(1000).optional(),url:z.string().max(2048).optional(),
 });
 export const AnswerKeywordSchema=z.object({
   term:z.string().min(2).max(40),evidence:z.array(AnswerSourceSchema).min(1).max(3),
@@ -20,7 +20,7 @@ export const AnswerQuestionSchema=z.object({
 export const AnswerContentPlanSchema=z.object({
   version:z.literal(1),source:z.literal('own-page'),mode:z.enum(['ai-assisted','basic','limited']),
   targetUrl:z.string().max(4000),observedAt:z.string().datetime(),
-  scope:z.literal('submitted-page'),coverage:z.enum(['partial','limited']),
+  scope:z.enum(['submitted-page','submitted-page-and-products']),coverage:z.enum(['partial','limited']),
   observation:z.literal('not-measured'),notice:z.string().max(700),
   primaryKeyword:AnswerKeywordSchema.nullable(),secondaryKeywords:z.array(AnswerKeywordSchema).max(2),
   topicScope:z.enum(['focused','mixed','unknown']),

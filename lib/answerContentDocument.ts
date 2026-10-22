@@ -3,7 +3,7 @@ import type {ReportBlock} from './reportDocument';
 import {ANSWER_CONTENT_TITLE,ANSWER_STATUS,answerQuestionText} from './answerContent';
 export function buildAnswerContentDocument(report:MarketingReport):ReportBlock[]{
   const plan=report.answerContentPlan;if(!plan)return [];
-  const blocks:ReportBlock[]=[{kind:'heading',text:ANSWER_CONTENT_TITLE},{kind:'body',text:plan.notice},{kind:'body',text:`분석 범위: 입력 페이지 · 실제 네이버 노출: 미측정 · ${plan.mode==='ai-assisted'?'페이지 맞춤 질문':plan.mode==='limited'?'제한된 내용으로 작성':'기본 질문 가이드'}`},{kind:'body',text:`분석 URL: ${plan.targetUrl}`,href:plan.targetUrl}];
+  const blocks:ReportBlock[]=[{kind:'heading',text:ANSWER_CONTENT_TITLE},{kind:'body',text:plan.notice},{kind:'body',text:`분석 범위: ${plan.scope==='submitted-page-and-products'?'입력 페이지·자사 상품 표본':'입력 페이지'} · 실제 네이버 노출: 미측정 · ${plan.mode==='ai-assisted'?'페이지 맞춤 질문':plan.mode==='limited'?'제한된 내용으로 작성':'기본 질문 가이드'}`},{kind:'body',text:`분석 URL: ${plan.targetUrl}`,href:plan.targetUrl}];
   if(!plan.primaryKeyword){blocks.push({kind:'body',text:'대표 키워드를 판단할 페이지 내용이 부족합니다. 대표 상품·서비스가 있는 상세 페이지로 재진단해 주세요.'});return blocks;}
   for(const [index,k] of [plan.primaryKeyword,...plan.secondaryKeywords].entries()){
     blocks.push({kind:'subheading',text:`${index===0?'대표':'보조'} 키워드: ${k.term}`},{kind:'body',text:k.reason});
