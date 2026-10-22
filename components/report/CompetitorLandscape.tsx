@@ -14,7 +14,7 @@ function ProductCollection({context}:{context?:OwnProductContext}){
   if(!context)return null;
   const labels={observed:'자사 상품 원문 확인',not_observed:'공개 경로에서 상품 원문 미확인',unavailable:'상품 원문 추가 수집 제한',blocked:'상품 원문 접근 규칙에 따라 수집 중단'};
   return <details className="position-method" open><summary>{labels[context.status]}{context.sources.length?` · 표본 ${context.sources.length}개`:''}</summary><div>
-    <p>{context.discovery==='naver_web'?'네이버 공식 웹문서 API로 자사 상품 URL을 찾고, 해당 사이트에서 상품 원문을 직접 읽었습니다. 검색 요약은 상품 근거나 AI 입력으로 사용하지 않았습니다.':context.discovery==='public_links'?'홈페이지에 연결된 공개 상품 페이지에서 원문을 직접 읽었습니다.':'입력 페이지의 공개 구조화 데이터와 상품 정보를 확인했습니다.'}</p>
+    <p>{context.discovery==='naver_web'?(context.sources.length?'네이버 공식 웹문서 API로 자사 상품 URL을 찾고, 해당 사이트에서 상품 원문을 직접 읽었습니다. 검색 요약은 상품 근거나 AI 입력으로 사용하지 않았습니다.':'네이버 공식 웹문서 API를 통한 자사 상품 URL 검색과 상품 원문 수집을 시도했습니다.'):context.discovery==='public_links'?'홈페이지에 연결된 공개 상품 페이지의 원문 수집을 시도했습니다.':'입력 페이지의 공개 구조화 데이터와 상품 정보를 수집하도록 시도했습니다.'}</p>
     <p>{context.note}</p>
     {context.sources.length?<ul>{context.sources.map((s,i)=><li key={`${s.url}-${i}`}><strong>{s.name}</strong>{s.categories.length?` · ${s.categories.join(' / ')}`:''}{safeHttpUrl(s.url)&&<p><a href={safeHttpUrl(s.url)!} target="_blank" rel="noopener noreferrer">상품 원문 확인</a></p>}</li>)}</ul>:<p>상품이 없다는 뜻이 아닙니다. 동적 로딩·접근 규칙·검색 API 범위 때문에 원문을 확인하지 못할 수 있습니다.</p>}
   </div></details>;
