@@ -52,7 +52,7 @@ export default function HomePage() {
       const competitorAnalysis=parsed.data;
       if(current())setReport(prev=>prev?{...prev,competitorAnalysis,competitorStatus:{
         status:competitorAnalysis.competitors.length?'complete':'empty',
-        message:competitorAnalysis.competitors.length?'경쟁사 비교를 완료했습니다.':'현재 검색 결과에서 비교할 경쟁사를 찾지 못했습니다.',
+        message:competitorAnalysis.research?.selectionMessage||(competitorAnalysis.competitors.length?'경쟁사 비교를 완료했습니다.':'현재 검색 결과에서 비교할 경쟁사를 찾지 못했습니다.'),
       }}:prev);
     }catch(error){
       if(current())setReport(prev=>prev?{...prev,competitorStatus:{

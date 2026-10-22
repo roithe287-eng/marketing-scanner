@@ -23,6 +23,7 @@ import {analyzeNaverOptimization} from "@/lib/analyzeNaverOptimization";
 import {capturePageEvidence} from '@/lib/pageEvidence';
 import {analyzeAnswerContent} from '@/lib/analyzeAnswerContent';
 import {buildAnswerContentPlan} from '@/lib/answerContent';
+import {competitorOwnText} from '@/lib/competitorResearch';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -172,6 +173,7 @@ export async function POST(req: NextRequest) {
         h1: websiteData.h1,
         h2: websiteData.h2,
         keywords: websiteData.keywords,
+        bodyText:competitorOwnText(websiteData),
       },
     };
     },req.signal);

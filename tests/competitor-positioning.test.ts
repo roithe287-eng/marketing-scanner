@@ -54,8 +54,8 @@ test('domain exclusions respect host boundaries and page evidence is not replace
   const item=(host:string)=>({title:'광고대행',description:'광고대행',link:`https://${host}`});
   const selection=selectSearchCandidates(['coupang.com','shop.coupang.com','coupang.com.example.net','agency.test','agency.test'].map(item),'example.com','광고대행',1);
   assert.equal(selection.eligibleCount,2);assert.equal(selection.budgetDeferredCount,1);assert.equal(selection.excluded.length,3);
-  const selected=finalizeSearchCandidates([{...selection.candidates[0],metaTitle:'다른 서비스',metaDescription:'다른 안내'}],'광고대행',[]);
-  assert.equal(selected[0].relevance,'needs_review');assert.deepEqual(selected[0].matchedTerms,[]);assert.equal(selected[0].relevanceBasis,'page_metadata');
+  const excluded:any[]=[];const selected=finalizeSearchCandidates([{...selection.candidates[0],metaTitle:'다른 서비스',metaDescription:'다른 안내'}],'광고대행',excluded);
+  assert.deepEqual(selected,[]);assert.match(excluded[0].reason,/일치를 확인하지 못함/);
 });
 test('new API snapshot preserves query provenance, absolute response position and two original page fields through sharing',async()=>{
   const oldFetch=globalThis.fetch;const keys=['NAVER_CLIENT_ID','NAVER_CLIENT_SECRET','OPENAI_API_KEY'] as const;const env=keys.map(k=>process.env[k]);process.env.NAVER_CLIENT_ID='test';process.env.NAVER_CLIENT_SECRET='test';delete process.env.OPENAI_API_KEY;

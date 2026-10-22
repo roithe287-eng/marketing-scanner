@@ -3,10 +3,12 @@ import React,{useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {safeHttpUrl} from '@/lib/citationMeasurement';
 import CompetitorDeepDiveModal from '@/components/CompetitorDeepDiveModal';
+import {competitorDisplay} from '@/lib/competitorDisplay';
 type Props={competitorAnalysis:NonNullable<MarketingReport['competitorAnalysis']>;ourUrl:string;ourTitle?:string};
 function getDomainFromUrl(url:string){try{return new URL(url).hostname.replace(/^www\./,'');}catch{return '';}}
 function getFaviconUrl(domain:string){return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;}
-export default function CompetitorComparison({competitorAnalysis,ourUrl,ourTitle}:Props){
+export default function CompetitorComparison({competitorAnalysis:storedAnalysis,ourUrl,ourTitle}:Props){
+  const competitorAnalysis=competitorDisplay(storedAnalysis);
   const competitors=competitorAnalysis.competitors||[],ourDomain=getDomainFromUrl(ourUrl);
   const [deepDiveTarget,setDeepDiveTarget]=useState<{url:string;domain:string}|null>(null);
   return (<div className="competitor-report">
