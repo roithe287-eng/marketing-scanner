@@ -2,7 +2,7 @@ import {searchNaverWeb} from './naverWebSearch';
 import {collectOwnProductContext} from './ownProductSources';
 import type {OwnProductContext} from './ownProductSchema';
 import {websiteHttp} from './security/safeFetch';
-import {marketKeywordCandidates,usableMarketKeyword,keywordEvidence,type QuerySite} from "./competitorResearch";
+import {marketKeywordCandidates,usableMarketKeyword,keywordEvidence,queryMatches,type QuerySite} from "./competitorResearch";
 import type {z} from "zod";
 import type {CompetitorResearchSchema} from "./competitorSchema";
 import * as cheerio from "cheerio";
@@ -129,6 +129,7 @@ async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
       .slice(0, 1500);
 
     const ctaKeywords = [
+      "장바구니",
       "문의",
       "상담",
       "신청",
@@ -271,6 +272,11 @@ export async function analyzeCompetitors(siteData: {
 
     let keywordSource: "ai" | "fallback" = "ai";
     if(keyword&&!usableMarketKeyword(keyword,querySite))keyword=null;
+    if(productContext?.sources.length){
+      const nameSupport=(q:string)=>productContext!.sources.filter(p=>{const m=queryMatches(q,p.name);return m.terms.length>0&&m.matched.length===m.terms.length;}).length;
+      const repeated=marketKeywordCandidates(querySite).filter(c=>nameSupport(c.keyword)>=2).sort((a,b)=>nameSupport(b.keyword)-nameSupport(a.keyword)||b.weightedSupport-a.weightedSupport)[0];
+      if(repeated&&(!keyword||nameSupport(keyword)<nameSupport(repeated.keyword))){keyword=repeated.keyword;keywordSource='fallback';}
+    }
 
     if (!keyword) {
       keyword = extractKeywordFallback(querySite);
@@ -294,7 +300,8 @@ export async function analyzeCompetitors(siteData: {
     // Inspect more search items without increasing the eight-page collection budget.
     const attemptedKeywords=[keyword];
     let response = await searchNaverWeb(keyword, 30);
-    let selection = selectSearchCandidates(response.items, ourDomain, keyword, 8);
+    const commerce=productContext?.discovery==='public_catalog';
+    let selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce);
     if (selection.candidates.length === 0 && keywordSource === "ai") {
       const fallbackKeyword = marketKeywordCandidates(querySite).find(k=>k.keyword!==keyword)?.keyword;
       if (fallbackKeyword && fallbackKeyword !== keyword) {
@@ -302,19 +309,19 @@ export async function analyzeCompetitors(siteData: {
         response = await searchNaverWeb(fallbackKeyword, 30);
         keyword = fallbackKeyword;
         keywordSource = "fallback";
-        selection = selectSearchCandidates(response.items, ourDomain, keyword, 8);
+        selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce);
       }
     }
     const candidates: Competitor[] = selection.candidates.map(c=>({...c,searchRank:c.searchRank+response.start-1}));
     // Each fetch has its own eight-second timeout. Await all before taking a snapshot.
     await Promise.all(candidates.map(candidate => fetchCompetitorMeta(candidate)));
-    const competitors = finalizeSearchCandidates(candidates, keyword, selection.excluded, 5);
+    const competitors = finalizeSearchCandidates(candidates, keyword, selection.excluded, 5,commerce);
 
     return {
       searchKeyword: keyword,
       keywordSource,
       research:{version:2,provider:'naver_web',capturedAt:response.capturedAt,requestedCount:30,returnedCount:response.items.length,apiStart:response.start,totalDocuments:response.total,
-        ...(productContext?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:productContext?.sources.length?'메인 HTML의 수집 한계를 보완하기 위해 자사 상품 원문을 직접 읽고 확인한 상품군에서 비교 키워드를 골랐습니다. 전체 쇼핑몰의 주력 상품 순위가 아닙니다.':keywordSource==='ai'?'페이지에 실제 있는 상품·서비스 표현으로 AI가 업종 검색어를 제안하고 원문 포함 여부와 회사명 단독 검색 여부를 확인했습니다.':'제목·설명·H1·H2·메타 키워드·수집 본문의 상품·서비스 관련성을 규칙으로 비교하고 회사명 단독 검색어는 제외했습니다.',
+        ...(productContext?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:productContext?.sources.length?'자사 상품 원문에서 여러 상품명에 공통으로 확인되는 구체적인 품목을 우선했습니다. 한 상품의 넓은 분류보다 상품명 근거를 우선하며, 전체 쇼핑몰의 매출·주력 순위를 뜻하지 않습니다.':keywordSource==='ai'?'페이지에 실제 있는 상품·서비스 표현으로 AI가 업종 검색어를 제안하고 원문 포함 여부와 회사명 단독 검색 여부를 확인했습니다.':'제목·설명·H1·H2·메타 키워드·수집 본문의 상품·서비스 관련성을 규칙으로 비교하고 회사명 단독 검색어는 제외했습니다.',
         keywordEvidence:keywordEvidence(keyword,querySite).evidence,alternatives:marketKeywordCandidates(querySite).filter(c=>c.keyword!==keyword).slice(0,3).map(c=>({keyword:c.keyword,fields:[...new Set(c.evidence.map(e=>e.field))]})),attemptedKeywords,
         eligibleCount:selection.eligibleCount,budgetDeferredCount:selection.budgetDeferredCount,successfulPages:candidates.filter(c=>!c.fetchError).length,selectedCount:competitors.length,
         selectionStatus:competitors.length?'matched':'no_relevant_candidates',selectionMessage:competitors.length?'후보 페이지 원문에서 대상 상품·서비스 검색어와 관련 표현을 확인했습니다.':'검색 응답 중 상품·서비스의 관련성을 원문으로 확인한 업체가 없습니다. 관련 없는 업체나 수집 실패 페이지로 비교표를 채우지 않았습니다.'},

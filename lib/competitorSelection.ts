@@ -45,7 +45,8 @@ export function nonProviderReason(title: string, query: string, description = ''
   }
 }
 
-export function selectSearchCandidates(items: SearchItem[], ourDomain: string, query: string, limit = 8) {
+const commerceText=/쇼핑몰|공식몰|전문몰|온라인몰|스토어|쇼핑|\bshop\b|\bstore\b|장바구니|바로구매|구매하기|주문하기|구매하러|\bcheckout\b|\badd to cart\b|\bbuy now\b/i;
+export function selectSearchCandidates(items: SearchItem[], ourDomain: string, query: string, limit = 8, preferCommerce=false) {
   const candidates: SearchCandidate[] = [];
   const excluded: ExcludedCandidate[] = [];
   const seen = new Set<string>();
@@ -69,12 +70,13 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
       title, link: item.link, description: stripSearchHtml(item.description), domain});
   });
   const coverage=(c:SearchCandidate)=>queryMatches(query,`${c.title} ${c.description}`).matched.length;
-  const selected=candidates.sort((a,b)=>coverage(b)-coverage(a)||a.searchRank-b.searchRank).slice(0,limit).map((c,i)=>({...c,rank:i+1}));
+  const seller=(c:SearchCandidate)=>Number(commerceText.test(`${c.title} ${c.description}`)||/\/(?:goods|products?)\//i.test(c.link));
+  const selected=candidates.sort((a,b)=>(preferCommerce?seller(b)-seller(a):0)||coverage(b)-coverage(a)||a.searchRank-b.searchRank).slice(0,limit).map((c,i)=>({...c,rank:i+1}));
   return {candidates:selected, excluded, reviewedCount: items.length,eligibleCount,budgetDeferredCount:Math.max(0,eligibleCount-selected.length)};
 }
 
-export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?: string; metaDescription?: string; h1?: string; fetchError?: string}>(
-  candidates: T[], query: string, excluded: ExcludedCandidate[], limit = 5,
+export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?: string; metaDescription?: string; h1?: string; fetchError?: string;ctaTexts?:string[]}>(
+  candidates: T[], query: string, excluded: ExcludedCandidate[], limit = 5, requireCommerce=false,
 ) {
   const kept: T[] = [];
   const normalize = (text: string) => text.toLowerCase().replace(/\s+/g, '');
@@ -87,8 +89,9 @@ export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?
     const match=queryMatches(query,text),matchedTerms=match.matched;
     const matches = match.terms.length > 0 && matchedTerms.length===match.terms.length;
     if(!hasPage||!matches){excluded.push({domain:candidate.domain,link:candidate.link,title,reason:!hasPage?'페이지 수집·원문 근거 부족: 검색 요약만으로 경쟁 관계를 확정하지 않음':'후보 페이지 제목·설명·H1에서 대상 상품·서비스 검색어 일치를 확인하지 못함'});continue;}
+    if(requireCommerce&&!commerceText.test([candidate.metaTitle,candidate.metaDescription,candidate.h1,...candidate.ctaTexts||[]].join(' '))){excluded.push({domain:candidate.domain,link:candidate.link,title,reason:'상품 판매 사이트의 비교에서 쇼핑몰·구매 동작을 원문으로 확인하지 못함'});continue;}
     kept.push({...candidate, relevance: 'keyword_match',matchedTerms,relevanceBasis:'page_metadata',
-      selectionEvidence:`페이지 제목·설명·H1에서 상품·서비스 검색어 “${query}”의 관련 표현을 확인했습니다. 실제 상품·서비스·지역·고객층·판매 방식은 별도로 대조해 주세요.`});
+      selectionEvidence:`페이지 제목·설명·H1에서 상품·서비스 검색어 “${query}”의 관련 표현을 확인했습니다.${requireCommerce?' 원문에서 쇼핑몰·구매 동작의 단서도 확인했습니다.':''} 실제 상품·서비스·지역·고객층·판매 방식은 별도로 대조해 주세요.`});
   }
   return kept.sort((a, b) => Number(b.relevance === 'keyword_match') - Number(a.relevance === 'keyword_match') || a.searchRank - b.searchRank)
     .slice(0, limit).map((candidate, i) => ({...candidate, rank: i + 1}));

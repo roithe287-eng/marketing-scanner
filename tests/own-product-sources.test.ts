@@ -14,6 +14,7 @@ import {extractWebsite} from '../lib/extractWebsite';
 import {capturePageEvidence} from '../lib/pageEvidence';
 import {buildPrompt} from '../lib/analyzeMarketing';
 import {classifyIndustry} from '../lib/industryClassifier';
+import {selectSearchCandidates,finalizeSearchCandidates} from '../lib/competitorSelection';
 
 beforeEach(t=>{(t as TestContext).mock.method(websiteHttp,'fetch',(u:string|URL,init?:RequestInit)=>globalThis.fetch(u,init));});
 const html=(body:string)=>new Response(body,{headers:{'content-type':'text/html;charset=utf-8'}});
@@ -159,4 +160,25 @@ test('main diagnosis sees real product context while raw SEO observations remain
   const report=MarketingReportSchema.parse({...fixture,productContext:data.productContext});
   assert.equal(report.productContext?.sources[0].name,'프레스샷 액상비타민');
   const {buildReportDocument}=await import('../lib/reportDocument');assert.match(buildReportDocument(report).map(b=>b.text).join('\n'),/상품 정보 보완 · 공개 상품 표본 1개/);
+});
+
+test('repeated concrete product names override one broad category and merchant scans exclude information-only sites',async t=>{
+  const restore=env(),names=['프레스샷 액상비타민','베지핏 비타민B','테라브레스 구강청결제'];const queries:string[]=[];
+  t.mock.method(globalThis,'fetch',async(input:unknown)=>{
+    const u=new URL(String(input));
+    if(u.hostname==='api.openai.com')return Response.json({choices:[{message:{content:'{"keyword":"건강용품"}'}}]});
+    if(u.hostname==='openapi.naver.com'){queries.push(u.searchParams.get('query')!);return Response.json({items:[{link:'https://health-info.example/',title:'비타민 안내센터',description:'비타민 권장량 안내'},{link:'https://vitamin-shop.example/',title:'비타민 전문몰',description:'비타민 전문몰'}]});}
+    if(u.pathname==='/robots.txt')return u.hostname==='api.onnuristore.com'?new Response('',{status:404}):new Response('User-agent: *\nAllow: /');
+    if(u.hostname==='api.onnuristore.com')return Response.json({data:names.map((displayName,i)=>({mainDisplayProductItems:[{productItemId:i+1,displayName}]}))});
+    if(u.hostname==='onnuristore.com')return u.pathname==='/'?html('<title>온누리스토어</title>'):html(product(names[Number(u.pathname.split('/').pop())-1],'헬스/건강용품'));
+    if(u.hostname==='health-info.example')return html('<title>비타민 안내센터</title><meta name="description" content="비타민 권장량 안내">');
+    assert.equal(u.hostname,'vitamin-shop.example');return html('<title>비타민 전문몰</title><meta name="description" content="비타민 상품 쇼핑몰"><button>구매하기</button>');
+  });
+  try{const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'비타민');assert.equal(result.keywordSource,'fallback');assert.deepEqual(queries,['비타민']);assert.deepEqual(result.competitors.map(c=>c.domain),['vitamin-shop.example']);assert.ok(result.filtering.excluded.some(c=>c.domain==='health-info.example'&&c.reason.includes('구매')));}finally{restore();}
+});
+
+test('merchant research inspects late shopping candidates before information pages while preserving API rank',()=>{
+  const items=[...Array.from({length:8},(_,i)=>({link:`https://info${i}.example/`,title:'비타민 안내센터',description:'비타민의 종류'})),{link:'https://shop.example/',title:'비타민 전문몰',description:'비타민 쇼핑몰'}];
+  const selected=selectSearchCandidates(items,'onnuristore.com','비타민',8,true);assert.equal(selected.candidates[0].domain,'shop.example');assert.equal(selected.candidates[0].searchRank,9);
+  const pages=selected.candidates.map(c=>({...c,metaTitle:c.title,metaDescription:c.description}));const result=finalizeSearchCandidates(pages,'비타민',selected.excluded,5,true);assert.deepEqual(result.map(c=>c.domain),['shop.example']);
 });
