@@ -77,6 +77,22 @@ test('existing public product links avoid an unnecessary search API call',async 
   const result=await collectOwnProductContext(own.url);assert.equal(result.discovery,'public_links');assert.equal(result.sources.length,1);assert.equal(result.attemptedPages,2);
 });
 
+test('shopping search can recover merchant product URLs when the web index has no product links, without trusting mall names or third-party summaries',async t=>{
+  const restore=env();
+  t.mock.method(globalThis,'fetch',async(input:unknown)=>{
+    const u=new URL(String(input));
+    if(u.hostname==='openapi.naver.com')return Response.json({items:u.pathname.endsWith('shop.json')?[
+      {link:own.url+'/goods/181632',title:'API title is not evidence',mallName:'온누리스토어'},
+      {link:'https://another.example/goods/123',title:'Other retailer',mallName:'온누리스토어'},
+    ]:[{link:own.url,title:'온누리스토어',description:'API description is not evidence'}]});
+    assert.equal(u.hostname,'onnuristore.com');
+    if(u.pathname==='/robots.txt')return new Response('User-agent: *\nAllow: /');
+    if(u.pathname==='/')return html('<title>온누리스토어</title><main>JS storefront</main>');
+    assert.equal(u.pathname,'/goods/181632');return html(product('자일리멜츠 마일드민트 80정 단품','푸드'));
+  });
+  try{const context=await collectOwnProductContext(own.url);assert.equal(context.status,'observed');assert.equal(context.discovery,'naver_shop');assert.equal(context.sources.length,1);assert.doesNotMatch(JSON.stringify(context.sources),/API title|API description|Other retailer/);assert.deepEqual(context.discoveryAttempts?.map(a=>a.productLinkCount),[0,0,1]);}finally{restore();}
+});
+
 test('robots path restrictions and cross-origin redirects are respected before product requests',async t=>{
   const seen:string[]=[];
   t.mock.method(globalThis,'fetch',async(input:unknown)=>{

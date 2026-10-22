@@ -204,7 +204,7 @@ async function extractKeywordWithAI(siteData: QuerySite /* own source only */ & 
 - H1: ${JSON.stringify(siteData.h1?.slice(0, 3) || [])}
 - H2 일부: ${JSON.stringify(siteData.h2?.slice(0, 8) || [])}
 - 수집된 자사 본문: ${(siteData.bodyText||'').slice(0,8000)}
-- 직접 수집한 자사 상품 원문 (검색 요약 아님): ${JSON.stringify(siteData.productSources||[])}
+- 직접 수집한 자사 상품 원문 (검색 요약 아님): ${JSON.stringify((siteData.productSources||[]).map(p=>({name:p.name,description:p.description,categories:p.categories})))}
 
 JSON 형식으로만 응답하라:
 {"keyword": "추출한 키워드"}`;
