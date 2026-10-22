@@ -6,6 +6,7 @@ import {evaluateRobots,type RobotsObservation} from './robotsRules';
 import {withBudget} from './runtime/budget';
 import {getScannerContactUrl} from './siteConfig';
 import {searchNaverWeb,searchNaverShop} from './naverWebSearch';
+import {loadPublicProductCatalog} from './publicProductCatalog';
 import {OWN_PRODUCT_NOTE,type OwnProductContext,type OwnProductSource} from './ownProductSchema';
 
 const UA=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
@@ -99,6 +100,13 @@ export async function collectOwnProductContext(url:string):Promise<OwnProductCon
     let candidates=[...new Set(links)];
     if(candidates.length)context.discovery='public_links';
     else{
+      const catalog=await loadPublicProductCatalog(input.url);
+      if(catalog.length){
+        context.discovery='public_catalog';context.sources=catalog;
+        candidates=Array.from({length:Math.min(4,catalog.length)},(_,i)=>catalog[Math.floor(i*(catalog.length-1)/Math.max(1,Math.min(4,catalog.length)-1))].url);
+      }
+    }
+    if(!candidates.length){
       context.discovery='naver_web';
       const discover=async(provider:'naver_web'|'naver_shop',query:string)=>{
         try{
@@ -128,7 +136,9 @@ export async function collectOwnProductContext(url:string):Promise<OwnProductCon
     candidates=[...new Set(candidates)].slice(0,4);
     context.attemptedPages+=candidates.length;
     const pages=await Promise.allSettled(candidates.map(async link=>{const p=await page(link);return p?productSourcesFromHtml(p.html,p.url):[];}));
-    context.sources=pages.flatMap(p=>p.status==='fulfilled'?p.value:[]).slice(0,12);
+    const collected=pages.flatMap(p=>p.status==='fulfilled'?p.value:[]);
+    const seen=new Set<string>();
+    context.sources=[...collected,...context.sources].filter(p=>{if(seen.has(p.url))return false;seen.add(p.url);return true;}).slice(0,12);
     if(!context.sources.length&&pages.some(p=>p.status==='rejected')&&context.status!=='blocked')context.status='unavailable';
   });}catch{if(context.status!=='blocked')context.status='unavailable';}
   if(context.sources.length)context.status='observed';

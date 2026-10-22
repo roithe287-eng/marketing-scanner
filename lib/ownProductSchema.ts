@@ -1,11 +1,11 @@
 import {z} from 'zod';
 export const OwnProductSourceSchema=z.object({
   url:z.string().max(2048),name:z.string().max(300),description:z.string().max(1200),categories:z.array(z.string().max(100)).max(8),
-  kind:z.enum(['structured_product','product_page']),
+  kind:z.enum(['structured_product','product_page','catalog_product']),
 });
 export const OwnProductContextSchema=z.object({
   status:z.enum(['observed','not_observed','unavailable','blocked']),
-  discovery:z.enum(['input_page','public_links','naver_web','naver_shop']),attemptedPages:z.number().int().nonnegative().max(5),
+  discovery:z.enum(['input_page','public_links','public_catalog','naver_web','naver_shop']),attemptedPages:z.number().int().nonnegative().max(5),
   discoveryAttempts:z.array(z.object({provider:z.enum(['naver_web','naver_shop']),returnedCount:z.number().int().nonnegative(),productLinkCount:z.number().int().nonnegative(),status:z.enum(['ok','unavailable'])})).max(3).optional(),
   sources:z.array(OwnProductSourceSchema).max(12),note:z.string().max(600),
 });
