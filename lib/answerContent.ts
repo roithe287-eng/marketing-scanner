@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
+import {marketKeywordCandidates} from './competitorResearch';
 import {AnswerContentPlanSchema,AnswerIntentSchema,type AnswerContentPlan,type AnswerSource,type AnswerKeyword,type AnswerIntent,type AnswerQuestion} from './answerContentSchema';
 
 export const ANSWER_CONTENT_TITLE='네이버 AI 브리핑 대응 콘텐츠 개선안';
@@ -7,7 +8,7 @@ export const ANSWER_CONTENT_NOTICE='입력한 페이지의 수집된 내용으�
 export const ANSWER_STATUS={supported:'답변 근거 확인',partial:'추가 정보 필요',not_observed:'수집 범위에서 미확인',review:'페이지 답변 대조 필요'};
 const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
 const compact=(text:string)=>clean(text).replace(/\s/g,'').toLocaleLowerCase();
-export type AnswerPageData=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'ogDescription'|'h1'|'h2'|'bodyText'|'isJsHeavy'|'siteEditing'|'seoEvidence'>;
+export type AnswerPageData=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'ogDescription'|'h1'|'h2'|'bodyText'|'isJsHeavy'|'siteEditing'|'seoEvidence'|'productContext'>;
 
 type IntentGuide={question:(keyword:string)=>string;fields:string[];template:(keyword:string)=>string;placement:string;match:RegExp};
 export const ANSWER_GUIDES:Record<AnswerIntent,IntentGuide>={
@@ -25,16 +26,19 @@ export const ANSWER_GUIDES:Record<AnswerIntent,IntentGuide>={
   proof:{question:k=>`${k}의 실제 사례는 어디에서 확인하나요?`,fields:['공개 가능한 실제 사례','기간·조건','결과 확인 자료'],template:k=>`${k}의 [실제 사례명]은 [진행 기간과 조건]에 따라 진행했습니다. [확인 가능한 결과]와 [검증 자료 또는 사례 페이지]를 함께 확인해 주세요.`,placement:'사례·후기 영역 아래',match:/사례|실적|후기|결과|검증|포트폴리오/},
 };
 
-/** A bounded pool from the already fetched page. No search API data, extra crawl or hidden state. */
+/** A bounded pool of page text and already verified merchant products. Product names select topics, never answer facts. */
 export function answerSources(data:AnswerPageData):AnswerSource[]{
   const sources:AnswerSource[]=[];const seen=new Set<string>();
-  const add=(text:string,kind:AnswerSource['kind'],location:string,selector?:string)=>{
+  const add=(text:string,kind:AnswerSource['kind'],location:string,selector?:string,url?:string)=>{
     const value=clean(text);if(value.length<2||value.length>700||seen.has(value)||sources.length>=100)return;
-    seen.add(value);sources.push({id:`p${sources.length+1}`,text:value,kind,location:location.slice(0,300),...(selector?{selector}: {})});
+    seen.add(value);sources.push({id:`p${sources.length+1}`,text:value,kind,location:location.slice(0,300),...(selector?{selector}: {}),...(url?{url}: {})});
   };
   add(data.title||'','title','페이지 제목','title');
   add(data.description||data.ogDescription||'','description','페이지 설명');
   for(const [i,h] of (data.h1||[]).entries())add(h,'heading',`대표 제목 ${i+1}`);
+  if(data.productContext?.status==='observed')for(const p of data.productContext.sources){
+    add([p.name,...p.categories].join(' · '),'product','확인한 자사 상품',undefined,p.url);
+  }
   const elements=data.siteEditing?.elements||[];
   const usable=elements.filter(e=>!e.truncated&&!['nav','header','footer'].includes(e.region||'')&&['text','heading'].includes(e.kind));
   for(const e of usable)add(e.text,e.kind==='heading'?'heading':'body',e.section?.label||e.heading||'본문',e.selector);
@@ -52,7 +56,7 @@ export function answerSources(data:AnswerPageData):AnswerSource[]{
 function keyword(term:string,pool:AnswerSource[]):AnswerKeyword|null{
   const value=clean(term);if(value.length<2||value.length>40||!/[가-힣a-z]/i.test(value))return null;
   if(/^(홈페이지|사이트|회사|서비스|제품|상품|로그인|회원가입|고객센터|문의|메뉴|copyright|home)$/i.test(value))return null;
-  const evidence=pool.filter(p=>compact(p.text).includes(compact(value))).sort((a,b)=>({title:4,heading:3,description:2,body:1}[b.kind]-{title:4,heading:3,description:2,body:1}[a.kind])).slice(0,3);
+  const evidence=pool.filter(p=>compact(p.text).includes(compact(value))).sort((a,b)=>({title:4,heading:3,description:2,body:1,product:2}[b.kind]-{title:4,heading:3,description:2,body:1,product:2}[a.kind])).slice(0,3);
   if(!evidence.length)return null;
   const kinds=new Set(evidence.map(e=>e.kind));
   const confidence=kinds.has('body')&&(kinds.has('title')||kinds.has('heading'))?'high':kinds.has('title')||kinds.has('heading')?'medium':'low';
@@ -63,7 +67,7 @@ export function fallbackKeywords(pool:AnswerSource[]):AnswerKeyword[]{
   const scores=new Map<string,number>();
   const stop=/^(입니다|합니다|있는|위한|대한|통해|전문|우리|고객|안내|확인|이용|관련|바로|가기|보기|전체|더보기|개인정보|처리방침|이용약관|네이버|카카오|사업자|대표|주식회사|copyright|the|and|for)$/i;
   for(const p of pool){
-    const weight={title:12,heading:8,description:5,body:1}[p.kind];
+    const weight={title:12,heading:8,description:5,body:1,product:3}[p.kind];
     const tokens=[...new Set((p.text.match(/[가-힣a-zA-Z][가-힣a-zA-Z0-9+·-]{1,19}/g)||[]).map(t=>t.replace(/(에서는|으로|에서|에는|은|는|을|를|의)$/,'')))];
     for(const t of tokens)if(t.length>=2&&!stop.test(t))scores.set(t,(scores.get(t)||0)+weight);
   }
@@ -78,18 +82,22 @@ function defaultIntents(k:string,pool:AnswerSource[]):AnswerIntent[]{
   if(/과잠|단체복|유니폼|맞춤.?제작|의류/.test(context))return ['delivery','minimum','price'];
   if(/대행|마케팅|컨설팅|강의|교육|상담/.test(context))return ['scope','process','price'];
   if(/매장|식당|카페|음식점|숙소/.test(context))return ['location','price','choice'];
+  if(pool.some(p=>p.kind==='product'))return ['choice','care','comparison'];
   if(/식품|음료|와인|가전|화장품|뷰티|제품/.test(context))return ['choice','care','comparison'];
   return ['definition','choice','process'];
 }
 
 /** Unknown model IDs and any model-written answer prose are discarded. Facts are full source units only. */
 export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):AnswerContentPlan{
-  const pool=answerSources(data),fallback=fallbackKeywords(pool);
+  const pool=answerSources(data),products=data.productContext?.status==='observed'?data.productContext.sources:[];
+  const productKeywords=products.length?marketKeywordCandidates({title:data.title,description:data.description,h1:data.h1,h2:data.h2,productSources:products}).map(c=>keyword(c.keyword,pool)).filter((k):k is AnswerKeyword=>!!k).slice(0,3):[];
+  const fallback=productKeywords.length?productKeywords:fallbackKeywords(pool);
   const parsed=AnswerSuggestionSchema.safeParse(suggestion);
   const ai=parsed.success?parsed.data:null;
-  const primary=(ai&&keyword(ai.primaryKeyword,pool))||fallback[0]||null;
+  const proposed=ai&&keyword(ai.primaryKeyword,pool);
+  const primary=(proposed&&(!products.length||proposed.evidence.some(e=>e.kind==='product'))?proposed:null)||fallback[0]||null;
   const assisted=!!(ai&&primary&&compact(primary.term)===compact(ai.primaryKeyword));
-  const secondaries=(assisted?ai!.secondaryKeywords.map(k=>keyword(k,pool)).filter((k):k is AnswerKeyword=>!!k):fallback.slice(1)).filter((k,i,a)=>compact(k.term)!==compact(primary?.term||'')&&a.findIndex(v=>compact(v.term)===compact(k.term))===i).slice(0,2);
+  const secondaries=(assisted?ai!.secondaryKeywords.map(k=>keyword(k,pool)).filter((k):k is AnswerKeyword=>!!k):fallback.slice(1)).filter((k,i,a)=>(!products.length||k.evidence.some(e=>e.kind==='product'))&&compact(k.term)!==compact(primary?.term||'')&&a.findIndex(v=>compact(v.term)===compact(k.term))===i).slice(0,2);
   const limited=(data.bodyText||'').trim().length<80||data.isJsHeavy===true;
   const intents=defaultIntents(primary?.term||'',pool);
   const fallbackRows=intents.map(intent=>({question:ANSWER_GUIDES[intent].question(primary?.term||'이 페이지'),intent,evidenceIds:[] as string[],missingFacts:ANSWER_GUIDES[intent].fields}));
@@ -110,7 +118,8 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
       draft,template:guide.template(primary.term),placement:guide.placement,
       steps:['해당 질문과 첫 문장 답변을 고객이 읽을 수 있는 본문 텍스트로 배치합니다.','수량·금액·기간·예외 조건은 실제 운영 기준과 대조한 뒤 게시합니다.','수정 후 같은 URL을 재진단하고, 실제 검색 노출은 별도로 확인합니다.']};
   }):[];
-  return AnswerContentPlanSchema.parse({version:1,source:'own-page',mode:limited?'limited':assisted?'ai-assisted':'basic',targetUrl:data.finalUrl||data.url,observedAt:data.seoEvidence?.capturedAt||new Date().toISOString(),scope:'submitted-page',coverage:limited?'limited':'partial',observation:'not-measured',notice:ANSWER_CONTENT_NOTICE,primaryKeyword:primary,secondaryKeywords:secondaries,topicScope:assisted?ai!.topicScope:'unknown',questions});
+  const notice=products.length?'입력 페이지와 확인한 자사 상품 표본으로 만든 추천 질문입니다. 상품명은 주제 선택의 근거이며 가격·효능·배송·사용법의 답변 근거가 아닙니다. 표본의 대표 키워드를 사이트 전체 주력 품목으로 단정하지 않습니다. 네이버 자동완성 순위·AI 브리핑 노출은 측정하지 않았습니다. 게시 전 실제 상품 상세와 운영 조건을 확인해 주세요.':ANSWER_CONTENT_NOTICE;
+  return AnswerContentPlanSchema.parse({version:1,source:'own-page',mode:limited?'limited':assisted?'ai-assisted':'basic',targetUrl:data.finalUrl||data.url,observedAt:data.seoEvidence?.capturedAt||new Date().toISOString(),scope:products.length?'submitted-page-and-products':'submitted-page',coverage:limited?'limited':'partial',observation:'not-measured',notice,primaryKeyword:primary,secondaryKeywords:secondaries,topicScope:assisted?ai!.topicScope:'unknown',questions});
 }
 
 export function answerQuestionText(question:AnswerQuestion):string{
