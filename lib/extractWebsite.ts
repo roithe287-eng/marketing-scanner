@@ -8,8 +8,10 @@ import iconv from "iconv-lite";
 import {captureSiteEditing} from './captureSiteEditing';
 import type {SiteEditing} from './siteEditingSchema';
 import type {OwnProductContext} from './ownProductSchema';
+import {captureProductSeed,type OwnProductSeed} from './productDiscovery';
 
 export type ExtractedWebsiteData = {
+  productDiscovery?:OwnProductSeed;
   productContext?:OwnProductContext;
   officialSeoEvidence?:OfficialSeoEvidence;
   siteEditing?:SiteEditing;
@@ -389,6 +391,7 @@ export async function extractWebsite(
   }
 
   const finalUrl = res.url || fetchedUrl;
+  const productDiscovery=captureProductSeed(html,finalUrl);
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
   const officialSeoEvidence=collectOfficialSeoEvidence($,finalUrl,res.headers);
@@ -696,6 +699,7 @@ export async function extractWebsite(
   return {
     url,
     finalUrl,
+    productDiscovery,
     siteEditing,
     officialSeoEvidence,
     seoEvidence: {capturedAt:new Date().toISOString(),titleCount,descriptionCount,canonicals,robotsMeta,xRobotsTag:res.headers.get("x-robots-tag")||"",htmlLang:$("html").attr("lang")||"",jsonLdErrors,microdataCount,rdfaCount,imagesMissingAlt:imageWithoutAlt,imagesEmptyAlt,robots,httpStatus:res.status},

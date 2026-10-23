@@ -1,6 +1,6 @@
 import type { ExtractedWebsiteData } from './extractWebsite';
 import type { MarketingReport, Discoverability } from './reportSchema';
-import {storefrontObservations,STOREFRONT_SCOPE_NOTE} from './storefrontEvidence';
+import {storefrontObservations,storefrontScopeNote} from './storefrontEvidence';
 export const SCORE_METHOD = 'ai-axes-mean-v1';
 export const INTEGRITY_NOTE = '수집 원문·AI 평가·개선 제안을 구분합니다. 원문 대조는 인용 문구의 일치를 확인하며, 페이지가 주장하는 사실이나 AI 해석의 정확성까지 검증한 것은 아닙니다. 순위·성과·실제 모바일 동작은 별도 측정이 필요합니다.';
 const normalized = (s: string) => s.normalize('NFKC').replace(/\s+/g, ' ').replace(/^[“”"'‘’]+|[“”"'‘’]+$/g, '').trim();
@@ -9,10 +9,11 @@ export function verifyReportEvidence(report: MarketingReport, data: ExtractedWeb
         field: string;
         message: string;
     }[] = [];
-    const limited=storefrontObservations(data);
+    const productClaim=[report.oneLineSummary,...report.criticalIssues.map(i=>i.title+' '+i.problem),...(report.checklist||[]).map(i=>i.diagnosis+' '+i.currentValue)].join('\n');
+    const limited=storefrontObservations(data).filter(c=>!c.ids.includes('product_info')||c.match.test(productClaim)),scopeNote=storefrontScopeNote(data);
     const limitedFeature=(text:string)=>limited.find(c=>c.match.test(text));
     const scopedText=(text:string)=>{const c=limitedFeature(text);return c?`${c.label}: ${c.guide}`:text;};
-    if(limited.length)warnings.push({field:'productContext',message:STOREFRONT_SCOPE_NOTE});
+    if(limited.length)warnings.push({field:'productContext',message:scopeNote});
     const sources = [data.title, data.description, data.ogTitle, data.ogDescription, ...data.h1, ...data.h2, ...data.buttons, ...data.ctaButtons, data.bodyText, ...(data.siteEditing?.elements || []).map(e => e.text),...(data.productContext?.sources||[]).flatMap(p=>[p.name,p.description])].map(normalized).filter(Boolean);
     const quote = (value: string | undefined, field: string) => {
         if (!value?.trim())
@@ -25,7 +26,7 @@ export function verifyReportEvidence(report: MarketingReport, data: ExtractedWeb
     };
     const criticalIssues = report.criticalIssues.map((issue, index) => {
         const missing=limitedFeature(issue.title+' '+issue.problem);
-        if(missing)return {...issue,title:`${missing.label} · 실제 화면 확인`,problem:missing.observation+' 공개 상품 목록만으로 실제 화면에서의 부재를 판정하지 않습니다.',reason:'동적으로 표시되는 내용은 수집 자료와 실제 화면을 대조한 뒤 개선 여부를 정해야 합니다.',recommendation:missing.guide,badExample:'수집 범위에서 미확인',goodExample:undefined,exampleNote:'실제 화면에서 누락이 확인된 경우에만 추가·수정하세요.',evidenceStatus:'review' as const,evidenceNote:STOREFRONT_SCOPE_NOTE};
+        if(missing)return {...issue,title:`${missing.label} · 실제 화면 확인`,problem:missing.observation+' 자동 수집 자료만으로 실제 화면에서의 부재를 판정하지 않습니다.',reason:'동적으로 표시되는 내용은 수집 자료와 실제 화면을 대조한 뒤 개선 여부를 정해야 합니다.',recommendation:missing.guide,badExample:'수집 범위에서 미확인',goodExample:undefined,exampleNote:'실제 화면에서 누락이 확인된 경우에만 추가·수정하세요.',evidenceStatus:'review' as const,evidenceNote:scopeNote};
         const badExample = quote(issue.badExample, `criticalIssues.${index}.badExample`);
         const claim = issue.title + ' ' + issue.problem;
         const contradiction = /H1/i.test(claim) && /없|부재|누락/.test(claim) && data.h1.length > 0;
@@ -64,9 +65,9 @@ export function verifyReportEvidence(report: MarketingReport, data: ExtractedWeb
     const overallScore = Math.round(Object.values(report.diagnosis).reduce((sum, n) => sum + n, 0) / 8);
     const summaryContradictsH1=data.h1.length>0&&/H1/i.test(report.oneLineSummary)&&/없|부재|누락/.test(report.oneLineSummary);
     return { ...report, overallScore, scoringMethod: SCORE_METHOD, checklist, criticalIssues,
-        oneLineSummary:limited.length?`판매 상품 표본 ${data.productContext!.sources.length}개를 확인했습니다. 동적으로 표시되는 가격·후기·구매 흐름은 실제 화면과 대조해야 합니다.`:summaryContradictsH1?'수집된 H1과 AI의 부재 판단이 달라 제목 구조를 재확인해야 합니다. 상세 진단의 관측 근거를 먼저 확인하세요.':report.oneLineSummary,
+        oneLineSummary:limited.length?(data.productContext?.sources.length?`판매 상품 표본 ${data.productContext.sources.length}개를 확인했습니다. 동적으로 표시되는 가격·후기·구매 흐름은 실제 화면과 대조해야 합니다.`:'수집한 HTML에서 동적 항목을 확인하지 못했습니다. 상품·서비스나 기능의 부재를 단정하지 않고 실제 페이지와 대조해야 합니다.'):summaryContradictsH1?'수집된 H1과 AI의 부재 판단이 달라 제목 구조를 재확인해야 합니다. 상세 진단의 관측 근거를 먼저 확인하세요.':report.oneLineSummary,
         quickWinsDetailed: report.quickWinsDetailed?.map((r, i) => {const c=limitedFeature(r.title+' '+r.steps.join(' '));return c?{...r,title:`${c.label} 확인 후 보완`,steps:[c.guide],beforeExample:c.observation,afterExample:'실제 화면과 대조한 뒤 누락되거나 불명확한 정보만 보완하세요.'}:{ ...r, beforeExample: quote(r.beforeExample, `quickWinsDetailed.${i}.beforeExample`) };}),
-        ...(limited.length?{priorityRoadmap:{immediately:report.priorityRoadmap.immediately.map(scopedText),thisWeek:report.priorityRoadmap.thisWeek.map(scopedText),thisMonth:report.priorityRoadmap.thisMonth.map(scopedText)},finalCta:{...report.finalCta,...(limitedFeature(report.finalCta.title)?{title:'실제 구매 화면을 함께 점검하세요'}:{}),description:'확인한 판매 상품과 실제 구매 화면을 함께 대조해 보완할 항목을 정리하세요. 수집되지 않은 항목의 유무는 확인 후 판단합니다.'}}:{}),
+        ...(limited.length?{priorityRoadmap:{immediately:report.priorityRoadmap.immediately.map(scopedText),thisWeek:report.priorityRoadmap.thisWeek.map(scopedText),thisMonth:report.priorityRoadmap.thisMonth.map(scopedText)},finalCta:{...report.finalCta,...(limitedFeature(report.finalCta.title)?{title:'실제 구매 화면을 함께 점검하세요'}:{}),description:'수집 자료와 실제 페이지·상세 화면을 함께 대조해 보완할 항목을 정리하세요. 수집되지 않은 항목의 유무는 확인 후 판단합니다.'}}:{}),
         exampleCopy: { ...report.exampleCopy, currentHeroHeadline: data.h1.join('\n') || '정적 HTML에서 H1 텍스트 미감지', currentCtaText: data.ctaButtons.join('\n') || '수집 범위에서 CTA 문구 미감지' },
         integrity: { version: 1, checkedAt: new Date().toISOString(), warnings, note: INTEGRITY_NOTE },
     };
