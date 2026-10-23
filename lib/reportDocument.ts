@@ -1,6 +1,7 @@
 import {readinessItems} from './reportVisuals';
 import {reportForPresentation} from './reportPresentation';
 import {evidenceScoreText} from './evidenceReview';
+import {showProductCollection} from './websitePurpose';
 import {buildOfficialSeoDocument} from './officialSeoDocument';
 import {buildAnswerContentDocument} from './answerContentDocument';
 import {retentionTime} from './reportRetention';
@@ -35,7 +36,7 @@ const labels:Record<string,string> = {
 };
 const values:Record<string,string> = {chatgpt:'OpenAI',true:'예',false:'아니오',ok:'정상',pending:'분석 중',complete:'완료',empty:'비교 대상 없음',error:'실패',timeout:'시간 초과',unavailable:'미설정',unverified:'검색·출처 확인 불가',own:'자사',external:'외부',unresolved:'대상 도메인 미확인',needs_review:'검토 필요',review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요',pass:'통과',warning:'주의',fail:'미충족',high:'높음',medium:'보통',low:'낮음',brand:'브랜드 확인',industry:'업종 비교',service:'서비스',local:'지역·특성'};
 Object.assign(labels, {metadataTruncated:'검색 제목·설명 일부만 보관',evidenceStatus:'근거 상태',evidenceNote:'근거 재확인 안내',methodVersion:'집계 방식 버전',scope:'집계 범위',sourceLength:'집계한 본문 글자 수',bodyTruncated:'본문 일부만 집계',totalPhrases:'집계 대상 인접 단어쌍 수',windowDays:'집계 기간(일)',scoringMethod:'진단 방식',scopeNote:'비교 범위',measurementProtocol:'비교 측정 규칙',brandName:'브랜드 판정 기준',requestFingerprint:'요청 설정 식별자',filtering:'후보 선정 기록',policyVersion:'선정 규칙 버전',reviewedCount:'검토한 검색 응답 수',metadataCheckedCount:'상세 수집 시도 수',excluded:'제외한 페이지와 이유',searchRank:'웹문서 검색 응답 순서',relevance:'검색어 관련성',selectionEvidence:'선정 근거'});
-Object.assign(values, {body:'수집 본문',review:'재확인 필요',keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
+Object.assign(values, {not_applicable:'해당 없음',body:'수집 본문',review:'재확인 필요',keyword_match:'검색어 관련 신호 확인',needs_review:'서비스 일치 검토 필요'});
 export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   report=reportForPresentation(activeCitationReport(report));
   const blocks:ReportBlock[] = [
@@ -46,7 +47,8 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     {kind:'body',text:report.oneLineSummary},
     {kind:'body',text:'전체 상세 내용이 포함된 결과 스냅샷입니다. AI 진단과 시뮬레이션은 검토를 위한 참고 자료이며 성과를 보장하지 않습니다.'},
   ];
-  if(report.productContext){const p=report.productContext;blocks.push({kind:'heading',text:p.sources.length?`상품 정보 보완 · 공개 상품 표본 ${p.sources.length}개`:'상품 정보 수집 범위와 확인 상태'},{kind:'body',text:p.note});for(const s of p.sources)blocks.push({kind:'body',text:s.name+' · '+s.url,href:safeHttpUrl(s.url)||undefined});}
+  if(report.sitePurpose){const p=report.sitePurpose;blocks.push({kind:'heading',text:'페이지 목적별 분석'},{kind:'body',text:`분류 후보: ${p.label} · 다음 행동 후보: ${p.goal.label}`},{kind:'body',text:p.note},{kind:'body',text:`원문 ${p.sourceUrl} · 수집 ${p.capturedAt||'미기록'}`});for(const c of p.checks){blocks.push({kind:'subheading',text:c.label+' · '+({observed:'원문 신호 확인',review:'추가 확인',not_applicable:'해당 없음'}[c.status])},{kind:'body',text:c.guide});for(const e of c.evidence)blocks.push({kind:'body',text:`원문: ${e.text} · 위치: ${e.locator}`});}}
+  if(report.productContext&&showProductCollection(report.sitePurpose)){const p=report.productContext;blocks.push({kind:'heading',text:p.sources.length?`상품 정보 보완 · 공개 상품 표본 ${p.sources.length}개`:'상품 정보 수집 범위와 확인 상태'},{kind:'body',text:p.note});for(const s of p.sources)blocks.push({kind:'body',text:s.name+' · '+s.url,href:safeHttpUrl(s.url)||undefined});}
   blocks.push({kind:'heading',text:'광고비·목표 CPA 시나리오'},{kind:'body',text:AD_BUDGET_NOTE+' 화면 입력값은 저장되지 않습니다. CPA=광고비÷전환 수, 목표 예산=직접 정한 목표 CPA×현재 전환 수입니다. 절감 효과 예측이 아닙니다.'});
   if(report.integrity){blocks.push({kind:'heading',text:'결과의 근거와 검증 범위'},{kind:'body',text:report.integrity.note});for(const warning of report.integrity.warnings)blocks.push({kind:'body',text:warning.message});}
   if(report.analysisWarnings?.length)for(const warning of report.analysisWarnings)blocks.push({kind:'body',text:`부가 분석 확인 필요: ${warning.label} · ${warning.status}`});

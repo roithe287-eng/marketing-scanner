@@ -9,13 +9,14 @@ import {NaverOptimizationSchema} from './naverSchema';
 import {SearchSignalsSchema} from './growthSchema';
 import {CompetitorResearchSchema,CompetitorOwnSiteSchema} from './competitorSchema';
 import {OwnProductContextSchema} from './ownProductSchema';
+import {WebsitePurposeSchema} from './websitePurpose';
 
 // 12가지 마케팅 진단 체크리스트
 export const ChecklistItemSchema = z.object({
   id: z.string(),
   category: z.enum(["seo", "content", "trust", "conversion"]),
   label: z.string(),
-  status: z.enum(["pass", "warning", "fail", "review"]),
+  status: z.enum(["pass", "warning", "fail", "review", "not_applicable"]),
   currentValue: z.string(),
   diagnosis: z.string(),
   guide: z.string(),
@@ -386,7 +387,7 @@ export const DiagnosisScoresSchema = z.object({
     seo: z.number().min(0).max(100),
   });
 
-export const DiagnosisCheckSchema=z.object({key:z.string().max(600),label:z.string().max(600),status:z.enum(['pass','warning','fail','review']),evidence:z.string().max(20000),source:z.string().max(100)});
+export const DiagnosisCheckSchema=z.object({key:z.string().max(600),label:z.string().max(600),status:z.enum(['pass','warning','fail','review','not_applicable']),evidence:z.string().max(20000),source:z.string().max(100)});
 export const DiagnosisBaselineSchema=z.object({
  expiresAt:z.number().finite().optional(),
  version:z.literal(1),reportId:z.string().regex(/^[A-Za-z0-9]{4,12}$/),url:z.string().max(4000),finalUrl:z.string().max(4000).optional(),capturedAt:z.string().datetime().optional(),method:z.string().max(100).optional(),overallScore:z.number().min(0).max(100),diagnosis:DiagnosisScoresSchema,checks:z.array(DiagnosisCheckSchema).max(500),
@@ -395,6 +396,7 @@ export type DiagnosisBaseline=z.infer<typeof DiagnosisBaselineSchema>;
 export type DiagnosisCheck=z.infer<typeof DiagnosisCheckSchema>;
 
 export const MarketingReportSchema = z.object({
+  sitePurpose:WebsitePurposeSchema.optional(),
   evidenceReview:EvidenceReviewSchema.optional(),
   sharedRetention:z.object({reportId:z.string().regex(/^[A-Za-z0-9]{4,12}$/),createdAt:z.number().finite(),expiresAt:z.number().finite()}).optional(),
   scoringMethod:z.literal("ai-axes-mean-v1").optional(),

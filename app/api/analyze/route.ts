@@ -27,6 +27,7 @@ import {competitorOwnText} from '@/lib/competitorResearch';
 import {collectOwnProductContext} from '@/lib/ownProductSources';
 import {finalizeReportEvidence} from '@/lib/evidenceReview';
 import {MarketingReportSchema} from '@/lib/reportSchema';
+import {analyzeWebsitePurpose,isNonCommerce} from '@/lib/websitePurpose';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -116,7 +117,7 @@ export async function POST(req: NextRequest) {
 
     // 1. 사이트 추출
     const websiteData = await withBudget(14_000,()=>extractWebsite(url),undefined,"페이지 수집 시간이 초과되었습니다. 최종 페이지 URL을 확인한 뒤 다시 시도해 주세요.");
-    websiteData.productContext=await collectOwnProductContext(websiteData.finalUrl,{seed:websiteData.productDiscovery,robots:websiteData.seoEvidence?.robots,budgetMs:7000});
+    if(!isNonCommerce(analyzeWebsitePurpose(websiteData))||websiteData.productDiscovery?.sources.length)websiteData.productContext=await collectOwnProductContext(websiteData.finalUrl,{seed:websiteData.productDiscovery,robots:websiteData.seoEvidence?.robots,budgetMs:7000});
     const pageEvidence=capturePageEvidence(websiteData);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 

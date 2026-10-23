@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {marketKeywordCandidates} from './competitorResearch';
+import {analyzeWebsitePurpose,isNonCommerce,outOfPurpose,type WebsitePurpose} from './websitePurpose';
 import {AnswerContentPlanSchema,AnswerIntentSchema,type AnswerContentPlan,type AnswerSource,type AnswerKeyword,type AnswerIntent,type AnswerQuestion} from './answerContentSchema';
 
 export const ANSWER_CONTENT_TITLE='네이버 AI 브리핑 대응 콘텐츠 개선안';
@@ -77,7 +78,12 @@ export function fallbackKeywords(pool:AnswerSource[]):AnswerKeyword[]{
 const RawQuestionSchema=z.object({question:z.string().min(5).max(160),intent:AnswerIntentSchema,evidenceIds:z.array(z.string().max(30)).max(3),missingFacts:z.array(z.string().min(2).max(100)).max(5)});
 export const AnswerSuggestionSchema=z.object({primaryKeyword:z.string().min(2).max(40),secondaryKeywords:z.array(z.string().min(2).max(40)).max(2),topicScope:z.enum(['focused','mixed','unknown']),questions:z.array(RawQuestionSchema).length(3)});
 
-function defaultIntents(k:string,pool:AnswerSource[]):AnswerIntent[]{
+function defaultIntents(k:string,pool:AnswerSource[],purpose:WebsitePurpose):AnswerIntent[]{
+  if(purpose.kind==='content')return ['definition','choice','proof'];
+  if(purpose.kind==='education')return ['scope','eligibility','process'];
+  if(purpose.kind==='public_service')return ['eligibility','process','proof'];
+  if(purpose.kind==='organization')return ['definition','scope','proof'];
+  if(purpose.kind==='service')return ['scope','process',purpose.pricingObserved?'price':'proof'];
   const context=[k,...pool.filter(p=>p.kind!=='body').map(p=>p.text)].join(' ');
   if(/과잠|단체복|유니폼|맞춤.?제작|의류/.test(context))return ['delivery','minimum','price'];
   if(/대행|마케팅|컨설팅|강의|교육|상담/.test(context))return ['scope','process','price'];
@@ -87,9 +93,23 @@ function defaultIntents(k:string,pool:AnswerSource[]):AnswerIntent[]{
   return ['definition','choice','process'];
 }
 
+function purposeGuide(intent:AnswerIntent,p:WebsitePurpose):IntentGuide{
+  const base=ANSWER_GUIDES[intent];
+  if(p.kind==='content'){
+    if(intent==='definition')return {...base,question:k=>`${k}의 핵심 내용과 적용 범위는 무엇인가요?`,fields:['핵심 설명','적용 범위'],template:k=>`${k}는 [원문으로 확인한 핵심 설명]입니다. [적용 범위와 예외]를 함께 확인해 주세요.`};
+    if(intent==='choice')return {...base,question:k=>`${k} 자료를 읽을 때 어떤 조건과 예외를 확인해야 하나요?`,fields:['적용 조건','해석 시 주의할 예외'],template:k=>`${k}는 [적용 조건]에서 설명합니다. [예외 또는 해석 시 주의사항]은 원자료와 함께 확인해 주세요.`};
+    if(intent==='proof')return {...base,question:k=>`${k}의 원출처와 최신 정보는 어디에서 확인하나요?`,fields:['작성자·발행 주체','원출처','확인 날짜'],placement:'문서의 작성자·출처·수정일 영역',match:/작성|저자|출처|참고|발행|수정|날짜|author|source|updated/i,template:k=>`${k} 자료는 [작성자 또는 발행 주체]의 [원출처]를 바탕으로 작성했습니다. [실제 확인 날짜] 기준의 내용이며 변경 사항은 원자료에서 확인해 주세요.`};
+  }
+  if(p.kind==='organization'&&intent==='definition')return {...base,question:k=>`${k}의 사업 분야와 제공 역량은 무엇인가요?`,fields:['사업 분야','확인 가능한 제공 역량'],template:k=>`${k}의 사업 분야는 [실제 사업 분야]입니다. [담당 조직과 확인 가능한 제공 역량]을 안내합니다.`};
+  if(p.kind==='education'&&intent==='scope')return {...base,question:k=>`${k}에서는 어떤 내용을 배우나요?`,fields:['커리큘럼','학습 범위','선수 조건'],template:k=>`${k}에서는 [실제 커리큘럼]을 다룹니다. [학습 대상과 선수 조건]을 확인한 뒤 [학습 범위]를 살펴보세요.`};
+  if(p.kind==='public_service'&&intent==='proof')return {...base,question:k=>`${k}의 공식 공고와 현재 조건은 어디에서 확인하나요?`,fields:['운영 기관','공식 공고','조건 확인 날짜'],placement:'공식 공고·운영 기관 안내 옆',match:/기관|공식|공고|출처|확인|수정|official|updated/i,template:k=>`${k}의 운영 기관은 [확인한 기관명]입니다. [공식 공고 링크]에서 [조건 확인 날짜] 기준의 신청 조건을 확인해 주세요.`};
+  return base;
+}
+
 /** Unknown model IDs and any model-written answer prose are discarded. Facts are full source units only. */
 export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):AnswerContentPlan{
-  const pool=answerSources(data),products=data.productContext?.status==='observed'?data.productContext.sources:[];
+  const purpose=analyzeWebsitePurpose(data);
+  const pool=answerSources(data),products=data.productContext?.status==='observed'&&!isNonCommerce(purpose)?data.productContext.sources:[];
   const productKeywords=products.length?marketKeywordCandidates({title:data.title,description:data.description,h1:data.h1,h2:data.h2,productSources:products}).map(c=>keyword(c.keyword,pool)).filter((k):k is AnswerKeyword=>!!k).slice(0,3):[];
   const fallback=productKeywords.length?productKeywords:fallbackKeywords(pool);
   const parsed=AnswerSuggestionSchema.safeParse(suggestion);
@@ -99,12 +119,12 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
   const assisted=!!(ai&&primary&&compact(primary.term)===compact(ai.primaryKeyword));
   const secondaries=(assisted?ai!.secondaryKeywords.map(k=>keyword(k,pool)).filter((k):k is AnswerKeyword=>!!k):fallback.slice(1)).filter((k,i,a)=>(!products.length||k.evidence.some(e=>e.kind==='product'))&&compact(k.term)!==compact(primary?.term||'')&&a.findIndex(v=>compact(v.term)===compact(k.term))===i).slice(0,2);
   const limited=(data.bodyText||'').trim().length<80||data.isJsHeavy===true;
-  const intents=defaultIntents(primary?.term||'',pool);
-  const fallbackRows=intents.map(intent=>({question:ANSWER_GUIDES[intent].question(primary?.term||'이 페이지'),intent,evidenceIds:[] as string[],missingFacts:ANSWER_GUIDES[intent].fields}));
-  const rows=assisted?ai!.questions:fallbackRows;
+  const intents=defaultIntents(primary?.term||'',pool,purpose);
+  const fallbackRows=intents.map(intent=>({question:purposeGuide(intent,purpose).question(primary?.term||'이 페이지'),intent,evidenceIds:[] as string[],missingFacts:purposeGuide(intent,purpose).fields}));
+  const rows=assisted?ai!.questions.map((q,i)=>isNonCommerce(purpose)&&(!intents.includes(q.intent)||outOfPurpose(q.question,purpose))?fallbackRows[i]:q):fallbackRows;
   const usedQuestions=new Set<string>();
   const questions:AnswerQuestion[]=primary?rows.map((row,i)=>{
-    const guide=ANSWER_GUIDES[row.intent];
+    const guide=purposeGuide(row.intent,purpose);
     let question=row.question;
     if(usedQuestions.has(compact(question))||/https?:|<[^>]+>|자동완성|브리핑.*(순위|선정)|\d/.test(question))question=fallbackRows[i].question;
     usedQuestions.add(compact(question));
