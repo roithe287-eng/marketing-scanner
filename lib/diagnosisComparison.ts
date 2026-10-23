@@ -3,7 +3,7 @@ import {canonicalPage} from './geoComparison';
 import {growthPageEvidence} from './growthPlan';
 import {diagnosisAxes} from './diagnosisVisuals';
 
-export const DIAGNOSIS_METHOD='marketing-diagnosis-2026-10-v12-general-evidence';
+export const DIAGNOSIS_METHOD='marketing-diagnosis-2026-10-v13-purpose-general-evidence';
 export const DIAGNOSIS_COMPARISON_NOTE='같은 URL의 저장 결과를 비교합니다. 진단 점수는 AI 평가와 수집 범위에 따라 달라질 수 있으며 매출·노출 성과나 수정의 인과 효과가 아닙니다. 통과 전환도 실제 화면과 담당자 검토로 확인하세요.';
 const normal=(s:string)=>s.trim().replace(/\s+/g,' ').toLowerCase();
 export function diagnosisChecks(report:MarketingReport):DiagnosisCheck[] {
@@ -32,10 +32,11 @@ export function buildDiagnosisComparison(report:MarketingReport) {
  const previous=index(baseline.checks),now=index(current);
  const items=[...new Set([...previous.keys(),...now.keys()])].flatMap(key=>{
    const old=previous.get(key)||[],next=now.get(key)||[],before=old[0],after=next[0];
+   if(before?.status==='not_applicable'&&after?.status==='not_applicable')return [];
    if(before?.status==='pass'&&after?.status==='pass'&&old.length===1&&next.length===1)return [];
    if(!before&&after?.status==='pass')return [];
    let group:DiagnosisChange='unknown';
-   if(!blocked&&p?.capturedAt&&baseline.capturedAt&&old.length<=1&&next.length<=1&&before?.status!=='review'&&after?.status!=='review'){
+   if(!blocked&&p?.capturedAt&&baseline.capturedAt&&old.length<=1&&next.length<=1&&before?.status!=='review'&&after?.status!=='review'&&before?.status!=='not_applicable'&&after?.status!=='not_applicable'){
      if((key.startsWith('check:')||key.startsWith('issue:'))&&report.diagnosisMethod&&baseline.method&&report.diagnosisMethod!==baseline.method)group='unknown';
      else if(before&&before.status!=='pass'&&after?.status==='pass')group='resolved';
      else if(before&&before.status!=='pass'&&after&&after.status!=='pass')group='kept';

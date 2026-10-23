@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import type {MarketingReport,ChecklistItem} from './reportSchema';
+import {analyzeWebsitePurpose,isNonCommerce,outOfPurpose} from './websitePurpose';
 
 export const EVIDENCE_SCORE_NOTE='수집한 HTML의 제목·설명·공유 정보·H1·ALT 속성·viewport 6개 항목을 같은 비중으로 집계합니다. 충족 항목 ÷ 판정 가능한 항목 × 100을 반올림합니다. 미확인은 분모에서 제외합니다. 자체 점검 기준이며 검색엔진 점수·전환율·AI 인용 가능성이나 실제 화면의 품질을 뜻하지 않습니다.';
 export const EvidenceReviewSchema=z.object({
@@ -21,6 +22,7 @@ function isContactLink(value:string){
 
 /** One frozen observation is used by the header, checklist, review cards and every export. */
 export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebsiteData):MarketingReport {
+  const purpose=analyzeWebsitePurpose(data),nonCommerce=isNonCommerce(purpose),goal=purpose.goal.label;
   const sourceUrl=data.finalUrl||data.url,capturedAt=data.seoEvidence?.capturedAt||report.pageEvidence?.capturedAt||new Date().toISOString();
   const origin=new Map((report.checklist||[]).map(c=>[c.id,c]));
   const contactLinks=(data.anchorHrefs||[]).filter(isContactLink).slice(0,8).map(s=>excerpt(s,300));
@@ -28,7 +30,7 @@ export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebs
   const contactCtas=ctas.filter(s=>/문의|상담|견적|예약|contact|consult|demo/i.test(s));
   const h1=`H1 요소 ${data.h1Count??'미확인'}개 · ${data.h1.length}개 텍스트 수집: ${data.h1.length?excerpt(data.h1.join(' / ')):'정적 HTML에서 비어 있지 않은 H1 텍스트 미감지'}`;
   const contact=`전화·이메일 패턴 ${data.hasContactInfo?'감지':'미감지'} · 폼 ${data.hasForm?'감지':'미감지'} · 문의·상담 CTA ${contactCtas.length}종 · 연락 링크 ${contactLinks.length}개${contactLinks.length?': '+contactLinks.join(' / '):''}`;
-  const facts:{id:string;label:string;category:ChecklistItem['category'];status:ChecklistItem['status'];value:string;note:string;guide:string}[]=[
+  const facts:{id:string;label:string;category:ChecklistItem['category'];status:Exclude<ChecklistItem['status'],'not_applicable'>;value:string;note:string;guide:string}[]=[
     {id:'title',label:'title 태그',category:'seo',status:!data.seoEvidence?'review':data.title&&data.seoEvidence.titleCount===1?'pass':'warning',value:`${excerpt(data.title)||'정적 HTML에서 title 미감지'} · title ${data.seoEvidence?.titleCount??'미확인'}개`,note:'검색 제목 원문과 개수의 관측입니다. 고정 글자 수를 합격 기준으로 사용하지 않습니다.',guide:'페이지 주제를 간결하게 설명하는 고유 제목인지 확인하세요. 50~60자에 맞추기 위한 불필요한 확장은 하지 않습니다.'},
     {id:'meta_description',label:'Meta Description',category:'seo',status:!data.seoEvidence?'review':data.description&&data.seoEvidence.descriptionCount===1?'pass':'warning',value:`${excerpt(data.description)||'정적 HTML에서 description 미감지'} · description ${data.seoEvidence?.descriptionCount??'미확인'}개`,note:'검색 설명의 존재·개수입니다. 설명 미기재는 Google 색인 필수 요건 위반이나 실제 스니펫 미노출을 뜻하지 않습니다.',guide:'본문에 맞는 고유 설명인지 확인하세요. 실제 검색 스니펫 채택은 별도로 확인합니다.'},
     {id:'og_tags',label:'Open Graph',category:'seo',status:data.ogTitle&&data.ogDescription?'pass':'warning',value:`og:title: ${excerpt(data.ogTitle)||'미감지'} / og:description: ${excerpt(data.ogDescription)||'미감지'}`,note:'공유용 메타데이터입니다. 검색 제목·설명과 구분합니다.',guide:'공유 미리보기와 페이지 내용이 일치하는지 확인하세요.'},
@@ -42,9 +44,21 @@ export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebs
     {id:'trust_certification',label:'인증·경력 확인',category:'trust',status:'review',value:`인증·신뢰 관련 표현 ${data.hasTrustKeyword?'감지':'미감지'}`,note:'키워드 감지와 실제 인증·경력 검증은 다릅니다.',guide:'기관·인증명·대상·기간과 확인 가능한 근거를 대조하세요.'},
     {id:'price_info',label:'가격·견적 확인',category:'conversion',status:'review',value:`가격·견적 관련 표현 ${data.hasPriceKeyword?'감지':'미감지'}`,note:'관련 표현만 관측했습니다. 실제 금액·포함 범위·추가 비용과 모든 서비스의 가격 공개 여부는 미확인입니다.',guide:'실제 서비스에 적용되는 금액·범위·별도 협의 조건을 확인하고 누락이 확인된 안내만 보완하세요.'},
   ];
-  const checklist=facts.map(f=>({...origin.get(f.id),id:f.id,label:f.label,category:f.category,status:f.status,currentValue:f.value,diagnosis:f.note,guide:f.guide,evidenceType:'observed' as const,sourceUrl,capturedAt,locator:locations[f.id]||'body · 링크·버튼 관측'}));
+  if(nonCommerce){
+    facts[6].guide=purpose.checks.find(c=>c.id==='goal')!.guide;
+    facts[7].guide=`${goal} 목적과 실제 페이지 길이·기기별 노출을 대조하세요. 버튼 반복 횟수나 구매 버튼 부재만으로 전환 손실을 단정하지 않습니다.`;
+    facts[9].guide='페이지 목적에 맞는 실제 사례·작성자·담당자·공개 출처를 확인하세요. 고객 후기나 별점을 필수로 추가하지 않습니다.';
+    facts[11].guide=purpose.checks.find(c=>c.id==='price')!.guide;
+    const priceEvidence=purpose.checks.find(c=>c.id==='price')!.evidence;
+    facts[11].value=priceEvidence.length?`가격·조건 관련 원문: ${priceEvidence.map(e=>e.text).join(' / ')}`:'가격·조건 관련 원문 신호 미감지 · 실제 부재 판정 아님';
+  }
+  const notApplicable=new Set<string>();
+  if(purpose.checks.find(c=>c.id==='price')?.status==='not_applicable')notApplicable.add('price_info');
+  if(['content','public_service'].includes(purpose.kind)){notApplicable.add('trust_review');notApplicable.add('trust_certification');if(purpose.goal.key==='read')notApplicable.add('contact_info');}
+  const checklist:ChecklistItem[]=facts.map(f=>({...origin.get(f.id),id:f.id,label:f.label,category:f.category,status:notApplicable.has(f.id)?'not_applicable':f.status,currentValue:f.value,diagnosis:notApplicable.has(f.id)?`${purpose.label}의 기본 필수 항목이 아니므로 보완 과제에서 제외했습니다. 실제 유료 거래·문의 목적이 있다면 해당 경로에서 별도 검토합니다.`:f.note,guide:f.guide,evidenceType:'observed' as const,sourceUrl,capturedAt,locator:locations[f.id]||'body · 링크·버튼 관측'}));
   const canonical=(s:string)=>/H1|대표 제목|목차/i.test(s)?facts[3]:/연락처|전화번호|이메일|NAP|지역 정보/.test(s)?facts[8]:/CTA|버튼/i.test(s)?facts[6]:/후기|리뷰/.test(s)?facts[9]:/인증/.test(s)?facts[10]:/가격|견적/.test(s)?facts[11]:undefined;
-  const criticalIssues=report.criticalIssues.map(issue=>{
+  const applicable=(text:string)=>!outOfPurpose(text,purpose)&&!notApplicable.has(canonical(text)?.id||'');
+  const criticalIssues=report.criticalIssues.filter(issue=>applicable(issue.title+' '+issue.problem+' '+issue.recommendation)).map(issue=>{
     const fact=canonical(issue.title+' '+issue.problem);
     if(fact)return {...issue,title:`${fact.label} · 실제 화면 확인`,problem:fact.value,reason:fact.note,recommendation:fact.guide,priority:'low' as const,badExample:fact.value,goodExample:undefined,exampleNote:'관측값과 실제 화면을 대조한 뒤 수정 여부를 결정하세요.',evidenceStatus:'review' as const,evidenceNote:`${observedNote} · ${sourceUrl} · ${capturedAt}`};
     const unmeasured=/모바일|첫 화면|랜딩|전환 흐름|전환율|이탈률/.test(issue.title+' '+issue.problem);
@@ -57,20 +71,27 @@ export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebs
   const axes:EvidenceReview['axes']=Object.entries(labels).map(([key,label])=>{
     const mapping:Record<string,number[]>={cta:[6,7],copywriting:[0,1,3],trust:[8,9,10],seo:[0,1,3,4]};
     const ids=mapping[key];
+    if(key==='trust'&&nonCommerce){
+      const relevant=purpose.checks.filter(c=>['source','proof','process'].includes(c.id));
+      return {key,label,status:'review',evidence:relevant.flatMap(c=>c.evidence.map(e=>e.text)).join(' · ')||'페이지 목적에 맞는 작성자·담당 주체·사례·출처는 실제 원문과 별도로 대조해야 합니다.',nextStep:relevant.map(c=>c.guide).join(' ')};
+    }
     if(key==='copywriting'){
       const body=(data.siteEditing?.elements||[]).filter(e=>e.kind==='text'&&!['header','nav','footer'].includes(e.region||'')).slice(0,2).map(e=>e.text).join(' ')||data.bodyText;
       return {key,label,status:'review',evidence:`수집 본문 ${data.bodyText.length}자 · 발췌: ${body.slice(0,500)}${body.length>500?'…':''}`,nextStep:'발췌를 앞뒤 문맥과 대조하고, 반복 문장이 새로운 정보를 제공하는지 검토하세요. 빈도만으로 과잉·삭제 필요성을 판단하지 않습니다.'};
     }
-    return {key,label,status:ids?'review':'unmeasured',evidence:ids?ids.map(i=>facts[i].value).join(' · '):key==='adLanding'?'광고 원본·타겟·유입 문맥 미수집':key==='mobileUx'?'실제 모바일 렌더링·터치·Core Web Vitals 미측정':key==='conversionFlow'?'클릭→입력→제출 완료·이벤트 수신 미측정':'기기별 첫 화면·시각적 위계 미측정',nextStep:ids?ids.map(i=>facts[i].guide).join(' '):key==='adLanding'?'광고 문구·혜택·조건과 도착 페이지를 함께 대조하세요.':key==='mobileUx'?'실제 모바일 기기에서 렌더링·터치·입력과 성능을 확인하세요.':key==='conversionFlow'?'실제 문의 동선을 끝까지 실행하고 클릭·완료 이벤트를 확인하세요.':'PC·모바일 첫 화면에서 고객·제공 가치·다음 행동이 함께 보이는지 확인하세요.'};
+    return {key,label,status:ids?'review':'unmeasured',evidence:ids?ids.map(i=>facts[i].value).join(' · '):key==='adLanding'?'광고 원본·타겟·유입 문맥 미수집':key==='mobileUx'?'실제 모바일 렌더링·터치·Core Web Vitals 미측정':key==='conversionFlow'?`${goal} 경로·완료 기준·이벤트 수신 미측정`:'기기별 첫 화면·시각적 위계 미측정',nextStep:ids?ids.map(i=>facts[i].guide).join(' '):key==='adLanding'?'광고 문구·혜택·조건과 도착 페이지를 함께 대조하세요.':key==='mobileUx'?'실제 모바일 기기에서 렌더링·터치·입력과 성능을 확인하세요.':key==='conversionFlow'?purpose.checks.find(c=>c.id==='goal')!.guide:'PC·모바일 첫 화면에서 대상·제공 가치·다음 행동이 함께 보이는지 확인하세요.'};
   });
   const evidenceReview:EvidenceReview={version:1,sourceUrl,capturedAt,score,passed,assessed:measured.length,unknown:criteria.length-measured.length,note:EVIDENCE_SCORE_NOTE,criteria,axes};
-  const discovery=report.discoverability?{...report.discoverability,summary:'수집 HTML에 대한 AI 검토 의견입니다. 실제 검색 노출이나 AI 인용 가능성을 점수로 검증한 결과가 아닙니다.',contentStructure:{...report.discoverability.contentStructure,status:'warning' as const,currentValue:h1,diagnosis:facts[3].note,guide:facts[3].guide},eeat:{...report.discoverability.eeat,status:'warning' as const,currentValue:contact,diagnosis:facts[8].note,guide:facts[8].guide},localBrand:{...report.discoverability.localBrand,status:'warning' as const,currentValue:contact,diagnosis:'브랜드·지역·NAP의 실제 일치와 지역 검색 노출은 별도 확인 대상입니다.',guide:facts[8].guide},priorityActions:(report.discoverability.priorityActions||[]).map(s=>canonical(s)?.guide||s)}:report.discoverability;
-  const scope=(s:string)=>canonical(s)?.guide||s;
-  return {...report,checklist,criticalIssues,discoverability:discovery,evidenceReview,
-    oneLineSummary:`HTML 기본 항목 ${measured.length}개 중 ${passed}개 충족 · 실제 화면·문의 흐름·광고 랜딩·모바일은 별도 확인이 필요합니다.`,
-    finalCta:{...report.finalCta,title:'확인한 근거로 다음 실행을 정하세요',description:`수집한 HTML 기본 항목 ${measured.length}개 중 ${passed}개가 점검 기준을 충족했습니다. 실제 화면·문의 과정·광고 원본과 계정 데이터를 함께 대조해 필요한 개선 순서를 정리하세요.`},
-    priorityRoadmap:{immediately:report.priorityRoadmap.immediately.map(scope),thisWeek:report.priorityRoadmap.thisWeek.map(scope),thisMonth:report.priorityRoadmap.thisMonth.map(scope)},
-    quickWinsDetailed:report.quickWinsDetailed?.map(q=>{const f=canonical(q.title);return f?{...q,title:`${f.label} 확인`,beforeExample:f.value,steps:[f.guide],afterExample:'실제 누락·문제 여부를 확인한 뒤 필요한 부분만 보완하세요.'}:{...q,steps:['실제 원문·화면에서 문제 여부를 확인한 뒤 다음 AI 검토 제안의 적용 여부를 결정하세요.',...q.steps]};}),
+  const trust=axes.find(a=>a.key==='trust')!;
+  const discovery=report.discoverability?{...report.discoverability,summary:'수집 HTML에 대한 AI 검토 의견입니다. 실제 검색 노출이나 AI 인용 가능성을 점수로 검증한 결과가 아닙니다.',contentStructure:{...report.discoverability.contentStructure,status:'warning' as const,currentValue:h1,diagnosis:facts[3].note,guide:facts[3].guide},eeat:{...report.discoverability.eeat,status:'warning' as const,currentValue:nonCommerce?trust.evidence:contact,diagnosis:nonCommerce?'페이지 목적에 맞는 작성자·담당자·이력·출처를 실제 자료와 대조합니다. 키워드 관측만으로 신뢰성을 검증하지 않습니다.':facts[8].note,guide:nonCommerce?trust.nextStep:facts[8].guide},localBrand:{...report.discoverability.localBrand,status:'warning' as const,currentValue:nonCommerce?`${purpose.label} · 지역·위치 정보의 적용 범위 확인 필요`:contact,diagnosis:'브랜드·지역·NAP의 실제 일치와 지역 검색 노출은 별도 확인 대상입니다.',guide:nonCommerce?'지역·방문 위치가 실제 이용 목적에 필요한 경우에만 해당 원문과 운영 정보를 대조하세요.':facts[8].guide},priorityActions:(report.discoverability.priorityActions||[]).filter(applicable).map(s=>canonical(s)?.guide||s)}:report.discoverability;
+  const scope=(s:string)=>canonical(s)?.guide||s,scoped=(rows:string[])=>rows.filter(applicable).map(scope);
+  return {...report,sitePurpose:purpose,checklist,criticalIssues,discoverability:discovery,evidenceReview,
+    oneLineSummary:`HTML 기본 항목 ${measured.length}개 중 ${passed}개 충족 · ${purpose.label} · ${goal} 동선과 실제 화면은 별도 확인이 필요합니다.`,
+    exampleCopy:{...report.exampleCopy,...(nonCommerce&&/구매|결제|장바구니/.test(report.exampleCopy.ctaText)?{ctaText:purpose.goal.observed?purpose.goal.evidence[0].text:goal}:{})},
+    finalCta:{...report.finalCta,title:'확인한 근거로 다음 실행을 정하세요',description:`수집한 HTML 기본 항목 ${measured.length}개 중 ${passed}개가 점검 기준을 충족했습니다. ${goal} 목적과 실제 화면·진행 과정·계정 데이터를 함께 대조해 필요한 개선 순서를 정리하세요.`},
+    priorityRoadmap:{immediately:scoped(report.priorityRoadmap.immediately),thisWeek:scoped(report.priorityRoadmap.thisWeek),thisMonth:scoped(report.priorityRoadmap.thisMonth)},
+    quickWins:report.quickWins?.filter(applicable),
+    quickWinsDetailed:report.quickWinsDetailed?.filter(q=>applicable(q.title+' '+q.steps.join(' '))).map(q=>{const f=canonical(q.title);return f?{...q,title:`${f.label} 확인`,beforeExample:f.value,steps:[f.guide],afterExample:'실제 누락·문제 여부를 확인한 뒤 필요한 부분만 보완하세요.'}:{...q,steps:['실제 원문·화면에서 문제 여부를 확인한 뒤 다음 AI 검토 제안의 적용 여부를 결정하세요.',...q.steps]};}),
   };
 }
 

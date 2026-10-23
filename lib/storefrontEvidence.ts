@@ -1,9 +1,11 @@
 import type {ExtractedWebsiteData} from './extractWebsite';
+import {analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
 
 export type StorefrontObservation={ids:string[];label:string;match:RegExp;observation:string;guide:string};
 
 /** Supplemental products and incomplete dynamic HTML cannot establish rendered feature absence. */
 export function storefrontObservations(data:ExtractedWebsiteData):StorefrontObservation[]{
+  if(isNonCommerce(analyzeWebsitePurpose(data)))return [];
   if(!data.productContext||!(data.productContext.sources.length||data.isJsHeavy||data.productDiscovery?.commerce||data.productDiscovery?.sparse))return [];
   const checks=[
     {ids:['product_info','product_description'],label:'상품·서비스 정보 수집 범위',match:/(?:상품|제품|판매.?품목).{0,10}(?:부재|없|불명확|정보.{0,4}부족|확인.{0,3}불가)/,

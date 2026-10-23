@@ -33,7 +33,7 @@ test('reported contact absence, H1 penalty and CTA-count conclusions become sour
   assert.match(r.checklist!.find(c=>c.id==='contact_info')!.currentValue,/channel\.io/);
   assert.equal(r.checklist?.find(c=>c.id==='h1')?.status,'pass');
   assert.equal(r.discoverability!.contentStructure.currentValue,r.checklist!.find(c=>c.id==='h1')!.currentValue);
-  assert.equal(r.discoverability!.eeat.currentValue,r.checklist!.find(c=>c.id==='contact_info')!.currentValue);
+  assert.equal(r.discoverability!.eeat.currentValue,r.evidenceReview!.axes.find(a=>a.key==='trust')!.evidence);
   assert.doesNotMatch(JSON.stringify([r.criticalIssues,r.discoverability!.priorityActions]),/전화번호 추가|H1 삭제|버튼 삭제|전환 손실|순위가 낮다/);
   assert.ok(r.criticalIssues.every(i=>i.evidenceStatus==='review'&&i.priority==='low'));
   assert.ok(r.checklist!.every(c=>c.sourceUrl===fixture.url&&c.capturedAt===data.seoEvidence!.capturedAt));

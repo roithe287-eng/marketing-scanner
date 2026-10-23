@@ -30,6 +30,7 @@ export function buildReportSummaryPage(report:MarketingReport,measure:TextMeasur
   text('마케팅 진단 · 한 장 요약',64,65,510,25,700,ink,1);
   text(report.meta?.siteName||report.meta?.domain||report.url,48,110,508,15,700,ink,1);
   text(report.url,48,138,508,10,400,muted,1);
+  if(report.sitePurpose)text(`${report.sitePurpose.label} · 다음 행동: ${report.sitePurpose.goal.label}`,48,156,508,10,600,muted,1);
   rect(590,48,152,110,'#fff4f4');text(report.evidenceReview?'HTML 기본 항목 충족':'AI 참고 평가',606,60,120,11,700,muted,1);
   text(report.evidenceReview?`${report.evidenceReview.passed} / ${report.evidenceReview.assessed}개`:`${report.overallScore} / 100`,606,80,120,22,700,red,1);
   text(report.evidenceReview?'산식·원문 근거 공개':'세부 배점 미검증',606,133,120,10,400,muted,1);

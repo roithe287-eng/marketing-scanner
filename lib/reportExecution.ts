@@ -27,7 +27,9 @@ export function buildExecutionPlan(report:MarketingReport,data:ReportInsights=bu
    const owner:WorkOwner=task.status==='review'||task.group==='AI 답변'?'verify':zone.id==='settings'||h1?'developer':'direct';
    const location=h1?'첫 화면 대표 제목 · 해당 제목의 H1 태그':/모바일|성능|속도/.test(task.title)?'모바일 레이아웃 · 리소스 · 클릭·입력 동작':/이미지|\balt\b/i.test(task.title)?'해당 이미지의 대체 텍스트·파일·로딩 설정':zone.hint;
    const completion=h1?'수집 HTML과 렌더링 결과에서 의도한 대표 제목·H1 반영을 확인':zone.check;
-   return {...task,anchor:`execution-task-${index+1}`,zone:zone.id,location,kpi:zone.metric,completion,owner};
+   const goal=report.sitePurpose?.goal;
+   const kpi=goal&&(zone.id==='hero'||zone.id==='action')?(goal.key==='read'?'본문 참여·원출처·관련 자료 이동을 별도로 측정':`${goal.label} 경로의 클릭·완료 이벤트를 구분해 실제 계정에서 확인`):zone.metric;
+   return {...task,anchor:`execution-task-${index+1}`,zone:zone.id,location,kpi,completion,owner};
  });
  // Only the starting list is deduplicated. Every original evidence row remains in the board and backlog.
  const seen=new Set<string>();
