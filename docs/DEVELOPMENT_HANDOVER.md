@@ -1,4 +1,6 @@
-> Latest evidence review: [관측 근거·판정 일치·질문 유형별 인용·PDF 정리](EVIDENCE_REVIEW_2026-10-23.md).
+> Latest general evidence: [일반 URL 공통 적용·긴 원문·보관 키워드 일치](GENERAL_EVIDENCE_2026-10-23.md).
+
+> Previous evidence review: [관측 근거·판정 일치·질문 유형별 인용·PDF 정리](EVIDENCE_REVIEW_2026-10-23.md).
 
 > Previous verification: [운영 검증과 상품·GEO 주제 오류 수정](SCANNER_QA_2026-10-23.md).
 

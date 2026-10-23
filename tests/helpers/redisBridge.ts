@@ -38,7 +38,10 @@ export async function startRedisBridge() {
     processError = error;
   });
   const command = async (args: unknown[]) => {
-    const result = await exec(
+    const values=args.map(a=>typeof a==='object'?JSON.stringify(a):String(a));
+    // stdin avoids the OS per-argument limit when a real report contains long HTML excerpts.
+    const piped=values.some(value=>Buffer.byteLength(value)>64*1024);
+    const execution = exec(
       cliBin,
       [
         "-h",
@@ -46,12 +49,12 @@ export async function startRedisBridge() {
         "-p",
         redisPort,
         "--json",
-        ...args.map((a) =>
-          typeof a === "object" ? JSON.stringify(a) : String(a),
-        ),
+        ...(piped?[]:values),
       ],
       { maxBuffer: 8 * 1024 * 1024 },
     );
+    if(piped)execution.child.stdin?.end(values.map(value=>JSON.stringify(value)).join(' ')+'\n');
+    const result=await execution;
     const parsed = JSON.parse(result.stdout);
     return String(args[0]).toUpperCase() === "HGETALL" &&
       parsed &&

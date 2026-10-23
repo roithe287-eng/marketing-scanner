@@ -4,7 +4,7 @@ import {analyzeOfficialSeo} from '@/lib/analyzeOfficialSeo';
 import {withBudget,optionalStage,remainingBudget} from '@/lib/runtime/budget';
 import {requirePrincipal} from '@/lib/saas/auth';
 import {reserve} from '@/lib/saas/store';
-import {readJson,failure} from '@/lib/security/request';
+import {readJson,failure,AccessError} from '@/lib/security/request';
 import {publicUrl} from '@/lib/security/safeFetch';
 import {getSharedReport} from "@/lib/shareStore";
 import {baselineQuestions, canonicalPage} from "@/lib/geoComparison";
@@ -26,6 +26,7 @@ import {buildAnswerContentPlan} from '@/lib/answerContent';
 import {competitorOwnText} from '@/lib/competitorResearch';
 import {collectOwnProductContext} from '@/lib/ownProductSources';
 import {finalizeReportEvidence} from '@/lib/evidenceReview';
+import {MarketingReportSchema} from '@/lib/reportSchema';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -161,7 +162,9 @@ export async function POST(req: NextRequest) {
     const benchmark=await optionalStage('benchmark','업종 비교 데이터',Math.max(1,Math.min(2500,remainingBudget()-500)),()=>category.value?analyzeBenchmark(websiteData,report.diagnosis,category.value,report.diagnosisMethod!):Promise.resolve(null));
     report.industryBenchmark=benchmark.value;
     report.analysisWarnings=[discoverability,llmCitation,keywordRank,category,benchmark,answerContent].flatMap(stage=>stage.warning?[stage.warning]:[]);
-    const reviewedReport=finalizeReportEvidence(report,websiteData);
+    const reviewed=MarketingReportSchema.safeParse(finalizeReportEvidence(report,websiteData));
+    if(!reviewed.success)throw new AccessError(502,'진단 결과의 필수 항목을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    const reviewedReport=reviewed.data;
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
@@ -183,7 +186,7 @@ export async function POST(req: NextRequest) {
     };
     },req.signal);
     await finish();
-    return NextResponse.json(payload);
+    return NextResponse.json(payload,{headers:{'Cache-Control':'private, no-store'}});
   } catch (error: unknown) {
     if(finish)await finish(true).catch(()=>{});
     return failure(error);

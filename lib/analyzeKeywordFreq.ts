@@ -109,8 +109,8 @@ export function containsKeyword(text:string,keyword:string):boolean {
   const value=normalize(text),word=normalize(keyword);if(!word)return false;
   return /[가-힣]/.test(word)?value.includes(word):` ${value} `.includes(` ${word} `);
 }
-export function reconcileKeywordMetadata(frequency:KeywordFrequency,title:string,description:string):KeywordFrequency {
-  const fix=(items:KeywordFreqItem[])=>items.map(k=>({...k,inTitle:containsKeyword(title,k.keyword),inMetaDescription:containsKeyword(description,k.keyword)}));
+export function reconcileKeywordMetadata(frequency:KeywordFrequency,title:string|undefined,description:string|undefined):KeywordFrequency {
+  const fix=(items:KeywordFreqItem[])=>items.map(k=>({...k,inTitle:title===undefined?k.inTitle:containsKeyword(title,k.keyword),inMetaDescription:description===undefined?k.inMetaDescription:containsKeyword(description,k.keyword)}));
   return {...frequency,singles:fix(frequency.singles),phrases:fix(frequency.phrases)};
 }
 const pairs=(text:string)=>{
