@@ -364,6 +364,7 @@ export const PageEvidenceSchema=z.object({
   capturedAt:z.string().datetime(),
   title:z.string().max(600),
   description:z.string().max(1600),
+  metadataTruncated:z.object({title:z.boolean(),description:z.boolean()}).optional(),
   h1:z.array(z.string().max(500)).max(6),
   h2:z.array(z.string().max(500)).max(12),
   ctaButtons:z.array(z.string().max(200)).max(12),

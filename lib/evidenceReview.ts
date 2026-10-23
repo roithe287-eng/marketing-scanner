@@ -14,24 +14,29 @@ const labels={firstView:'첫 화면',cta:'CTA 문구',copywriting:'본문 문구
 const rules:Record<string,string>={title:'비어 있지 않은 title 1개',meta_description:'비어 있지 않은 meta description 1개',og_tags:'og:title과 og:description 존재',h1:'비어 있지 않은 H1 존재. 복수 H1만으로 감점하지 않음',image_alt:'수집한 img의 alt 속성 누락 없음. 빈 alt는 장식 용도로 허용',viewport:'viewport 메타 존재. 모바일 동작 확인과 구분'};
 const locations:Record<string,string>={title:'head > title',meta_description:'head > meta[name="description"]',og_tags:'meta[property^="og:"]',h1:'h1',image_alt:'img:not([alt])',viewport:'meta[name="viewport"]'};
 const observedNote='입력 페이지의 정적 HTML 관측입니다. 실제 화면·외부 연결 화면·계정 데이터는 별도로 확인합니다.';
+function excerpt(value:string,max=4000){return value.length>max?value.slice(0,max)+`… (원문 ${value.length}자 중 발췌)`:value;}
+function isContactLink(value:string){
+  try{const u=new URL(value);return ['tel:','mailto:'].includes(u.protocol)||(/^https?:$/.test(u.protocol)&&(u.hostname==='channel.io'||u.hostname.endsWith('.channel.io')||['pf.kakao.com','open.kakao.com'].includes(u.hostname)));}catch{return false;}
+}
 
 /** One frozen observation is used by the header, checklist, review cards and every export. */
 export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebsiteData):MarketingReport {
   const sourceUrl=data.finalUrl||data.url,capturedAt=data.seoEvidence?.capturedAt||report.pageEvidence?.capturedAt||new Date().toISOString();
   const origin=new Map((report.checklist||[]).map(c=>[c.id,c]));
-  const contactLinks=(data.anchorHrefs||[]).filter(s=>/^(?:tel:|mailto:)|channel\.io|pf\.kakao\.com|open\.kakao\.com/i.test(s)).slice(0,8).map(s=>s.length>300?s.slice(0,300)+'…':s);
+  const contactLinks=(data.anchorHrefs||[]).filter(isContactLink).slice(0,8).map(s=>excerpt(s,300));
   const ctas=[...new Set(data.ctaButtons||[])];
-  const h1=data.h1.length?`${data.h1.length}개 텍스트 수집: ${data.h1.join(' / ')}`:'정적 HTML에서 H1 텍스트 미감지';
-  const contact=`전화·이메일 패턴 ${data.hasContactInfo?'감지':'미감지'} · 폼 ${data.hasForm?'감지':'미감지'} · 문의 관련 CTA ${ctas.length}종 · 연락 링크 ${contactLinks.length}개${contactLinks.length?': '+contactLinks.join(' / '):''}`;
+  const contactCtas=ctas.filter(s=>/문의|상담|견적|예약|contact|consult|demo/i.test(s));
+  const h1=`H1 요소 ${data.h1Count??'미확인'}개 · ${data.h1.length}개 텍스트 수집: ${data.h1.length?excerpt(data.h1.join(' / ')):'정적 HTML에서 비어 있지 않은 H1 텍스트 미감지'}`;
+  const contact=`전화·이메일 패턴 ${data.hasContactInfo?'감지':'미감지'} · 폼 ${data.hasForm?'감지':'미감지'} · 문의·상담 CTA ${contactCtas.length}종 · 연락 링크 ${contactLinks.length}개${contactLinks.length?': '+contactLinks.join(' / '):''}`;
   const facts:{id:string;label:string;category:ChecklistItem['category'];status:ChecklistItem['status'];value:string;note:string;guide:string}[]=[
-    {id:'title',label:'title 태그',category:'seo',status:!data.seoEvidence?'review':data.title&&data.seoEvidence.titleCount===1?'pass':'warning',value:`${data.title||'정적 HTML에서 title 미감지'} · title ${data.seoEvidence?.titleCount??'미확인'}개`,note:'검색 제목 원문과 개수의 관측입니다. 고정 글자 수를 합격 기준으로 사용하지 않습니다.',guide:'페이지 주제를 간결하게 설명하는 고유 제목인지 확인하세요. 50~60자에 맞추기 위한 불필요한 확장은 하지 않습니다.'},
-    {id:'meta_description',label:'Meta Description',category:'seo',status:!data.seoEvidence?'review':data.description&&data.seoEvidence.descriptionCount===1?'pass':'warning',value:`${data.description||'정적 HTML에서 description 미감지'} · description ${data.seoEvidence?.descriptionCount??'미확인'}개`,note:'검색 설명의 존재·개수입니다. 설명 미기재는 Google 색인 필수 요건 위반이나 실제 스니펫 미노출을 뜻하지 않습니다.',guide:'본문에 맞는 고유 설명인지 확인하세요. 실제 검색 스니펫 채택은 별도로 확인합니다.'},
-    {id:'og_tags',label:'Open Graph',category:'seo',status:data.ogTitle&&data.ogDescription?'pass':'warning',value:`og:title: ${data.ogTitle||'미감지'} / og:description: ${data.ogDescription||'미감지'}`,note:'공유용 메타데이터입니다. 검색 제목·설명과 구분합니다.',guide:'공유 미리보기와 페이지 내용이 일치하는지 확인하세요.'},
+    {id:'title',label:'title 태그',category:'seo',status:!data.seoEvidence?'review':data.title&&data.seoEvidence.titleCount===1?'pass':'warning',value:`${excerpt(data.title)||'정적 HTML에서 title 미감지'} · title ${data.seoEvidence?.titleCount??'미확인'}개`,note:'검색 제목 원문과 개수의 관측입니다. 고정 글자 수를 합격 기준으로 사용하지 않습니다.',guide:'페이지 주제를 간결하게 설명하는 고유 제목인지 확인하세요. 50~60자에 맞추기 위한 불필요한 확장은 하지 않습니다.'},
+    {id:'meta_description',label:'Meta Description',category:'seo',status:!data.seoEvidence?'review':data.description&&data.seoEvidence.descriptionCount===1?'pass':'warning',value:`${excerpt(data.description)||'정적 HTML에서 description 미감지'} · description ${data.seoEvidence?.descriptionCount??'미확인'}개`,note:'검색 설명의 존재·개수입니다. 설명 미기재는 Google 색인 필수 요건 위반이나 실제 스니펫 미노출을 뜻하지 않습니다.',guide:'본문에 맞는 고유 설명인지 확인하세요. 실제 검색 스니펫 채택은 별도로 확인합니다.'},
+    {id:'og_tags',label:'Open Graph',category:'seo',status:data.ogTitle&&data.ogDescription?'pass':'warning',value:`og:title: ${excerpt(data.ogTitle)||'미감지'} / og:description: ${excerpt(data.ogDescription)||'미감지'}`,note:'공유용 메타데이터입니다. 검색 제목·설명과 구분합니다.',guide:'공유 미리보기와 페이지 내용이 일치하는지 확인하세요.'},
     {id:'h1',label:'H1',category:'content',status:data.h1.length?'pass':'warning',value:h1,note:'H1 존재 여부를 관측했습니다. 대표성·목차·기기별 노출은 렌더링 검토 대상이며 개수만으로 검색 패널티를 판정하지 않습니다.',guide:'수집한 H1을 PC·모바일 화면과 대조하세요. 반응형 복제나 숨겨진 요소를 구분한 뒤 대표 제목의 위계를 검토합니다.'},
     {id:'image_alt',label:'이미지 ALT',category:'content',status:data.imageCount===0?'review':data.imageWithoutAlt===0?'pass':'warning',value:`이미지 ${data.imageCount}개 / alt 속성 누락 ${data.imageWithoutAlt}개 / 빈 alt ${data.seoEvidence?.imagesEmptyAlt??'미확인'}개`,note:'속성 존재를 검사했습니다. 빈 alt는 장식 이미지에 적절할 수 있습니다. 설명의 정확성과 이미지 역할은 별도 검토합니다.',guide:'alt 속성이 누락된 이미지의 역할을 확인하고 정보성 이미지에는 설명을, 장식 이미지에는 빈 alt를 적용하세요.'},
-    {id:'viewport',label:'모바일 viewport',category:'seo',status:data.viewportMeta?'pass':'warning',value:data.viewportMeta||'정적 HTML에서 viewport 미감지',note:'메타 태그만 확인했습니다. 모바일 레이아웃·터치·속도는 미측정입니다.',guide:'실제 모바일 화면에서 잘림·확대·입력·터치 동작과 성능을 확인하세요.'},
+    {id:'viewport',label:'모바일 viewport',category:'seo',status:data.viewportMeta?'pass':'warning',value:excerpt(data.viewportMeta)||'정적 HTML에서 viewport 미감지',note:'메타 태그만 확인했습니다. 모바일 레이아웃·터치·속도는 미측정입니다.',guide:'실제 모바일 화면에서 잘림·확대·입력·터치 동작과 성능을 확인하세요.'},
     {id:'cta_clarity',label:'CTA 문구·연결 확인',category:'conversion',status:'review',value:`수집한 CTA: ${ctas.join(' / ')||'미감지'}`,note:'문구 감지는 클릭 위치·목적·문의 완료의 검증이 아닙니다.',guide:'주요 CTA의 실제 위치와 연결 화면을 대조하고 클릭→문의 완료 흐름을 테스트하세요.'},
-    {id:'cta_repeat',label:'CTA 반복 배치 검토',category:'conversion',status:'review',value:`수집한 버튼 ${data.buttons.length}개 · 문의 관련 CTA ${data.ctaButtons.length}회`,note:'반복 횟수만으로 집중도 저하나 전환 개선을 판정하지 않습니다.',guide:'페이지 길이·기기별 노출과 CTA 역할을 확인하고, 클릭·문의 완료 데이터를 기준으로 배치를 테스트하세요.'},
+    {id:'cta_repeat',label:'CTA 반복 배치 검토',category:'conversion',status:'review',value:`수집한 버튼·링크 문구 ${data.buttons.length}개 · 주요 CTA ${data.ctaButtons.length}회`,note:'수집한 문구 표본입니다. 전체 페이지의 모든 버튼 수나 실제 화면 배치가 아니며 반복 횟수만으로 전환 개선을 판정하지 않습니다.',guide:'페이지 길이·기기별 노출과 CTA 역할을 확인하고, 클릭·문의 완료 데이터를 기준으로 배치를 테스트하세요.'},
     {id:'contact_info',label:'연락 경로 확인',category:'conversion',status:'review',value:contact,note:'수집 범위에서 패턴을 찾지 못한 경우에도 연락처나 문의 기능 부재로 단정하지 않습니다.',guide:'폼·채널톡·카카오톡·전화·이메일 중 실제 제공하는 문의 경로를 끝까지 테스트하세요. 누락이 확인된 정보만 보완합니다.'},
     {id:'trust_review',label:'후기·사례 확인',category:'trust',status:'review',value:`후기·리뷰 관련 표현 ${data.hasReviewKeyword?'감지':'미감지'}`,note:'관련 단어 감지는 실제 고객 후기의 존재·진위·사용 권한을 증명하지 않습니다.',guide:'해당 원문·사례·출처·공개 사용 가능 범위를 확인한 뒤 안내하세요.'},
     {id:'trust_certification',label:'인증·경력 확인',category:'trust',status:'review',value:`인증·신뢰 관련 표현 ${data.hasTrustKeyword?'감지':'미감지'}`,note:'키워드 감지와 실제 인증·경력 검증은 다릅니다.',guide:'기관·인증명·대상·기간과 확인 가능한 근거를 대조하세요.'},
