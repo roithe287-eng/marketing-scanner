@@ -55,6 +55,28 @@ test('GEO topics come from actual product nouns rather than common storefront he
   assert.ok(citationFallbackQuestions(repeatedHeadings,'가상가전').slice(1).every(q=>q.question.includes('제습기')));
 });
 
+test('repeated promotions and unclassified name tokens cannot replace a verified product category',async t=>{
+  const names=['리미티드 샘플 증정 이벤트 액상비타민','리미티드 증정 비타민B','리미티드 증정 구강청결제'];
+  const page='<title>가상스토어</title><meta name="description" content="모두가 더 건강한 선택을 할 수 있는 세상"><main>홈</main>';
+  t.mock.method(globalThis,'fetch',async(input:unknown)=>String(input).endsWith('/robots.txt')?robots():html(page));
+  const data=await extractWebsite(root),sources=names.map((name,i)=>({url:root+'/products/'+i,name,description:'',categories:[],kind:'catalog_product' as const}));
+  data.productContext={status:'observed',discovery:'public_catalog',attemptedPages:0,sources,note:'공개 상품 표본'};
+  const query={...data,productSources:sources},candidates=marketKeywordCandidates(query);
+  assert.equal(candidates[0]?.keyword,'비타민');
+  assert.ok(candidates.every(c=>!['리미티드','증정','샘플','이벤트'].includes(c.keyword)));
+  assert.equal(usableMarketKeyword('증정',query),false);
+  assert.ok(citationFallbackQuestions(data,'가상스토어').slice(1).every(q=>q.question.includes('비타민')));
+});
+
+test('unclassified catalog products keep a truthful shopping fallback when no category is grounded',async t=>{
+  t.mock.method(globalThis,'fetch',async(input:unknown)=>String(input).endsWith('/robots.txt')?robots():html('<title>가상스토어</title><main>홈</main>'));
+  const data=await extractWebsite(root);
+  data.productContext={status:'observed',discovery:'public_catalog',attemptedPages:0,sources:[{url:root+'/products/one',name:'루미나 플렉스위브',description:'',categories:[],kind:'catalog_product'}],note:'공개 상품 표본'};
+  const questions=citationFallbackQuestions(data,'가상스토어');
+  assert.match(questions[0].question,/어떤 상품/);
+  assert.ok(questions.slice(1).every(q=>q.question.includes('상품')&&!/서비스|계약/.test(q.question)));
+});
+
 
 test('public cards and microdata recover multiple products and keep each merchant source URL',()=>{
   const seed=captureProductSeed('<title>가상스토어</title><main><ul><li><a href="/product/detail.html?product_no=1"><img alt="비타민 제품 하나" src="a.png"></a></li><li><a href="/product/detail.html?product_no=2"><img alt="비타민 제품 둘" src="b.png"></a></li></ul></main>',root);
