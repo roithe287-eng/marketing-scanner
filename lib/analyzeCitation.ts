@@ -9,7 +9,7 @@ import { CURRENT_GEO_PROTOCOL, aggregateCitation, brandMentioned, buildActionPla
 import { citationFailure, httpCitationFailure, incompleteCitationFailure, CitationRequestError, readCitationError } from './citationFailure';
 import {keywordEvidence,marketKeywordCandidates} from './competitorResearch';
 
-const VERSION = 'geo-v2.8-grounded-product-topics';
+const VERSION = 'geo-v2.9-validated-product-topics';
 const TIMEOUT = 22_000;
 const QuestionSchema = z.object({question:z.string().min(5).max(250),type:z.enum(['brand','industry','service','local']),journey:z.string().max(40)});
 export type CitationQuestion = z.infer<typeof QuestionSchema>;
@@ -24,12 +24,12 @@ function productTopics(data:ExtractedWebsiteData){
 }
 export function citationFallbackQuestions(data:ExtractedWebsiteData,brand:string):Question[]{
   const topics=productTopics(data);
-  if(topics.length){
-    const topic=topics[0],host=new URL(data.finalUrl||data.url).hostname;
+  if(topics.length||(data.productContext?.status==='observed'&&data.productContext.sources.length)){
+    const topic=topics[0]||'상품',host=new URL(data.finalUrl||data.url).hostname;
     return [
       {question:`${brand}(${host})에서는 어떤 상품을 판매하나요?`,type:'brand',journey:'브랜드 확인'},
       {question:`${topic} 선택 시 무엇을 확인해야 하나요?`,type:'industry',journey:'인지'},
-      {question:`${topic} 제품별 구성과 용량은 어떻게 비교하나요?`,type:'industry',journey:'비교'},
+      {question:`${topic}의 구성과 주요 특징은 어떻게 비교하나요?`,type:'industry',journey:'비교'},
       {question:`${topic} 구매 전 가격·배송·반품 조건에서 확인할 것은 무엇인가요?`,type:'service',journey:'구매 전'},
       {question:`${topic} 사용·보관 시 확인할 주의사항은 무엇인가요?`,type:'service',journey:'이용 후'},
     ];
