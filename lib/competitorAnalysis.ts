@@ -251,11 +251,8 @@ export async function analyzeCompetitors(siteData: {
   bodyText?: string;
 }): Promise<CompetitorAnalysisResult | null> {
   try {
-    // Sparse JS storefronts need merchant product evidence before choosing a market query.
-    let productContext:OwnProductContext|undefined;
-    if(!marketKeywordCandidates(siteData).length){
-      productContext=await collectOwnProductContext(siteData.url);
-    }
+    // Every domain checks product evidence even when a generic slogan supplied a keyword.
+    const productContext:OwnProductContext=await collectOwnProductContext(siteData.url);
     const querySite:QuerySite={...siteData,productSources:productContext?.sources};
     // 1. AI 키워드 추출 우선
     let keyword = await extractKeywordWithAI({
@@ -298,7 +295,7 @@ export async function analyzeCompetitors(siteData: {
     console.log(`[경쟁사] 키워드: "${keyword}" (${keywordSource})`);
 
     // Inspect more search items without increasing the eight-page collection budget.
-    const commerce=productContext?.discovery==='public_catalog';
+    const commerce=productContext.commerce===true;
     const searchQuery=(term:string)=>commerce?`${term} 쇼핑몰`:term;
     const attemptedKeywords=[searchQuery(keyword)];
     let response = await searchNaverWeb(searchQuery(keyword), 30);

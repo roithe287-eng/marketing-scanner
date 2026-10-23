@@ -54,6 +54,7 @@ test('live analysis contract preserves zero results and enriches only eight page
       assert.equal(new URL(String(input)).searchParams.get('display'),'30');
       return Response.json({items:empty?[]:[...Array.from({length:12},(_,i)=>item(`agency${i}.test`))]});
     }
+    if(new URL(String(input)).hostname==='example.com')return new Response('',{status:503});
     pages++; return new Response('<html><title>광고대행 업체</title><h1>광고대행 서비스</h1></html>',{headers:{'content-type':'text/html;charset=utf-8'}});
   };
   const site = {url:'https://example.com',title:'예시',ogTitle:'예시',description:'광고대행',h1:[],keywords:query};

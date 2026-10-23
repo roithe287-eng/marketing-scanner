@@ -5,9 +5,10 @@ export const OwnProductSourceSchema=z.object({
 });
 export const OwnProductContextSchema=z.object({
   status:z.enum(['observed','not_observed','unavailable','blocked']),
-  discovery:z.enum(['input_page','public_links','public_catalog','naver_web','naver_shop']),attemptedPages:z.number().int().nonnegative().max(5),
+  discovery:z.enum(['input_page','public_links','public_catalog','public_categories','public_sitemap','naver_web','naver_shop']),attemptedPages:z.number().int().nonnegative().max(9),
   discoveryAttempts:z.array(z.object({provider:z.enum(['naver_web','naver_shop']),returnedCount:z.number().int().nonnegative(),productLinkCount:z.number().int().nonnegative(),status:z.enum(['ok','unavailable'])})).max(3).optional(),
   sources:z.array(OwnProductSourceSchema).max(12),note:z.string().max(600),
+  commerce:z.boolean().optional(),
 });
 export type OwnProductSource=z.infer<typeof OwnProductSourceSchema>;
 export type OwnProductContext=z.infer<typeof OwnProductContextSchema>;

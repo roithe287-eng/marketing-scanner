@@ -52,6 +52,7 @@ test('a sparse Onnuri storefront recovers its own products via official URL disc
     }
     if(u.hostname==='onnuristore.com'){
       if(u.pathname==='/robots.txt')return new Response('User-agent: *\nAllow: /');
+      if(u.pathname==='/sitemap.xml')return new Response('',{status:404});
       ownPages.push(u.href);
       if(u.pathname==='/')return html('<title>온누리스토어</title><main><div id="products"></div></main>');
       if(u.pathname==='/goods/123')return html(product('프레스샷 액상비타민','건강기능식품'));
@@ -62,7 +63,7 @@ test('a sparse Onnuri storefront recovers its own products via official URL disc
   });
   try{
     const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'비타민');
-    assert.deepEqual(queries,['site:onnuristore.com','비타민']);assert.equal(ownPages.length,3);assert.equal(new Set(ownPages).size,3);
+    assert.deepEqual(queries,['site:onnuristore.com','비타민 쇼핑몰']);assert.equal(ownPages.length,3);assert.equal(new Set(ownPages).size,3);
     assert.equal(result.research.productContext?.status,'observed');assert.equal(result.research.productContext?.sources.length,2);
     assert.equal(result.ourSite.metaDescription,'');assert.deepEqual(result.competitors.map(p=>p.domain),['vitamins.example']);
     assert.ok(result.research.keywordEvidence.some(e=>e.field.startsWith('상품명')));
@@ -93,6 +94,7 @@ test('shopping search can recover merchant product URLs when the web index has n
     ]:[{link:own.url,title:'온누리스토어',description:'API description is not evidence'}]});
     assert.equal(u.hostname,'onnuristore.com');
     if(u.pathname==='/robots.txt')return new Response('User-agent: *\nAllow: /');
+    if(u.pathname==='/sitemap.xml')return new Response('',{status:404});
     if(u.pathname==='/')return html('<title>온누리스토어</title><main>JS storefront</main>');
     assert.equal(u.pathname,'/goods/181632');return html(product('자일리멜츠 마일드민트 80정 단품','푸드'));
   });
