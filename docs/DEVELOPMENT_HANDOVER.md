@@ -1,3 +1,5 @@
+> Latest verification: [운영 검증과 상품·GEO 주제 오류 수정](SCANNER_QA_2026-10-23.md).
+
 > Latest general-domain update: [일반 도메인 공통 상품·경쟁사 점검](GENERAL_DOMAIN_EVIDENCE_2026-10-22.md).
 
 > Latest storefront follow-up: [동적 상품 진단·질문 연결](STOREFRONT_SCOPE_2026-10-22.md).

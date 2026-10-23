@@ -19,15 +19,21 @@ const stored=(age:number,report=fixture)=>({version:2,ownerId:'internal',created
 
 test('saved reports and owner indexes expire within seven days; reads, resaves and patches cannot extend them',async()=>{
  const id=await saveSharedReport(fixture,principal);assert.ok(id);
+ const original=await db().get<{createdAt:number;expiresAt:number}>(reportKey(id));assert.ok(original);
  const ttl=Number(await db().pttl(reportKey(id)));assert.ok(ttl>7*day-2000&&ttl<=7*day);
  assert.ok(Number(await db().ttl(key('reports:internal')))<=REPORT_RETENTION_SECONDS);
  const first=await getSharedReport(id,principal);assert.ok(first?.sharedRetention);
  assert.deepEqual(first.llmCitationTest?.results[0].sources,fixture.llmCitationTest?.results[0].sources);
  assert.equal(await updateSharedReportCompetitor(id,{searchKeyword:'검증 업종',competitors:[]},principal),true);
  const reread=await getSharedReport(id,principal);assert.ok(reread);assert.deepEqual(reread.competitorAnalysis?.competitors,[]);
- assert.equal(reread.sharedRetention?.expiresAt,first.sharedRetention.expiresAt);
+ // TIME and PTTL can be sampled milliseconds apart while Redis parses the report.
+ // The policy is no extension; the immutable stored deadline must stay intact.
+ assert.ok(reread.sharedRetention!.expiresAt<=first.sharedRetention.expiresAt);
+ const unchanged=await db().get<{createdAt:number;expiresAt:number}>(reportKey(id));
+ assert.equal(unchanged?.createdAt,original.createdAt);assert.equal(unchanged?.expiresAt,original.expiresAt);
  const copy=await saveSharedReport(first,principal);assert.ok(copy);
- assert.equal((await getSharedReport(copy,principal))?.sharedRetention?.expiresAt,first.sharedRetention.expiresAt);
+ const copied=await getSharedReport(copy,principal);assert.ok(copied?.sharedRetention);
+ assert.ok(copied.sharedRetention.expiresAt<=first.sharedRetention.expiresAt);
 });
 
 test('expired old 21-day reports are deleted and denied by the actual baseline API; seven-day boundary is exclusive',async()=>{
@@ -43,7 +49,8 @@ test('comparison snapshots inherit the earlier source expiry; missing or expired
  const prior=await getSharedReport('prior123',principal);assert.ok(prior?.sharedRetention);
  const combined={...fixture,diagnosisBaseline:createDiagnosisBaseline(prior,'prior123')};
  const id=await saveSharedReport(combined,principal);assert.ok(id);
- assert.equal((await getSharedReport(id,principal))?.sharedRetention?.expiresAt,prior.sharedRetention.expiresAt);
+ const combinedReport=await getSharedReport(id,principal);assert.ok(combinedReport?.sharedRetention);
+ assert.ok(combinedReport.sharedRetention.expiresAt<=prior.sharedRetention.expiresAt);
  assert.ok(Number(await db().ttl(reportKey(id)))<=86400);
  await db().del(reportKey('prior123'));
  assert.equal(await getSharedReport(id,principal),null);assert.equal(await db().exists(reportKey(id)),0);
@@ -60,7 +67,8 @@ test('deployment migration handles unread old data, preserves younger timestamps
  const result=await migrateReportRetention();assert.equal(result.checked,2);assert.equal(result.removed,1);
  assert.equal(await db().exists(reportKey('old12345')),0);assert.ok(Number(await db().ttl(reportKey('young123')))<=5*86400);
  const prior=await getSharedReport('young123',principal);assert.ok(prior);
- await migrateReportRetention();assert.equal((await getSharedReport('young123',principal))?.sharedRetention?.expiresAt,prior.sharedRetention?.expiresAt);
+ await migrateReportRetention();const migrated=await getSharedReport('young123',principal);assert.ok(migrated?.sharedRetention);
+ assert.ok(migrated.sharedRetention.expiresAt<=prior.sharedRetention!.expiresAt);
  assert.equal(await db().exists('ms:report:untouched'),1);
  assert.equal(await db().exists('ms:preview:citation:geo-v2.4:abc:questions'),0);assert.equal(await db().exists('ms:preview:citation:geo-v2.6-openai:abc:questions'),1);
  assert.deepEqual((await listOwnReports(principal)).map(r=>r?.id),['young123']);

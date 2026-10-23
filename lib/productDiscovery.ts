@@ -18,6 +18,8 @@ export function ownPublicUrl(value:string,base:string):URL|null{
 export function ownProductUrl(value:string,base:string):string|null{
   const url=ownPublicUrl(value,base);if(!url)return null;
   const path=url.pathname;
+  // Cafe24 boards reuse /product/ in write/review routes; these are not merchandise.
+  if(/\/(?:board|bbs|forum|community)(?:[/.]|$)/i.test(path))return null;
   if(/\/(?:recent_view_product|wish_list|compare|review|coupon|search)\.(?:html|php)$/i.test(path))return null;
   const keys=['goodsNo','goodsno','it_id','product_no','branduid','index_no','idx','id'];
   const hasId=(names:string[])=>names.some(k=>!!url.searchParams.get(k)?.trim());
@@ -73,7 +75,7 @@ export function productSourcesFromHtml(html:string,url:string):OwnProductSource[
     if(!link||sources.some(p=>p.url===link)||a.closest('nav,header,footer,aside,[hidden],[aria-hidden="true"]').length)return;
     const card=a.closest('li,article,[class*="product"],[class*="goods"],[class*="item"]');
     const name=clean(a.find('[itemprop="name"],.name,.prdName,.goods_name,.product-name,h2,h3').first().text()||a.attr('title')||a.find('img[alt]').first().attr('alt')||a.text(),300);
-    if(!name||/^(?:자세히|상세보기|바로가기|구매하기|view|more|상품|product)$/i.test(name)||name.length>200)return;
+    if(!name||/^(?:자세히|상세보기|바로가기|구매하기|장바구니|관심상품|찜하기|후기|리뷰|후기쓰기|리뷰작성|문의하기|상품문의|write|reviews?|q\s*&?\s*a|view|more|상품|product)$/i.test(name)||name.length>200)return;
     if(!a.find('img').length&&!card.find('img').length&&!/장바구니|구매|배송|[\d,]+\s*원|add to cart/i.test(card.text()))return;
     add(name,'',[],'catalog_product',link);
   });

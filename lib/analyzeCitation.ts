@@ -7,9 +7,9 @@ import { LlmCitationTestSchema, type LlmCitationTest, type LlmCitationQuestionRe
 import { getRedisClient } from './redisClient';
 import { CURRENT_GEO_PROTOCOL, aggregateCitation, brandMentioned, buildActionPlan, parseOpenAI } from './citationMeasurement';
 import { citationFailure, httpCitationFailure, incompleteCitationFailure, CitationRequestError, readCitationError } from './citationFailure';
-import {marketKeywordCandidates} from './competitorResearch';
+import {keywordEvidence,marketKeywordCandidates} from './competitorResearch';
 
-const VERSION = 'geo-v2.7-product-context';
+const VERSION = 'geo-v2.8-grounded-product-topics';
 const TIMEOUT = 22_000;
 const QuestionSchema = z.object({question:z.string().min(5).max(250),type:z.enum(['brand','industry','service','local']),journey:z.string().max(40)});
 export type CitationQuestion = z.infer<typeof QuestionSchema>;
@@ -18,7 +18,9 @@ const digest = (input: string) => createHash('sha256').update(input).digest('hex
 const pending = new Map<string, Promise<LlmCitationTest>>();
 
 function productTopics(data:ExtractedWebsiteData){
-  return data.productContext?.status==='observed'?marketKeywordCandidates({...data,productSources:data.productContext.sources}).map(k=>k.keyword):[];
+  if(data.productContext?.status!=='observed')return [];
+  const products={productSources:data.productContext.sources};
+  return marketKeywordCandidates({...data,...products}).filter(k=>keywordEvidence(k.keyword,products).grounded).map(k=>k.keyword);
 }
 export function citationFallbackQuestions(data:ExtractedWebsiteData,brand:string):Question[]{
   const topics=productTopics(data);
