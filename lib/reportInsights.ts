@@ -76,10 +76,10 @@ export function buildReportInsights(report:MarketingReport) {
   const gaps=(report.keywordFrequency?.singles||[]).filter(k=>isKeywordPlacementCandidate(k,report.meta)).slice(0,8);
   const heldKeywords=(report.keywordFrequency?.singles||[]).flatMap(k=>{const reason=keywordReviewReason(k.keyword,report.meta);return reason?[{...k,reason}]:[];});
   const tasks:FollowupTask[]=[];
-  const push=(group:string,source:string,rows:{label:string;status:'pass'|'warning'|'fail';currentValue:string;guide:string}[])=>rows.filter(r=>r.status!=='pass').forEach((r,i)=>tasks.push({id:`${source}-${i}`,group,title:r.label,status:r.status as 'warning'|'fail',evidence:r.currentValue,current:r.currentValue,action:r.guide,source}));
+  const push=(group:string,source:string,rows:{label:string;status:'pass'|'warning'|'fail'|'review';currentValue:string;guide:string}[])=>rows.filter(r=>r.status!=='pass').forEach((r,i)=>tasks.push({id:`${source}-${i}`,group,title:r.label,status:r.status as 'warning'|'fail'|'review',evidence:r.currentValue,current:r.currentValue,action:r.guide,source}));
   report.criticalIssues.forEach((r,i)=>tasks.push({id:`critical-${i}`,group:'핵심 개선',title:r.title,status:r.evidenceStatus==='review'?'review':r.priority==='high'?'fail':r.priority==='medium'?'warning':'review',evidence:r.problem,current:r.badExample,action:r.recommendation,source:'AI 진단'}));
   push('기본 진단','기본 체크리스트',report.checklist||[]);
-  push('GEO 준비도','GEO 준비도',readinessItems(report.discoverability));
+  push('GEO 준비도','GEO 준비도',readinessItems(report.discoverability).map(c=>report.evidenceReview?{...c,status:'review' as const}:c));
   for(const check of report.naverOptimization?.mode==='diagnosis'?report.naverOptimization.checks:[]) {
     if(check.status==='action'||(check.status==='manual'&&check.priority==='high'))tasks.push({id:`naver-${check.id}`,group:'네이버',title:check.title,status:check.status==='manual'?'review':check.priority==='high'?'fail':'warning',evidence:check.evidence,guideScope:check.category!=='search'||check.owner==='marketer'?'account':'page',instructions:check.steps,completion:check.completion,action:`${check.steps.join(' → ')} / 완료 확인: ${check.completion}`,source:NAVER_CATEGORIES[check.category]});
   }
@@ -95,7 +95,7 @@ export function buildReportInsights(report:MarketingReport) {
     {label:'AI 출처 판정',value:obs?`${obs.sourceTotal} / ${obs.total}건`:'—',state:!obs?'미확인':obs.sourceTotal===obs.total&&obs.total?'판정 완료':obs.sourceTotal?'일부 판정':'판정 불가',detail:'분모는 OpenAI 관측'},
     {label:'경쟁사 수집',value:`${metadataCount} / ${competitors.length}개`,state:report.competitorStatus?.status==='pending'?'진행 중':competitors.length?(metadataCount===competitors.length?'저장됨':'일부 미확인'):'미확인',detail:'후보 중 상세 항목이 있는 사이트'},
   ];
-  return {obs,sources,eligibleSources,excludedSources,reviews,reviewSummary,reviewExplanation,questions,messageRows,messageOpportunities,stages,gaps,heldKeywords,tasks,coverage,metadataCount,competitorCount:competitors.length};
+  return {evidenceReview:report.evidenceReview,obs,sources,eligibleSources,excludedSources,reviews,reviewSummary,reviewExplanation,questions,messageRows,messageOpportunities,stages,gaps,heldKeywords,tasks,coverage,metadataCount,competitorCount:competitors.length};
 }
 export type ReportInsights=ReturnType<typeof buildReportInsights>;
 export function contentBrief(question:string,target:string|null) {

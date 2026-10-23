@@ -32,7 +32,7 @@ export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer)
   const ready=readinessItems(report.discoverability),obs=buildObservationVisual(report.llmCitationTest);
   if (ready.length || obs) {
     newPage('GEO 한눈에 보기','페이지 준비도와 AI 답변 관측을 구분해 읽습니다. 모든 원문·출처·개선안은 뒤의 상세 보고서에 포함됩니다.');
-    if(ready.length) {
+    if(ready.length&&!report.evidenceReview) {
       y=text(`페이지 준비도  ${report.discoverability!.overallScore} / 100`,48,y,694,17,ink,700)+12;
       for(let i=0;i<ready.length;i++) {
         const item=ready[i],x=48+(i%4)*177,top=y+Math.floor(i/4)*152;
@@ -45,16 +45,16 @@ export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer)
     if(obs) {
       ensure(410,'GEO AI 답변 관측','실패와 판정 불가는 인용률의 0점으로 처리하지 않습니다.');
       y=text('AI 답변 관측',48,y,694,17,ink,700)+12;
-      const cards=[{label:'브랜드 언급률',rate:obs.mentionRate,n:obs.mentionCount,d:obs.mentionTotal,color:blue},{label:'자사 출처 인용률',rate:obs.citationRate,n:obs.sourceCount,d:obs.sourceTotal,color:green}];
+      const cards=[{label:'브랜드 미포함 질문 인용',rate:obs.unbrandedRate,n:obs.unbrandedCount,d:obs.unbrandedTotal,color:blue},{label:'브랜드 포함 질문 인용',rate:obs.brandedRate,n:obs.brandedCount,d:obs.brandedTotal,color:green}];
       cards.forEach((c,i)=>{const x=48+i*355;rect(x,y,339,132,'#f3f5f8');page.shapes.push({kind:'ring',x:x+16,y:y+18,size:94,value:c.rate,color:c.color});const caption=c.rate===null?'—':`${c.rate}%`;text(caption,x+63-measure(caption,style(21,ink,700))/2,y+48,100,21,ink,700);text(c.label,x+126,y+25,195,15,ink,700);text(c.d?`${c.d}건 중 ${c.n}건`:'판정 가능한 관측 없음',x+126,y+61,195,12,gray);});
-      y+=156;
+      y+=150;y=text(`전체 질문 인용 ${obs.sourceCount}/${obs.sourceTotal}건 · 브랜드 언급 ${obs.mentionCount}/${obs.mentionTotal}건 · 유형 미분류 ${obs.unclassifiedTotal}건`,48,y,694,12,gray)+16;
       for(const d of obs.distributions) {
         y=text(`${engineNames[d.engine]}  ·  ${d.total}건`,48,y,694,13,ink,700)+7;
         rect(48,y,694,13,'#e5e9ef',4);let x=48;
         for(const [state,count] of Object.entries(d.counts)) {const width=d.total?694*count/d.total:0;if(width)rect(x,y,width,13,observationStates[state as keyof typeof d.counts].color,0);x+=width;}
         y+=22;y=text(Object.entries(d.counts).filter(([,n])=>n).map(([s,n])=>`${observationStates[s as keyof typeof d.counts].label} ${n}건`).join('  ·  ')||'관측 없음',48,y,694,12,gray)+18;
       }
-      text('막대는 측정 상태의 구성입니다. API 관측은 일반 AI 화면이나 시장 전체 노출률과 다릅니다.',48,y,694,12,gray);
+      text('질문 유형별 소수 표본의 관측입니다. 반복 검증한 확률·시장 전체 노출률이 아닙니다. 실패·미확인은 분모에서 제외합니다.',48,y,694,12,gray);
     }
   }
   if(obs?.questions.length) {

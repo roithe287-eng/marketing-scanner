@@ -8,7 +8,7 @@ export function buildCompetitorVisualPage(report:MarketingReport,measure:TextMea
   const rect=(x:number,y:number,width:number,height:number,color:string,radius=8)=>page.shapes.push({kind:'rect',x,y,width,height,color,radius});
   function text(value:string,x:number,y:number,width:number,size=14,color='#334155',weight=400){const s:PdfTextStyle={size,lineHeight:size*1.6,color,weight};for(const line of wrapPdfText(value,s,measure,width)){page.lines.push({...s,text:line.text,x,y,width:measure(line.text,s)});y+=s.lineHeight;}return y;}
   text('MARKETING SCANNER · COMPETITOR EVIDENCE',48,46,694,12,'#526174',700);
-  text('검색 메시지 포지셔닝',48,73,694,26,'#202936',800);
+  text('검색 문구 비교 지도',48,73,694,26,'#202936',800);
   text(`대표 키워드: ${model.analysis.searchKeyword} · ${model.profile.label} 기준`,48,126,694,17,'#285b98',700);
   text('X 상품·서비스 설명 · Y 선택·이용 근거 / 검색 순위·성과 점수 아님',48,162,694,14);
   const x0=112,y0=225,w=560,h=280;

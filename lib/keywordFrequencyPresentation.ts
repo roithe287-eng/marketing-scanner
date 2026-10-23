@@ -3,7 +3,7 @@ import type {KeywordFrequency} from './reportSchema';
 export function keywordFrequencyScope(frequency:KeywordFrequency):string {
   if(frequency.methodVersion!==2) return '이전 집계 방식: 제목·설명·헤딩·본문을 합친 저장값입니다. 중복 합산과 문장 경계를 넘은 어구가 포함될 수 있으므로, 본문 빈도 확인과 수정 판단에는 다시 진단한 값을 사용하세요.';
   const range=frequency.bodyTruncated?'수집 본문 앞부분':'수집 본문';
-  return `${range}${frequency.sourceLength!==undefined?` ${frequency.sourceLength.toLocaleString()}자`:''} 기준입니다. 제목·메타 설명을 추가 합산하지 않으며, 메뉴·푸터 등 HTML 본문에 포함된 텍스트도 집계합니다. 화면에만 동적으로 표시되는 문구는 누락될 수 있습니다.`;
+  return `${range}${frequency.sourceLength!==undefined?` ${frequency.sourceLength.toLocaleString()}자`:''} 기준입니다. 제목·메타 설명을 추가 합산하지 않으며, 메뉴·푸터 등 HTML 본문에 포함된 텍스트도 집계합니다. 화면에만 동적으로 표시되는 문구는 누락될 수 있습니다. 제목·설명 포함 여부는 동일 수집 원문의 표현을 대조하며, 한국어 복합어 안에 포함된 표현도 포함으로 표시합니다. 의미·검색 수요를 판정하는 값은 아닙니다.`;
 }
 export function keywordDensityNote(frequency:KeywordFrequency,phrases:boolean):string {
   if(frequency.methodVersion!==2) return '이전 집계의 저장 비중입니다. 새 방식과 직접 비교하지 마세요.';

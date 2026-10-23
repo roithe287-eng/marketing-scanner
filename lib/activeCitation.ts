@@ -4,6 +4,10 @@ import {aggregateCitation, buildActionPlan} from './citationMeasurement';
 /** Read-time projection: archived observations remain untouched in storage. */
 export function activeCitation(value:LlmCitationTest):LlmCitationTest {
   const results=value.results.filter(row=>row.engine==='chatgpt');
+  if(value.measurementVersion===2&&results.length===value.results.length){
+    const metrics=aggregateCitation(results);
+    return {...value,...metrics,engineScores:{chatgpt:metrics.engineScores.chatgpt}};
+  }
   if(results.length===value.results.length) {
     if(value.engineScores.gemini===undefined)return value;
     return {...value,engineScores:{chatgpt:value.engineScores.chatgpt}};

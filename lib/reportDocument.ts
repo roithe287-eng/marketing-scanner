@@ -1,4 +1,6 @@
+import {readinessItems} from './reportVisuals';
 import {reportForPresentation} from './reportPresentation';
+import {evidenceScoreText} from './evidenceReview';
 import {buildOfficialSeoDocument} from './officialSeoDocument';
 import {buildAnswerContentDocument} from './answerContentDocument';
 import {retentionTime} from './reportRetention';
@@ -20,7 +22,7 @@ import {buildGrowthDocument} from './growthDocument';
 import {buildCompetitorDocument} from './competitorDocument';
 export type ReportBlock = {text:string;kind:'title'|'heading'|'subheading'|'body';href?:string};
 const labels:Record<string,string> = {
-  engine:'AI 엔진',overallScore:'종합 점수',grade:'등급',summary:'요약',score:'점수',status:'상태',message:'안내',currentValue:'현재 상태',diagnosis:'진단',guide:'개선 가이드',evidence:'확인 근거',priorityActions:'우선 실행 과제',
+  sourceUrl:'관측 URL',capturedAt:'수집 시각',locator:'원문 위치',evidenceType:'근거 종류',brandedTests:'브랜드 포함 질문 분모',brandedCited:'브랜드 포함 질문 인용 수',unbrandedTests:'브랜드 미포함 질문 분모',unbrandedCited:'브랜드 미포함 질문 인용 수',unclassifiedTests:'질문 유형 미분류 수',engine:'AI 엔진',overallScore:'종합 점수',grade:'등급',summary:'요약',score:'점수',status:'상태',message:'안내',currentValue:'현재 상태',diagnosis:'진단',guide:'개선 가이드',evidence:'확인 근거',priorityActions:'우선 실행 과제',
   firstView:'첫 화면',cta:'행동 유도',copywriting:'카피라이팅',trust:'신뢰',conversionFlow:'전환 흐름',adLanding:'광고 랜딩',mobileUx:'모바일 UX',seo:'SEO',
   problem:'문제',reason:'이유',recommendation:'개선안',priority:'우선순위',badExample:'현재 예시',goodExample:'개선 예시',exampleNote:'예시 참고',steps:'실행 순서',beforeExample:'개선 전',afterExample:'개선 후',
   immediately:'즉시',thisWeek:'이번 주',thisMonth:'이번 달',heroHeadline:'추천 헤드라인',subHeadline:'서브 헤드라인',ctaText:'추천 CTA',currentHeroHeadline:'현재 헤드라인',currentCtaText:'현재 CTA',competitorCopyInsight:'경쟁사 카피 인사이트',
@@ -40,7 +42,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     {kind:'title',text:`${report.meta?.siteName || report.meta?.domain || '웹사이트'} 마케팅 진단 리포트`},
     ...(report.sharedRetention?[{kind:'body' as const,text:`공유 페이지 열람 종료: ${retentionTime(report.sharedRetention.expiresAt)} · 다운로드한 파일은 자동 회수되지 않습니다.`}]:[]),
     {kind:'body',text:report.url,href:safeHttpUrl(report.url)||undefined},
-    {kind:'body',text:`종합 점수 ${report.overallScore} / 100`},
+    {kind:'body',text:evidenceScoreText(report)},
     {kind:'body',text:report.oneLineSummary},
     {kind:'body',text:'전체 상세 내용이 포함된 결과 스냅샷입니다. AI 진단과 시뮬레이션은 검토를 위한 참고 자료이며 성과를 보장하지 않습니다.'},
   ];
@@ -48,7 +50,8 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   blocks.push({kind:'heading',text:'광고비·목표 CPA 시나리오'},{kind:'body',text:AD_BUDGET_NOTE+' 화면 입력값은 저장되지 않습니다. CPA=광고비÷전환 수, 목표 예산=직접 정한 목표 CPA×현재 전환 수입니다. 절감 효과 예측이 아닙니다.'});
   if(report.integrity){blocks.push({kind:'heading',text:'결과의 근거와 검증 범위'},{kind:'body',text:report.integrity.note});for(const warning of report.integrity.warnings)blocks.push({kind:'body',text:warning.message});}
   if(report.analysisWarnings?.length)for(const warning of report.analysisWarnings)blocks.push({kind:'body',text:`부가 분석 확인 필요: ${warning.label} · ${warning.status}`});
-  if(report.scoringMethod)blocks.push({kind:'body',text:'종합 점수는 8개 AI 평가 점수의 산술평균입니다. 실제 성과·모바일 성능·AI 인용률이 아닙니다.'});
+  if(report.evidenceReview){const e=report.evidenceReview;blocks.push({kind:'heading',text:'관측 항목 충족률 · 산식과 근거'},{kind:'body',text:e.note},{kind:'body',text:`대상 ${e.sourceUrl} · 수집 ${e.capturedAt}`});for(const c of e.criteria)blocks.push({kind:'subheading',text:c.label},{kind:'body',text:`${c.status==='pass'?'충족':c.status==='review'?'미확인':'보완 검토'} · 기준: ${c.rule}`},{kind:'body',text:`원문: ${c.evidence}`},{kind:'body',text:`위치: ${c.locator}`});}
+  else if(report.scoringMethod)blocks.push({kind:'body',text:'구버전 종합 점수는 8개 AI 평가 점수의 산술평균입니다. 세부 배점은 검증되지 않았고 실제 성과·모바일 성능·AI 인용률이 아닙니다.'});
   if(report.keywordFrequency)blocks.push({kind:'heading',text:'반복 표현 집계 범위'},{kind:'body',text:keywordFrequencyScope(report.keywordFrequency)},{kind:'body',text:keywordDensityNote(report.keywordFrequency,false)},{kind:'body',text:keywordDensityNote(report.keywordFrequency,true)});
   blocks.push(...buildInsightsDocument(report));
   blocks.push(...buildGrowthDocument(report));
@@ -106,12 +109,12 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     walk(comparison.baseline.citation);
   }
   const sections:[string,unknown][] = [
-    ['영역별 점수',report.diagnosis],['GEO 질문·답변·출처·실행 과제',report.llmCitationTest],
-    ['콘텐츠 발견성 및 AI 답변 대응',report.discoverability],['핵심 개선 이슈',report.criticalIssues],
+    ['영역별 점수',report.evidenceReview?undefined:report.diagnosis],['GEO 질문·답변·출처·실행 과제',report.llmCitationTest],
+    ['콘텐츠 발견성 및 AI 답변 대응',report.evidenceReview&&report.discoverability?{summary:report.discoverability.summary,checks:readinessItems(report.discoverability).map(({label,currentValue,diagnosis,guide})=>({label,currentValue,diagnosis,guide}))}:report.discoverability],['핵심 개선 이슈',report.criticalIssues],
     ['진단 체크리스트',report.checklist],['빠른 개선 과제',report.quickWinsDetailed || report.quickWins],
     ['우선순위 로드맵',report.priorityRoadmap],['카피 개선',report.exampleCopy],
     ['키워드 빈도',report.keywordFrequency],
-    ['수집 표본 참고 비교',presentBenchmark(report.industryBenchmark)],
+    ['수집 표본 참고 비교',report.evidenceReview?undefined:presentBenchmark(report.industryBenchmark)],
     ['경쟁사 분석 상태',report.competitorStatus],['경쟁사 분석',report.competitorAnalysis],['다음 단계',report.finalCta],
   ];
   for (const [title,data] of sections) {

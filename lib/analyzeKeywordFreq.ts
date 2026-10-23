@@ -103,6 +103,16 @@ const STOPWORDS = new Set([
 /** Preserve short/stop words and separators until adjacency has been checked. */
 const rawTokens=(text:string)=>text.normalize('NFKC').toLowerCase().match(/[가-힣]+|[a-z0-9][a-z0-9_-]*/g)||[];
 const meaningful=(token:string)=>token.length>=2&&!STOPWORDS.has(token);
+/** Literal expression coverage; compound Korean words already containing the term need no extra repetition. */
+export function containsKeyword(text:string,keyword:string):boolean {
+  const normalize=(s:string)=>s.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu,' ').trim();
+  const value=normalize(text),word=normalize(keyword);if(!word)return false;
+  return /[가-힣]/.test(word)?value.includes(word):` ${value} `.includes(` ${word} `);
+}
+export function reconcileKeywordMetadata(frequency:KeywordFrequency,title:string,description:string):KeywordFrequency {
+  const fix=(items:KeywordFreqItem[])=>items.map(k=>({...k,inTitle:containsKeyword(title,k.keyword),inMetaDescription:containsKeyword(description,k.keyword)}));
+  return {...frequency,singles:fix(frequency.singles),phrases:fix(frequency.phrases)};
+}
 const pairs=(text:string)=>{
   const source=text.normalize('NFKC').toLowerCase();
   const matches=[...source.matchAll(/[가-힣]+|[a-z0-9][a-z0-9_-]*/g)];
@@ -122,5 +132,5 @@ export function analyzeKeywordFrequency(data:ExtractedWebsiteData):KeywordFreque
   function items(map:Map<string,number>,denominator:number,title:Set<string>,description:Set<string>):KeywordFreqItem[]{
     return [...map.entries()].filter(([,n])=>n>=2).sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],'ko')).slice(0,30).map(([keyword,count])=>({keyword,count,density:denominator?Math.round(count/denominator*10000)/100:0,inTitle:title.has(keyword),inMetaDescription:description.has(keyword)}));
   }
-  return {methodVersion:2,scope:'body',sourceLength:data.bodyText.length,bodyTruncated:data.bodyTextLength>data.bodyText.length,totalTokens:tokens.length,totalPhrases:phrases.length,uniqueSingles:singles.size,uniquePhrases:bigrams.size,singles:items(singles,tokens.length,titleTokens,descriptionTokens),phrases:items(bigrams,phrases.length,titlePairs,descriptionPairs)};
+  return reconcileKeywordMetadata({methodVersion:2,scope:'body',sourceLength:data.bodyText.length,bodyTruncated:data.bodyTextLength>data.bodyText.length,totalTokens:tokens.length,totalPhrases:phrases.length,uniqueSingles:singles.size,uniquePhrases:bigrams.size,singles:items(singles,tokens.length,titleTokens,descriptionTokens),phrases:items(bigrams,phrases.length,titlePairs,descriptionPairs)},data.title,data.description);
 }

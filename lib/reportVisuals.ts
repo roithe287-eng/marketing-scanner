@@ -45,7 +45,11 @@ export function buildObservationVisual(citation?:LlmCitationTest|null) {
   const sourceRows=citation.results.filter(r=>unique(r)&&['cited','uncited'].includes(observationState(r)));
   const mentionRows=citation.results.filter(r=>unique(r)&&(r.status==='ok'||r.status==='unverified')&&typeof r.brandMentioned==='boolean');
   const sourceCount=sourceRows.filter(r=>r.cited).length,mentionCount=mentionRows.filter(r=>r.brandMentioned).length;
+  const branded=sourceRows.filter(r=>r.branded===true),unbranded=sourceRows.filter(r=>r.branded===false);
   return {questions,distributions,total:citation.results.length,sourceTotal:sourceRows.length,sourceCount,mentionTotal:mentionRows.length,mentionCount,
+    brandedTotal:branded.length,brandedCount:branded.filter(r=>r.cited).length,brandedRate:branded.length?Math.round(100*branded.filter(r=>r.cited).length/branded.length):null,
+    unbrandedTotal:unbranded.length,unbrandedCount:unbranded.filter(r=>r.cited).length,unbrandedRate:unbranded.length?Math.round(100*unbranded.filter(r=>r.cited).length/unbranded.length):null,
+    unclassifiedTotal:sourceRows.length-branded.length-unbranded.length,
     citationRate:sourceRows.length?Math.round(100*sourceCount/sourceRows.length):null,
     mentionRate:mentionRows.length?Math.round(100*mentionCount/mentionRows.length):null};
 }

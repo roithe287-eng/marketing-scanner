@@ -25,6 +25,7 @@ import {analyzeAnswerContent} from '@/lib/analyzeAnswerContent';
 import {buildAnswerContentPlan} from '@/lib/answerContent';
 import {competitorOwnText} from '@/lib/competitorResearch';
 import {collectOwnProductContext} from '@/lib/ownProductSources';
+import {finalizeReportEvidence} from '@/lib/evidenceReview';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -160,11 +161,12 @@ export async function POST(req: NextRequest) {
     const benchmark=await optionalStage('benchmark','업종 비교 데이터',Math.max(1,Math.min(2500,remainingBudget()-500)),()=>category.value?analyzeBenchmark(websiteData,report.diagnosis,category.value,report.diagnosisMethod!):Promise.resolve(null));
     report.industryBenchmark=benchmark.value;
     report.analysisWarnings=[discoverability,llmCitation,keywordRank,category,benchmark,answerContent].flatMap(stage=>stage.warning?[stage.warning]:[]);
+    const reviewedReport=finalizeReportEvidence(report,websiteData);
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
     return {
-      ...report,
+      ...reviewedReport,
       _hasCompetitor: !!(
         process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET && (principal.kind==='internal'||principal.account.features.competitor)
       ),
