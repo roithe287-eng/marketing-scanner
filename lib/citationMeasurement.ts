@@ -52,8 +52,11 @@ export function aggregateCitation(results: LlmCitationQuestionResult[]) {
     totalTests: results.length, validTests: valid.length, citationValidTests: measured.length,
     failedTests: results.length - valid.length, totalCited: measured.filter(r => r.cited).length,
     mentionRate: rate(unique.filter(r=>typeof r.brandMentioned==='boolean'), r => !!r.brandMentioned), ownedCitationRate: citationRate,
-    brandedCitationRate: rate(measured.filter(r => r.branded), r => r.cited),
-    unbrandedCitationRate: rate(measured.filter(r => !r.branded), r => r.cited),
+    brandedCitationRate: rate(measured.filter(r => r.branded===true), r => r.cited),
+    unbrandedCitationRate: rate(measured.filter(r => r.branded===false), r => r.cited),
+    brandedTests:measured.filter(r=>r.branded===true).length,brandedCited:measured.filter(r=>r.branded===true&&r.cited).length,
+    unbrandedTests:measured.filter(r=>r.branded===false).length,unbrandedCited:measured.filter(r=>r.branded===false&&r.cited).length,
+    unclassifiedTests:measured.filter(r=>typeof r.branded!=='boolean').length,
     // Retained for older consumers only. v2 UI uses nullable metrics above.
     overallScore: citationRate ?? 0, citationRate: citationRate ?? 0,
     engineScores: {

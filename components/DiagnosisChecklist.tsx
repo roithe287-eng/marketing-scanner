@@ -2,7 +2,7 @@ import {Guidebook} from './report/SiteGuidebook';
 import React from 'react';
 import type {ChecklistItem} from '@/lib/reportSchema';
 import EvidenceFlow from './report/EvidenceFlow';
-const states={pass:{label:'통과',symbol:'✓'},warning:{label:'보완',symbol:'!'},fail:{label:'미충족',symbol:'−'}} as const;
+const states={pass:{label:'관측 충족',symbol:'✓'},warning:{label:'보완 검토',symbol:'!'},fail:{label:'미충족',symbol:'−'},review:{label:'미확인·검토',symbol:'?'}} as const;
 const categories:Record<string,string>={seo:'SEO',content:'콘텐츠',trust:'신뢰',conversion:'전환'};
 export default function DiagnosisChecklist({checklist}:{checklist:ChecklistItem[]}) {
   if(!checklist?.length)return null;

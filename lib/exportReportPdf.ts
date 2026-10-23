@@ -1,4 +1,5 @@
 import {buildReportSummaryPage} from './reportSummaryPdf';
+import {reportForPresentation} from './reportPresentation';
 export type PdfScope='full'|'summary';
 import {buildVisualPdfPages,type VisualPdfPage} from './reportVisualPdf';
 import type { MarketingReport } from './reportSchema';
@@ -9,6 +10,7 @@ const yieldToBrowser=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 
 /** Prepare a browser-independent PDF result; saving is an explicit user action. */
 export async function renderReportPdf(report:MarketingReport,onProgress:(text:string)=>void,canvas:HTMLCanvasElement,fontFamily=PDF_FONT,signal?:AbortSignal,scope:PdfScope='full') {
+  report=reportForPresentation(report);
   signal?.throwIfAborted();
   onProgress(scope==='summary'?'한 장 요약을 정리 중...':'결과 차트·비교 카드·상세 안내를 정리 중...');
   const {default:JsPDF}=await import('jspdf');

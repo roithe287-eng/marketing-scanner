@@ -52,7 +52,9 @@ test('reference parsing only accepts this scanner and preserves fixed question t
 test('share roundtrip, visible panel and PDF retain both observations and failure reasons',()=>{
   const r=report([row(q,{responseText:'이전 답변 보존',sources:[{url:'https://example.com/old-evidence',title:'이전 근거',ownership:'own'}]})],[row(q,{status:'error',errorMessage:'HTTP 429',measuredAt:'2026-10-02'})]);
   const restored=MarketingReportSchema.parse(JSON.parse(JSON.stringify(r)));
-  assert.deepEqual(restored.geoBaseline,r.geoBaseline);
+  assert.deepEqual(restored.geoBaseline?.citation.results,r.geoBaseline?.citation.results);
+  assert.equal(restored.geoBaseline?.citation.unbrandedTests,0);
+  assert.equal(restored.geoBaseline?.citation.unclassifiedTests,1);
   const pdf=buildReportDocument(restored);const text=pdf.map(b=>b.text).join('\n');
   for(const value of ['GEO 이전·현재 비교','이전 답변 보존','HTTP 429','실패 또는 검색·출처 미확인','비교 불가']) assert.ok(text.includes(value),value);
   assert.ok(pdf.some(b=>b.href==='https://example.com/old-evidence'));

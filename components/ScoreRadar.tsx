@@ -6,13 +6,16 @@ import DiagnosisIcon from './report/DiagnosisIcon';
 import DiagnosisRadarGraphic from './DiagnosisRadarGraphic';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {diagnosisScores,scoreGrade} from '@/lib/diagnosisVisuals';
+import EvidenceReviewPanel from './report/EvidenceReviewPanel';
+import type {EvidenceReview} from '@/lib/evidenceReview';
 
-export default function ScoreRadar({diagnosis,plan}:{diagnosis:MarketingReport['diagnosis'];plan?:ExecutionPlan}) {
+export default function ScoreRadar({diagnosis,plan,review}:{diagnosis:MarketingReport['diagnosis'];plan?:ExecutionPlan;review?:EvidenceReview}) {
   const scores=diagnosisScores(diagnosis),ordered=[...scores].sort((a,b)=>a.score-b.score);
   const [selected,setSelected]=useState<string>(ordered[0].key);
   const current=scores.find(s=>s.key===selected)||ordered[0];
   const selectedIndex=scores.findIndex(s=>s.key===current.key);
   const detailId=useId();
+  if(review)return <EvidenceReviewPanel review={review}/>;
   const patterns:Record<string,RegExp>={firstView:/첫|제목|헤드라인/,cta:/CTA|버튼|문의/,copywriting:/카피|문구|본문|중복/,trust:/신뢰|후기|사례|인증/,conversionFlow:/전환|폼|문의/,adLanding:/랜딩|광고|CTA/,mobileUx:/모바일|속도|성능/,seo:/SEO|검색|메타|title/i};
   const task=plan?.tasks.find(t=>patterns[current.key]?.test(t.title));
   const target=task?.anchor||(['seo','mobileUx'].includes(current.key)?'report-growth-plan':'report-page-edits');

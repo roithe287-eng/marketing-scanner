@@ -1,3 +1,5 @@
+import {evidenceScoreText} from './evidenceReview';
+import {reportForPresentation} from './reportPresentation';
 import {buildExecutableRewrites} from './keywordExecution';
 import {diagnosisScores,radarPoint} from './diagnosisVisuals';
 import {rewriteKinds} from './keywordRewrite';
@@ -8,14 +10,20 @@ import type {VisualPdfPage} from './reportVisualPdf';
 const ink='#202329',gray='#606875',red='#b9141a';
 const short=(s:string,max=90)=>s.length>max?s.slice(0,max)+'…':s;
 export function buildInsightsPdfPages(report:MarketingReport,measure:TextMeasurer):VisualPdfPage[] {
+  report=reportForPresentation(report);
   const d=buildReportInsights(report),pages:VisualPdfPage[]=[];let page!:VisualPdfPage,y=0;
   function text(value:string,x:number,top:number,width=694,size=13,color=ink,weight=400) {
     const style:PdfTextStyle={size,color,weight,lineHeight:size*1.6};
     for(const line of wrapPdfText(value,style,measure,width)){page.lines.push({...style,text:line.text,x,y:top,width:measure(line.text,style)});top+=style.lineHeight;}return top;
   }
+  function wrappedHeight(value:string,width:number,size:number){return wrapPdfText(value,{size,color:ink,weight:400,lineHeight:size*1.6},measure,width).length*size*1.6;}
   function rect(x:number,top:number,width:number,height:number,color='#f4f5f7'){page.shapes.push({kind:'rect',x,y:top,width,height,color,radius:10});}
   function next(title:string,note:string) {page={lines:[],shapes:[]};pages.push(page);rect(48,48,5,38,red);text('JINJJA MARKETING · DIAGNOSIS',65,46,660,11,gray,700);const end=text(title,65,68,660,25,ink,700);y=text(note,48,end+14,694,12,gray)+24;}
   const scores=diagnosisScores(report.diagnosis),ordered=[...scores].sort((a,b)=>a.score-b.score);
+  if(report.evidenceReview){
+    next('8개 영역 · 근거와 측정 범위','실제 화면·전환·모바일의 미측정 항목에는 점수를 부여하지 않습니다.');
+    for(const a of report.evidenceReview.axes){const evidence=short(a.evidence,550),nextStep=short(a.nextStep,450),height=wrappedHeight(evidence,662,12)+wrappedHeight(nextStep,662,12)+72;if(y+height>PDF_PAGE.contentBottom)next('영역별 근거 · 계속','입력 페이지의 관측과 실제 화면 검증을 구분합니다.');rect(48,y,694,height);let top=text(`${a.label} · ${a.status==='unmeasured'?'미측정':'원문 관측·검토'}`,64,y+12,662,15,ink,700);top=text(evidence,64,top+8,662,12,gray);text(nextStep,64,top+8,662,12,gray);y+=height+12;}
+  }else{
   next('8개 영역 진단 인포그래픽','기존 8방향 점수를 유지하고, 낮은 점수의 영역부터 검토 가이드를 연결합니다.');
   const chartY=y;
   for(const level of [100,80,60,40,20])page.shapes.push({kind:'polygon',x:48,y:chartY,width:694,height:480,points:scores.map((_,i)=>radarPoint(i,level,347,240,160)),color:'#dfe4eb',...(level===100?{fill:'#f8fafc'}:{})});
@@ -25,11 +33,14 @@ export function buildInsightsPdfPages(report:MarketingReport,measure:TextMeasure
   y=chartY+508;y=text('점수 기준 먼저 검토할 3개 영역',48,y,694,18,ink,700)+14;
   ordered.slice(0,3).forEach((s,i)=>{const x=48+i*236;rect(x,y,222,194);text(`0${i+1} · ${s.label}`,x+14,y+14,194,13,ink,700);text(`${s.score}점`,x+14,y+47,194,23,s.color,700);text(s.action,x+14,y+90,194,12,gray);});
   y+=214;text('검토 순서는 점수 기준이며 실제 성과·개선 효과의 크기를 뜻하지 않습니다. 동점은 표시 순서 기준입니다.',48,y,694,12,gray);
+  }
   next('핵심 진단 한눈에 보기',short(report.meta?.siteName||report.meta?.domain||report.url,65));
-  rect(48,y,694,116);text(`마케팅 종합 점수  ${report.overallScore} / 100`,64,y+14,662,20,ink,700);text(short(report.oneLineSummary,95),64,y+51,662,14);y+=142;
+  rect(48,y,694,116);text(evidenceScoreText(report),64,y+14,662,20,ink,700);text(short(report.oneLineSummary,95),64,y+51,662,14);y+=142;
+  if(!report.evidenceReview){
   y=text('고객 전환 준비도',48,y,694,18,ink,700)+12;
   d.stages.forEach((s,i)=>{const x=48+i*177;rect(x,y,163,139);text(`0${i+1}  ${s.label}`,x+12,y+12,139,13,ink,700);text(`${s.score} / 100`,x+12,y+48,139,25,ink,700);rect(x+12,y+96,139,5,'#dfe4e9');if(s.score)rect(x+12,y+96,139*s.score/100,5,s.score===Math.min(...d.stages.map(v=>v.score))?red:'#43526a');});y+=151;
-  y=text(insightNotes.stages,48,y,694,12,gray)+26;y=text('데이터 확인 범위',48,y,694,18,ink,700)+12;
+  y=text(insightNotes.stages,48,y,694,12,gray)+26;}
+  y=text('데이터 확인 범위',48,y,694,18,ink,700)+12;
   d.coverage.forEach((c,i)=>{const x=48+i*177;rect(x,y,163,136);text(c.label,x+12,y+12,139,13,ink,700);text(c.value,x+12,y+44,139,20,ink,700);text(c.state,x+12,y+83,139,12,gray);text(c.detail,x+12,y+108,139,10,gray);});y+=163;
   const stats=[['통합 보완',`${d.tasks.length}개`],['고객 질문',d.obs?`${d.questions.length}개`:'미확인'],['출처 URL',`${d.sources.length}개`],['브랜드 답변 대조',d.reviewSummary.verified?`${d.reviews.length}건`:'미확인']];
   stats.forEach(([label,value],i)=>{const x=48+i*177;rect(x,y,163,90,'#fff5f5');text(label,x+12,y+12,139,12,gray);text(value,x+12,y+41,139,24,ink,700);});y+=110;

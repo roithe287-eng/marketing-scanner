@@ -9,7 +9,8 @@ export function buildOfficialSeoDocument(report:MarketingReport):ReportBlock[]{
  if(audit.observedAt)blocks.push({kind:'body',text:`URL: ${audit.targetUrl} · 관측 ${audit.observedAt}`});
  for(const check of audit.checks){blocks.push({kind:'subheading',text:`[${OFFICIAL_SEO_STATUS[check.status]}] ${check.title}`},{kind:'body',text:`${check.engines.map(e=>e==='naver'?'네이버':'Google').join(' · ')} · 근거: ${check.evidence}`},{kind:'body',text:check.interpretation});check.steps.forEach((s,i)=>blocks.push({kind:'body',text:`${i+1}. ${s}`}));blocks.push({kind:'body',text:`완료 확인: ${check.completion}`});if(!check.id.startsWith('review-'))for(const source of officialSeoCheckSources(check))blocks.push({kind:'body',text:source.title,href:source.url});}
  // The report stores the catalog version. Never attach a newer catalog to an older snapshot.
- if(audit.catalogVersion===OFFICIAL_SEO_VERSION){
+ if(report.evidenceReview)blocks.push({kind:'heading',text:'공식 문서의 적용 범위'},{kind:'body',text:'이 PDF에는 위 점검에 적용한 기준·관측값·실행 순서와 해당 공식 출처를 연결했습니다. 사이트에 적용되지 않은 전체 문서 사전과 속성 목록은 반복 수록하지 않습니다. 공통 기준의 존재가 해당 사이트의 결함이나 성과를 입증하는 것은 아닙니다.'});
+ else if(audit.catalogVersion===OFFICIAL_SEO_VERSION){
   blocks.push({kind:'heading',text:'공식 문서별 적용 기준'},{kind:'body',text:'각 페이지의 실제 콘텐츠 유형·지역·제휴·운영 상황에 해당할 때 적용합니다. 세부 속성의 형식·허용값·대안·중첩 조건은 링크의 공식 명세에서 검증합니다.'});
   for(const guide of OFFICIAL_SEO_GUIDES){
    blocks.push({kind:'subheading',text:`${guide.engine==='naver'?'네이버':'Google'} · ${guide.title}${guide.status==='unavailable'?' [원문 재확인 필요]':''}`},{kind:'body',text:`${OFFICIAL_SEO_TOPICS[guide.topic as OfficialSeoTopic]} · 적용: ${guide.applicability}`});

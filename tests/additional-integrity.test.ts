@@ -21,7 +21,8 @@ test('body frequency counts headings once and excludes metadata from its denomin
  const result=analyzeKeywordFrequency(data);
  assert.equal(result.totalTokens,6);assert.equal(result.totalPhrases,3);
  assert.equal(result.singles.find(i=>i.keyword==='마케팅')?.count,3);
- assert.equal(result.singles.find(i=>i.keyword==='분석')?.inTitle,false);
+ // Coverage includes an expression within a Korean compound; frequency still counts body tokens only.
+ assert.equal(result.singles.find(i=>i.keyword==='분석')?.inTitle,true);
  assert.equal(result.phrases[0].density,100);assert.equal(result.phrases[0].inMetaDescription,true);
  assert.equal(result.methodVersion,2);assert.equal(result.bodyTruncated,false);
 });

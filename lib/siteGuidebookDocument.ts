@@ -26,8 +26,17 @@ export function buildSiteGuidebookDocument(report:MarketingReport):ReportBlock[]
  const blocks:ReportBlock[]=[{kind:'heading',text:'URL 맞춤 편집 가이드북 · 위치·기대효과·검증'},
  {kind:'body',text:`제작 도구: ${editingPlatform(report).label} · 공식 문서 검토 ${GUIDE_REVIEWED_AT}`},
  {kind:'body',text:'공개 HTML의 원문과 문서 순서를 연결합니다. 브라우저 화면 캡처·관리자 화면·화면 좌표는 수집하지 않았습니다. 공식 문서는 작동 원리를 뒷받침하며 해당 사이트의 순위·매출·문의 상승을 실증하거나 보장하지 않습니다.'}];
- for(const [i,r] of guidebookRequests(report).entries()){
+ for(const [i,r] of guidebookRequests(report).filter(r=>!report.evidenceReview||!r.keyword).entries()){
   const g=buildSiteGuide(report,r),add=(text:string)=>blocks.push({kind:'body',text});
+  if(report.evidenceReview){
+   blocks.push({kind:'subheading',text:`${i+1}. ${g.title}`});
+   add(`편집 위치: ${g.location}`);add(`경로 참고: ${g.route.path.join(' → ')}`);add(`위치 근거: ${g.matchLabel} · ${g.matchReason}`);
+   if(g.focus){add(`수집 원문: ${g.focus.text}`);add(`원문 선택자: ${g.focus.selector}`);}
+   for(const setting of g.settings)add(`설정 ${setting.name}: ${setting.value} · ${setting.selector}`);
+   add(`제안: ${g.proposal||'앞의 실행 보드에서 해당 항목 확인'}`);add(`완료 확인: ${g.effect.check}`);
+   for(const id of new Set([...g.effect.sources,...g.route.sources]))blocks.push({kind:'body',text:GUIDE_SOURCES[id].title,href:GUIDE_SOURCES[id].url});
+   continue;
+  }
   blocks.push({kind:'subheading',text:`${i+1}. ${g.title}`});add(`대상: ${g.url||report.url}`);add(`기대효과 · 조건부: ${g.effect.expected}`);add(`효과 한계: ${g.effect.limit}`);
   add(`편집 경로: ${g.route.path.join(' → ')}`);add(g.route.scope);add(g.route.instruction);
   add(`위치 연결: ${g.matchLabel} · ${g.matchReason}`);add(`선택한 위치: ${g.location}`);

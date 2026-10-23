@@ -8,10 +8,11 @@ export function buildInsightsDocument(report:MarketingReport):ReportBlock[] {
   const d=buildReportInsights(report),blocks:ReportBlock[]=[];
   const add=(kind:ReportBlock['kind'],text:string,href?:string)=>blocks.push({kind,text,...(href?{href}:{})});
   add('heading','8개 영역별 검토 가이드');
-  diagnosisScores(report.diagnosis).forEach(s=>{add('subheading',`${s.label} · ${s.score}점`);add('body',s.action);add('body',`완료 확인: ${s.check}`);});
+  if(report.evidenceReview)report.evidenceReview.axes.forEach(a=>{add('subheading',`${a.label} · ${a.status==='unmeasured'?'미측정':'원문 관측·검토'}`);add('body',a.evidence);add('body',a.nextStep);});
+  else diagnosisScores(report.diagnosis).forEach(s=>{add('subheading',`${s.label} · ${s.score}점`);add('body',s.action);add('body',`완료 확인: ${s.check}`);});
   add('heading','추가 진단 · 확인 범위와 전환 준비도');
   d.coverage.forEach(c=>add('body',`${c.label}: ${c.value} · ${c.state} · ${c.detail}`));add('body',insightNotes.stages);
-  d.stages.forEach((s,i)=>add('body',`${i+1}. ${s.label}: ${s.score}/100 · ${s.action}`));
+  if(!report.evidenceReview)d.stages.forEach((s,i)=>add('body',`${i+1}. ${s.label}: ${s.score}/100 · ${s.action}`));
   add('heading','질문과 답변 페이지 지도');add('body',insightNotes.questions);
   if(!d.questions.length)add('body','새 형식의 질문 관측이 없어 페이지 연결을 판정하지 않았습니다.');
   d.questions.forEach(q=>{add('subheading',q.question);add('body',`${q.kind} · 정상 관측 ${q.observations}건 · ${q.evidence}`);if(q.target)add('body',q.target,q.target);add('body',contentBrief(q.question,q.target));});
@@ -31,8 +32,9 @@ export function buildInsightsDocument(report:MarketingReport):ReportBlock[] {
   add('heading','반복 표현 TO-BE 제안');add('body',KEYWORD_REWRITE_NOTE);
   for(const [label,plans] of [['단어',rewrites.singles],['연속어구',rewrites.phrases]] as const){
     add('subheading',`${label} · ${plans.length}개 제안`);
-    plans.forEach(p=>{add('subheading',`${p.item.keyword} · ${p.kind} · ${p.item.count}회`);add('body',`AS-IS: ${p.reason}`);add('body',`TO-BE: ${p.action}`);if(p.guide.url)add('body',p.guide.url,p.guide.url);add('body',rewriteInstruction(p));});
+    plans.forEach(p=>{add('subheading',`${p.item.keyword} · ${p.kind} · ${p.item.count}회`);add('body',`현재: ${p.reason}`);add('body',`원문: ${p.source||'해당 표현의 문장 원문 미확인'}`);add('body',`검토 위치: ${p.guide.location}`);add('body',`제안: ${p.action}`);add('body',`작성 틀: ${p.template}`);add('body',`완료 확인: ${p.check}`);if(!report.evidenceReview){if(p.guide.url)add('body',p.guide.url,p.guide.url);add('body',rewriteInstruction(p));}});
   }
+  add('subheading','반복 표현 공통 실행 순서');add('body','표현이 있는 원문 위치 확인 → 실제 의미·업무 범위 확인 → 작성 틀의 대괄호를 사실로 채우기 → PC·모바일 미리보기 → 같은 URL에서 반영 확인. 표현별 전체 작업 지시서는 보고서 화면의 작성 도우미에서 확인·복사할 수 있습니다.');
   add('heading','키워드 연결 기회');add('body','저장된 빈도 표현 중 일반어·확인되지 않은 영문 표기·상품 코드를 제외한 최대 8개 검토 후보입니다. 집계 범위는 빈도 상세에 표시하며, 횟수는 검색량이 아닙니다. 대표 상품·서비스인지 확인한 뒤 제목·설명을 검토하세요.');
   if(!d.gaps.length)add('body','연결 후보가 없거나 빈도 데이터가 없습니다.');
   d.gaps.forEach(k=>add('body',`${k.keyword} · ${k.count}회 · ${k.density}% · 제목 ${k.inTitle?'포함':'미포함'} · 설명 ${k.inMetaDescription?'포함':'미포함'}`));

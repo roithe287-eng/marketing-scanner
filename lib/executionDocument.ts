@@ -19,7 +19,7 @@ export function buildExecutionDocument(report:MarketingReport):ReportBlock[] {
   blocks.push({kind:'body',text:`기준 보고서 ${c.baseline.reportId} · 이전 ${comparisonTime(c.baseline.capturedAt)} → 현재 ${comparisonTime(c.currentTime)}`});
   if(!c.methodMatched)blocks.push({kind:'body',text:'평가 기준·모델 기록이 없거나 달라 점수 차이는 참고용입니다.'});
   if(!c.timeKnown)blocks.push({kind:'body',text:'수집 시각이 없는 결과는 새 측정인지 확인할 수 없어 해결 판정을 보류합니다.'});
-  for(const a of c.axes)blocks.push({kind:'body',text:`${a.label}: ${a.before} → ${a.after} (${a.delta>0?'+':''}${a.delta}점)`});
+  if(!report.evidenceReview)for(const a of c.axes)blocks.push({kind:'body',text:`${a.label}: ${a.before} → ${a.after} (${a.delta>0?'+':''}${a.delta}점)`});
   for(const g of comparisonGroups){const items=c.items.filter(t=>t.group===g.id);blocks.push({kind:'subheading',text:`${g.label} · ${items.length}개`},{kind:'body',text:g.note});for(const item of items)blocks.push({kind:'subheading',text:item.label},{kind:'body',text:`이전: ${item.before?.evidence||'동일 항목 기록 없음'}`},{kind:'body',text:`현재: ${item.after?.evidence||'현재 결과에 없어 해결 여부 미확인'}`},{kind:'body',text:item.reason||'동일 항목의 저장 상태를 대조한 결과'});}
  }
  blocks.push({kind:'heading',text:'담당별 실행 보드'},{kind:'body',text:'담당과 수정 위치는 추천 분류입니다. 실제 수정 권한·업무 범위에 맞게 배정하세요.'});

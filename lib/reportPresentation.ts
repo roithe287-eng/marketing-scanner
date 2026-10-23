@@ -2,9 +2,13 @@ import type {MarketingReport} from './reportSchema';
 import {excludedPlatformReason} from './competitorSelection';
 import {ownHost,safeHttpUrl} from './citationMeasurement';
 import {competitorDisplay} from './competitorDisplay';
+import {reconcileKeywordMetadata} from './analyzeKeywordFreq';
+import {canonicalPage} from './geoComparison';
 
 /** Reapply candidate policy to saved reports without mutating their observations. */
 export function reportForPresentation(report:MarketingReport):MarketingReport {
+  const page=report.pageEvidence;
+  if(report.keywordFrequency&&page&&canonicalPage(page.requestedUrl)===canonicalPage(report.url))report={...report,keywordFrequency:reconcileKeywordMetadata(report.keywordFrequency,page.title,page.description)};
   const storedAnalysis=report.competitorAnalysis;if(!storedAnalysis)return report;const analysis=competitorDisplay(storedAnalysis);
   const excluded:NonNullable<typeof analysis.filtering>['excluded']=[];
   const competitors=analysis.competitors.filter(c=>{

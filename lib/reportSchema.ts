@@ -1,6 +1,7 @@
 import {OfficialSeoAuditSchema} from './officialSeoSchema';
 import {activeCitation} from './activeCitation';
 import { z } from "zod";
+import {EvidenceReviewSchema} from './evidenceReview';
 import { citationFailureCodes } from './citationFailure';
 import {SiteEditingSchema} from './siteEditingSchema';
 import {AnswerContentPlanSchema} from './answerContentSchema';
@@ -14,10 +15,12 @@ export const ChecklistItemSchema = z.object({
   id: z.string(),
   category: z.enum(["seo", "content", "trust", "conversion"]),
   label: z.string(),
-  status: z.enum(["pass", "warning", "fail"]),
+  status: z.enum(["pass", "warning", "fail", "review"]),
   currentValue: z.string(),
   diagnosis: z.string(),
   guide: z.string(),
+  evidenceType:z.enum(['observed','inference','unmeasured']).optional(),
+  sourceUrl:z.string().optional(),capturedAt:z.string().optional(),locator:z.string().optional(),
 });
 
 // v44: Discoverability 개별 항목 스키마
@@ -99,6 +102,9 @@ const StoredLlmCitationTestSchema = z.object({
   ownedCitationRate: z.number().nullable().optional(),
   brandedCitationRate: z.number().nullable().optional(),
   unbrandedCitationRate: z.number().nullable().optional(),
+  brandedTests:z.number().int().nonnegative().optional(),brandedCited:z.number().int().nonnegative().optional(),
+  unbrandedTests:z.number().int().nonnegative().optional(),unbrandedCited:z.number().int().nonnegative().optional(),
+  unclassifiedTests:z.number().int().nonnegative().optional(),
   actionPlan: z.array(z.object({
     question: z.string(),
     journey: z.string(),
@@ -388,6 +394,7 @@ export type DiagnosisBaseline=z.infer<typeof DiagnosisBaselineSchema>;
 export type DiagnosisCheck=z.infer<typeof DiagnosisCheckSchema>;
 
 export const MarketingReportSchema = z.object({
+  evidenceReview:EvidenceReviewSchema.optional(),
   sharedRetention:z.object({reportId:z.string().regex(/^[A-Za-z0-9]{4,12}$/),createdAt:z.number().finite(),expiresAt:z.number().finite()}).optional(),
   scoringMethod:z.literal("ai-axes-mean-v1").optional(),
   integrity:z.object({version:z.literal(1),checkedAt:z.string().datetime(),note:z.string(),warnings:z.array(z.object({field:z.string(),message:z.string()})).max(100)}).optional(),

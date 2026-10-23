@@ -1,4 +1,6 @@
-> Latest verification: [운영 검증과 상품·GEO 주제 오류 수정](SCANNER_QA_2026-10-23.md).
+> Latest evidence review: [관측 근거·판정 일치·질문 유형별 인용·PDF 정리](EVIDENCE_REVIEW_2026-10-23.md).
+
+> Previous verification: [운영 검증과 상품·GEO 주제 오류 수정](SCANNER_QA_2026-10-23.md).
 
 > Latest general-domain update: [일반 도메인 공통 상품·경쟁사 점검](GENERAL_DOMAIN_EVIDENCE_2026-10-22.md).
 
