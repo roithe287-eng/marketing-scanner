@@ -11,6 +11,7 @@ import {citationFallbackQuestions} from '../lib/analyzeCitation';
 import {analyzeCompetitors} from '../lib/competitorAnalysis';
 import {MarketingReportSchema} from '../lib/reportSchema';
 import {fixture} from './fixtures/report';
+import {marketKeywordCandidates,usableMarketKeyword} from '../lib/competitorResearch';
 
 beforeEach(t=>{(t as TestContext).mock.method(websiteHttp,'fetch',(u:string|URL,init?:RequestInit)=>globalThis.fetch(u,init));});
 const root='https://general-shop.example.com';
@@ -28,8 +29,29 @@ for(const [platform,path] of [
 });
 
 test('list, account, lookalike, credential and private URLs cannot become detail sources',()=>{
-  for(const path of ['/product/list.html?cate_no=1','/goods/goods_list.php?cateCd=1','/products/categories/1','/product/detail.html','/shop_view/?idx=','/member/login.html','/cart/products/1','/api/products/1','https://general-shop.example.com.attacker.example/products/1','https://user:secret@general-shop.example.com/products/1','http://127.0.0.1/products/1'])assert.equal(ownProductUrl(path,root),null,path);
+  for(const path of ['/product/list.html?cate_no=1','/goods/goods_list.php?cateCd=1','/products/categories/1','/product/detail.html','/shop_view/?idx=','/member/login.html','/cart/products/1','/api/products/1','/board/product/write.html?product_no=70','/board/product/list.html?board_no=6','/bbs/products/review/1','https://general-shop.example.com.attacker.example/products/1','https://user:secret@general-shop.example.com/products/1','http://127.0.0.1/products/1'])assert.equal(ownProductUrl(path,root),null,path);
 });
+
+test('product-board actions and card controls never become product samples or discovery requests',()=>{
+  const seed=captureProductSeed('<main><ul><li><a href="/board/product/write.html?product_no=70">WRITE</a><a href="/product/detail.html?product_no=70">REVIEW</a><a href="/product/detail.html?product_no=70"><img alt="공개 제습기" src="a.png"></a></li></ul></main>',root);
+  assert.deepEqual(seed.sources.map(p=>p.name),['공개 제습기']);
+  assert.deepEqual(seed.productLinks,[root+'/product/detail.html?product_no=70']);
+  assert.deepEqual(seed.catalogLinks,[]);
+});
+
+test('GEO topics come from actual product nouns rather than common storefront headings or brand names',async t=>{
+  const page='<title>가상가전(appliance)</title><meta name="description" content="제습기와 냉난방기 전문 가전"><h2>BEST ITEMS</h2><h2>NEW ARRIVALS</h2><h2>BEST PHOTO REVIEW</h2><main>'+[24,60,16].map(n=>`<li><a href="/products/dehumidifier-${n}"><img alt="가상가전 1등급 대용량 제습기 W10LA ${n}L" src="a.png"></a></li>`).join('')+'</main>';
+  t.mock.method(globalThis,'fetch',async(input:unknown)=>String(input).endsWith('/robots.txt')?robots():html(page));
+  const sources=productSourcesFromHtml(page,root),data=await extractWebsite(root);
+  data.productContext={status:'observed',discovery:'public_links',attemptedPages:1,sources,note:'공개 상품 표본'};
+  const candidates=marketKeywordCandidates({...data,productSources:sources});
+  assert.equal(candidates[0]?.keyword,'제습기');
+  assert.ok(candidates.every(c=>!['등급','W10LA','w10la'].includes(c.keyword)));
+  for(const label of ['BEST ITEMS','NEW ARRIVALS','BEST PHOTO REVIEW',"MD’s CHOICE",'가상가전'])assert.equal(usableMarketKeyword(label,{...data,productSources:sources}),false,label);
+  assert.ok(citationFallbackQuestions(data,'가상가전').slice(1).every(q=>q.question.includes('제습기')));
+  assert.equal(buildAnswerContentPlan(data).primaryKeyword?.term,'제습기');
+});
+
 
 test('public cards and microdata recover multiple products and keep each merchant source URL',()=>{
   const seed=captureProductSeed('<title>가상스토어</title><main><ul><li><a href="/product/detail.html?product_no=1"><img alt="비타민 제품 하나" src="a.png"></a></li><li><a href="/product/detail.html?product_no=2"><img alt="비타민 제품 둘" src="b.png"></a></li></ul></main>',root);

@@ -54,14 +54,31 @@ export function keywordCandidates(site:QuerySite,limit=5) {
     .map(v=>{const evidence=keywordEvidence(v,site);return {...evidence,weightedSupport:evidence.weightedSupport+(keywordSeeds.has(normalizeSearchText(v))?3:0)-(evidence.evidence.length===1&&evidence.evidence[0].field==='페이지 제목'?3:0)};}).sort((a,b)=>b.weightedSupport-a.weightedSupport||a.keyword.length-b.keyword.length).slice(0,limit);
 }
 const marketTerms=['건강기능식품','건강식품','영양제','비타민','유산균','오메가3','구강청결제','칫솔','캔디','사료','세탁세제','단체복','과잠바','유니폼','의류','화장품','스킨케어','생활용품','반려동물용품','반려동물 사료','식품','밀키트','와인','가구','인테리어','마케팅 컨설팅','광고대행','광고 대행','메타광고','기업 교육','온라인 강의','채용 플랫폼','구인구직','소프트웨어','세무 상담','법률 상담'];
+const catalogLabel=/^(?:best(?:items?|products?|sellers?|photoreviews?)?|new(?:arrivals?|items?|products?)?|mds?(?:choice|picks?)|all(?:items?|products?)|featured(?:items?|products?)|photoreviews?|reviews?|shop(?:all|now)?|collections?|home|aboutus|contactus|write|more|view(?:more|all)?)$/i;
+const productStop=/^(?:기본|기획|개발|국내|국산|수입|정품|공식|전문|추천|베스트|인기|신상|신제품|신상품|할인|무료|배송|설치|방문설치|기본설치포함|당일|대용량|소형|대형|고급|프리미엄|세트|추가구성품|상품명|상품|제품|구매|판매|회원가입|적립금|지급|브랜드|set|new|best|the|and|for|with)$/i;
+function brandAliases(site:QuerySite){
+  return [site.title,site.ogTitle].filter((t):t is string=>!!t).flatMap(t=>t.split(/[|·:–—()（）]/)).map(t=>normalizeSearchText(t).replace(/(?:공식홈페이지|공식사이트|공식몰|스토어|store|shop|몰)$/i,'')).filter(t=>t.length>=2);
+}
+/** Recover category words beyond the fixed vocabulary, grounded in distinct public product names. */
+function productKeywordSeeds(site:QuerySite):string[]{
+  const words=new Map<string,Set<string>>(),aliases=brandAliases(site);
+  for(const p of site.productSources||[])for(const term of new Set(p.name.normalize('NFKC').match(/[\p{L}\p{N}]+/gu)||[])){
+    if(!/^(?:[가-힣]{2,20}|[a-zA-Z]{3,20})$/.test(term))continue;
+    const word=term.toLowerCase();if(productStop.test(word)||aliases.includes(normalizeSearchText(word)))continue;
+    if(!words.has(word))words.set(word,new Set());words.get(word)!.add(p.url+'\n'+p.name);
+  }
+  const metadata=[site.description,site.ogDescription,site.keywords,...site.h1||[]].join(' ');
+  return [...words].filter(([word,products])=>products.size>=2||queryMatches(word,metadata).matched.length>0).map(([word])=>word);
+}
 /** A company-name lookup is not a market query, even when its title repeats. */
 export function usableMarketKeyword(query:string,site:QuerySite):boolean {
   const q=normalizeSearchText(query),evidence=keywordEvidence(query,site);
   if(!evidence.grounded||query.length>40||queryTerms(query).length>5||/https?:|[<>]|채용공고|연봉|기업리뷰/.test(query))return false;
   if(/^(홈|메인|공식|홈페이지|사이트|쇼핑|쇼핑몰|스토어|온라인|인터넷|비즈니스|회사|기업|제품|상품|서비스|플랫폼|브랜드|문의|상담|고객센터|공지사항|로그인|회원가입|이용약관|개인정보|건강|헬스케어|푸드|뷰티|펫|헬스|라이프)$/i.test(q))return false;
   if(/(?:핫딜|pick|매거진|베스트|카테고리|기획전|신상품|추천상품|고객센터)$/i.test(q))return false;
+  if(catalogLabel.test(q.replace(/[^\p{L}\p{N}]/gu,'')))return false;
   const known=marketTerms.some(t=>normalizeSearchText(t)===q);
-  const aliases=[site.title,site.ogTitle].filter((t):t is string=>!!t).flatMap(t=>t.split(/[|·:–—]/)).map(t=>normalizeSearchText(t).replace(/(?:공식홈페이지|공식사이트|공식몰)$/,''));
+  const aliases=brandAliases(site);
   if(!known&&aliases.some(alias=>alias.length>=2&&(q===alias||q.includes(alias))))return false;
   if(isEmploymentQuery(query)&&!isEmploymentQuery([site.title,site.ogTitle,site.description,site.ogDescription,...site.h1||[]].join(' ')))return false;
   // A category embedded in a brand (e.g. 온누리식품) is insufficient on its own.
@@ -69,7 +86,7 @@ export function usableMarketKeyword(query:string,site:QuerySite):boolean {
   return exactCategoryHeading||evidence.evidence.some(e=>['메타 설명','메타 키워드','수집된 본문'].includes(e.field)||/^상품(?:명| 분류| 설명) · /.test(e.field));
 }
 export function marketKeywordCandidates(site:QuerySite){
-  const existing=keywordCandidates(site,20),extra=marketTerms.filter(t=>keywordEvidence(t,site).grounded).map(t=>keywordEvidence(t,site));
+  const existing=keywordCandidates(site,20),extra=[...marketTerms,...productKeywordSeeds(site)].filter(t=>keywordEvidence(t,site).grounded).map(t=>keywordEvidence(t,site));
   const seen=new Set<string>();
   return [...existing,...extra].filter(c=>usableMarketKeyword(c.keyword,site)).filter(c=>{const k=normalizeSearchText(c.keyword);if(seen.has(k))return false;seen.add(k);return true;})
     .sort((a,b)=>b.weightedSupport-a.weightedSupport||b.keyword.length-a.keyword.length).slice(0,5);
