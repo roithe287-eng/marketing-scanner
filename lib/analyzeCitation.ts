@@ -7,7 +7,7 @@ import { LlmCitationTestSchema, type LlmCitationTest, type LlmCitationQuestionRe
 import { getRedisClient } from './redisClient';
 import { CURRENT_GEO_PROTOCOL, aggregateCitation, brandMentioned, buildActionPlan, parseOpenAI } from './citationMeasurement';
 import { citationFailure, httpCitationFailure, incompleteCitationFailure, CitationRequestError, readCitationError } from './citationFailure';
-import {marketKeywordCandidates} from './competitorResearch';
+import {keywordEvidence,marketKeywordCandidates} from './competitorResearch';
 
 const VERSION = 'geo-v2.8-grounded-product-topics';
 const TIMEOUT = 22_000;
@@ -18,7 +18,9 @@ const digest = (input: string) => createHash('sha256').update(input).digest('hex
 const pending = new Map<string, Promise<LlmCitationTest>>();
 
 function productTopics(data:ExtractedWebsiteData){
-  return data.productContext?.status==='observed'?marketKeywordCandidates({...data,productSources:data.productContext.sources}).filter(k=>k.evidence.some(e=>/^상품(?:명| 분류| 설명) · /.test(e.field))).map(k=>k.keyword):[];
+  if(data.productContext?.status!=='observed')return [];
+  const products={productSources:data.productContext.sources};
+  return marketKeywordCandidates({...data,...products}).filter(k=>keywordEvidence(k.keyword,products).grounded).map(k=>k.keyword);
 }
 export function citationFallbackQuestions(data:ExtractedWebsiteData,brand:string):Question[]{
   const topics=productTopics(data);

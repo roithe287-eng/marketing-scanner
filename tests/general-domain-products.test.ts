@@ -50,6 +50,9 @@ test('GEO topics come from actual product nouns rather than common storefront he
   for(const label of ['BEST ITEMS','NEW ARRIVALS','BEST PHOTO REVIEW',"MD’s CHOICE",'가상가전'])assert.equal(usableMarketKeyword(label,{...data,productSources:sources}),false,label);
   assert.ok(citationFallbackQuestions(data,'가상가전').slice(1).every(q=>q.question.includes('제습기')));
   assert.equal(buildAnswerContentPlan(data).primaryKeyword?.term,'제습기');
+  // The displayed evidence list is capped at eight; that cap cannot erase real product grounding.
+  const repeatedHeadings={...data,h1:Array(4).fill('제습기'),h2:Array(8).fill('제습기')};
+  assert.ok(citationFallbackQuestions(repeatedHeadings,'가상가전').slice(1).every(q=>q.question.includes('제습기')));
 });
 
 
