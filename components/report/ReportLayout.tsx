@@ -84,7 +84,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
         {id:'geo-brand',label:'브랜드 표현 검토',children:<BrandReview data={data}/>},
         {id:'geo-sources',label:'AI 인용 출처',children:<SourceDirectory data={data}/>},
         {id:'geo-readiness',label:'페이지 준비도',children:<><GeoIntroduction/>{report.discoverability&&<DiscoverabilityPanel discoverability={report.discoverability} observedOnly={!!report.evidenceReview}/>}</>},
-        {id:'geo-comparison',label:'이전 관측 비교',children:<GeoComparisonPanel report={report}/>},
+        ...(report.geoBaseline?[{id:'geo-comparison',label:'이전 관측 비교',children:<GeoComparisonPanel report={report}/>}]:[]),
       ]}/>
     </Chapter>
     <Chapter id="search" number="03" title="페이지를 확인하고 바로 다듬기" note="문구 개선, 원문·링크, 검색 점검을 순서대로 확인하세요.">

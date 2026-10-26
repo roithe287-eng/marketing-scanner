@@ -13,7 +13,8 @@ export function ReportWorkspace({children}:{children:React.ReactNode}){
   let frame=0;
   const update=()=>{
    frame=0;
-   const line=(report.querySelector('.report-nav')?.getBoundingClientRect().bottom||0)+48;
+   const anchorOffset=chapters[0]?parseFloat(getComputedStyle(chapters[0]).scrollMarginTop)||0:0;
+   const line=Math.max(report.querySelector('.report-nav')?.getBoundingClientRect().bottom||0,anchorOffset)+8;
    const active=chapters.filter(chapter=>chapter.getBoundingClientRect().top<=line).at(-1)||chapters[0];
    const chapter=active?.dataset.chapter;
    const panels=active?Array.from(active.querySelectorAll<HTMLElement>('[data-report-panel]')):[];
