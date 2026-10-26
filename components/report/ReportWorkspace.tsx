@@ -13,7 +13,7 @@ export function ReportWorkspace({children}:{children:React.ReactNode}){
   let frame=0;
   const update=()=>{
    frame=0;
-   const line=(report.querySelector('.report-nav')?.getBoundingClientRect().bottom||0)+32;
+   const line=(report.querySelector('.report-nav')?.getBoundingClientRect().bottom||0)+48;
    const active=chapters.filter(chapter=>chapter.getBoundingClientRect().top<=line).at(-1)||chapters[0];
    const chapter=active?.dataset.chapter;
    if(chapter)setSelection(previous=>previous.chapter===chapter?previous:{...previous,chapter});
