@@ -74,3 +74,34 @@ test('declared article types identify an informational page without commerce or 
   assert.equal(p.kind,'content');assert.equal(p.goal.key,'read');assert.ok(p.evidence.some(e=>e.text==='@type: Article'));
   assert.ok(buildAnswerContentPlan(data).questions.every(q=>!['price','delivery','minimum'].includes(q.intent)));
 });
+
+test('a service homepage keeps its primary purpose when it also promotes training',async t=>{
+  const menus=Array.from({length:35},(_,i)=>`<a href="/menu/${i}">메뉴 ${i}</a>`).join('');
+  const html=`<html><head><title>진짜마케팅 | 광고대행·마케팅 컨설팅</title><meta name="description" content="광고 운영과 마케팅 컨설팅을 제공하는 실무 전문가 그룹입니다."></head><body>${menus}<main><h1>광고대행·마케팅 컨설팅</h1><h2>매체 강의·교육·컨설팅</h2><p>교육에서는 광고 분석을 학습합니다.</p><h2>우리 서비스와 진행 방식</h2><p>광고대행의 제공 범위와 담당자·프로젝트 사례를 안내합니다.</p><a id="primary-contact" href="/contact">서비스 상담 문의</a></main><footer><a href="/newsletter">뉴스레터 구독</a></footer></body></html>`;
+  t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>new Response(String(input).endsWith('/robots.txt')?'User-agent: *\nAllow: /':html,{headers:{'content-type':'text/html;charset=utf-8'}}));
+  const data=await extractWebsite('https://agency.example.com/'),purpose=analyzeWebsitePurpose(data);
+  assert.equal(purpose.kind,'service');assert.equal(purpose.goal.key,'contact');
+  assert.ok(purpose.goal.evidence.some(e=>e.locator==='#primary-contact'));
+  assert.ok(purpose.checks.some(c=>c.id==='scope'));assert.ok(!purpose.checks.some(c=>c.id==='curriculum'));
+  const report=finalizeReportEvidence({...fixture,url:data.url},data),pdf=buildReportDocument(report).map(b=>b.text).join('\n');
+  assert.match(report.oneLineSummary,/서비스·상담형/);assert.match(pdf,/상담·문의/);
+});
+
+test('a dedicated education page still wins over incidental service language and early menus',async t=>{
+  const menus=Array.from({length:35},(_,i)=>`<a href="/menu/${i}">메뉴 ${i}</a>`).join('');
+  const html=`<html><head><title>마케팅 실무 교육·강의</title><meta name="description" content="광고대행 담당자를 위한 교육과 커리큘럼 안내"></head><body>${menus}<main><h1>실무자를 위한 마케팅 교육</h1><p>컨설팅 서비스의 운영 경험으로 학습 과정과 준비사항을 설명합니다.</p><a id="apply" href="/apply">수강 신청</a></main><footer><a href="/contact">상담 문의</a></footer></body></html>`;
+  t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>new Response(String(input).endsWith('/robots.txt')?'User-agent: *\nAllow: /':html,{headers:{'content-type':'text/html;charset=utf-8'}}));
+  const purpose=analyzeWebsitePurpose(await extractWebsite('https://academy.example.com/lecture'));
+  assert.equal(purpose.kind,'education');assert.equal(purpose.goal.key,'application');
+  assert.ok(purpose.goal.evidence.some(e=>e.locator==='#apply'));
+});
+
+test('primary action controls remain observable beyond the link sample limit',async t=>{
+  const links=Array.from({length:35},(_,i)=>`<a href="/reference/${i}">관련 자료 ${i}</a>`).join('');
+  const html=`<html><head><title>예약 상담 서비스</title><meta name="description" content="전문 상담 서비스의 범위와 예약 절차"></head><body><main><h1>상담 서비스</h1>${links}<input id="book" type="submit" value="상담 예약"><div id="contact" role="button" aria-label="상담 문의"></div></main></body></html>`;
+  t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>new Response(String(input).endsWith('/robots.txt')?'User-agent: *\nAllow: /':html,{headers:{'content-type':'text/html;charset=utf-8'}}));
+  const data=await extractWebsite('https://booking.example.com/'),purpose=analyzeWebsitePurpose(data);
+  assert.equal(purpose.kind,'service');assert.equal(purpose.goal.key,'booking');
+  assert.ok(purpose.goal.evidence.some(e=>e.locator==='#book'));
+  assert.ok(data.siteEditing!.elements.some(e=>e.selector==='#contact'&&e.kind==='cta'));
+});
