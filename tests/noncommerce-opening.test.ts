@@ -32,7 +32,8 @@ for(const site of noncommerceCases.filter(c=>!['mixed','unknown'].includes(c.kin
   const before=JSON.stringify(report),$=render(report),opening=nonCommerceOpening(report)!;
   assert.equal($('#report-overview .answer-content').length,1);
   assert.equal($('#report-geo .answer-content').length,0,'the moved content is not duplicated');
-  assert.equal($('#report-overview [data-report-panel]:not([hidden]) .report-radar').length,0);
+  assert.equal($('#report-view-overview-main .report-radar').length,0,'the opening still leads with homepage content');
+  assert.equal($('#report-view-overview-observations[hidden]').length,0,'later evidence is visible while reading down');
   assert.equal($('.report-hero-score').length,0);
   assert.ok($('.report-hero-summary').text().includes(opening.topic));
   assert.doesNotMatch($('.report-hero').text()+$('.answer-header').text(),/HTML 기본 항목|미측정|미확인|완료하지 못/);

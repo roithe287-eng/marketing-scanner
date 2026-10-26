@@ -60,12 +60,21 @@ test('source browser bounds the list, preserves a readable original and centrali
  assert.equal($('.guide-element').length,0);assert.ok($('.source-library-stats').text().includes('건 중복 정리'));
 });
 
-test('report chapters read continuously with bounded detail panels and all target IDs available',t=>{
+test('all report categories read continuously and their menus link to individual section starts',t=>{
  const prior=(globalThis as typeof globalThis&{React?:typeof React}).React;Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:prior}));
  const report=serviceReviewReport(),before=JSON.stringify(report),$=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
  assert.equal($('.report-chapter:not([hidden])').length,5);
  assert.deepEqual($('.report-chapter').toArray().map(e=>$(e).attr('data-chapter')),['overview','geo','search','competition','actions']);
- for(const chapter of $('.report-chapter').toArray())assert.equal($(chapter).find('[data-report-panel]:not([hidden])').length,1);
+ for(const chapter of $('.report-chapter').toArray()){
+  const panels=$(chapter).find('[data-report-panel]'),links=$(chapter).find('.report-section-nav a');
+  assert.ok(panels.length>1);
+  assert.equal(panels.filter('[hidden]').length,0,'no category requires selection to reveal its content');
+  assert.equal(links.length,panels.length);
+  assert.deepEqual(links.toArray().map(e=>$(e).attr('href')),panels.toArray().map(e=>`#${$(e).attr('id')}`));
+ }
+ assert.equal($('.report-section-nav button').length,0);
+ assert.equal($('.keyword-workspace>div[hidden]').length,0);
+ assert.equal($('.keyword-workspace-nav a').length,3);
  assert.equal($('.report-nav a[aria-current="location"]').attr('href'),'#report-overview');
  assert.equal($('#report-overview .site-content-overview').length,1);assert.equal($('details:not([open])').length,0);
  for(const group of ['execution-tasks','growth-tasks','answer-questions','naver-checks','official-docs']){

@@ -13,9 +13,9 @@ function ReportPreview() {
   const axis = diagnosisAxes[selected];
   const insightId = useId();
   return <div className="scanner-radar-preview">
-    <div className="scanner-radar-caption"><strong>강점과 빈틈이 한눈에</strong><span>8개 축 · 예시 점수</span></div>
+    <div className="scanner-radar-caption"><strong>커머스 분석 예시</strong><span>8개 축 · 예시 점수</span></div>
     <DiagnosisRadarGraphic scores={exampleScores} selected={selected} example />
-    <div className="scanner-radar-controls" role="group" aria-label="예시 진단 영역 선택">{diagnosisAxes.map((a,i)=><button type="button" key={a.key} aria-pressed={i===selected} aria-controls={insightId} onClick={()=>setSelected(i)} style={{'--axis-color':a.color,'--axis-surface':a.surface} as CSSProperties}>
+    <div className="scanner-radar-controls" role="group" aria-label="커머스 분석 예시 영역 선택">{diagnosisAxes.map((a,i)=><button type="button" key={a.key} aria-pressed={i===selected} aria-controls={insightId} onClick={()=>setSelected(i)} style={{'--axis-color':a.color,'--axis-surface':a.surface} as CSSProperties}>
       <span><DiagnosisIcon axis={a.key}/>{a.short}<b>{exampleScores[i]}</b></span><i aria-hidden="true"><i style={{width:`${exampleScores[i]}%`}}/></i>
     </button>)}</div>
     <div className="scanner-radar-guidance" id={insightId} aria-live="polite"><strong>{axis.label} · 이렇게 개선</strong><p>{axis.action}</p></div>

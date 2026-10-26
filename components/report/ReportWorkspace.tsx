@@ -16,7 +16,9 @@ export function ReportWorkspace({children}:{children:React.ReactNode}){
    const line=(report.querySelector('.report-nav')?.getBoundingClientRect().bottom||0)+48;
    const active=chapters.filter(chapter=>chapter.getBoundingClientRect().top<=line).at(-1)||chapters[0];
    const chapter=active?.dataset.chapter;
-   if(chapter)setSelection(previous=>previous.chapter===chapter?previous:{...previous,chapter});
+   const panels=active?Array.from(active.querySelectorAll<HTMLElement>('[data-report-panel]')):[];
+   const panel=(panels.filter(item=>item.getBoundingClientRect().top<=line).at(-1)||panels[0])?.dataset.reportPanel;
+   if(chapter)setSelection(previous=>previous.chapter===chapter&&(!panel||previous.panels[chapter]===panel)?previous:{chapter,panels:panel?{...previous.panels,[chapter]:panel}:previous.panels});
   };
   const schedule=()=>{if(!frame)frame=requestAnimationFrame(update);};
   const observer=new ResizeObserver(schedule);observer.observe(report);
@@ -47,8 +49,8 @@ export function ReportWorkspace({children}:{children:React.ReactNode}){
 export function useReportSelection(){return useContext(WorkspaceContext);}
 export function ReportSections({chapter,items}:{chapter:string;items:{id:string;label:string;children:React.ReactNode}[]}){
  const selection=useReportSelection(),selected=items.some(i=>i.id===selection?.panels[chapter])?selection!.panels[chapter]:items[0]?.id;
- return <div className="report-section-workspace"><div className="report-section-nav" role="group" aria-label={`${chapter} 세부 결과 선택`}>{items.map(item=><button type="button" key={item.id} aria-pressed={selected===item.id} aria-controls={`report-view-${item.id}`} onClick={()=>revealReportTarget(`report-view-${item.id}`)}>{item.label}</button>)}</div>
-  {items.map(item=><div key={item.id} id={`report-view-${item.id}`} data-report-panel={item.id} hidden={selected!==item.id} className="report-section-panel"><div className="report-stack">{item.children}</div></div>)}
+ return <div className="report-section-workspace"><nav className="report-section-nav" aria-label={`${chapter} 세부 목차`}>{items.map(item=><a key={item.id} href={`#report-view-${item.id}`} aria-current={selected===item.id?'location':undefined} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(`report-view-${item.id}`))event.preventDefault();}}>{item.label}</a>)}</nav>
+  {items.map(item=><section key={item.id} id={`report-view-${item.id}`} data-report-panel={item.id} aria-label={item.label} className="report-section-panel"><div className="report-stack">{item.children}</div></section>)}
  </div>;
 }
 export function ReportNavigation({chapters}:{chapters:readonly (readonly [string,string])[]}){

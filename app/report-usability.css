@@ -132,8 +132,9 @@
 .report-excluded-sources li { display:grid; gap:6px; padding:16px 0; border-bottom:1px solid #dce3ec; overflow-wrap:anywhere; }
 .report-excluded-sources small { color:#53647b; }
 .keyword-workspace-nav { display:flex; flex-wrap:wrap; gap:8px; border-bottom:1px solid #ccd6e5; padding-bottom:16px; margin-bottom:24px; }
-.keyword-workspace-nav button { flex:1 1 160px; border:1px solid #bbcbe2; border-radius:10px; background:#fff; color:#294665; padding:13px 16px; min-height:48px; font-weight:750; font-size:16px; }
-.keyword-workspace-nav button[aria-pressed=true] { color:#fff; border-color:#2454c6; background:#2454c6; }
+.keyword-workspace-nav a { display:flex; align-items:center; justify-content:space-between; gap:8px; flex:1 1 160px; border:1px solid #bbcbe2; border-radius:10px; background:#fff; color:#294665; padding:13px 16px; min-height:48px; font-weight:750; font-size:16px; }
+.keyword-workspace-nav a:hover { border-color:#2454c6; background:#edf3ff; }
+.keyword-workspace>div[id]+div[id] { margin-top:24px; padding-top:24px; border-top:1px solid #ccd6e5; }
 .report-v2 .keyword-panel-content { border:0; border-radius:0; box-shadow:none; padding:0; margin:0; min-width:0; }
 .report-v2 .keyword-panel-content h4 { font-size:21px; line-height:1.65; margin:0 0 14px; }
 .keyword-panel-heading { margin-bottom:24px; }
@@ -153,5 +154,5 @@
  .report-v2 .discoverability-actions>summary { padding:18px; }
  .report-v2 .discoverability-actions>div { padding:0 18px 18px; }
  .keyword-workspace-nav { gap:6px; }
- .keyword-workspace-nav button { flex-basis:100%; text-align:left; }
+ .keyword-workspace-nav a { flex-basis:100%; text-align:left; }
 }
