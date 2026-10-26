@@ -1,4 +1,5 @@
 'use client';
+import {CompactText} from './ReportVisualSummary';
 import React,{useEffect,useRef,useState} from 'react';
 import {DiagnosisBaselineSchema,type DiagnosisBaseline,type MarketingReport} from '@/lib/reportSchema';
 import {buildDiagnosisComparison,comparisonGroups,DIAGNOSIS_COMPARISON_NOTE} from '@/lib/diagnosisComparison';
@@ -17,7 +18,7 @@ export default function DiagnosisComparisonPanel({report,onChange}:{report:Marke
   finally{clearTimeout(timer);if(active.current===controller)setLoading(false);}
  }
  return <section className="report-card report-workflow work-comparison" id="report-recheck" aria-label="재진단 이전 현재 비교">
-  <div className="report-card-heading"><p className="report-eyebrow">BEFORE → NOW</p><h3>바꾼 뒤, 무엇이 달라졌나요?</h3><p className="report-note">{DIAGNOSIS_COMPARISON_NOTE}</p></div>
+  <div className="report-card-heading"><p className="report-eyebrow">BEFORE → NOW</p><h3>바꾼 뒤, 무엇이 달라졌나요?</h3><CompactText className="report-note" text={DIAGNOSIS_COMPARISON_NOTE}/></div>
   {onChange&&<div className="work-baseline-form"><label>이전 보고서 보관 링크 또는 ID<input value={reference} onChange={e=>setReference(e.target.value)} disabled={loading} placeholder="보관 링크 또는 보고서 ID" autoComplete="off"/></label><button type="button" className="report-secondary-button" disabled={loading||!reference.trim()} onClick={load}>{loading?'불러오는 중…':'이전 결과 연결'}</button>{comparison&&<button type="button" className="report-secondary-button" onClick={()=>{onChange(undefined);setMessage('비교 연결을 해제했습니다.');}} disabled={loading}>비교 해제</button>}</div>}
   {message&&<p className="work-feedback" role="status">{message}</p>}
   {!comparison?<div className="work-recheck-empty"><span className="work-number">↻</span><div><h4>처음 진단했다면, 이 결과부터 보관하세요.</h4><p>결과 보관 → 7일 이내 사이트 수정·재진단 → 이전 결과 연결. 비교할 데이터가 준비되면 레이더와 항목별 변화가 이곳에 표시됩니다.</p><a className="work-link" href="/account">보관함에서 기준 결과 찾기 <span aria-hidden="true">↗</span></a></div></div>:comparison.blocked?<p className="work-empty" role="alert">{comparison.blocked}</p>:<>

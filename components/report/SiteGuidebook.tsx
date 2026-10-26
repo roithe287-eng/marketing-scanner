@@ -1,4 +1,5 @@
 'use client';
+import {CompactText,VisualSteps} from './ReportVisualSummary';
 import React,{createContext,useContext,useMemo,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {buildSiteGuide,editingEvidence,editingPlatform,elementLink,guideInstruction,PLATFORM_NAMES,type GuideRequest} from '@/lib/siteGuidebook';
@@ -40,8 +41,8 @@ function GuidebookContent(props:GuideRequest&{compact?:boolean}){
 export function SiteGuidebookOverview({report}:{report:MarketingReport}){
  const p=editingEvidence(report),site=p?.siteEditing,platform=editingPlatform(report),[expanded,setExpanded]=useState(false),[filter,setFilter]=useState('all');
  const all=site?.elements.filter(e=>filter==='all'||e.kind===filter)||[],shown=expanded?all:all.slice(0,5);
- return <section className="report-card guide-overview" id="report-site-guide" aria-label="URL 맞춤 편집 안내"><div className="report-card-heading"><p className="report-eyebrow">YOUR URL · EDITING GUIDEBOOK</p><h3>이 사이트는 어디서 수정할까요?</h3><p className="report-note">각 개선안 아래에 편집 경로와 기대효과를 연결했습니다. 먼저 제작 도구의 단서와 실제 수집 원문을 확인하세요.</p></div>
- <div className="guide-platform"><div><span className="guide-label">제작 도구</span><h4>{platform.label}</h4><p>공개 HTML의 흔적을 이용한 후보 판단입니다. 호스팅·CDN과 콘텐츠 편집 도구는 다릅니다.</p></div><div><span className="guide-label">관측 범위</span><h4>HTML 원문·요소 위치</h4><p>브라우저 화면 캡처·관리자 화면·화면 좌표는 포함하지 않습니다. 아래 카드는 수집 원문을 재배열한 안내입니다.</p></div></div>
+ return <section className="report-card guide-overview" id="report-site-guide" aria-label="URL 맞춤 편집 안내"><div className="report-card-heading"><p className="report-eyebrow">YOUR URL · EDITING GUIDEBOOK</p><h3>이 사이트는 어디서 수정할까요?</h3><p className="report-note">원문을 선택하면 편집 위치와 수정 방법을 확인할 수 있습니다.</p></div>
+ <VisualSteps kind="editing" label="페이지 편집 순서"/><div className="guide-platform"><div><span className="guide-label">제작 도구</span><h4>{platform.label}</h4><p>공개 HTML의 단서로 추정한 후보입니다.</p></div><div><span className="guide-label">관측 범위</span><h4>HTML 원문·요소 위치</h4><p>수집한 원문 기준 · 실제 화면·관리자 화면은 미확인</p></div></div>
  {!!site?.signals.length&&<ul className="guide-signals">{site.signals.map(s=><li key={s.id}><strong>{PLATFORM_NAMES[s.id]} · {s.kind==='cms'?'제작 도구 후보':s.kind==='framework'?'프레임워크 단서':'전송 계층 단서'}</strong><span>{s.evidence.join(' · ')}</span></li>)}</ul>}
  <p className="guide-note">{site&&p?`대상: ${p.finalUrl} · 수집: ${new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium',timeStyle:'short'}).format(new Date(p.capturedAt))} KST`:'이전 보고서에는 새 위치 관측값이 없습니다. 재진단하면 제작 도구 단서와 요소 위치를 함께 저장합니다.'}</p>
  <div className="guide-filters" role="group" aria-label="수집 원문 종류">{[['all','전체'],['heading','제목'],['text','본문'],['cta','링크·버튼'],['image','이미지'],['title','검색 제목'],['description','검색 설명']].map(([id,label])=><button type="button" key={id} aria-pressed={filter===id} onClick={()=>{setFilter(id);setExpanded(false);}}>{label}</button>)}</div>

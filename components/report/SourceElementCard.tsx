@@ -1,4 +1,5 @@
 'use client';
+import {CompactText} from './ReportVisualSummary';
 import React,{useEffect,useState} from 'react';
 import type {PageElement} from '@/lib/siteEditingSchema';
 import {elementLocation} from '@/lib/guideGrounding';
@@ -26,7 +27,7 @@ export default function SourceElementCard({element,url,elements=[],nearby=false}
       {href&&<a href={href} target="_blank" rel="noopener noreferrer">실제 페이지의 {element.anchor?'해당 구역':'원문 문구'} 열기 ↗</a>}
       {findText&&<button type="button" onClick={()=>copy(findText.slice(0,160),'찾을 문구를')}>찾을 문구 복사</button>}
     </div>
-    <p className="guide-note">{element.kind==='image'?'이미지 설명은 화면에 보이는 문장이 아니므로 자동으로 이동하지 않을 수 있습니다. 위의 소속 구역과 아래 이미지 파일을 대조하세요.':element.kind==='title'||element.kind==='description'?'검색 제목·설명은 본문에 표시되지 않습니다. 페이지의 SEO 설정에서 이 값과 대조하세요.':'새 창에서 위치가 이동하지 않으면 Ctrl+F(맥은 ⌘F)를 누르고 복사한 문구를 붙여 넣으세요.'}</p>
+    <CompactText className="guide-note" text={element.kind==='image'?'이미지 설명은 화면에 보이는 문장이 아니므로 자동으로 이동하지 않을 수 있습니다. 위의 소속 구역과 아래 이미지 파일을 대조하세요.':element.kind==='title'||element.kind==='description'?'검색 제목·설명은 본문에 표시되지 않습니다. 페이지의 SEO 설정에서 이 값과 대조하세요.':'새 창에서 위치가 이동하지 않으면 Ctrl+F(맥은 ⌘F)를 누르고 복사한 문구를 붙여 넣으세요.'} summary={element.kind==='image'?'이미지 대체 설명 · 실제 이미지 파일과 대조':element.kind==='title'||element.kind==='description'?'검색 설정 값 · 본문이 아닌 SEO 설정에서 대조':'원문 이동이 안 되면 페이지 찾기(Ctrl+F / ⌘F) 사용'}/>
     <details className="guide-selector">
       <summary>개발자용 요소 위치 확인</summary>
       <p><strong>현재 선택: {element.tag.toUpperCase()} · 문서 순서 {element.order}</strong></p>

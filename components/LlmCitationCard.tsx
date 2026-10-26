@@ -1,4 +1,5 @@
 "use client";
+import {CompactText} from './report/ReportVisualSummary';
 import {activeCitation} from '@/lib/activeCitation';
 
 import React, { memo, useState } from 'react';
@@ -20,8 +21,8 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
   return <section className="report-geo-observations jm-card p-5 md:p-8" aria-label="GEO 질문·출처·실행 과제">
     <p className="text-xs font-bold text-jm-red">GEO · 브랜드 언급과 출처 인용</p>
     <h3 className="text-2xl font-black mt-2">AI 답변에서 확인한 GEO 결과</h3>
-    <p className="mt-3 text-sm text-jm-charcoal leading-7">{modern?'고객 질문에 대한 AI 답변에서 우리 브랜드가 언급되는지, 우리 사이트가 근거 출처로 인용되는지 확인합니다. 아래 OpenAI 결과는 이 GEO 진단을 위한 관측입니다.':'아래 AI 결과는 고객 질문에 대한 브랜드 언급을 확인한 구버전 GEO 자료입니다. 자사 URL의 실제 출처 인용은 이 결과에서 측정하지 않았습니다.'}</p>
-    <p className="mt-3 text-sm text-jm-gray leading-6">{modern ? citation.summary : '이 리포트는 구버전의 브랜드 언급 기반 측정입니다. 실제 URL 출처 인용률과 비교할 수 없습니다.'}</p>
+    <p className="mt-3 text-sm text-jm-charcoal leading-7">{modern?'브랜드 언급과 자사 URL 인용을 따로 확인합니다. API 관측이며 일반 ChatGPT 화면·시장 전체 노출률과 다릅니다.':'아래 AI 결과는 고객 질문에 대한 브랜드 언급을 확인한 구버전 GEO 자료입니다. 자사 URL의 실제 출처 인용은 이 결과에서 측정하지 않았습니다.'}</p>
+    <CompactText className="mt-3 text-sm text-jm-gray leading-6" text={modern ? citation.summary : '구버전 브랜드 언급 측정입니다. URL 출처 인용률과 비교할 수 없습니다.'}/>
     {modern ? <ObservationOverview citation={citation}/> : <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-5">
       {[
         ['브랜드 언급률',modern ? percent(citation.mentionRate) : `${citation.citationRate}% (구버전)`],
@@ -29,12 +30,12 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
         ['측정 실패·미설정',modern ? `${citation.failedTests || 0}건 / ${citation.totalTests}건` : '구분되지 않음'],
       ].map(([label,value]) => <div key={label} className="rounded-2xl bg-neutral-50 border p-4"><p className="text-sm text-jm-gray">{label}</p><p className="text-2xl font-black mt-2">{value}</p></div>)}
     </div>}
-    {modern && <div className="text-xs text-jm-gray leading-6 mb-5">
+    {modern && <details className="report-text-detail mb-5"><summary>질문 유형별 인용률·측정 조건</summary><div className="text-xs text-jm-gray leading-6">
       <p>브랜드 포함 질문 인용률 {percent(citation.brandedCitationRate)} · 미포함 질문 {percent(citation.unbrandedCitationRate)}</p>
       <p>정상 답변 {citation.validTests}건 · 검색 출처 판정 {citation.citationValidTests}건. 실패·검색 미확인 응답은 인용률 분모에서 제외합니다.</p>
       <p>측정: {citation.measuredAt?.replace('T',' ').replace('Z',' UTC')} · 질문 세트 {citation.questionSetId}{citation.cacheHit ? ' · 저장된 관측 결과' : ''}</p>
       <p>API에서 관측한 결과이며 일반 ChatGPT 화면이나 시장 전체 노출률을 의미하지 않습니다.</p>
-    </div>}
+    </div></details>}
     {modern && <CitationFailureSummary citation={citation}/>}
     {modern && <QuestionMatrix citation={citation} selected={selected} onSelect={setSelectedQuestion}/>}
     {modern && <div className="mb-3 mt-6 border-t pt-5" aria-live="polite"><h4 className="text-sm font-black">선택한 질문의 답변·출처</h4><p className="mt-2 text-sm leading-6 text-jm-gray">{selected || '위 관측 지도에서 질문을 선택해 주세요.'}</p></div>}
