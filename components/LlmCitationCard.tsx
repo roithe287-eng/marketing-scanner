@@ -17,7 +17,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
   citation=activeCitation(citation);
   if (!citation.results.length) return null;
   const modern = citation.measurementVersion === 2;
-  const selected=selectedQuestion && citation.results.some(r=>r.question.trim()===selectedQuestion) ? selectedQuestion : null;
+  const selected=selectedQuestion && citation.results.some(r=>r.question.trim()===selectedQuestion) ? selectedQuestion : citation.results[0]?.question.trim()||null;
   const visibleResults=modern ? citation.results.filter(r=>r.question.trim()===selected) : citation.results;
   return <section className="report-geo-observations jm-card p-5 md:p-8" aria-label="GEO 질문·출처·실행 과제">
     <p className="text-xs font-bold text-jm-red">GEO · 브랜드 언급과 출처 인용</p>
@@ -31,7 +31,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
         ['측정 실패·미설정',modern ? `${citation.failedTests || 0}건 / ${citation.totalTests}건` : '구분되지 않음'],
       ].map(([label,value]) => <div key={label} className="rounded-2xl bg-neutral-50 border p-4"><p className="text-sm text-jm-gray">{label}</p><p className="text-2xl font-black mt-2">{value}</p></div>)}
     </div>}
-    {modern && <details className="report-text-detail mb-5"><summary>질문 유형별 인용률·측정 조건</summary><div className="text-xs text-jm-gray leading-6">
+    {modern && <details open className="report-text-detail mb-5"><summary>질문 유형별 인용률·측정 조건</summary><div className="text-xs text-jm-gray leading-6">
       <p>브랜드 포함 질문 인용률 {percent(citation.brandedCitationRate)} · 미포함 질문 {percent(citation.unbrandedCitationRate)}</p>
       <p>정상 답변 {citation.validTests}건 · 검색 출처 판정 {citation.citationValidTests}건. 실패·검색 미확인 응답은 인용률 분모에서 제외합니다.</p>
       <p>측정: {citation.measuredAt?.replace('T',' ').replace('Z',' UTC')} · 질문 세트 {citation.questionSetId}{citation.cacheHit ? ' · 저장된 관측 결과' : ''}</p>
@@ -41,11 +41,11 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
     {modern && <QuestionMatrix citation={citation} selected={selected} onSelect={setSelectedQuestion}/>}
     {modern && <div className="mb-3 mt-6 border-t pt-5" aria-live="polite"><h4 className="text-sm font-black">선택한 질문의 답변·출처</h4><p className="mt-2 text-sm leading-6 text-jm-gray">{selected || '위 관측 지도에서 질문을 선택해 주세요.'}</p></div>}
     <div className="space-y-3">
-      {visibleResults.map((r,i) => <details key={`${r.engine}-${i}`} className="geo-detail rounded-xl border p-4">
+      {visibleResults.map((r,i) => <details open key={`${r.engine}-${i}`} className="geo-detail rounded-xl border p-4">
         <summary className="cursor-pointer font-bold text-sm leading-6">
           <span className="text-jm-red">OpenAI · GEO {modern?'답변 관측':'구버전 측정'} · {r.journey || r.questionType}</span>
           <span className="block mt-1 break-words">{r.question}</span>
-          <span className="block font-normal text-jm-gray">{!modern ? (r.cited ? '브랜드 언급 있음' : '브랜드 언급 없음') : r.status === 'ok' ? `브랜드 언급 ${typeof r.brandMentioned!=='boolean'?'미확인':r.brandMentioned ? '있음' : '없음'} · 자사 출처 ${r.cited ? '확인' : '없음'}` : r.status === 'unverified' ? '답변 수신 · 검색 또는 출처 확인 불가' : r.errorMessage || '측정 실패'} · 답변·출처 펼치기</span>
+          <span className="block font-normal text-jm-gray">{!modern ? (r.cited ? '브랜드 언급 있음' : '브랜드 언급 없음') : r.status === 'ok' ? `브랜드 언급 ${typeof r.brandMentioned!=='boolean'?'미확인':r.brandMentioned ? '있음' : '없음'} · 자사 출처 ${r.cited ? '확인' : '없음'}` : r.status === 'unverified' ? '답변 수신 · 검색 또는 출처 확인 불가' : r.errorMessage || '측정 실패'}</span>
         </summary>
         <div className="pt-4 space-y-3 text-sm leading-7">
           <p className="text-xs text-jm-gray">{r.model} {r.measuredAt && `· ${r.measuredAt}`} {r.durationMs != null && `· ${(r.durationMs/1000).toFixed(1)}초`}</p>
@@ -60,7 +60,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
       </details>)}
     </div>
     {!!citation.actionPlan?.length && <div className="mt-7"><h4 className="text-xl font-black">질문별 실행 과제</h4><p className="text-xs text-jm-gray mt-2">입력한 페이지와 관측 출처에 근거한 검토 제안입니다. 사실 정확도와 사이트 전체 콘텐츠 유무는 담당자가 확인해야 합니다.</p>
-      <div className="space-y-3 mt-4">{citation.actionPlan.map((a,i) => <details className="geo-detail rounded-xl border p-4" key={i}>
+      <div className="space-y-3 mt-4">{citation.actionPlan.map((a,i) => <details open className="geo-detail rounded-xl border p-4" key={i}>
         <summary className="cursor-pointer font-bold text-sm leading-6">{i+1}. {a.question}<span className="block text-jm-red text-xs">{actionLabels[a.action]}</span></summary>
         <div className="pt-3 text-sm leading-7 space-y-2"><RoleBox role="current" label="관측 근거"><p>{a.evidence}</p></RoleBox>{a.targetUrl && safeHttpUrl(a.targetUrl) && <a className="block break-all underline text-blue-700" href={a.targetUrl} target="_blank" rel="noopener noreferrer">검토 페이지: {a.targetUrl}</a>}<RoleBox role="proposal" label="실행 제안"><p>{a.nextStep}</p></RoleBox><p className="text-xs text-jm-gray">정확도: 검토 필요</p></div>
       </details>)}</div>

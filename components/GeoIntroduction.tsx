@@ -13,7 +13,7 @@ export default function GeoIntroduction() {
         <dt className="text-sm font-bold text-jm-black"><span className="report-concept-icon"><DiagnosisIcon axis={index===0?'seo':index===1?'copywriting':'trust'}/></span>{metric.title}</dt>
         <dd className="mt-2 text-xs leading-6 text-jm-gray">{['정보를 읽고 이해할 수 있는가','답변에 브랜드명이 등장하는가','근거 링크에 자사 URL이 있는가'][index]}</dd>
       </div>)}
-    </dl><details className="report-text-detail"><summary>세 지표의 정의</summary><div>{GEO_METRICS.map(m=><p key={m.title}><strong>{m.title}</strong> · {m.description}</p>)}</div></details>
+    </dl><details open className="report-text-detail"><summary>세 지표의 정의</summary><div>{GEO_METRICS.map(m=><p key={m.title}><strong>{m.title}</strong> · {m.description}</p>)}</div></details>
     <p className="mt-4 text-xs leading-6 text-jm-gray">준비도 ≠ 실제 답변 · 브랜드 언급 ≠ 자사 출처 인용</p>
   </section>;
 }

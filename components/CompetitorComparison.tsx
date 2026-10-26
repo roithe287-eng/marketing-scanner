@@ -136,7 +136,7 @@ export default function CompetitorComparison({competitorAnalysis:storedAnalysis,
         </div>
 
     </div>
-    {(competitorAnalysis.ourPositioning||competitorAnalysis.overallComparison)&&<details className="position-method"><summary>저장된 AI 비교·포지셔닝 해석</summary><div><p>아래는 기존 보고서의 AI 해석이며 새 도표의 좌표 계산에는 사용하지 않습니다. 실제 상품·서비스와 맞는지 확인하세요.</p>{competitorAnalysis.overallComparison&&<p>{competitorAnalysis.overallComparison}</p>}{competitorAnalysis.ourPositioning&&<p>{competitorAnalysis.ourPositioning}</p>}</div></details>}
+    {(competitorAnalysis.ourPositioning||competitorAnalysis.overallComparison)&&<details open className="position-method"><summary>저장된 AI 비교·포지셔닝 해석</summary><div><p>아래는 기존 보고서의 AI 해석이며 새 도표의 좌표 계산에는 사용하지 않습니다. 실제 상품·서비스와 맞는지 확인하세요.</p>{competitorAnalysis.overallComparison&&<p>{competitorAnalysis.overallComparison}</p>}{competitorAnalysis.ourPositioning&&<p>{competitorAnalysis.ourPositioning}</p>}</div></details>}
       {/* v45-W2: 경쟁사 딥다이브 모달 */}
       {deepDiveTarget && (
         <CompetitorDeepDiveModal

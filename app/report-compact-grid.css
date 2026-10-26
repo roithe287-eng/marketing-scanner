@@ -1,0 +1,92 @@
+/* Open report sections, compact parallel cards, and source-type graphics. */
+.report-v2 { --report-gap:18px; }
+.report-v2 .report-card { padding:22px; }
+.report-v2 .report-card-heading { margin-bottom:16px; }
+.report-v2 .report-role-box { padding:15px; border-radius:10px; }
+.report-v2 .report-role-icon { flex-basis:32px; width:32px; height:32px; border-radius:9px; }
+.report-v2 .report-role-icon svg { width:20px; height:20px; }
+.report-v2 .report-role-label { gap:8px; }
+.report-v2 .report-role-content { margin-top:10px; line-height:1.7; }
+.report-v2 .report-role-content>small { margin-top:10px; padding-top:8px; }
+.report-v2 .report-compact-text { margin:0; line-height:1.7; white-space:pre-wrap; }
+.report-v2 :is(.report-evidence-flow,.report-role-stack,.report-role-pair,.guide-outcomes,.work-detail>dl) {
+ display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); gap:12px; align-items:start;
+}
+.report-v2 .report-evidence-flow { margin:14px 0; }
+.report-v2 .report-evidence-flow>.report-role-box { display:block; height:100%; }
+.report-v2 .report-evidence-flow dt { margin-bottom:0; }
+.report-v2 .report-evidence-flow dd { color:var(--role-ink); line-height:1.7; }
+.report-v2 .report-role-pair>.report-role-box,.report-v2 .guide-outcomes>.report-role-box { height:100%; }
+.report-v2 :is(.report-detail-list,.naver-checks,.official-seo-guides,.growth-actions) { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr)); gap:14px; align-items:start; }
+.report-v2 .report-chapter-heading { gap:14px; padding-bottom:16px; margin-bottom:18px; }
+.report-v2 .report-chapter-heading>.report-chapter-symbol { display:grid; gap:2px; align-content:center; width:58px; height:64px; border-radius:14px; }
+.report-v2 .report-chapter-symbol svg { width:26px; height:26px; margin:auto; }
+.report-v2 .report-chapter-symbol small { font-size:12px; line-height:1.2; text-align:center; letter-spacing:.04em; }
+.report-v2 .report-visual-steps { gap:12px; margin:16px 0; }
+.report-v2 .report-visual-steps li { padding:12px; }
+.report-v2 .report-visual-steps li:not(:last-child)::after { right:-12px; }
+.report-v2 .guidebook-compact { margin-top:16px; padding:0; border:0; border-radius:0; overflow:visible; }
+.report-v2 .guidebook-compact p { line-height:1.7; }
+.report-v2 .guide-application { display:grid; gap:12px; margin-bottom:12px; }
+.report-v2 .guide-application-heading { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; padding:0; }
+.report-v2 .guide-application-heading button { font-size:13px; padding:8px 12px; }
+.report-v2 .guide-target-select { display:grid; gap:7px; font-size:14px; font-weight:700; }
+.report-v2 .guide-target-select select { width:100%; max-width:100%; min-width:0; padding:10px; background:white; border:1px solid #b8c5d5; border-radius:8px; font:inherit; font-size:16px; }
+.report-v2 .guide-field-list { gap:12px; }
+.report-v2 .guide-field-list article { border:0; overflow:visible; background:transparent; }
+.report-v2 .guide-field-list h6 { display:flex; gap:8px; align-items:center; padding:8px 0; background:transparent; border:0; font-size:16px; }
+.report-v2 .guide-field-list h6>span { display:grid; place-items:center; flex:0 0 26px; height:26px; border-radius:7px; background:#edf4ff; color:#2657ab; font-size:12px; }
+.report-v2 .guide-field-list .report-evidence-flow { grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr)); margin:0; }
+.report-v2 .guide-field-list .report-evidence-flow>.report-role-box { display:block; padding:14px; }
+.report-v2 .guide-field-list .report-role-content { margin-top:10px; }
+.report-v2 .guide-proposal { margin:0; }
+.report-v2 .guide-outcomes .guide-links { gap:2px 12px; margin-top:8px; }
+.report-v2 .guide-outcomes .guide-links>a { padding:2px 0; font-size:13px; }
+.report-v2 .guide-outcomes .report-role-content { font-size:15px; }
+.report-v2 .guide-unconfirmed { padding:12px; margin:0; }
+.report-v2 .guide-platform { gap:12px; }
+.report-v2 .guide-platform>.report-role-box { padding:15px; }
+.report-v2 .guide-platform h4 { font-size:20px; }
+.report-v2 .guide-signals { grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); margin:12px 0; gap:12px; }
+.report-v2 .guide-signals li { padding:10px 12px; border:1px solid #d8e0eb; border-radius:9px; background:#f8fafc; font-size:14px; }
+.report-v2 .guide-filters { margin:14px 0; gap:6px; }
+.report-v2 .guide-filters button { padding:7px 12px; font-size:14px; }
+.report-v2 .guide-elements { grid-template-columns:repeat(auto-fit,minmax(min(100%,290px),1fr)); gap:12px; align-items:start; }
+.report-v2 .guide-element { --source-ink:#2657ab; --source-bg:#edf4ff; padding:14px; border:1px solid #c9d7e8; border-top:3px solid var(--source-ink); border-radius:12px; background:#fff; }
+.report-v2 .guide-element[data-kind=image] { --source-ink:#6b43a6; --source-bg:#f3effb; }
+.report-v2 .guide-element[data-kind=cta],.report-v2 .guide-element[data-kind=form] { --source-ink:#087569; --source-bg:#e9f8f3; }
+.report-v2 .guide-element[data-kind=text] { --source-ink:#475569; --source-bg:#f1f5f9; }
+.report-v2 .guide-element-heading { display:flex; flex-wrap:nowrap; justify-content:flex-start; gap:10px; padding:0; border:0; }
+.report-v2 .guide-source-graphic { flex:0 0 58px; width:58px; height:44px; color:var(--source-ink); background:var(--source-bg); border-radius:8px; }
+.report-v2 .guide-element-heading>strong { min-width:0; flex:1; color:var(--source-ink); font-size:16px; }
+.report-v2 .guide-source-badge { border:1px solid #d4dde8; padding:3px 7px; border-radius:6px; font-size:11px; color:#475569; }
+.report-v2 .guide-element blockquote { margin:12px 0; padding:12px; border-left:3px solid var(--source-ink); border-radius:8px; background:var(--source-bg); font-size:16px; font-weight:550; line-height:1.7; color:#263449; }
+.report-v2 .guide-element .guide-original-actions { display:flex; gap:8px; margin:0; flex-wrap:wrap; }
+.report-v2 .guide-original-actions :is(a,button) { display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:7px 10px; min-height:40px; border:1px solid #bdcbdc; background:white; color:#334c70; border-radius:7px; font-size:13px; }
+.report-v2 .guide-element textarea { display:block; width:100%; margin-top:10px; border:1px solid #bdcbdc; border-radius:8px; padding:10px; font-size:16px; }
+.report-v2 .report-execution-steps { grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr)); gap:12px; margin:16px 0; }
+.report-v2 .report-execution-steps>li { padding:12px; border:1px solid #d8e0eb; border-radius:10px; background:#f8fafc; }
+.report-v2 .report-execution-steps p { font-size:15px; line-height:1.7; }
+.report-v2 .naver-check-body { padding:14px; }
+.report-v2 .naver-check-body>.report-evidence-flow { margin:10px 0; }
+.report-v2 .naver-execution.report-role-box { margin:12px 0; }
+.report-v2 .naver-copy-preview,.report-v2 .report-copy-fallback { margin-top:10px; }
+.report-v2 [role=status]:empty { display:none; }
+@media(max-width:767px) {
+ .report-v2 .report-card { padding:18px 14px; }
+ .report-v2 .report-role-box { padding:14px; }
+ .report-v2 .report-role-caption strong { font-size:15px; }
+ .report-v2 .report-chapter-heading>.report-chapter-symbol { width:46px; height:56px; border-radius:11px; }
+ .report-v2 .report-chapter-symbol svg { width:23px; height:23px; }
+ .report-v2 .guide-application-heading { align-items:flex-start; }
+ .report-v2 .guide-application-heading button { min-height:44px; }
+ .report-v2 .guide-element .guide-original-actions :is(a,button) { min-height:44px; }
+ .report-v2 .guide-elements { gap:10px; }
+}
+@media(prefers-reduced-motion:reduce) { .report-v2 * { scroll-behavior:auto; } }
+
+@media(max-width:480px) {
+ .report-v2 .report-readiness>:has(>.guidebook) { padding:12px; }
+ .report-v2 :is(.naver-check-body,.growth-action-body,.report-detail-body,.work-detail,.report-execution-content) { padding:12px; }
+ .report-v2 .official-seo-guide { padding:12px; }
+}

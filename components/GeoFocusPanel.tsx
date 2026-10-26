@@ -28,9 +28,9 @@ export default function GeoFocusPanel({report}: {report: MarketingReport}) {
       <div className="flex items-center justify-between gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white">{i+1}</span><span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{task.id==='restore-measurement'?'관측 복구':task.id==='review-source'?'정보 검토':task.id==='page-readiness'?'구조 보완':'직접 답변'}</span></div>
       <h3 className="mt-4 font-bold leading-6">{task.title}</h3>
       {task.targetUrl && <a className="mt-3 block break-all text-xs text-blue-700 underline" href={task.targetUrl} target="_blank" rel="noopener noreferrer">검토 페이지 열기 ↗</a>}
-      <details className="mt-4 border-t pt-3"><summary className="cursor-pointer text-xs font-bold">근거·실행·완료 기준 보기</summary><div className="report-role-stack"><RoleBox role="current" label="관측 근거"><p>{task.evidence}</p></RoleBox><RoleBox role="proposal" label="실행 제안"><p>{task.nextStep}</p></RoleBox><RoleBox role="verify" label="완료 확인"><p>{task.completion}</p></RoleBox></div></details>
+      <details open className="mt-4 border-t pt-3"><summary className="cursor-pointer text-xs font-bold">근거·실행·완료 기준 보기</summary><div className="report-role-stack"><RoleBox role="current" label="관측 근거"><p>{task.evidence}</p></RoleBox><RoleBox role="proposal" label="실행 제안"><p>{task.nextStep}</p></RoleBox><RoleBox role="verify" label="완료 확인"><p>{task.completion}</p></RoleBox></div></details>
     </li>)}</ol>
-    {focus.questions.length > 0 && <details className="mt-4 rounded-xl border p-4 text-sm">
+    {focus.questions.length > 0 && <details open className="mt-4 rounded-xl border p-4 text-sm">
       <summary className="cursor-pointer font-bold">재사용할 고객 질문 {focus.questions.length}개 보기</summary>
       <p className="mt-3 text-xs text-jm-gray leading-6">직접 질문 입력란에 한 줄씩 붙여 넣으면 질문 조건을 유지할 수 있습니다. 엔진·시점·저장된 관측 사용 여부는 상세 결과에서 함께 확인하세요.</p>
       <textarea aria-label="재사용할 GEO 고객 질문" className="mt-3 min-h-32 w-full rounded-lg border p-3 text-sm leading-6" readOnly value={questionText}/>

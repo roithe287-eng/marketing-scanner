@@ -21,6 +21,6 @@ export default function DiscoverabilityPanel({discoverability,observedOnly=false
       <p className="text-xs font-bold text-jm-gray">선택한 점검 항목</p><h4 className="mt-2 text-lg font-black">{active.label} <span className="ml-2 text-sm font-normal">{observedOnly?'AI 검토 의견 · 실측 아님':`${active.score}점 · ${readinessLabels[active.status]}`}</span></h4>
       <EvidenceFlow items={[{label:'현재',role:'current',kicker:'AS-IS',content:active.currentValue},{label:'진단',role:'review',content:active.diagnosis},{label:'개선',role:'proposal',kicker:'TO-BE · 제안',content:active.guide}]}/>{active.status!=='pass'&&<Guidebook title={active.label} current={active.currentValue} evidence={active.diagnosis} proposal={active.guide}/>}
     </article>
-    <details className="discoverability-actions"><summary>종합 해석과 우선 실행 액션</summary><div><CompactText className="mt-3 text-sm leading-7" text={discoverability.summary}/><ol className="mt-3 space-y-2">{discoverability.priorityActions?.map((a,i)=><li key={i} className="flex gap-3 text-sm leading-6"><span className="font-bold text-jm-red">{i+1}.</span><span>{a}</span></li>)}</ol></div></details>
+    <details open className="discoverability-actions"><summary>종합 해석과 우선 실행 액션</summary><div><CompactText className="mt-3 text-sm leading-7" text={discoverability.summary}/><ol className="mt-3 space-y-2">{discoverability.priorityActions?.map((a,i)=><li key={i} className="flex gap-3 text-sm leading-6"><span className="font-bold text-jm-red">{i+1}.</span><span>{a}</span></li>)}</ol></div></details>
   </section>;
 }

@@ -71,7 +71,7 @@ test('keyword panels share one navigation while preserving all frequency and rew
 test('metadata and short duplicate copy never offer a generic page-opening fallback',()=>{
  const element:PageElement={key:'title',kind:'title',tag:'title',selector:'head > title',text:'저장된 검색 제목',truncated:false,heading:'',order:0,anchor:'not-visible'};
  const $=load(renderToStaticMarkup(React.createElement(SourceElementCard,{element,url:'https://example.com'})));
- assert.equal($('a').length,0);assert.doesNotMatch($.text(),/실제 페이지 열기/);assert.match($.text(),/SEO 설정/);assert.match($.text(),/내 브라우저에만 임시 적용/);
+ assert.equal($('a').length,0);assert.doesNotMatch($.text(),/실제 페이지 열기/);assert.equal($('.guide-element blockquote').text(),element.text);assert.equal($('.guide-selector,.guide-source-context').length,0);
 });
 test('missing H1 explains why a comparison cannot be displayed and what to check next',t=>{
  const prior=(globalThis as typeof globalThis & {React?:typeof React}).React;Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:prior}));

@@ -1,13 +1,10 @@
 import React from 'react';
 import DiagnosisIcon from './DiagnosisIcon';
-import {reportExcerpt} from '@/lib/conciseReport';
 
-/** The full explanation remains selectable, accessible and available to print. */
-export function CompactText({text,summary,className='',label='설명 전체 보기'}:{text:string;summary?:string;className?:string;label?:string}){
+/** Authored summaries stay concise; dynamic explanations are shown once, in full. */
+export function CompactText({text,summary,className=''}:{text:string;summary?:string;className?:string;label?:string}){
   if(!text)return null;
-  const brief=summary||reportExcerpt(text);
-  if(brief===text.trim())return <p className={className}>{text}</p>;
-  return <div className={`report-compact-text ${className}`}><p className="report-compact-lead">{brief}</p><details className="report-text-detail"><summary>{label}</summary><div className="report-full-text">{text}</div></details></div>;
+  return <p className={`report-compact-text ${className}`}>{summary||text}</p>;
 }
 
 type Axis=React.ComponentProps<typeof DiagnosisIcon>['axis'];
@@ -16,7 +13,7 @@ const guides={
   questions:[{title:'질문 선택',detail:'고객이 궁금한 내용',icon:'seo'},{title:'페이지 연결',detail:'인용 URL 또는 검토 후보',icon:'conversionFlow'},{title:'답변 보강',detail:'사실·조건·근거 정리',icon:'copywriting'}],
   brand:[{title:'브랜드 확인',detail:'업체명·서비스 대조',icon:'firstView'},{title:'조건 확인',detail:'가격·범위·최신 정보',icon:'trust'},{title:'출처 확인',detail:'원문 업체와 일치 여부',icon:'seo'}],
   geo:[{title:'페이지 준비',detail:'읽을 수 있는 정보',icon:'copywriting'},{title:'브랜드 언급',detail:'답변에 이름이 있는지',icon:'firstView'},{title:'자사 출처',detail:'우리 URL이 연결됐는지',icon:'seo'}],
-  editing:[{title:'원문 선택',detail:'수정할 문구 찾기',icon:'seo'},{title:'위치 확인',detail:'편집 경로·요소 대조',icon:'firstView'},{title:'수정·검증',detail:'적용 뒤 다시 확인',icon:'cta'}],
+  editing:[{title:'현재 내용',detail:'수집한 문구 확인',icon:'seo'},{title:'수정 제안',detail:'핵심·조건·행동 정리',icon:'copywriting'},{title:'완료 확인',detail:'적용 뒤 결과 대조',icon:'cta'}],
   keywords:[{title:'대표 표현',detail:'실제 사업과 맞는 단어',icon:'seo'},{title:'문장 구성',detail:'제목·설명에 자연스럽게',icon:'copywriting'},{title:'본문 대조',detail:'제공하는 내용과 일치',icon:'trust'}],
   execution:[{title:'담당 배정',detail:'권한·업무 범위 확인',icon:'firstView'},{title:'페이지 수정',detail:'근거와 수정안 전달',icon:'copywriting'},{title:'결과 확인',detail:'같은 URL로 재진단',icon:'cta'}],
   sources:[{title:'질문 확인',detail:'어떤 답변에 쓰였는지',icon:'seo'},{title:'원문 대조',detail:'우리 주제와 관련 있는지',icon:'trust'},{title:'구성 참고',detail:'유용한 배치만 활용',icon:'copywriting'}],
@@ -49,6 +46,6 @@ export function SourceReferenceDiagram({details}:{details:React.ReactNode}){
   <div className="report-source-patterns">{sourceCards.map(c=><div key={c.type}><SourceSketch type={c.type}/><strong>{c.title}</strong><small>{c.detail}</small></div>)}</div>
   <VisualSteps kind="sources" label="외부 출처 검토 순서"/>
   <p className="report-visual-caution">경쟁사·추천 사례로 검증한 목록이 아닙니다. 무관한 출처는 건너뛰세요.</p>
-  <details className="report-text-detail"><summary>활용 기준 자세히 보기</summary><div>{details}</div></details>
+  <details open className="report-text-detail"><summary>활용 기준 자세히 보기</summary><div>{details}</div></details>
  </aside>;
 }
