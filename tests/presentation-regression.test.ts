@@ -18,17 +18,18 @@ import EvidenceFlow from '../components/report/EvidenceFlow';
 import CompetitorComparison from '../components/CompetitorComparison';
 import {buildReportDocument} from '../lib/reportDocument';
 import {layoutPdfPages,PDF_PAGE} from '../lib/pdfLayout';
+import {reportReadingPoints} from '../lib/conciseReport';
 const measure=(s:string,t:PdfTextStyle)=>Array.from(s).reduce((n,c)=>n+(/[ -~]/.test(c)?.55:1)*t.size*(t.weight>=600?1.06:1),0);
 const long='문장이 길어져도 줄바꿈 과정에서 원문이나 작업 순서가 사라지지 않아야 합니다. '.repeat(12);
 const issue={title:'긴 제목 '+long,priority:'high' as const,problem:long+'문제',reason:long+'원인',recommendation:long+'조치',badExample:'현재 문구 <script>alert(1)</script>',goodExample:'제안 문구 '+long,exampleNote:'사실 확인 필요'};
-test('restyled evidence, copy and timeline panels preserve full text, ordering and escaping',()=>{
+test('evidence and copy stay exact while explanations preserve every distinct reading point',()=>{
   const components=[
-    {element:React.createElement(DiagnosisCard,{issue,index:0}),values:[issue.title,issue.problem,issue.reason,issue.recommendation,issue.badExample,issue.goodExample,issue.exampleNote]},
+    {element:React.createElement(DiagnosisCard,{issue,index:0}),values:[issue.title,issue.problem,...reportReadingPoints(issue.reason),...reportReadingPoints(issue.recommendation),issue.badExample,issue.goodExample,issue.exampleNote]},
     {element:React.createElement(CopyImprovement,{exampleCopy:{...fixture.exampleCopy,currentHeroHeadline:long,heroHeadline:long+'개선',competitorCopyInsight:long+'비교'}}),values:[long,long+'개선',long+'비교']},
-    {element:React.createElement(PriorityMatrix,{roadmap:{immediately:[long+'첫째',long+'둘째'],thisWeek:[long+'이번 주'],thisMonth:[]}}),values:[long+'첫째',long+'둘째',long+'이번 주','해당 항목이 없습니다.']},
-    {element:React.createElement(QuickWinsFlow,{quickWins:[{title:long+'빠른 개선',steps:[long+'1단계',long+'2단계'],beforeExample:long+'이전',afterExample:long+'이후'}]}),values:[long+'빠른 개선',long+'1단계',long+'2단계',long+'이전',long+'이후']},
+    {element:React.createElement(PriorityMatrix,{roadmap:{immediately:[long+'첫째',long+'둘째'],thisWeek:[long+'이번 주'],thisMonth:[]}}),values:[...reportReadingPoints(long+'첫째'),...reportReadingPoints(long+'둘째'),...reportReadingPoints(long+'이번 주'),'해당 항목이 없습니다.']},
+    {element:React.createElement(QuickWinsFlow,{quickWins:[{title:long+'빠른 개선',steps:[long+'1단계',long+'2단계'],beforeExample:long+'이전',afterExample:long+'이후'}]}),values:[long+'빠른 개선',...reportReadingPoints(long+'1단계'),...reportReadingPoints(long+'2단계'),long+'이전',long+'이후']},
   ];
-  for(const c of components){const html=renderToStaticMarkup(c.element),$=load(html),text=$.text();for(const value of c.values)assert.ok(text.includes(value));assert.equal($('script').length,0);}
+  for(const c of components){const html=renderToStaticMarkup(c.element),$=load(html),text=$.text();for(const value of c.values)assert.ok(text.includes(value),value.slice(-24));assert.equal($('script').length,0);}
 });
 test('checklist distribution reflects stored states and never marks missing text as a passed check',()=>{
   const checklist=[{category:'seo' as const,id:'1',label:'첫 번째 항목',status:'pass' as const,currentValue:long,diagnosis:'관측 근거',guide:'가이드'},{category:'content' as const,id:'2',label:'두 번째 항목',status:'warning' as const,currentValue:'',diagnosis:'',guide:''},{category:'trust' as const,id:'3',label:'세 번째 항목',status:'fail' as const,currentValue:'',diagnosis:'진단',guide:'수정'}];

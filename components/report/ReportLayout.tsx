@@ -64,10 +64,10 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
     {report.productContext&&showProductCollection(report.sitePurpose)&&<section className="report-card" aria-label="상품 정보 보완"><h3>공개 경로에서 확인한 상품 정보</h3><ProductCollection context={report.productContext}/></section>}
     {!!report.analysisWarnings?.length&&<aside className="report-empty" role="status">{report.analysisWarnings.map(w=><p key={w.key}>{w.label} · {w.status==='timeout'?'응답 시간 초과':w.status==='unavailable'?'수집되지 않음':'일시적 오류'}</p>)}</aside>}
   </>;
-  return <SiteGuideProvider report={report}><ReportWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`}><div className="report-v2 report-focused" id="report-area">
+  return <SiteGuideProvider report={report}><ReportWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`}><div className="report-v2 report-focused report-continuous" id="report-area">
     <ReportHeader report={report} data={data} actions={actions}/>
     <ReportNavigation chapters={chapters}/>
-    <Chapter id="overview" number="01" title={opening?'홈페이지의 강점과 보강할 내용을 함께 보세요':'먼저 파악할 핵심'} note="필요한 결과를 선택하세요. 전체 보고서를 길게 스크롤할 필요가 없습니다.">
+    <Chapter id="overview" number="01" title={opening?'홈페이지의 강점과 보강할 내용을 함께 보세요':'먼저 파악할 핵심'} note="아래로 이어서 읽고, 각 영역에서 필요한 세부 내용을 선택하세요.">
       <ReportSections chapter="overview" items={[
         {id:'overview-main',label:opening?'홈페이지 근거':'핵심 진단',children:opening?<SiteContentOverview report={report}/>:<><TodayWork plan={execution}/><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview}/></>},
         ...(!opening?[{id:'overview-content',label:'홈페이지 근거',children:<SiteContentOverview report={report}/>}]:[]),

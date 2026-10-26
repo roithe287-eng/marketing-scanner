@@ -7,6 +7,23 @@ const WorkspaceContext=createContext<Selection|null>(null);
 export function ReportWorkspace({children}:{children:React.ReactNode}){
  const [selection,setSelection]=useState<Selection>({chapter:'overview',panels:{}});
  useEffect(()=>{
+  const report=document.getElementById('report-area');
+  if(!report)return;
+  const chapters=Array.from(report.querySelectorAll<HTMLElement>('[data-chapter]'));
+  let frame=0;
+  const update=()=>{
+   frame=0;
+   const line=(report.querySelector('.report-nav')?.getBoundingClientRect().bottom||0)+48;
+   const active=chapters.filter(chapter=>chapter.getBoundingClientRect().top<=line).at(-1)||chapters[0];
+   const chapter=active?.dataset.chapter;
+   if(chapter)setSelection(previous=>previous.chapter===chapter?previous:{...previous,chapter});
+  };
+  const schedule=()=>{if(!frame)frame=requestAnimationFrame(update);};
+  const observer=new ResizeObserver(schedule);observer.observe(report);
+  window.addEventListener('scroll',schedule,{passive:true});window.addEventListener('resize',schedule);schedule();
+  return()=>{observer.disconnect();window.removeEventListener('scroll',schedule);window.removeEventListener('resize',schedule);if(frame)cancelAnimationFrame(frame);};
+ },[]);
+ useEffect(()=>{
   const activate=(event:Event)=>{
    const id=(event as CustomEvent<{id:string}>).detail?.id,target=id?document.getElementById(id):null;
    const chapter=target?.closest<HTMLElement>('[data-chapter]')?.dataset.chapter;
@@ -36,5 +53,5 @@ export function ReportSections({chapter,items}:{chapter:string;items:{id:string;
 }
 export function ReportNavigation({chapters}:{chapters:readonly (readonly [string,string])[]}){
  const selection=useReportSelection();
- return <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} aria-current={selection?.chapter===id?'page':undefined} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(`report-${id}`))event.preventDefault();}}><span>0{i+1}</span>{label}</a>)}</nav>;
+ return <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} aria-current={selection?.chapter===id?'location':undefined} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(`report-${id}`))event.preventDefault();}}><span>0{i+1}</span>{label}</a>)}</nav>;
 }

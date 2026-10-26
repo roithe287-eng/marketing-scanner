@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {load} from 'cheerio';
-import {reportExcerpt} from '../lib/conciseReport';
+import {reportExcerpt,reportReadingPoints} from '../lib/conciseReport';
 import {CompactText,SourceReferenceDiagram} from '../components/report/ReportVisualSummary';
 import {SourceDirectory} from '../components/report/InsightPanels';
 import {buildReportInsights} from '../lib/reportInsights';
@@ -12,17 +12,26 @@ import {buildReportDocument} from '../lib/reportDocument';
 import {visualReviewReport} from './fixtures/visual-review-report';
 import {PDF_PAGE,type PdfTextStyle} from '../lib/pdfLayout';
 
-test('explanations show once without disclosure and authored summaries stay concise',()=>{
+test('long explanations remove adjacent repetition while preserving facts and limits without disclosure',()=>{
  const text='https://example.org/a.b 페이지에서 2.5%를 관측했다는 설명입니다. '+ '확인할 위치와 작업 내용이 이어지는 문장입니다. '.repeat(6)+'실제 전환율을 측정한 결과는 아닙니다.';
  const excerpt=reportExcerpt(text);
  assert.ok(excerpt.startsWith('https://example.org/a.b'));assert.ok(excerpt.includes('2.5%'));
  assert.ok(excerpt.includes('실제 전환율을 측정한 결과는 아닙니다.'));assert.ok(excerpt.length<text.length);
  const $=load(renderToStaticMarkup(React.createElement(CompactText,{text})));
- assert.equal($('.report-compact-text').text(),text);assert.equal($('details').length,0);
+ assert.equal($('.report-reading-points li').length,3);assert.equal($('details').length,0);
+ assert.match($('.report-compact-text').text(),/https:\/\/example.org\/a.b/);assert.match($('.report-compact-text').text(),/2.5%/);assert.match($('.report-compact-text').text(),/실제 전환율을 측정한 결과는 아닙니다/);
+ const original=load(renderToStaticMarkup(React.createElement(CompactText,{text,verbatim:true})));
+ assert.equal(original('.report-compact-text').text(),text);
  const summary=load(renderToStaticMarkup(React.createElement(CompactText,{text,summary:excerpt})));
  assert.equal(summary('.report-compact-text').text(),excerpt);assert.equal(summary('details').length,0);
  const steps='원문 확인\n담당자 확인\n사이트 수정\n다시 진단';assert.equal(reportExcerpt(steps),steps);
  const noBoundary='한 문장으로 연결된 긴 설명 '.repeat(30);assert.equal(reportExcerpt(noBoundary),noBoundary.trim());
+});
+
+test('reading points retain conditions, numbers, numbered steps and contextual repetition',()=>{
+ const points=reportReadingPoints('1. 상담을 신청하세요.\n2. 최소 3명이 필요합니다. 2.5%는 가정이며 실측이 아닙니다. 가격은 확정되지 않았습니다. 해외 대상입니다. 가격은 확정되지 않았습니다. 예외: 7일 이내 취소는 무료입니다.');
+ assert.deepEqual(points,['1. 상담을 신청하세요.','2. 최소 3명이 필요합니다.','2.5%는 가정이며 실측이 아닙니다.','가격은 확정되지 않았습니다.','해외 대상입니다.','가격은 확정되지 않았습니다.','예외: 7일 이내 취소는 무료입니다.']);
+ const single='조건이 하나로 이어지는 긴 설명 '.repeat(20);assert.deepEqual(reportReadingPoints(single),[single.trim()]);
 });
 
 test('external source diagram keeps unverified status and original URLs without mutating data',()=>{
