@@ -23,8 +23,8 @@ test('original-location links never pretend that image alt or metadata is visibl
  assert.equal(elementLink('javascript:alert(1)',text),null);
  const link=elementLink(url,text)!;assert.ok(link.includes('/catalog?category=outer#:~:text='));assert.ok(link.includes('%2D'));
  const html=load(renderToStaticMarkup(React.createElement(SourceElementCard,{element:img,url,elements:captured.elements})));
- assert.equal(html('.guide-source-context li[aria-current=true]').length,1);assert.equal(html('.guide-source-context li[aria-current=true]').text().includes('항공점퍼'),true);
- assert.ok(html('.guide-selector').text().includes('/outer.jpg'));assert.ok(html('a').toArray().every(a=>!html(a).attr('href')!.includes(':~:text=')));
+ assert.equal(html('.guide-element blockquote').text(),'항공점퍼');assert.equal(html('.guide-source-context').length,0);
+ assert.equal(html('.guide-selector').length,0);assert.ok(html('a').toArray().every(a=>!html(a).attr('href')!.includes(':~:text=')));
 });
 test('selecting duplicate original copy changes selector, section and real destination together',()=>{
  const first=buildSiteGuide(report,{title:'CTA 버튼',current:'상담 문의'}),last=first.targets.at(-1)!;

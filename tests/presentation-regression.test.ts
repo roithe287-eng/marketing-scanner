@@ -44,8 +44,8 @@ test('shared report keeps all five chapters, eight directions and complete issue
   const report=MarketingReportSchema.parse({...fixture,criticalIssues:[issue],keywordFrequency:{totalTokens:100,uniqueSingles:1,uniquePhrases:0,singles:[{keyword:'운영',count:12,density:12,inTitle:false,inMetaDescription:false}],phrases:[]}});
   const before=JSON.stringify(report),$=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
   assert.equal($('.report-chapter').length,5);assert.equal($('.report-axis').length,8);
-  assert.ok($.text().includes(issue.recommendation));assert.equal($('.report-copy-fallback textarea[readonly]').length,1);
-  assert.ok($('.report-copy-fallback textarea').text().includes(report.url));
+  assert.ok($.text().includes(issue.recommendation));assert.equal($('.report-copy-fallback textarea[readonly]').length,0);
+  assert.ok($('button[aria-label="운영 수정안 복사"]').length);
   assert.equal($('#report-execution-board').length,1);assert.equal($('.report-backlog-distribution').length,0);assert.ok($('.work-task-list>details').length>0);
   assert.equal(JSON.stringify(report),before);
 });
@@ -66,14 +66,14 @@ test('Naver visual text stays in page bounds and separate text boxes do not coll
   }
 });
 
-test('long explanations remain complete in disclosure and unsummarized procedures retain wide layout',()=>{
+test('long explanations and procedures remain complete in responsive parallel cards',()=>{
   const explanations=[long+'마지막 문장도 남아야 합니다.','첫 단계\n두 번째 단계\n세 번째 단계\n네 번째 단계'];
   for(const explanation of explanations){
     const $=load(renderToStaticMarkup(React.createElement(EvidenceFlow,{items:[{label:'확인 근거',content:'관측값'},{label:'상세 실행',content:explanation}]})));
     const full=$('dd').last().find('.report-full-text');
     assert.equal(full.length?full.text():$('dd').last().text(),explanation);
-    assert.equal($('dl').attr('data-layout'),full.length?'columns':'stacked');
-    if(full.length)assert.equal(full.closest('details').attr('open'),undefined);
+    assert.equal($('dl').attr('data-layout'),'columns');
+    assert.equal($('details').length,0);
   }
   const $=load(renderToStaticMarkup(React.createElement(EvidenceFlow,{items:[{label:'근거',content:'짧은 근거'},{label:'조치',content:'짧은 조치'}]})));
   assert.equal($('dl').attr('data-layout'),'columns');

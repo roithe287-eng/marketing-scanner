@@ -6,7 +6,7 @@ export default function PositionCheckCard({row,check}:{row:PositionRow;check:Pos
   return <div className="position-check-card" data-state={state}>
     <div className="position-check-heading"><strong>{check.label}</strong><span>{state==='unknown'?'판정 보류':state==='found'?'표현 확인':'미탐지'}</span></div>
     <p>{positionCheckReason(row,check)}</p>
-    <details className="position-check-detail">
+    <details open className="position-check-detail">
       <summary>{check.label} · 확인 기준과 원문 보기</summary>
       <div>
         <h5>어떤 정보를 찾았나요?</h5>

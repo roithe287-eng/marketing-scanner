@@ -92,6 +92,6 @@ test('all tasks carry executable steps, actual source URL, change, KPI and full 
 });
 test('report panels show unknown evidence and empty KPI instead of fake site performance',()=>{
   const plan=renderToStaticMarkup(React.createElement(GrowthPlanPanel,{report:fixture})),kpi=renderToStaticMarkup(React.createElement(GrowthKpiPanel,{targetUrl:fixture.url}));
-  assert.match(plan,/새 기술 관측값이 없습니다/);assert.match(plan,/14개 실행 가이드/);
+  assert.match(plan,/새 기술 관측값이 없습니다/);assert.equal((plan.match(/class="growth-action"/g)||[]).length,14);
   assert.match(kpi,/숫자 3개/);assert.equal((kpi.match(/type="number"/g)||[]).length,3);assert.ok(!kpi.includes('value="10000"'));assert.match(kpi,/같은 기간·채널·완료 기준/);
 });

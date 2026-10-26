@@ -20,7 +20,7 @@ export default function CitationFailureSummary({citation}:{citation:LlmCitationT
         <p className="mt-2 font-bold text-amber-900">{row.errorMessage || fallback.errorMessage}</p>
         <p className="mt-2 text-slate-700">{row.errorAction || fallback.errorAction}</p>
         <p className="mt-3 text-sm text-slate-600">{httpStatus && `HTTP ${httpStatus} · `}{row.providerCode || row.errorCode || '상세 코드 기록 없음'}</p>
-        <details className="mt-3 border-t border-slate-200 pt-3"><summary className="cursor-pointer font-semibold text-slate-700">운영자 확인 정보</summary>
+        <details open className="mt-3 border-t border-slate-200 pt-3"><summary className="cursor-pointer font-semibold text-slate-700">운영자 확인 정보</summary>
           <p className="mt-2">측정 모델: {row.model || '기록 없음'}</p>
           <ul className="mt-2 space-y-2">{rows.map((r,i)=><li key={r.diagnosticId||i}>{r.measuredAt?.replace('T',' ').replace('Z',' UTC') || '측정 시각 기록 없음'}<br/>오류 번호: {r.diagnosticId || '이전 리포트 · 상세 기록 없음'}</li>)}</ul>
         </details>

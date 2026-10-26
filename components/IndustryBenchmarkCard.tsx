@@ -245,7 +245,7 @@ export default function IndustryBenchmarkCard({ benchmark }: Props) {
         </div>
       )}
 
-      <details className="mt-4 rounded-xl border border-neutral-200 p-4"><summary className="cursor-pointer font-bold">표본 집계 기준</summary><p className="mt-3 text-sm leading-7">{benchmark.scopeNote || "집계 방법이 확인된 표본만 제공합니다."} 표본 90백분위는 점수를 오름차순으로 정렬했을 때 90% 위치의 값입니다.</p></details>
+      <details open className="mt-4 rounded-xl border border-neutral-200 p-4"><summary className="cursor-pointer font-bold">표본 집계 기준</summary><p className="mt-3 text-sm leading-7">{benchmark.scopeNote || "집계 방법이 확인된 표본만 제공합니다."} 표본 90백분위는 점수를 오름차순으로 정렬했을 때 90% 위치의 값입니다.</p></details>
     </section>
   );
 }

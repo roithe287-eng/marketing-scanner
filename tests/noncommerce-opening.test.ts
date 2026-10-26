@@ -38,8 +38,8 @@ for(const site of noncommerceCases.filter(c=>!['mixed','unknown'].includes(c.kin
   assert.doesNotMatch($('.report-hero').text()+$('.answer-header').text(),/HTML 기본 항목|미측정|미확인|완료하지 못/);
   const purpose=$('[aria-label="페이지 목적별 분석"]'),evidence=$('[aria-label="8개 영역 근거와 측정 범위"]');
   assert.equal(purpose.length,1);assert.equal(evidence.length,1);
-  assert.equal(purpose.closest('details').attr('open'),undefined);
-  assert.equal(evidence.closest('details').attr('open'),undefined);
+  assert.equal(purpose.closest('details').attr('open'),'open');
+  assert.equal(evidence.closest('details').attr('open'),'open');
   assert.ok(evidence.text().includes('미측정'),'measurement limits remain available');
   assert.equal($('.report-chapter').length,5);
   const ids=$('[id]').toArray().map(n=>$(n).attr('id'));assert.equal(ids.length,new Set(ids).size);
@@ -55,11 +55,11 @@ for(const site of noncommerceCases.filter(c=>!['mixed','unknown'].includes(c.kin
   assert.equal(JSON.stringify(report),before,'presentation does not rewrite stored observations');
 });
 
-test('basic and limited guidance retain their exact scope inside a closed disclosure',()=>{
+test('basic and limited guidance retain their exact scope inside a default-open disclosure',()=>{
   for(const mode of ['basic','limited'] as const){
     const plan={...answerPlan(),mode};
     const $=load(renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan,opportunityFirst:true})));
-    const details=$('.answer-scope-detail');assert.equal(details.length,1);assert.equal(details.attr('open'),undefined);
+    const details=$('.answer-scope-detail');assert.equal(details.length,1);assert.equal(details.attr('open'),'open');
     assert.ok(details.text().includes(plan.notice));assert.match(details.text(),/미측정|실제 네이버 노출/);
     assert.doesNotMatch($('.answer-header').text(),/미측정|부족|완료하지 못/);
     assert.ok($('.answer-tags').text().includes(mode==='basic'?'기본 질문 가이드':'페이지 주제 기반 가이드'));

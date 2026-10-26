@@ -6,7 +6,7 @@ import {fillRewriteTemplate,rewriteFields,rewriteInstruction,type ExecutableRewr
 export default function RewriteExecutionGuide({plan,values,onChange}:{plan:ExecutableRewrite;values:RewriteValues;onChange:(token:string,value:string)=>void}) {
   const id=useId(),[message,setMessage]=useState('');
   const g=plan.guide,preview=fillRewriteTemplate(plan.template,values),remaining=rewriteFields(preview).length;
-  return <details className="report-execution-guide">
+  return <details open className="report-execution-guide">
     <summary><span><strong>이 URL에서 따라하기</strong><small>원문 근거 → 수정 순서 → 문장 완성 → 완료 확인</small></span><b aria-hidden="true">+</b></summary>
     <div className="report-execution-content">
       <RoleBox className="report-execution-source" role="current" label="수집한 원문"><span className="report-pill">{g.evidence.length?'원문 근거 연결':'문구 위치 확인 필요'}</span><h5>{g.site}</h5>{g.url&&<a href={g.url} target="_blank" rel="noopener noreferrer">{g.url} ↗</a>}<p className="report-note">{g.coverage}</p>

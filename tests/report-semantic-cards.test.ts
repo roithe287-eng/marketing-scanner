@@ -28,14 +28,14 @@ test('all reading roles meet AA text contrast and remain identifiable without co
  assert.equal($('.work-before-after>.report-role-box>.report-role-label svg[aria-hidden=true]').length,2);
 });
 
-test('raw-source cards separate literal text, location and verification without inventing a TO-BE',()=>{
+test('source cards show literal text and copy actions without redundant position information',()=>{
  const report=visualReviewReport(),original=JSON.stringify(report),element=report.pageEvidence!.siteEditing!.elements.find(e=>e.kind==='description')!;
  const $=load(renderToStaticMarkup(React.createElement(SourceElementCard,{element,url:report.url,elements:report.pageEvidence!.siteEditing!.elements})));
- assert.equal($('.guide-source-grid blockquote').text(),element.text);
- assert.ok($('.guide-source-grid [data-report-role=location]').length);
- assert.ok($('.guide-element>.report-role-box[data-report-role=verify]').length);
- assert.equal($('.guide-element [data-report-role=proposal]').length,0);
- assert.ok($('.report-full-text').text().includes('검색 제목·설명은 본문에 표시되지 않습니다.'));
+ assert.equal($('.guide-element blockquote').text(),element.text);
+ assert.equal($('.guide-source-context,.guide-selector,[data-report-role=location],details').length,0);
+ assert.equal($('.guide-source-graphic[aria-hidden=true]').length,1);
+ assert.equal($('.guide-element button').text().trim(),'⧉ 원문 복사');
+ assert.doesNotMatch($('.guide-element').text(),/문서 순서|원문이 있는 위치|개발자용/);
  assert.equal(JSON.stringify(report),original);
 });
 
@@ -62,4 +62,19 @@ test('PDF field roles preserve historical comparisons and exact long original te
  assert.ok(pages.some(p=>p.shapes.some(s=>s.color===reportRoles.verify.background)));
  assert.equal(pages.flatMap(p=>p.lines).filter(l=>l.sourceId===4).map(l=>l.text).join('').replace(/\s/g,''),('수정 방법:'+text).replace(/\s/g,''));
  for(const page of pages)for(const line of page.lines){assert.ok(line.x+line.width<=742.01);assert.ok(line.y+line.lineHeight<=PDF_PAGE.contentBottom+.01);}
+});
+
+test('all report explanations start open while source lists and exact copy instructions remain available',async t=>{
+ const {default:ReportLayout}=await import('../components/report/ReportLayout');
+ const prior=(globalThis as typeof globalThis&{React?:typeof React}).React;
+ Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:prior}));
+ const report=visualReviewReport(),before=JSON.stringify(report);
+ const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
+ assert.ok($('details').length>25,'fixture exercises all report chapters');
+ assert.equal($('details:not([open])').length,0,'no explanation starts collapsed');
+ assert.equal($('.guide-elements>.guide-element').length,report.pageEvidence!.siteEditing!.elements.length);
+ assert.equal($('.guide-source-context,.guide-selector,.guide-source-grid').length,0);
+ assert.equal($('.naver-copy-preview,.report-copy-fallback').length,0,'duplicate fallback instructions appear only after a failed copy');
+ assert.equal($('.report-chapter-symbol svg').length,5);
+ assert.equal(JSON.stringify(report),before);
 });
