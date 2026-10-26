@@ -96,3 +96,12 @@
 @media print {
  .report-v2 .report-role-box { print-color-adjust:exact; -webkit-print-color-adjust:exact; break-inside:avoid; }
 }
+@media(max-width:400px) {
+ .report-v2 .guide-content { padding:12px; }
+ .report-v2 .guide-content .guide-element { padding:12px 0; border-inline:0; border-radius:0; }
+ .report-v2 .guide-content .report-role-box { padding:14px; }
+ .report-v2 .report-role-icon { flex-basis:32px; width:32px; height:32px; border-radius:8px; }
+ .report-v2 .report-role-caption strong { font-size:15px; }
+ .report-v2 .guide-field-list h6 { padding:14px 12px; font-size:16px; }
+ .report-v2 .guide-field-list .report-evidence-flow { margin:8px; }
+}
