@@ -1,5 +1,5 @@
 'use client';
-import {CompactText,VisualSteps} from './ReportVisualSummary';
+import {VisualSteps} from './ReportVisualSummary';
 import {RoleBox,RoleLabel} from './ReportRole';
 import EvidenceFlow from './EvidenceFlow';
 import React,{createContext,useContext,useMemo,useState} from 'react';
@@ -24,7 +24,7 @@ function GuidebookContent(props:GuideRequest&{compact?:boolean}){
  return <div className="guidebook guidebook-compact">
   {!props.compact&&<section className="guide-application" aria-label="적용 체크포인트">
    <header className="guide-application-heading"><RoleLabel role="proposal" label="적용 체크포인트"/><button type="button" className="report-secondary-button" onClick={copyGuide}>실행 가이드 복사</button></header>
-   {g.targets.length>1&&<label className="guide-target-select">수정할 내용<select value={g.focus?.key||''} onChange={e=>setSelectedKey(e.target.value)}>{g.targets.map((e,i)=><option key={e.key} value={e.key}>{i+1}. {e.text.slice(0,90)||'이미지'}</option>)}</select></label>}
+   {g.targets.length>1&&<label className="guide-target-select">수정할 내용<select value={g.focus?.key||''} onChange={e=>setSelectedKey(e.target.value)}>{g.targets.map((e,i)=><option key={e.key} value={e.key}>{i+1}. {e.text.slice(0,90)||'이미지'}{g.targets.filter(t=>t.text===e.text).length>1?` · ${e.section?.label||e.href||e.tag.toUpperCase()}`:''}</option>)}</select></label>}
    <div className="guide-field-list">{g.fields.map((f,i)=><article key={f.label+i}><h6><span>{String(i+1).padStart(2,'0')}</span>{f.label}</h6><EvidenceFlow label={`${f.label} 현재와 수정안`} items={[{label:"현재 값",kicker:"AS-IS",role:"current",content:f.before},{label:"수정 방법",kicker:"TO-BE · 제안",role:"proposal",content:f.action},{label:"완료 조건",role:"verify",content:f.done}]}/></article>)}</div>
    {g.missing&&g.topic!=='account'&&<p className="guide-unconfirmed">저장된 HTML에서 일치하는 요소를 확인하지 못했습니다. 실제 페이지를 확인한 뒤 적용하세요.</p>}
    {g.proposal&&<RoleBox className="guide-proposal" role="proposal" label="적용할 문구" kicker="TO-BE · 제안"><p>{g.proposal}</p></RoleBox>}

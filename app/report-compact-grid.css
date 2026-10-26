@@ -60,7 +60,7 @@
 .report-v2 .guide-source-graphic { flex:0 0 58px; width:58px; height:44px; color:var(--source-ink); background:var(--source-bg); border-radius:8px; }
 .report-v2 .guide-element-heading>strong { min-width:0; flex:1; color:var(--source-ink); font-size:16px; }
 .report-v2 .guide-source-badge { border:1px solid #d4dde8; padding:3px 7px; border-radius:6px; font-size:11px; color:#475569; }
-.report-v2 .guide-element blockquote { margin:12px 0; padding:12px; border-radius:8px; background:var(--source-bg); font-size:16px; font-weight:550; line-height:1.7; color:#263449; }
+.report-v2 .guide-element blockquote { margin:12px 0; padding:12px; border-left:3px solid var(--source-ink); border-radius:8px; background:var(--source-bg); font-size:16px; font-weight:550; line-height:1.7; color:#263449; }
 .report-v2 .guide-element .guide-original-actions { display:flex; gap:8px; margin:0; flex-wrap:wrap; }
 .report-v2 .guide-original-actions :is(a,button) { display:inline-flex; align-items:center; justify-content:center; gap:5px; padding:7px 10px; min-height:40px; border:1px solid #bdcbdc; background:white; color:#334c70; border-radius:7px; font-size:13px; }
 .report-v2 .guide-element textarea { display:block; width:100%; margin-top:10px; border:1px solid #bdcbdc; border-radius:8px; padding:10px; font-size:16px; }
@@ -84,3 +84,9 @@
  .report-v2 .guide-elements { gap:10px; }
 }
 @media(prefers-reduced-motion:reduce) { .report-v2 * { scroll-behavior:auto; } }
+
+@media(max-width:480px) {
+ .report-v2 .report-readiness>div:has(>.guidebook) { padding:12px; }
+ .report-v2 :is(.naver-check-body,.growth-action-body,.report-detail-body,.work-detail,.report-execution-content) { padding:12px; }
+ .report-v2 .official-seo-guide { padding:12px; }
+}
