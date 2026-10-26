@@ -254,7 +254,7 @@ export default function AdminView() {
                 </div>
                 {(item.planId || !!item.services?.length) && <dl className="admin-inquiry-selections">
                   {inquiryPlanLabel(item.planId) && <div><dt>선택한 이용 안내</dt><dd>{inquiryPlanLabel(item.planId)}</dd></div>}
-                  {!!item.services?.length && <div><dt>광고대행 문의</dt><dd>{inquiryServiceLabels(item.services).join(' · ')}</dd></div>}
+                  {!!item.services?.length && <div><dt>광고대행 상담 선택</dt><dd>{inquiryServiceLabels(item.services).join(' · ')}</dd></div>}
                 </dl>}
                 <p className="access-detail">
                   {item.email} · {item.contact}

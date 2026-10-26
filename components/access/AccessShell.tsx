@@ -5,17 +5,19 @@ export default function AccessShell({
   description,
   children,
   wide = false,
+  className = "",
 }: {
   eyebrow: string;
   title: string;
   description: string;
   children: React.ReactNode;
   wide?: boolean;
+  className?: string;
 }) {
   return (
     <main className="access-page">
       <BrandHeader />
-      <section className={`access-shell${wide ? " access-wide" : ""}`}>
+      <section className={`access-shell${wide ? " access-wide" : ""}${className ? ` ${className}` : ""}`}>
         <a href="/" className="access-back">
           ← 마케팅스캐너
         </a>

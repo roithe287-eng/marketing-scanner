@@ -1,16 +1,36 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { inquirySchema } from '../lib/saas/validation';
-import { inquiryServiceLabels } from '../lib/inquiry';
+import { inquiryServiceLabels, toggleInquiryService } from '../lib/inquiry';
 
 const base = { name: '문의 테스트', email: 'inquiry@example.com', contact: 'test only', consent: true };
 
 test('inquiries accept zero, one or both services without making advertising mandatory', () => {
   assert.deepEqual(inquirySchema.parse(base).services, []);
-  for (const services of [[], ['naver-ads'], ['meta-ads'], ['naver-ads', 'meta-ads']]) {
+  for (const services of [[], ['no-agency'], ['naver-ads'], ['meta-ads'], ['naver-ads', 'meta-ads']]) {
     assert.deepEqual(inquirySchema.parse({ ...base, services }).services, services);
   }
   assert.deepEqual(inquirySchema.parse({ ...base, services: ['naver-ads', 'naver-ads'] }).services, ['naver-ads']);
+});
+
+test('explicit opt-out cannot be submitted with either advertising channel', () => {
+  for (const services of [['no-agency', 'naver-ads'], ['meta-ads', 'no-agency'], ['no-agency', 'naver-ads', 'meta-ads']]) {
+    assert.equal(inquirySchema.safeParse({ ...base, services }).success, false);
+  }
+  assert.deepEqual(inquirySchema.parse({ ...base, services: ['no-agency', 'no-agency'] }).services, ['no-agency']);
+});
+
+test('checkbox choices preserve both channels and switch cleanly to and from no agency', () => {
+  const both = toggleInquiryService(['naver-ads'], 'meta-ads', true);
+  assert.deepEqual(both, ['naver-ads', 'meta-ads']);
+  const optedOut = toggleInquiryService(both, 'no-agency', true);
+  assert.deepEqual(optedOut, ['no-agency']);
+  assert.deepEqual(toggleInquiryService(optedOut, 'no-agency', false), []);
+  assert.deepEqual(toggleInquiryService(optedOut, 'naver-ads', true), ['naver-ads']);
+  assert.deepEqual(toggleInquiryService(optedOut, 'meta-ads', true), ['meta-ads']);
+  assert.deepEqual(toggleInquiryService(both, 'naver-ads', false), ['meta-ads']);
+  assert.deepEqual(toggleInquiryService(both, 'naver-ads', true), both);
+  assert.deepEqual(both, ['naver-ads', 'meta-ads'], 'transitions do not mutate existing state');
 });
 
 test('inquiries reject unknown, oversized and malformed selections', () => {
@@ -33,6 +53,7 @@ test('pricing selections are validated separately from editable message text', (
 
 test('admin labels preserve both channels and support historical inquiries without selections', () => {
   assert.deepEqual(inquiryServiceLabels(['meta-ads', 'naver-ads']), ['네이버 광고대행 문의', '메타 광고대행 문의']);
+  assert.deepEqual(inquiryServiceLabels(['no-agency']), ['대행문의 필요없음']);
   assert.deepEqual(inquiryServiceLabels(undefined), []);
   assert.deepEqual(inquiryServiceLabels([]), []);
 });
