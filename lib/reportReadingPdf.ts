@@ -2,6 +2,7 @@ import { buildReportDocument, type ReportBlock } from './reportDocument';
 import type { MarketingReport } from './reportSchema';
 import { PDF_PAGE, wrapPdfText, type PdfTextStyle, type TextMeasurer } from './pdfLayout';
 import type { VisualPdfPage } from './reportVisualPdf';
+import {reportRoles,reportFieldRole} from './reportRoles';
 
 export type ReadingBlock = ReportBlock & { sourceId?:number; anchor?:string; targetId?:string; originalText?:string; references?:{id:string;label:string}[] };
 export type ReadingSection = { id:string; title:string; group:string; blocks:ReadingBlock[] };
@@ -128,6 +129,8 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
     y=top+36;
   }
   function renderField(block:ReadingBlock,f:NonNullable<ReturnType<typeof field>>){
+    const role=reportFieldRole(f.label),palette=role?reportRoles[role]:undefined;
+    const fieldLabel={...label,color:palette?.accent||label.color};
     const labelWidth=106,valueWidth=W-labelWidth-28;
     const left=lines(f.label,label,labelWidth-20),right=lines(f.value,body,valueWidth);
     if(right.length>7||left.length>2){
@@ -138,8 +141,9 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
         const count=Math.min(wrapped.length-offset,Math.floor((BOTTOM-y-42)/body.lineHeight));
         if(count<1){newPage();continue;}
         const part=wrapped.slice(offset,offset+count),h=part.length*body.lineHeight+42;
-        rect(X,y,W,h,C.soft,6);
-        text(first?f.label:'이어서',X+14,y+8,W-28,label,first?block:undefined);
+        rect(X,y,W,h,palette?.background||C.soft,6);
+        if(palette)rect(X,y,3,h,palette.accent,1);
+        text(first?f.label:'이어서',X+14,y+8,W-28,fieldLabel,first?block:undefined);
         let top=y+31;for(const row of part){page.lines.push({...body,color:block.targetId?C.blue:body.color,text:row.text,x:X+14,y:top,width:measure(row.text,body),sourceId:block.sourceId,targetId:block.targetId});top+=body.lineHeight;}
         y+=h+5;offset+=count;first=false;if(offset<wrapped.length)newPage();
       }
@@ -154,8 +158,9 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
       const count=Math.min(right.length-offset,Math.floor(remaining/body.lineHeight));
       const part=right.slice(offset,offset+count);
       const h=Math.max((first?left.length:1)*label.lineHeight,part.length*body.lineHeight)+12;
-      rect(X,y,W,h,C.soft,4);rect(X+labelWidth,y+6,1,h-12,C.line);
-      if(first)text(f.label,X+10,y+6,labelWidth-20,label,block);
+      rect(X,y,W,h,palette?.background||C.soft,4);rect(X+labelWidth,y+6,1,h-12,palette?.border||C.line);
+      if(palette)rect(X,y,3,h,palette.accent,1);
+      if(first)text(f.label,X+10,y+6,labelWidth-20,fieldLabel,block);
       else text('이어서',X+10,y+6,labelWidth-20,small);
       let top=y+6;for(const row of part){page.lines.push({...body,color:block.targetId?C.blue:body.color,text:row.text,x:X+labelWidth+14,y:top,width:measure(row.text,body),sourceId:block.sourceId,targetId:block.targetId});top+=body.lineHeight;}
       y+=h+3;offset+=count;first=false;
@@ -231,8 +236,9 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
         if(h<=460){
           ensure(h+16);mark(block);mark(next);
           for(const [n,value,rows,source] of [[0,pair.before,a,block],[1,pair.after,b,next]] as const){
-            const x=X+n*(width+16);rect(x,y,width,h,C.line,8);rect(x+1,y+1,width-2,h-2,n?C.pale:C.white,7);
-            text(value.label,x+14,y+12,inner,{...label,color:n?C.blue:C.muted},source);
+            const palette=reportRoles[n?(pair.before.label.startsWith('이전')?'verify':'proposal'):'current'];
+            const x=X+n*(width+16);rect(x,y,width,h,palette.border,8);rect(x+1,y+1,width-2,h-2,palette.background,7);rect(x,y,width,4,palette.accent,1);
+            text(value.label,x+14,y+12,inner,{...label,color:palette.accent},source);
             let top=y+42;for(const row of rows){page.lines.push({...body,color:source.targetId?C.blue:body.color,text:row.text,x:x+14,y:top,width:measure(row.text,body),sourceId:source.sourceId,targetId:source.targetId});top+=body.lineHeight;}
           }
           y+=h+14;i++;continue;

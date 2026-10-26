@@ -123,3 +123,5 @@ npm run dev -- --hostname 127.0.0.1
 # Latest owner administration and activity work
 
 See [OWNER_ADMIN_ACTIVITY_HANDOVER_2026-10-06.md](./OWNER_ADMIN_ACTIVITY_HANDOVER_2026-10-06.md) for the single-owner approval workflow, per-user activity records and production setup prerequisite.
+
+- 2026-10-26: [결과 카드의 역할·비교 구분](SEMANTIC_REPORT_CARDS_2026-10-26.md) — AS-IS/TO-BE, 원문·진단·제안·확인·위치 팔레트와 아이콘, PDF 가독성.

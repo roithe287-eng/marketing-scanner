@@ -2,6 +2,7 @@
 import {CompactText} from './report/ReportVisualSummary';
 import {activeCitation} from '@/lib/activeCitation';
 
+import {RoleBox} from './report/ReportRole';
 import React, { memo, useState } from 'react';
 import {ObservationOverview,QuestionMatrix} from './visuals/ObservationVisuals';
 import type { LlmCitationTest } from '@/lib/reportSchema';
@@ -50,7 +51,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
           <p className="text-xs text-jm-gray">{r.model} {r.measuredAt && `· ${r.measuredAt}`} {r.durationMs != null && `· ${(r.durationMs/1000).toFixed(1)}초`}</p>
           {r.errorAction && <p className="rounded-lg bg-amber-50 p-3 text-amber-950">{r.errorAction}</p>}
           {r.diagnosticId && <p className="break-all text-sm text-jm-gray">오류 번호: {r.diagnosticId}{r.httpStatus && ` · HTTP ${r.httpStatus}`}{r.providerCode && ` · ${r.providerCode}`}</p>}
-          <p className="whitespace-pre-wrap break-words">{r.responseText || r.responseSnippet || '수신한 답변이 없습니다.'}</p>
+          <RoleBox role="current" label="AI가 반환한 답변"><p className="whitespace-pre-wrap break-words">{r.responseText || r.responseSnippet || '수신한 답변이 없습니다.'}</p></RoleBox>
           {(r.sources || []).length > 0 ? <ul className="space-y-2">{r.sources!.map((s,j) => <li key={`${s.url}-${j}`} className="rounded-lg bg-neutral-50 p-3 break-words">
             <span className="text-xs font-bold">{s.ownership === 'own' ? '자사 출처' : s.ownership === 'unresolved' ? '대상 도메인 확인 필요' : '외부 출처'} · </span>
             {safeHttpUrl(s.url) && <a className="underline text-blue-700" href={s.url} target="_blank" rel="noopener noreferrer">{s.title || s.url}</a>}
@@ -61,7 +62,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
     {!!citation.actionPlan?.length && <div className="mt-7"><h4 className="text-xl font-black">질문별 실행 과제</h4><p className="text-xs text-jm-gray mt-2">입력한 페이지와 관측 출처에 근거한 검토 제안입니다. 사실 정확도와 사이트 전체 콘텐츠 유무는 담당자가 확인해야 합니다.</p>
       <div className="space-y-3 mt-4">{citation.actionPlan.map((a,i) => <details className="geo-detail rounded-xl border p-4" key={i}>
         <summary className="cursor-pointer font-bold text-sm leading-6">{i+1}. {a.question}<span className="block text-jm-red text-xs">{actionLabels[a.action]}</span></summary>
-        <div className="pt-3 text-sm leading-7 space-y-2"><p>{a.evidence}</p>{a.targetUrl && safeHttpUrl(a.targetUrl) && <a className="block break-all underline text-blue-700" href={a.targetUrl} target="_blank" rel="noopener noreferrer">검토 페이지: {a.targetUrl}</a>}<p className="font-semibold">{a.nextStep}</p><p className="text-xs text-jm-gray">정확도: 검토 필요</p></div>
+        <div className="pt-3 text-sm leading-7 space-y-2"><RoleBox role="current" label="관측 근거"><p>{a.evidence}</p></RoleBox>{a.targetUrl && safeHttpUrl(a.targetUrl) && <a className="block break-all underline text-blue-700" href={a.targetUrl} target="_blank" rel="noopener noreferrer">검토 페이지: {a.targetUrl}</a>}<RoleBox role="proposal" label="실행 제안"><p>{a.nextStep}</p></RoleBox><p className="text-xs text-jm-gray">정확도: 검토 필요</p></div>
       </details>)}</div>
     </div>}
   </section>;

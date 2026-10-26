@@ -13,6 +13,7 @@ import "./report-reading.css";
 import "./report-usability.css";
 import "./answer-content.css";
 import "./report-visual-summary.css";
+import "./report-semantic-cards.css";
 
 const pretendard = localFont({
   src: "../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2",

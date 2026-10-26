@@ -7,6 +7,7 @@ import type {MarketingReport} from './reportSchema';
 import {buildReportInsights,insightNotes,messageThemes} from './reportInsights';
 import {wrapPdfText,PDF_PAGE,type TextMeasurer,type PdfTextStyle} from './pdfLayout';
 import type {VisualPdfPage} from './reportVisualPdf';
+import {reportRoles,type ReportRole} from './reportRoles';
 const ink='#202329',gray='#606875',red='#b9141a';
 const short=(s:string,max=90)=>s.length>max?s.slice(0,max)+'…':s;
 export function buildInsightsPdfPages(report:MarketingReport,measure:TextMeasurer):VisualPdfPage[] {
@@ -19,6 +20,11 @@ export function buildInsightsPdfPages(report:MarketingReport,measure:TextMeasure
   function wrappedHeight(value:string,width:number,size:number){return wrapPdfText(value,{size,color:ink,weight:400,lineHeight:size*1.6},measure,width).length*size*1.6;}
   function rect(x:number,top:number,width:number,height:number,color='#f4f5f7'){page.shapes.push({kind:'rect',x,y:top,width,height,color,radius:10});}
   function next(title:string,note:string) {page={lines:[],shapes:[]};pages.push(page);rect(48,48,5,38,red);text('JINJJA MARKETING · DIAGNOSIS',65,46,660,11,gray,700);const end=text(title,65,68,660,25,ink,700);y=text(note,48,end+14,694,12,gray)+24;}
+  function roleField(label:string,value:string,role:ReportRole){
+    const palette=reportRoles[role],height=wrappedHeight(value,662,12)+54;
+    rect(48,y,694,height,palette.background);rect(48,y,4,height,palette.accent);
+    const top=text(label,64,y+12,662,12,palette.accent,700);text(value,64,top+7,662,12,palette.ink);y+=height+10;
+  }
   const scores=diagnosisScores(report.diagnosis),ordered=[...scores].sort((a,b)=>a.score-b.score);
   if(report.evidenceReview){
     next('8개 영역 · 근거와 측정 범위','실제 화면·전환·모바일의 미측정 항목에는 점수를 부여하지 않습니다.');
@@ -71,11 +77,11 @@ export function buildInsightsPdfPages(report:MarketingReport,measure:TextMeasure
     rewriteKinds.forEach((kind,i)=>{const x=48+i*140;rect(x,y,132,80);text(kind,x+12,y+10,108,13,ink,700);text(`${plans.filter(p=>p.kind===kind).length}개`,x+12,y+36,108,22,red,700);});y+=103;
     for(const plan of [...plans,...rewrites.phrases].slice(0,3)){
       const title=`${short(plan.item.keyword,22)} · ${plan.kind} · ${plan.item.count}회`;
-      if(y+250>PDF_PAGE.contentBottom)next('반복 표현 · TO-BE 계속','작성 틀을 실제 서비스와 조건에 맞게 확인해 사용하세요.');
+      const fields=[['확인 근거',short(plan.reason,140),'verify'],['검토·수정 방향',short(plan.action,155),'proposal'],['작성 틀 · 사실 확인 후 사용',short(plan.template,155),'proposal']] as const;
+      const needed=wrappedHeight(title,694,17)+9+fields.reduce((height,[,value])=>height+wrappedHeight(value,662,12)+64,0);
+      if(y+needed>PDF_PAGE.contentBottom)next('반복 표현 · TO-BE 계속','작성 틀을 실제 서비스와 조건에 맞게 확인해 사용하세요.');
       y=text(title,48,y,694,17,ink,700)+9;
-      y=text(`AS-IS  ${short(plan.reason,140)}`,48,y,694,12,gray)+9;
-      y=text(`TO-BE  ${short(plan.action,155)}`,48,y,694,13,ink)+9;
-      y=text(`작성 틀  ${short(plan.template,155)}`,48,y,694,12,red)+22;
+      for(const [label,value,role] of fields)roleField(label,value,role);
     }
   }
   return pages;

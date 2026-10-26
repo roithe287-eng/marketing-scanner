@@ -1,5 +1,7 @@
 'use client';
 import {CompactText,VisualSteps} from './ReportVisualSummary';
+import {RoleBox,RoleLabel} from './ReportRole';
+import EvidenceFlow from './EvidenceFlow';
 import React,{createContext,useContext,useMemo,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {buildSiteGuide,editingEvidence,editingPlatform,elementLink,guideInstruction,PLATFORM_NAMES,type GuideRequest} from '@/lib/siteGuidebook';
@@ -25,24 +27,24 @@ function GuidebookContent(props:GuideRequest&{compact?:boolean}){
    <div className="guide-grounding"><strong>{g.matchLabel}</strong><p>{g.matchReason}</p>{g.targets.length>1&&<label>수정할 원문 선택 · {g.targets.length}개<span className="guide-select-wrap"><select value={g.focus?.key||''} onChange={e=>setSelectedKey(e.target.value)}>{g.targets.map((e,i)=><option key={e.key} value={e.key}>{i+1}. {e.section?.label||e.tag.toUpperCase()} · {e.text.slice(0,90)||'이미지'} · #{e.order}</option>)}</select></span></label>}<p><b>페이지에서 찾을 구역</b> {g.location}</p></div>
    {g.focus&&<ElementCard element={g.focus} url={g.url} elements={editingEvidence(report!)?.siteEditing?.elements}/>}
    {!!g.settings.length&&<div className="guide-settings">{g.settings.map(s=><article key={s.selector}><strong>{s.name}</strong><pre>{s.value||'빈 값'}{s.truncated?'\n(일부 발췌 · 전체 원본 확인 필요)':''}</pre><details className="guide-selector"><summary>설정의 HTML 위치</summary><code>{s.selector}</code></details></article>)}</div>}
-   <div className="guide-field-list"><h5>이 위치에서 실제로 수정할 항목</h5>{g.fields.map((f,i)=><article key={f.label+i}><h6>{String(i+1).padStart(2,'0')} · {f.label}</h6><dl><div><dt>현재 값</dt><dd>{f.before}</dd></div><div><dt>수정 방법</dt><dd>{f.action}</dd></div><div><dt>완료 조건</dt><dd>{f.done}</dd></div></dl></article>)}</div>
+   <div className="guide-field-list"><h5>이 위치에서 실제로 수정할 항목</h5>{g.fields.map((f,i)=><article key={f.label+i}><h6>{String(i+1).padStart(2,'0')} · {f.label}</h6><EvidenceFlow label={`${f.label} 현재와 수정안`} items={[{label:"현재 값",kicker:"AS-IS",role:"current",content:f.before},{label:"수정 방법",kicker:"TO-BE · 제안",role:"proposal",content:f.action},{label:"완료 조건",role:"verify",content:f.done}]}/></article>)}</div>
    {g.missing&&g.topic!=='account'&&<p className="guide-unconfirmed">일치하는 요소를 저장된 HTML에서 확인하지 못했습니다. 실제 페이지에서 위치를 확인한 뒤 수정하세요. 관리자 화면과 브라우저 렌더링은 수집하지 않았습니다.</p>}
    {g.nearby.map(e=><ElementCard key={e.key} element={e} url={g.url} elements={editingEvidence(report!)?.siteEditing?.elements} nearby/>)}
    <p className="guide-note">위치는 화면의 좌표가 아닌 문서 순서입니다. 원문 링크의 위치 이동은 브라우저 지원·페이지 변경에 따라 작동하지 않을 수 있습니다. 그때는 원문 문구로 페이지 찾기를 사용하세요.</p>
    <details className="guide-more"><summary>담당자에게 전달할 상세 절차</summary><ol className="guide-steps">{g.steps.map((s,i)=><li key={s.title}><span>{String(i+1).padStart(2,'0')}</span><div><h5>{s.title}</h5><p>{s.detail}</p></div></li>)}</ol></details>
-   {g.proposal&&<div className="guide-proposal"><h5>이 위치에 적용할 수정안</h5><p>{g.proposal}</p></div>}
+   {g.proposal&&<div className="guide-proposal"><h5><RoleLabel role="proposal" label="이 위치에 적용할 수정안" kicker="TO-BE · 제안"/></h5><p>{g.proposal}</p></div>}
    <button type="button" className="report-secondary-button" onClick={async()=>{try{await navigator.clipboard.writeText(guideInstruction(g));setStatus('위치·순서·기대효과·근거를 복사했습니다.');setFallback(false);}catch{setFallback(true);setStatus('아래 전체 작업 지시서를 직접 선택해 복사하세요.');}}}>맞춤 실행 가이드 복사</button><p role="status" className="guide-note">{status}</p>{fallback&&<label className="guide-fallback">전체 작업 지시서<textarea readOnly rows={12} value={guideInstruction(g)}/></label>}
    </div>
   </details>}
-  <details className="guide-effect"><summary>수정하면 어떤 도움이 되나요?</summary><div><p>{g.effect.expected}</p><small>{g.effect.limit}</small></div></details>
-  <details className="guide-proof"><summary>공식 근거와 확인할 지표</summary><div><p><strong>공식 가이드의 설명</strong>{g.effect.mechanism}</p>{naverGuideCondition(g.topic)&&<p className="guide-naver-condition"><strong>네이버에서 함께 확인할 조건</strong>{naverGuideCondition(g.topic)}</p>}<p><strong>수정 후 확인할 것</strong>{g.effect.metric}</p><div className="guide-links">{sources.map(id=><a href={GUIDE_SOURCES[id].url} key={id} target="_blank" rel="noopener noreferrer">{GUIDE_SOURCES[id].title} ↗</a>)}</div><small>공식 문서 확인 {g.reviewedAt} · 노출이나 매출 증가는 별도로 확인해야 합니다.</small></div></details>
+  <details className="guide-effect"><summary><RoleLabel role="proposal" label="수정하면 어떤 도움이 되나요?"/></summary><div><p>{g.effect.expected}</p><small>{g.effect.limit}</small></div></details>
+  <details className="guide-proof"><summary><RoleLabel role="verify" label="공식 근거와 확인할 지표"/></summary><div><p><strong>공식 가이드의 설명</strong>{g.effect.mechanism}</p>{naverGuideCondition(g.topic)&&<p className="guide-naver-condition"><strong>네이버에서 함께 확인할 조건</strong>{naverGuideCondition(g.topic)}</p>}<p><strong>수정 후 확인할 것</strong>{g.effect.metric}</p><div className="guide-links">{sources.map(id=><a href={GUIDE_SOURCES[id].url} key={id} target="_blank" rel="noopener noreferrer">{GUIDE_SOURCES[id].title} ↗</a>)}</div><small>공식 문서 확인 {g.reviewedAt} · 노출이나 매출 증가는 별도로 확인해야 합니다.</small></div></details>
  </div>;
 }
 export function SiteGuidebookOverview({report}:{report:MarketingReport}){
  const p=editingEvidence(report),site=p?.siteEditing,platform=editingPlatform(report),[expanded,setExpanded]=useState(false),[filter,setFilter]=useState('all');
  const all=site?.elements.filter(e=>filter==='all'||e.kind===filter)||[],shown=expanded?all:all.slice(0,5);
  return <section className="report-card guide-overview" id="report-site-guide" aria-label="URL 맞춤 편집 안내"><div className="report-card-heading"><p className="report-eyebrow">YOUR URL · EDITING GUIDEBOOK</p><h3>이 사이트는 어디서 수정할까요?</h3><p className="report-note">원문을 선택하면 편집 위치와 수정 방법을 확인할 수 있습니다.</p></div>
- <VisualSteps kind="editing" label="페이지 편집 순서"/><div className="guide-platform"><div><span className="guide-label">제작 도구</span><h4>{platform.label}</h4><p>공개 HTML의 단서로 추정한 후보입니다.</p></div><div><span className="guide-label">관측 범위</span><h4>HTML 원문·요소 위치</h4><p>수집한 원문 기준 · 실제 화면·관리자 화면은 미확인</p></div></div>
+ <VisualSteps kind="editing" label="페이지 편집 순서"/><div className="guide-platform"><RoleBox role="review" label="제작 도구 후보"><h4>{platform.label}</h4><p>공개 HTML의 단서로 추정한 후보입니다.</p></RoleBox><RoleBox role="verify" label="관측 범위"><h4>HTML 원문·요소 위치</h4><p>수집한 원문 기준 · 실제 화면·관리자 화면은 미확인</p></RoleBox></div>
  {!!site?.signals.length&&<ul className="guide-signals">{site.signals.map(s=><li key={s.id}><strong>{PLATFORM_NAMES[s.id]} · {s.kind==='cms'?'제작 도구 후보':s.kind==='framework'?'프레임워크 단서':'전송 계층 단서'}</strong><span>{s.evidence.join(' · ')}</span></li>)}</ul>}
  <p className="guide-note">{site&&p?`대상: ${p.finalUrl} · 수집: ${new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium',timeStyle:'short'}).format(new Date(p.capturedAt))} KST`:'이전 보고서에는 새 위치 관측값이 없습니다. 재진단하면 제작 도구 단서와 요소 위치를 함께 저장합니다.'}</p>
  <div className="guide-filters" role="group" aria-label="수집 원문 종류">{[['all','전체'],['heading','제목'],['text','본문'],['cta','링크·버튼'],['image','이미지'],['title','검색 제목'],['description','검색 설명']].map(([id,label])=><button type="button" key={id} aria-pressed={filter===id} onClick={()=>{setFilter(id);setExpanded(false);}}>{label}</button>)}</div>

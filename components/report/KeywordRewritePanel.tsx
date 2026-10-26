@@ -2,6 +2,7 @@
 import {CompactText} from './ReportVisualSummary';
 import {keywordFrequencyScope} from '@/lib/keywordFrequencyPresentation';
 import {Guidebook} from './SiteGuidebook';
+import {RoleBox,RoleLabel} from './ReportRole';
 import React,{useMemo,useState} from 'react';
 import RewriteExecutionGuide from './RewriteExecutionGuide';
 import {buildExecutableRewrites,fillRewriteTemplate,rewriteInstruction,type ExecutableRewrite,type RewriteValues} from '@/lib/keywordExecution';
@@ -12,8 +13,8 @@ function RewriteCard({plan,values,onChange}:{plan:ExecutableRewrite;values:Rewri
   if(plan.reviewOnly)return <article className="report-rewrite-card keyword-review-only"><header><div><span className="report-pill">의미 확인 필요</span><h4>{plan.item.keyword}</h4></div><span>{plan.item.count}회 · {plan.item.density}%</span></header><CompactText text={plan.reason}/><p className="report-explanation">{plan.action}</p><details className="report-inline-details"><summary>수집된 원문 근거 확인</summary><p className="report-note">{plan.guide.coverage}</p>{plan.guide.evidence.length?plan.guide.evidence.map((e,i)=><div key={i}><strong>{e.label}</strong><blockquote className="report-answer">{e.text}</blockquote></div>):<p className="report-empty">빈도는 저장돼 있지만 이 표현의 문장 원문은 저장 범위에서 찾지 못했습니다. 원문을 확인한 뒤 수정 여부를 정하세요.</p>}</details></article>;
   return <article className="report-rewrite-card">
     <header><div><span className="report-pill">{plan.kind}</span><h4>{plan.item.keyword}</h4></div><span>{plan.item.count}회 · {plan.item.density}%</span></header>
-    <div className="report-rewrite-comparison"><div><span className="report-eyebrow"><b className="report-rewrite-step" aria-hidden="true">01</b> 확인된 근거</span><CompactText text={plan.reason}/></div><div><span className="report-eyebrow"><b className="report-rewrite-step" aria-hidden="true">02</b> 검토·수정 방향</span><CompactText text={plan.action}/></div></div>
-    <div className="report-rewrite-template"><span>작성 틀 · 괄호 안을 확인된 사실로 교체</span><p>{plan.template.split(/(\[[^\]\n]+\])/g).map((part,i)=>part.startsWith('[')&&part.endsWith(']')?<mark key={i}>{part}</mark>:part)}</p></div>
+    <div className="report-role-pair"><RoleBox role="verify" label="확인된 근거"><CompactText text={plan.reason}/></RoleBox><RoleBox role="proposal" label="검토·수정 방향"><CompactText text={plan.action}/></RoleBox></div>
+    <div className="report-rewrite-template"><RoleLabel role="proposal" label="작성 틀 · 괄호 안을 확인된 사실로 교체"/><p>{plan.template.split(/(\[[^\]\n]+\])/g).map((part,i)=>part.startsWith('[')&&part.endsWith(']')?<mark key={i}>{part}</mark>:part)}</p></div>
     <Guidebook title={`반복 표현 · ${plan.item.keyword}`} keyword={plan.item.keyword} topic={plan.kind==='배치'?'title':'content'} proposal={fillRewriteTemplate(plan.template,values)}/><p className="report-rewrite-placement"><strong>권장 위치</strong> {plan.placement}</p>
     <RewriteExecutionGuide plan={plan} values={values} onChange={onChange}/>
     <div className="report-copy"><button type="button" className="report-secondary-button" onClick={async()=>{try{await navigator.clipboard.writeText(rewriteInstruction(plan,values));setMessage('URL 근거와 단계별 실행 가이드를 복사했습니다.');}catch{setMessage('복사하지 못했습니다. 아래 작업 지시서를 펼쳐 직접 선택해 주세요.');}}} aria-label={`${plan.item.keyword} 수정안 복사`}>수정안 복사</button><span role="status">{message}</span></div><details className="report-copy-fallback"><summary>작업 지시서 보기 · 직접 선택해 복사</summary><textarea readOnly rows={8} aria-label={`${plan.item.keyword} TO-BE 작업 지시서`} value={rewriteInstruction(plan,values)} onFocus={event=>event.currentTarget.select()}/></details>

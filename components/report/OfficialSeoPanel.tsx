@@ -1,5 +1,7 @@
 'use client';
 import {CompactText} from './ReportVisualSummary';
+import {RoleBox,RoleLabel} from './ReportRole';
+import EvidenceFlow from './EvidenceFlow';
 import React,{useMemo,useState} from 'react';
 import type {OfficialSeoAudit,OfficialSeoEngine} from '@/lib/officialSeoSchema';
 import {analyzeOfficialSeo} from '@/lib/analyzeOfficialSeo';
@@ -30,7 +32,7 @@ export default function OfficialSeoPanel({audit,targetUrl}:{audit?:OfficialSeoAu
   </div>
   <div className="naver-checks">{rows.length?rows.map(check=><details key={check.id} className="naver-check" data-state={check.status}>
    <summary><span className="naver-check-main"><strong>{check.title}</strong><small>{check.engines.map(e=>names[e]).join(' · ')} · {OFFICIAL_SEO_TOPICS[check.topic as OfficialSeoTopic]}</small></span><span className="naver-badge">{OFFICIAL_SEO_STATUS[check.status]}</span><span aria-hidden="true">+</span></summary>
-   <div className="naver-check-body"><CompactText className="official-seo-evidence" text={check.evidence}/><CompactText text={check.interpretation}/><ol className="official-seo-steps">{check.steps.map((step,i)=><li key={i}>{step}</li>)}</ol><div className="naver-completion"><strong>완료 확인</strong><p>{check.completion}</p></div><div className="naver-check-footer"><div className="naver-sources">{officialSeoCheckSources(check).slice(0,3).map(source=><a key={source.id} href={source.url} target="_blank" rel="noopener noreferrer">{names[source.engine]} · {source.title} ↗</a>)}</div><button type="button" className="naver-copy" onClick={()=>showTopic(check.topic)}>관련 기준 전체 보기</button></div></div>
+   <div className="naver-check-body"><EvidenceFlow items={[{label:"확인 근거",role:"current",kicker:report.mode==="guide"?undefined:"AS-IS",content:check.evidence},{label:"진단 해석",role:"review",content:check.interpretation}]}/><RoleBox className="naver-execution" role="proposal" label="실행·확인 순서" kicker={check.status==="action"?"TO-BE · 제안":undefined}><ol className="official-seo-steps">{check.steps.map((step,i)=><li key={i}>{step}</li>)}</ol><div className="naver-completion"><RoleLabel role="verify" label="완료 확인"/><p>{check.completion}</p></div></RoleBox><div className="naver-check-footer"><div className="naver-sources">{officialSeoCheckSources(check).slice(0,3).map(source=><a key={source.id} href={source.url} target="_blank" rel="noopener noreferrer">{names[source.engine]} · {source.title} ↗</a>)}</div><button type="button" className="naver-copy" onClick={()=>showTopic(check.topic)}>관련 기준 전체 보기</button></div></div>
   </details>):<p className="report-empty">이 조건의 항목이 없습니다. 직접 확인 항목과 문서 기준은 아래에서 확인하세요.</p>}</div>
   <details className="official-seo-library" open={catalogOpen} onToggle={e=>setCatalogOpen(e.currentTarget.open)}><summary>전체 문서 기준 · 유형별 속성 찾아보기</summary>
    <div className="official-seo-controls"><label className="official-seo-search">문서·속성 검색<input type="search" value={query} onChange={e=>{setQuery(e.target.value);setPage(0);}} placeholder="예: Product, 파비콘, noindex"/></label><label>분야<select value={topic} onChange={e=>{setTopic(e.target.value);setPage(0);}}><option value="all">전체 분야</option>{Object.entries(OFFICIAL_SEO_TOPICS).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label></div>

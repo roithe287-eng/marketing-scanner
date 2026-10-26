@@ -1,4 +1,5 @@
 "use client";
+import {RoleBox} from './report/ReportRole';
 import React,{useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {buildGeoFocus} from '@/lib/geoFocus';
@@ -27,7 +28,7 @@ export default function GeoFocusPanel({report}: {report: MarketingReport}) {
       <div className="flex items-center justify-between gap-2"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white">{i+1}</span><span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-600">{task.id==='restore-measurement'?'관측 복구':task.id==='review-source'?'정보 검토':task.id==='page-readiness'?'구조 보완':'직접 답변'}</span></div>
       <h3 className="mt-4 font-bold leading-6">{task.title}</h3>
       {task.targetUrl && <a className="mt-3 block break-all text-xs text-blue-700 underline" href={task.targetUrl} target="_blank" rel="noopener noreferrer">검토 페이지 열기 ↗</a>}
-      <details className="mt-4 border-t pt-3"><summary className="cursor-pointer text-xs font-bold">근거·실행·완료 기준 보기</summary><ol className="ml-2 mt-4 space-y-5 border-l border-slate-300 pl-4">{[['관측 근거',task.evidence],['실행 제안',task.nextStep],['완료 확인',task.completion]].map(([label,text],index)=><li key={label} className="relative"><span className="absolute -left-[23px] top-1 h-3 w-3 rounded-full border-2 border-white bg-slate-500" aria-hidden="true"/><p className="text-xs font-bold text-jm-gray">{index+1}. {label}</p><p className="mt-1 break-words text-sm leading-7">{text}</p></li>)}</ol></details>
+      <details className="mt-4 border-t pt-3"><summary className="cursor-pointer text-xs font-bold">근거·실행·완료 기준 보기</summary><div className="report-role-stack"><RoleBox role="current" label="관측 근거"><p>{task.evidence}</p></RoleBox><RoleBox role="proposal" label="실행 제안"><p>{task.nextStep}</p></RoleBox><RoleBox role="verify" label="완료 확인"><p>{task.completion}</p></RoleBox></div></details>
     </li>)}</ol>
     {focus.questions.length > 0 && <details className="mt-4 rounded-xl border p-4 text-sm">
       <summary className="cursor-pointer font-bold">재사용할 고객 질문 {focus.questions.length}개 보기</summary>
