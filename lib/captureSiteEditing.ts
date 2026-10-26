@@ -1,3 +1,4 @@
+import {captureContentSections} from './contentSections';
 import type {CheerioAPI} from 'cheerio';
 import type {Element} from 'domhandler';
 import type {PageElement,PlatformId,SiteEditing} from './siteEditingSchema';
@@ -51,7 +52,7 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
     if(/^h[1-3]$/.test(tag))lastHeading=text.slice(0,300);
     const kind:PageElement['kind']=tag==='title'?'title':tag==='meta'?'description':/^h[1-3]$/.test(tag)?'heading':control?'cta':tag==='img'?'image':tag==='form'?'form':'text';
     total++;order++;if(elements.length>=100||counts[kind]>=limits[kind]||(control&&!sampledControls.has(el)))return;counts[kind]++;
-    let href:string|undefined;if(tag==='a'){try{const u=new URL(item.attr('href')||'',finalUrl);if(/^https?:$/.test(u.protocol)&&!u.username&&!u.password)href=u.href.slice(0,4000);}catch{}}
+    let href:string|undefined;if(tag==='a'&&item.attr('href')?.trim()&&!/^javascript:/i.test(item.attr('href')!.trim())){try{const u=new URL(item.attr('href')!,finalUrl);if(/^https?:$/.test(u.protocol)&&!u.username&&!u.password)href=u.href.slice(0,4000);}catch{}}
     const id=item.attr('id'),anchor=id&&ids.get(id)===1&&id.length<=300?id:undefined;
     const regionNode=item.closest('head,nav,header,footer,main,[role="main"],[role="navigation"]').get(0) as Element|undefined;
     const region:PageElement['region']=regionNode?regionNode.attribs.role==='navigation'?'nav':regionNode.attribs.role==='main'?'main':regionNode.tagName as PageElement['region']:'body';
@@ -75,5 +76,5 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
     const value=el.tagName==='script'?item.text():item.attr('content')||item.attr('href')||'';
     settings.push({name,selector:selector(el),value:value.slice(0,3000),truncated:value.length>3000});
   });
-  return {version:1,source:'static-html',signals,elements,elementsTruncated:total>elements.length,settings};
+  return {version:1,source:'static-html',signals,elements,elementsTruncated:total>elements.length,settings,contentSections:captureContentSections($,finalUrl)};
 }

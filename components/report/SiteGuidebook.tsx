@@ -1,11 +1,10 @@
 'use client';
-import {VisualSteps} from './ReportVisualSummary';
 import {RoleBox,RoleLabel} from './ReportRole';
 import EvidenceFlow from './EvidenceFlow';
 import React,{createContext,useContext,useMemo,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
-import {buildSiteGuide,editingEvidence,editingPlatform,guideInstruction,PLATFORM_NAMES,type GuideRequest} from '@/lib/siteGuidebook';
-import ElementCard from './SourceElementCard';
+import {buildSiteGuide,guideInstruction,type GuideRequest} from '@/lib/siteGuidebook';
+import ReportSourceLibrary from './ReportSourceLibrary';
 import {GUIDE_SOURCES,naverGuideCondition} from '@/lib/guideKnowledge';
 
 const GuideContext=createContext<MarketingReport|null>(null);
@@ -37,15 +36,4 @@ function GuidebookContent(props:GuideRequest&{compact?:boolean}){
   </div>
  </div>;
 }
-export function SiteGuidebookOverview({report}:{report:MarketingReport}){
- const p=editingEvidence(report),site=p?.siteEditing,platform=editingPlatform(report),[filter,setFilter]=useState('all');
- const shown=site?.elements.filter(e=>filter==='all'||e.kind===filter)||[];
- return <section className="report-card guide-overview" id="report-site-guide" aria-label="URL 맞춤 편집 안내"><div className="report-card-heading"><p className="report-eyebrow">YOUR URL · EDITING GUIDEBOOK</p><h3>내 페이지의 현재 내용</h3><p className="report-note">종류별로 원문을 확인하고 필요한 문구를 복사하세요.</p></div>
- <VisualSteps kind="editing" label="페이지 편집 순서"/><div className="guide-platform"><RoleBox role="review" label="제작 도구 후보"><h4>{platform.label}</h4><p>공개 HTML의 단서로 추정한 후보입니다.</p></RoleBox><RoleBox role="verify" label="관측 범위"><h4>공개 HTML 원문</h4><p>실제 화면·관리자 화면은 미확인</p></RoleBox></div>
- {!!site?.signals.length&&<ul className="guide-signals">{site.signals.map(s=><li key={s.id}><strong>{PLATFORM_NAMES[s.id]} · {s.kind==='cms'?'제작 도구 후보':s.kind==='framework'?'프레임워크 단서':'전송 계층 단서'}</strong><span>{s.evidence.join(' · ')}</span></li>)}</ul>}
- <p className="guide-note">{site&&p?`대상: ${p.finalUrl} · 수집: ${new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium',timeStyle:'short'}).format(new Date(p.capturedAt))} KST`:'저장된 원문이 없습니다. 재진단 후 확인하세요.'}</p>
- <div className="guide-filters" role="group" aria-label="수집 원문 종류">{[['all','전체'],['heading','제목'],['text','본문'],['cta','링크·버튼'],['image','이미지'],['title','검색 제목'],['description','검색 설명']].map(([id,label])=><button type="button" key={id} aria-pressed={filter===id} onClick={()=>setFilter(id)}>{label}</button>)}</div>
- <div className="guide-elements">{shown.map(e=><ElementCard key={e.key} element={e} url={p?.finalUrl||report.url}/>)}</div>{!shown.length&&<p className="guide-unconfirmed">이 종류의 저장된 요소가 없습니다. 실제 화면에서 존재 여부를 확인하세요.</p>}
- {site?.elementsTruncated&&<p className="guide-note">최대 100개 요소를 저장한 결과입니다. 수집 이후 생성되는 동적 콘텐츠와 저장 범위 밖의 내용은 원문에서 확인하세요.</p>}
- </section>;
-}
+export function SiteGuidebookOverview({report}:{report:MarketingReport}){return <ReportSourceLibrary report={report}/>;}

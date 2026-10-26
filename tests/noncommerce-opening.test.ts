@@ -32,14 +32,15 @@ for(const site of noncommerceCases.filter(c=>!['mixed','unknown'].includes(c.kin
   const before=JSON.stringify(report),$=render(report),opening=nonCommerceOpening(report)!;
   assert.equal($('#report-overview .answer-content').length,1);
   assert.equal($('#report-geo .answer-content').length,0,'the moved content is not duplicated');
-  assert.equal($('#report-overview .report-radar').length,0);
+  assert.equal($('#report-overview [data-report-panel]:not([hidden]) .report-radar').length,0);
   assert.equal($('.report-hero-score').length,0);
   assert.ok($('.report-hero-summary').text().includes(opening.topic));
   assert.doesNotMatch($('.report-hero').text()+$('.answer-header').text(),/HTML 기본 항목|미측정|미확인|완료하지 못/);
   const purpose=$('[aria-label="페이지 목적별 분석"]'),evidence=$('[aria-label="8개 영역 근거와 측정 범위"]');
   assert.equal(purpose.length,1);assert.equal(evidence.length,1);
   assert.equal(purpose.closest('details').attr('open'),'open');
-  assert.equal(evidence.closest('details').attr('open'),'open');
+  assert.equal(evidence.closest('[data-report-panel]').attr('data-report-panel'),'overview-observations');
+  assert.equal(evidence.find('details:not([open])').length,0);
   assert.ok(evidence.text().includes('미측정'),'measurement limits remain available');
   assert.equal($('.report-chapter').length,5);
   const ids=$('[id]').toArray().map(n=>$(n).attr('id'));assert.equal(ids.length,new Set(ids).size);

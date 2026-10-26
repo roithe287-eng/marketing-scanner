@@ -72,7 +72,7 @@ test('all report explanations start open while source lists and exact copy instr
  const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
  assert.ok($('details').length>25,'fixture exercises all report chapters');
  assert.equal($('details:not([open])').length,0,'no explanation starts collapsed');
- assert.equal($('.guide-elements>.guide-element').length,report.pageEvidence!.siteEditing!.elements.length);
+ assert.equal($('.source-library').length,1);assert.ok($('.source-browser-list button').length<=8);assert.ok($('.source-pagination').length);
  assert.equal($('.guide-source-context,.guide-selector,.guide-source-grid').length,0);
  assert.equal($('.naver-copy-preview,.report-copy-fallback').length,0,'duplicate fallback instructions appear only after a failed copy');
  assert.equal($('.report-chapter-symbol svg').length,5);

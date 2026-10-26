@@ -1,4 +1,5 @@
 'use client';
+import ReportJumpLink from './ReportJumpLink';
 import {CompactText} from './ReportVisualSummary';
 import {growthGuideTopic} from '@/lib/siteGuidebook';
 import {Guidebook} from './SiteGuidebook';
@@ -23,7 +24,7 @@ export default function GrowthPlanPanel({report}:{report:MarketingReport}) {
     <div className="report-card-heading"><p className="report-eyebrow">SEARCH → ANSWER → ACTION</p><h3>{GROWTH_TITLE}</h3><p className="report-note">검색에서 발견 → 답변으로 이해 → 문의·구매로 연결</p></div>
     <div className="growth-concepts">{GROWTH_CONCEPTS.map(c=><article key={c.id} data-area={c.id}><span>{c.id}</span><h4>{c.title}</h4><p>{c.text}</p><small>확인할 지표</small><strong>{c.metric}</strong></article>)}</div>
     <ol className="growth-path" aria-label="사이트 개선과 측정의 연결"><li><span>01</span><strong>읽을 수 있는 페이지</strong><p>접근·색인 확인</p></li><li><span>02</span><strong>선택할 이유가 있는 제목</strong><p>노출·CTR 관찰</p></li><li><span>03</span><strong>근거가 있는 답변</strong><p>AI 노출·인용 관측</p></li><li><span>04</span><strong>완료할 수 있는 행동</strong><p>문의·구매 확인</p></li></ol>
-    <div className="growth-plan-heading"><div><h4>{plan.site} 실행 가이드</h4><p>{plan.tasks.length}개 작업 · {plan.tasks.filter(t=>t.status==='action').length}개 우선 보완 검토 · 공식 문서 확인 {plan.reviewedAt}</p></div>{plan.url&&<a className="report-source-link" href={plan.url} target="_blank" rel="noopener noreferrer">대상 페이지 ↗</a>}</div>
+    <div className="growth-plan-heading"><div><h4>{plan.site} 실행 가이드</h4><p>{plan.tasks.length}개 작업 · {plan.tasks.filter(t=>t.status==='action').length}개 우선 보완 검토 · 공식 문서 확인 {plan.reviewedAt}</p></div>{plan.url&&<ReportJumpLink id="report-site-guide">원문·링크 모음</ReportJumpLink>}</div>
     {!plan.hasTechnicalEvidence&&<p className="growth-evidence-note">이전 보고서에는 새 기술 관측값이 없습니다. 확인하지 못한 항목은 ‘담당자 확인’으로 표시합니다. 기존에 저장된 제목·본문이 있으면 해당 근거로 실행안을 제공합니다.</p>}
     <div className="report-filter-row" role="group" aria-label="실행 가이드 관점 필터">{(['all','SEO','GEO','AEO'] as const).map(f=><button type="button" key={f} aria-pressed={filter===f} onClick={()=>{setFilter(f);setExpanded(true);}}>{f==='all'?'전체 관점':f}</button>)}<span role="status">{filtered.length}개 중 {shown.length}개 표시</span></div>
     <div className="growth-actions">{shown.map((task,i)=><details open className="growth-action" key={task.id}>
