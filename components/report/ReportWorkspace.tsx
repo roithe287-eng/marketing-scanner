@@ -43,14 +43,19 @@ export function ReportWorkspace({children}:{children:React.ReactNode}){
   };
   document.addEventListener('report:reveal',activate);document.addEventListener('click',fromLink);
   window.addEventListener('hashchange',fromHash);window.addEventListener('popstate',fromHash);fromHash();
-  // Font swapping changes the height of preceding sections in a long report.
-  // Align the initial deep link again once fonts settle, unless the reader has interacted.
+  // Keep an initial deep link aligned through font/image/hydration layout changes.
+  // Stop as soon as the reader interacts so later reading is never pulled back.
   const initialHash=window.location.hash,interactions=['pointerdown','wheel','touchstart','keydown'] as const;
-  let cancelled=false;
-  const stopInitialAlignment=()=>{cancelled=true;interactions.forEach(type=>window.removeEventListener(type,stopInitialAlignment));};
-  if(initialHash&&document.fonts){
+  let cancelled=false,alignmentFrame=0;
+  let initialObserver:ResizeObserver|undefined;
+  const alignInitial=()=>{if(!cancelled&&window.location.hash===initialHash&&!alignmentFrame)alignmentFrame=requestAnimationFrame(()=>{alignmentFrame=0;if(!cancelled&&window.location.hash===initialHash)fromHash();});};
+  const stopInitialAlignment=()=>{cancelled=true;initialObserver?.disconnect();if(alignmentFrame)cancelAnimationFrame(alignmentFrame);window.removeEventListener('load',alignInitial);interactions.forEach(type=>window.removeEventListener(type,stopInitialAlignment));};
+  if(initialHash){
    interactions.forEach(type=>window.addEventListener(type,stopInitialAlignment,{once:true,passive:true}));
-   void document.fonts.ready.then(()=>{const align=!cancelled&&window.location.hash===initialHash;stopInitialAlignment();if(align)fromHash();});
+   const root=document.getElementById('report-area');
+   if(root){initialObserver=new ResizeObserver(alignInitial);initialObserver.observe(root);}
+   window.addEventListener('load',alignInitial,{once:true});
+   void document.fonts?.ready.then(alignInitial);alignInitial();
   }
   return()=>{stopInitialAlignment();document.removeEventListener('report:reveal',activate);document.removeEventListener('click',fromLink);window.removeEventListener('hashchange',fromHash);window.removeEventListener('popstate',fromHash);};
  },[]);
