@@ -1,6 +1,7 @@
-/* Navigate the report by task; explanations inside the selected view remain open. */
+/* Chapters read continuously; compact selectors organize detail within each chapter. */
 .report-v2.report-focused [hidden] { display:none!important; }
 .report-focused .report-chapter { margin-top:0; padding-top:24px; }
+.report-continuous .report-chapter+.report-chapter { margin-top:28px; border-top:1px solid #ccd7e8; }
 .report-focused .report-chapter-heading { padding:16px 18px; margin-bottom:14px; }
 .report-focused .report-chapter-heading h2 { font-size:25px; }
 .report-focused .report-chapter-heading p { font-size:15px; }
@@ -8,8 +9,8 @@
 .report-focused .report-hero-bottom { padding:14px 20px; }
 .report-focused .report-hero-purpose { padding:22px; }
 .report-focused .report-nav { margin-top:18px; }
-.report-focused .report-nav a[aria-current=page] { background:#2348cc; color:#fff; border-radius:10px; }
-.report-focused .report-nav a[aria-current=page] span { color:#fff; }
+.report-focused .report-nav a[aria-current=location] { background:#2348cc; color:#fff; border-radius:10px; }
+.report-focused .report-nav a[aria-current=location] span { color:#fff; }
 .report-section-workspace { min-width:0; }
 .report-section-nav { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 16px; padding:12px; background:#edf1f8; border:1px solid #ccd7e8; border-radius:12px; }
 .report-section-nav button,.source-library-toolbar button { padding:10px 14px; min-height:44px; border:1px solid #bacbe0; background:white; border-radius:8px; font-size:14px; font-weight:700; color:#36516f; }

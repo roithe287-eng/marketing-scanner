@@ -7,6 +7,9 @@
 .report-v2 .report-visual-steps small {font-size:12px;line-height:1.5;color:#52647c;overflow-wrap:anywhere}
 .report-v2 .report-visual-steps li:not(:last-child)::after {content:'→';position:absolute;right:-15px;top:50%;transform:translateY(-50%);font-size:14px;color:#6f8ba9}
 .report-v2 .report-compact-text {min-width:0;max-width:100%;font-size:14px;line-height:1.7}
+.report-v2 .report-reading-points {display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.report-v2 .report-reading-points>li {position:relative;margin:0;padding:0 0 0 13px;min-width:0;overflow-wrap:anywhere;line-height:1.75}
+.report-v2 .report-reading-points>li::before {content:'';position:absolute;left:0;top:.7em;width:5px;height:5px;border-radius:50%;background:var(--role-accent,#4d668a)}
 .report-v2 .report-compact-lead {margin:0;overflow-wrap:anywhere;white-space:pre-line}
 .report-v2 .report-text-detail {margin:7px 0 0;border:0;border-radius:0;background:transparent;min-width:0}
 .report-v2 .report-text-detail>summary {display:list-item;list-style:disclosure-closed;padding:5px 0;min-height:30px;cursor:pointer;font-size:12px;font-weight:650;color:#4d668a;text-align:left}

@@ -1,9 +1,15 @@
 import React from 'react';
 import DiagnosisIcon from './DiagnosisIcon';
+import {reportReadingPoints} from '@/lib/conciseReport';
 
-/** Authored summaries stay concise; dynamic explanations are shown once, in full. */
-export function CompactText({text,summary,className=''}:{text:string;summary?:string;className?:string;label?:string}){
+/** Keep source values exact; turn long explanations into complete, distinct reading points. */
+export function CompactText({text,summary,verbatim=false,className=''}:{text:string;summary?:string;verbatim?:boolean;className?:string;label?:string}){
   if(!text)return null;
+  if(!verbatim&&!summary&&text.length>220){
+    const points=reportReadingPoints(text);
+    if(points.length>1)return <ul className={`report-compact-text report-reading-points ${className}`}>{points.map((point,i)=><li key={i}>{point}</li>)}</ul>;
+    if(points.length===1)return <p className={`report-compact-text ${className}`}>{points[0]}</p>;
+  }
   return <p className={`report-compact-text ${className}`}>{summary||text}</p>;
 }
 

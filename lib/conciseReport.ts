@@ -14,3 +14,15 @@ export function reportExcerpt(text:string,limit=130):string {
   if(qualifications.length)excerpt+=' '+qualifications.join(' ');
   return excerpt.length>=24&&excerpt.length<clean.length?excerpt:clean;
 }
+
+/** Compact explanatory prose without dropping distinct facts, qualifications or steps. */
+export function reportReadingPoints(text:string):string[]{
+ const parts=text.trim().split(/(?<=[.!?。])\s+|\n+/u).map(part=>part.trim()).filter(Boolean);
+ const points:string[]=[];
+ for(let i=0;i<parts.length;i++){
+  const point=/^\d+[.)]$/.test(parts[i])&&parts[i+1]?parts[i]+' '+parts[++i]:parts[i];
+  // Only consecutive identical sentences are redundant. Repetition in another context stays.
+  if(points.at(-1)!==point)points.push(point);
+ }
+ return points;
+}
