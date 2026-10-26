@@ -12,6 +12,7 @@ import {reportForPresentation} from '../lib/reportPresentation';
 import {MarketingReportSchema} from '../lib/reportSchema';
 import {buildReportDocument} from '../lib/reportDocument';
 import {buildReportSummaryPage} from '../lib/reportSummaryPdf';
+import {nonCommerceOpening} from '../lib/reportOpening';
 import EvidenceReviewPanel from '../components/report/EvidenceReviewPanel';
 import {fixture} from './fixtures/report';
 import {generalEvidenceCases,generalPageResponse} from './fixtures/general-evidence';
@@ -34,7 +35,8 @@ for(const site of generalEvidenceCases)test(`shared evidence survives collection
   assert.ok(pdfText.includes(`HTML 기본 항목 ${review.passed}/${review.assessed}개 충족`));
   for(const c of review.criteria)assert.ok(pdfText.includes(c.evidence),c.id+' shares its evidence with the PDF');
   const summary=buildReportSummaryPage(presented,(s,style)=>Array.from(s).reduce((n,c)=>n+(/[ -~]/.test(c)?.55:1)*style.size,0));
-  assert.ok(summary.lines.some(line=>line.text.includes(`${review.passed} / ${review.assessed}개`)));
+  if(nonCommerceOpening(presented))assert.ok(summary.lines.some(line=>line.text.includes('주요 주제와 다음 행동')));
+  else assert.ok(summary.lines.some(line=>line.text.includes(`${review.passed} / ${review.assessed}개`)));
   assert.equal(review.score,Math.round(100*review.passed/review.assessed));
   if(site.id==='commerce'||site.id==='english'){
     assert.match(report.checklist!.find(c=>c.id==='contact_info')!.currentValue,/문의·상담 CTA 0종/);

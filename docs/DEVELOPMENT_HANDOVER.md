@@ -1,4 +1,6 @@
-> Latest purpose correction: [대표 목적 분류·본문 행동 누락 교정](PRIMARY_PURPOSE_2026-10-26.md).
+> Latest non-commerce report opening: [고객 질문·콘텐츠 중심의 시작 화면과 PDF](NONCOMMERCE_OPENING_2026-10-26.md).
+
+> Previous purpose correction: [대표 목적 분류·본문 행동 누락 교정](PRIMARY_PURPOSE_2026-10-26.md).
 
 > Previous purpose update: [비커머스 목적별 분석·질문·해당 없음·PDF](NONCOMMERCE_PURPOSE_2026-10-23.md).
 
