@@ -85,7 +85,7 @@ export default function InquiryForm({ selectedPlan, selectedPlanId }: { selected
       </fieldset>
       <div className="access-form-grid">
         <label>
-          이름 <b>필수</b>
+          <span>이름 <b>필수</b></span>
           <input name="name" required maxLength={80} autoComplete="name" />
         </label>
         <label>
@@ -93,7 +93,7 @@ export default function InquiryForm({ selectedPlan, selectedPlanId }: { selected
           <input name="company" maxLength={120} autoComplete="organization" />
         </label>
         <label>
-          이메일 <b>필수</b>
+          <span>이메일 <b>필수</b></span>
           <input
             name="email"
             type="email"
@@ -104,7 +104,7 @@ export default function InquiryForm({ selectedPlan, selectedPlanId }: { selected
           />
         </label>
         <label>
-          연락처 <b>필수</b>
+          <span>연락처 <b>필수</b></span>
           <input
             name="contact"
             required
