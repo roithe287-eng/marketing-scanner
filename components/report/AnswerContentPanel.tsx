@@ -1,5 +1,6 @@
 'use client';
 import {CompactText,VisualSteps} from './ReportVisualSummary';
+import {RoleLabel} from './ReportRole';
 import React,{useState} from 'react';
 import type {AnswerContentPlan} from '@/lib/answerContentSchema';
 import {ANSWER_CONTENT_TITLE,ANSWER_STATUS,answerPlanText,answerQuestionText} from '@/lib/answerContent';
@@ -26,9 +27,9 @@ export default function AnswerContentPanel({plan,opportunityFirst=false}:{plan?:
       {plan.topicScope==='mixed'&&<p className="answer-notice">여러 주제가 섞인 페이지입니다. 대표 키워드를 검토하고, 상품·서비스별 상세 URL도 각각 진단해 주세요.</p>}
       <VisualSteps kind="questions" label="콘텐츠 구성 순서"/><div className="answer-list">{plan.questions.map((q,i)=><article className="answer-question" key={q.id}>
         <div className="answer-question-head"><span className="answer-number">추천 질문 0{i+1}</span><span className="answer-status" data-state={q.status}>{ANSWER_STATUS[q.status]}</span></div><h4>{q.question}</h4>
-        <div className="answer-draft"><span>{q.draft?'원문을 재배치한 답변 초안':'확인 후 채울 답변 예시'}</span><p>{q.draft||q.template}</p><small>{q.draft?'원문 기반 초안 · 문맥·최신 조건 확인 후 사용':'작성 예시 · 대괄호를 실제 정보로 채우세요'}</small></div>
-        {q.missingFacts.length>0&&<div className="answer-missing"><strong>게시 전 확인할 정보</strong><ul>{q.missingFacts.map(f=><li key={f}>{f}</li>)}</ul></div>}
-        <div className="answer-placement"><strong>수정 위치 제안</strong><CompactText text={q.placement}/><small>해당 영역이 없다면 상품·서비스 설명 다음에 문답 영역을 추가하세요.</small></div>
+        <div className="answer-draft"><RoleLabel role="proposal" kicker="TO-BE · 작성 제안" label={q.draft?'원문을 재배치한 답변 초안':'확인 후 채울 답변 예시'}/><p>{q.draft||q.template}</p><small>{q.draft?'원문 기반 초안 · 문맥·최신 조건 확인 후 사용':'작성 예시 · 대괄호를 실제 정보로 채우세요'}</small></div>
+        {q.missingFacts.length>0&&<div className="answer-missing"><RoleLabel role="review" label="게시 전 확인할 정보"/><ul>{q.missingFacts.map(f=><li key={f}>{f}</li>)}</ul></div>}
+        <div className="answer-placement"><RoleLabel role="location" label="수정 위치 제안"/><CompactText text={q.placement}/><small>해당 영역이 없다면 상품·서비스 설명 다음에 문답 영역을 추가하세요.</small></div>
         <CopyText text={answerQuestionText(q)} label={`질문 ${i+1} · 답변 초안 복사`}/>
         <details className="answer-detail"><summary>원문 위치와 적용 방법</summary>{q.evidence.length?q.evidence.map(e=><blockquote key={e.id}><span>{e.location}</span>{e.text}{e.selector&&<code>{e.selector}</code>}</blockquote>):<p>{q.status==='review'?'기본 가이드이므로 기존 답변과 직접 대조해 주세요.':'수집된 내용에서 이 질문에 직접 답하는 문장을 확인하지 못했습니다. 다른 페이지에 있는지는 확인하지 않았습니다.'}</p>}{q.draft&&q.missingFacts.length>0&&<div className="answer-template"><strong>추가 작성 형식</strong><p>{q.template}</p><small>대괄호를 실제 정보로 채우고 위 원문과 연결해 주세요.</small></div>}<ol>{q.steps.map(step=><li key={step}>{step}</li>)}</ol></details>
       </article>)}</div>
