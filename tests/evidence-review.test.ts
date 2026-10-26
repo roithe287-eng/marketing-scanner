@@ -76,14 +76,14 @@ test('a 1/5 aggregate cannot hide that the only citation came from an explicitly
   const duplicates=aggregateCitation([rows[0],{...rows[0],cited:true}]);assert.equal(duplicates.unbrandedTests,0);
 });
 
-test('all PDF views use evidence counts and omit unsupported score panels; compact detail retains unique words and sources',()=>{
+test('PDFs separate content opportunities from evidence counts and omit unsupported scores; details preserve unique wording',()=>{
   const words=Array.from({length:30},(_,i)=>({keyword:`서비스항목${i}`,count:30-i,density:1,inTitle:false,inMetaDescription:false}));
   const r=finalizeReportEvidence({...input,keywordFrequency:{totalTokens:1000,uniqueSingles:30,uniquePhrases:0,singles:words,phrases:[]}},data);
   const summary=buildReportSummaryPage(r,measure),visuals=buildVisualPdfPages(r,measure),blocks=buildReportDocument(r);
   const text=[...summary.lines,...visuals.flatMap(p=>p.lines)].map(l=>l.text).join('\n');
-  assert.match(text,/5 \/ 6개/);assert.match(text,/미측정/);assert.doesNotMatch(text,/마케팅 종합 점수|고객 전환 준비도|페이지 준비도\s+74/);
+  assert.match(summary.lines.map(l=>l.text).join(' '),/주요 주제와 다음 행동/);assert.doesNotMatch(text,/마케팅 종합 점수|고객 전환 준비도|페이지 준비도\s+74/);
   const detail=blocks.map(b=>b.text).join('\n');for(const w of words)assert.ok(detail.includes(w.keyword));
-  assert.match(detail,/산식과 근거/);assert.match(detail,/channel\.io/);
+  assert.match(detail,/산식과 근거/);assert.match(detail,/HTML 기본 항목 5\/6개 충족/);assert.match(detail,/channel\.io/);
   const pages=buildDetailedReportPdf(r,measure,1).pages;
   assert.ok(pages.length<150,`detail expanded to ${pages.length} pages`);
   for(const p of [summary,...visuals,...pages])for(const line of p.lines){assert.ok(line.x+line.width<=742.1,JSON.stringify(line));assert.ok(line.y+line.lineHeight<=1039,JSON.stringify(line));}
