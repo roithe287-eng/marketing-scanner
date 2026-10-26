@@ -45,6 +45,15 @@ export function buildInsightsPdfPages(report:MarketingReport,measure:TextMeasure
   const stats=[['통합 보완',`${d.tasks.length}개`],['고객 질문',d.obs?`${d.questions.length}개`:'미확인'],['출처 URL',`${d.sources.length}개`],['브랜드 답변 대조',d.reviewSummary.verified?`${d.reviews.length}건`:'미확인']];
   stats.forEach(([label,value],i)=>{const x=48+i*177;rect(x,y,163,90,'#fff5f5');text(label,x+12,y+12,139,12,gray);text(value,x+12,y+41,139,24,ink,700);});y+=110;
   text('보완 항목·관측 상태·출처를 함께 검토하세요. 브랜드 답변 대조는 오답 확정이 아닌 검토 제안입니다. 전체 원문과 실행 과제는 뒤의 상세 보고서에 포함됩니다.',48,y,694,12,gray);
+  if(d.eligibleSources.length){
+    next('외부 출처 · 구성만 골라 참고하세요','AI가 연결한 링크입니다. 경쟁사·추천 사례로 검증한 목록은 아닙니다.');
+    const rules=[['참고할 것','정보를 보여주는 구성','#e7f4f0'],['업종이 다르면 비교 제외','상품·가격·경쟁력','#eef1f6']];
+    rules.forEach(([label,value,color],i)=>{const x=48+i*354;rect(x,y,340,94,color);text(label,x+18,y+15,304,12,gray,700);text(value,x+18,y+42,304,20,ink,700);});y+=115;
+    const patterns=[['비용 구성','기본 비용 / 추가 비용'],['질문과 답변','질문 바로 아래 답변'],['사례와 증빙','주장 옆에 확인 근거'],['문의 동선','설명 다음에 문의 버튼']];
+    patterns.forEach(([title,detail],i)=>{const x=48+(i%2)*354,top=y+Math.floor(i/2)*130;rect(x,top,340,116,'#f2f7fc');text('0'+(i+1),x+16,top+12,45,12,'#3564a7',700);text(title,x+16,top+38,308,18,ink,700);text(detail,x+16,top+77,308,13,gray);});y+=280;
+    [['질문 확인','어떤 답변에 쓰였는지'],['원문 대조','우리 주제와 관련 있는지'],['구성 참고','유용한 배치만 활용']].forEach(([title,detail],i)=>{const x=48+i*236;rect(x,y,222,102);text('0'+(i+1)+' · '+title,x+12,y+15,198,15,ink,700);text(detail,x+12,y+55,198,12,gray);});y+=130;
+    text('무관한 출처는 건너뛰세요. 질문별 출처 URL과 전체 활용 기준은 상세 보고서에 보존됩니다.',48,y,694,13,gray);
+  }
   const note=insightNotes.messages;
   next('경쟁사 메시지 비교 지도',note);
   function tableHead(){rect(48,y,694,38);text('사이트',58,y+9,164,11,gray,700);messageThemes.forEach((t,i)=>text(t.label,232+i*85,y+9,78,10,gray,700));y+=42;}

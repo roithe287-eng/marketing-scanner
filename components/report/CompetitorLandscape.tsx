@@ -1,4 +1,5 @@
 'use client';
+import {CompactText} from './ReportVisualSummary';
 import {Guidebook} from './SiteGuidebook';
 import {buildSiteGuide,guideInstruction} from '@/lib/siteGuidebook';
 import React,{useId,useState,type CSSProperties} from 'react';
@@ -34,7 +35,7 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
     <div className="position-query"><div><span>{research?.productContext?.sources.length?'확인한 상품군의 비교 키워드':'이번 비교의 대표 키워드'}</span><strong>{analysis.searchKeyword||'미저장'}</strong></div><span className="position-tag" title="외부 후보 중 제목·메타 설명을 모두 확보하고 동일한 기준으로 계산 가능한 업체 수">원문 비교 가능 {known.length}/{analysis.competitors.length}곳</span></div>
     {research?.attemptedKeywords.some(q=>q!==analysis.searchKeyword)&&<p className="report-note">후보 검색에 사용한 질의: {research.attemptedKeywords.join(' → ')}{(research.productContext?.commerce||research.productContext?.discovery==='public_catalog')?' · 판매처를 찾기 위한 구매 의도를 포함했습니다.':''}</p>}
     <ProductCollection context={research?.productContext}/>
-    <p className="position-lead">{COMPETITOR_API_NOTE}</p>
+    <CompactText className="position-lead" text={COMPETITOR_API_NOTE} summary="네이버 웹문서 API의 비교 후보입니다. 실제 검색 순위·직접 경쟁 여부는 별도 확인하세요."/>
     {analysis.filtering?.policyVersion!==2&&<p className="report-note">이전 선정 기준의 보고서입니다. 최신 상품·서비스 관련성 검증을 적용하려면 재진단해 주세요.</p>}
     <ol className="position-selection-flow" aria-label="경쟁사 선정 과정">
       <li><span>01 · 키워드 선정</span><strong>페이지의 주제</strong><p>주력 상품·서비스 표현에서 선택</p></li>
@@ -54,10 +55,10 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
       <div className="position-sources">{COMPETITOR_SOURCES.map(s=><a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>)}</div>
     </div></details>
 
-    <div className="position-map-heading"><p className="report-eyebrow">MESSAGE POSITIONING</p><h4>업종에 맞춰 비교하는 설명과 근거</h4><p>{POSITION_NOTE}</p></div>
+    <div className="position-map-heading"><p className="report-eyebrow">MESSAGE POSITIONING</p><h4>업종에 맞춰 비교하는 설명과 근거</h4><CompactText text={POSITION_NOTE} summary="제목·설명에 나타난 정보 단서의 비교입니다. 성과·가격·품질 점수가 아닙니다."/></div>
     <div className="position-industry"><label>비교할 업종<select value={model.profile.id} onChange={e=>{setIndustry(e.target.value as IndustryCategory);choose('own');}}>{Object.entries(POSITION_INDUSTRIES).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><p>{model.industryBasis}. 모든 업체에 같은 업종 기준을 적용합니다. 업종 선택은 이 화면에만 반영되며 PDF·공유에는 기본 업종을 사용합니다.</p></div>
     <div className="position-axis-cards"><article><span>가로축 · 어떤 상품·서비스인가요?</span><h5>{model.profile.criteria.slice(0,2).map(c=>c.label).join(' · ')}</h5><p>오른쪽일수록 제공 내용과 조건을 설명하는 단서가 많습니다.</p></article><article><span>세로축 · 무엇을 확인하고 이용하나요?</span><h5>{model.profile.criteria.slice(2).map(c=>c.label).join(' · ')}</h5><p>위쪽일수록 선택 근거와 이용 방법을 설명하는 단서가 많습니다.</p></article></div>
-    <div className="position-size-guide"><div><span className="report-eyebrow">BUBBLE SIZE</span><h5>클수록 선택 정보 단서가 풍부합니다</h5><p>{POSITION_SIZE_NOTE}</p></div><div className="position-size-samples" aria-label="버블 크기 예시">{[0,4,8].map(n=><div key={n}><i aria-hidden="true" style={{'--bubble-size':`${positionDiameter(n)}px`,'--bubble-mobile-size':`${positionDiameter(n,true)}px`} as CSSProperties}/><span>{n}개{n===8?' 이상':''}</span></div>)}</div></div>
+    <div className="position-size-guide"><div><span className="report-eyebrow">BUBBLE SIZE</span><h5>클수록 선택 정보 단서가 풍부합니다</h5><CompactText text={POSITION_SIZE_NOTE}/></div><div className="position-size-samples" aria-label="버블 크기 예시">{[0,4,8].map(n=><div key={n}><i aria-hidden="true" style={{'--bubble-size':`${positionDiameter(n)}px`,'--bubble-mobile-size':`${positionDiameter(n,true)}px`} as CSSProperties}/><span>{n}개{n===8?' 이상':''}</span></div>)}</div></div>
     <figure className="position-figure"><div className="position-y-caption"><strong>Y · {POSITION_AXES.y}</strong><span>상단: 근거·이용 단서가 더 많음</span></div>
       <div className="position-chart-grid">
       <div className="position-y-scale" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
@@ -77,7 +78,7 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
       <p>{active.x===null?active.reason:`제목 ${active.termFields[0].matched.length}/${active.terms.length}개 · 설명 ${active.termFields[1].matched.length}/${active.terms.length}개 연결 · 선택 정보 ${active.checks.filter(c=>c.found).length}/4종류 · 업종별 단서 ${active.signalCount}/8개`}</p>
       {active.searchRank&&<p>네이버 웹문서 API 응답의 {active.searchRank}번째 항목 · 비교 번호와 별개</p>}
       <div className="position-terms"><strong>비교 검색어 포함 여부 · 좌표와 별도 확인</strong>{active.terms.map(t=><span key={t} data-found={active.matched.includes(t)}>{active.x===null?'—':active.matched.includes(t)?'확인':'미탐지'} · {t}</span>)}</div>
-      <p className="position-check-scope">확인 범위는 저장된 페이지 제목과 메타 설명입니다. 본문·이미지 내용은 이 비교에서 확인하지 않습니다. 각 항목을 펼치면 찾던 표현과 원문별 결과를 볼 수 있습니다.</p>
+      <p className="position-check-scope">제목·메타 설명 기준입니다. 항목을 펼치면 탐지한 표현과 원문을 볼 수 있습니다.</p>
       <div className="position-checks">{active.checks.map(c=><PositionCheckCard key={`${active.id}-${c.id}`} row={active} check={c}/>)}</div>
       <details className="position-method"><summary>계산에 사용한 원문 전체 보기</summary><div><strong>페이지 제목</strong><p>{active.title||'저장된 값 없음'}</p><strong>페이지 설명</strong><p>{active.description||'저장된 값 없음'}</p><p>{active.sourceLabel}. 구버전 후보는 메타 설명과 OG 설명의 대체 여부가 기록되지 않았습니다. 엄밀한 같은 시점 비교는 재진단하세요.</p>{active.url&&<a href={active.url} target="_blank" rel="noopener noreferrer">해당 페이지 확인</a>}</div></details>
     </article>

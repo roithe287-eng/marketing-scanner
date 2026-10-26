@@ -66,12 +66,14 @@ test('Naver visual text stays in page bounds and separate text boxes do not coll
   }
 });
 
-test('long explanations and multi-step paragraphs get a wide reading layout without losing a character',()=>{
+test('long explanations remain complete in disclosure and unsummarized procedures retain wide layout',()=>{
   const explanations=[long+'마지막 문장도 남아야 합니다.','첫 단계\n두 번째 단계\n세 번째 단계\n네 번째 단계'];
   for(const explanation of explanations){
     const $=load(renderToStaticMarkup(React.createElement(EvidenceFlow,{items:[{label:'확인 근거',content:'관측값'},{label:'상세 실행',content:explanation}]})));
-    assert.equal($('dd').last().text(),explanation);
-    assert.equal($('dl').attr('data-layout'),'stacked');
+    const full=$('dd').last().find('.report-full-text');
+    assert.equal(full.length?full.text():$('dd').last().text(),explanation);
+    assert.equal($('dl').attr('data-layout'),full.length?'columns':'stacked');
+    if(full.length)assert.equal(full.closest('details').attr('open'),undefined);
   }
   const $=load(renderToStaticMarkup(React.createElement(EvidenceFlow,{items:[{label:'근거',content:'짧은 근거'},{label:'조치',content:'짧은 조치'}]})));
   assert.equal($('dl').attr('data-layout'),'columns');

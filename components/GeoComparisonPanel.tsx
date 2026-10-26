@@ -1,3 +1,4 @@
+import {CompactText} from './report/ReportVisualSummary';
 import React from 'react';
 import {PairedBars,ComparisonCoverage} from './visuals/ComparisonVisuals';
 import type {LlmCitationQuestionResult, MarketingReport} from '@/lib/reportSchema';
@@ -17,7 +18,7 @@ export default function GeoComparisonPanel({report}:{report:MarketingReport}) {
   const result=buildGeoComparison(report);if (!result) return null;
   return <section aria-label={GEO_COMPARISON_TITLE} className="report-geo-comparison jm-card mt-6 p-5 md:p-7">
     <p className="text-xs font-bold text-jm-red">GEO COMPARISON</p><h2 className="mt-2 text-xl font-black md:text-2xl">{GEO_COMPARISON_TITLE}</h2>
-    <p className="mt-3 text-sm leading-7 text-jm-gray">{GEO_COMPARISON_NOTE}</p>
+    <CompactText className="mt-3 text-sm leading-7 text-jm-gray" text={GEO_COMPARISON_NOTE}/>
     <p className="mt-3 text-xs leading-6 text-jm-gray">이전 {comparisonTime(result.baseline.citation.measuredAt)}<br/>현재 {comparisonTime(result.current?.measuredAt)}</p>
     <div className="mt-5 grid gap-3 lg:grid-cols-3">
       <PairedBars label="자사 출처 인용률" before={result.beforeRate} after={result.afterRate} count={result.matched}/>
