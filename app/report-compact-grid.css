@@ -86,7 +86,7 @@
 @media(prefers-reduced-motion:reduce) { .report-v2 * { scroll-behavior:auto; } }
 
 @media(max-width:480px) {
- .report-v2 .report-readiness>div:has(>.guidebook) { padding:12px; }
+ .report-v2 .report-readiness>:has(>.guidebook) { padding:12px; }
  .report-v2 :is(.naver-check-body,.growth-action-body,.report-detail-body,.work-detail,.report-execution-content) { padding:12px; }
  .report-v2 .official-seo-guide { padding:12px; }
 }
