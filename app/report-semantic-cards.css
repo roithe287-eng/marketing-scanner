@@ -5,7 +5,7 @@
 }
 .report-v2 .report-role-label {
   display:inline-flex; align-items:center; justify-content:flex-start; gap:10px;
-  width:auto; height:auto; padding:0; margin:0; border:0; border-radius:0; background:transparent;
+  width:auto; max-width:100%; height:auto; padding:0; margin:0; border:0; border-radius:0; background:transparent;
   color:var(--role-accent); font-size:15px; line-height:1.45; text-align:left; letter-spacing:0;
 }
 .report-v2 .report-role-icon { display:grid; place-items:center; flex:0 0 38px; width:38px; height:38px; border-radius:10px; background:var(--role-accent); color:white; }
@@ -25,6 +25,9 @@
 .report-v2 .report-role-stack { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; margin-top:16px; }
 .report-v2 .report-role-pair { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:16px; }
 .report-v2 .report-evidence-flow dt { margin:0; }
+.report-v2 :is(.report-evidence-flow,.guide-platform,.report-copy-pair,.work-before-after)>.report-role-box[data-report-role] {
+  background:var(--role-bg); border-color:var(--role-border); border-top-color:var(--role-accent); color:var(--role-ink);
+}
 .report-v2 .report-evidence-flow dt>.report-role-label { width:auto; height:auto; border:0; background:transparent; margin:0; }
 .report-v2 .report-evidence-flow[data-layout=stacked]>.report-role-box { display:grid; grid-template-columns:160px minmax(0,1fr); gap:22px; }
 .report-v2 .report-evidence-flow[data-layout=stacked] .report-role-content { margin:0; }
@@ -75,6 +78,12 @@
 .report-v2 .report-rewrite-template { background:#e9f8f3; border-color:#83c8b6; border-left:4px solid #087569; }
 .report-v2 .report-rewrite-template mark { color:#693710; background:#ffedc9; }
 .report-v2 :is(.report-role-box,.guide-source-context,.guide-selector) :is(a,button,summary):focus-visible { outline:3px solid #254caa; outline-offset:4px; }
+.report-v2 .guidebook { container-type:inline-size; }
+@container(max-width:640px) {
+  .report-v2 .guide-field-list .report-evidence-flow,.report-v2 .guide-source-grid { grid-template-columns:minmax(0,1fr); }
+  .report-v2 .guide-field-list .report-evidence-flow>.report-role-box { display:block; }
+  .report-v2 .guide-field-list .report-role-content { margin-top:12px; }
+}
 @media(max-width:767px) {
   .report-v2 :is(.report-role-pair,.guide-source-grid,.work-detail>dl) { grid-template-columns:minmax(0,1fr); }
   .report-v2 .report-role-box { padding:17px; }
