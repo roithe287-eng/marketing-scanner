@@ -89,6 +89,7 @@
   .inquiry-page .access-intro { font-size: 14px; line-height: 1.8; margin-bottom: 20px; }
   .inquiry-preview-header, .inquiry-preview-body, .access-form.inquiry-form { padding: 18px; }
   .inquiry-preview-header h2 { font-size: 25px; }
+  .inquiry-preview-header h2 br { display: initial; }
   .inquiry-preview-header > p { font-size: 13px; }
   .inquiry-preview-header > a { margin-top: 14px; }
   .inquiry-preview-body > h3 { font-size: 20px; }
