@@ -15,6 +15,7 @@
 .report-section-nav button,.source-library-toolbar button { padding:10px 14px; min-height:44px; border:1px solid #bacbe0; background:white; border-radius:8px; font-size:14px; font-weight:700; color:#36516f; }
 .report-section-nav button[aria-pressed=true],.source-library-toolbar button[aria-pressed=true] { background:#263d79; border-color:#263d79; color:white; }
 .report-section-panel { scroll-margin-top:168px; min-width:0; outline:none; }
+.report-section-nav,#report-site-guide,#report-content-evidence { scroll-margin-top:170px; }
 .report-focused .report-ending { margin-top:20px; }
 .source-library-stats { display:flex; flex-wrap:wrap; gap:10px; margin:12px 0; }
 .source-library-stats>span { padding:8px 12px; background:#f0f4fa; border-radius:8px; font-size:14px; color:#455c78; }
@@ -87,5 +88,10 @@
  .source-library-stats { gap:6px; }
  .source-library-stats>span { padding:7px 9px; font-size:12px; }
  .source-library-stats b { font-size:17px; }
+}
+@media(max-width:767px){
+ .report-focused .report-nav { position:sticky; display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); padding:8px 0; }
+ .report-focused .report-nav a { min-height:48px; padding:6px 3px; font-size:12px; line-height:1.5; }
+ .report-section-nav,#report-site-guide,#report-content-evidence { scroll-margin-top:145px; }
 }
 @media print { .report-v2.report-focused [hidden] { display:block!important; }.report-section-nav { display:none; } }

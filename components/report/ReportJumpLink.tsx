@@ -11,7 +11,8 @@ export function revealReportTarget(id:string,updateHistory=true) {
   while(parent){if(parent instanceof HTMLDetailsElement)parent.open=true;parent=parent.parentElement;}
   if(target instanceof HTMLButtonElement&&target.dataset.reportTab==='true')target.click();
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    target.scrollIntoView({behavior:'instant',block:'start'});
+    const navigation=id.startsWith('report-view-')?target.parentElement?.querySelector('.report-section-nav'):null;
+    (navigation||target).scrollIntoView({behavior:'instant',block:'start'});
     if(!target.matches('button,input,select,textarea,a[href]'))target.tabIndex=-1;target.focus({preventScroll:true});
   }));
   return true;

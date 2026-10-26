@@ -67,9 +67,11 @@ export type ContentFacetId=typeof CONTENT_FACETS[number]['id'];
 /** Explain the mapping with literal words from the page, never assert a business claim is verified. */
 export function buildContentFacets(library:SourceLibrary){
  const pool=library.groups.filter(g=>!g.chrome&&!g.kinds.every(k=>['image','form'].includes(k)));
+ const specific:Record<ContentFacetId,RegExp>={offer:/어학연수|대학유학|조기유학|영어캠프|인턴십|워킹홀리데이|프로그램|커리큘럼|컨설팅|서비스|제품|사업/,audience:/대상|자격|학생|대학생|직장인|가족|지역|위치/,process:/절차|단계|신청 후|접수 후|상담 후|준비 서류/,conditions:/비용|가격|수강료|기간|일정|포함|제외/,proof:/후기|사례|경력|수상|인증|실적/,support:/혜택|장학|정착|사후|현지|출국|케어/};
  return CONTENT_FACETS.map(f=>{
   const matches=pool.filter(g=>f.match.test(g.text));
-  const ranked=[...matches].sort((a,b)=>Number(b.kinds.includes('text'))-Number(a.kinds.includes('text'))+Number(b.text.length>=60)-Number(a.text.length>=60)||b.text.length-a.text.length);
+  const score=(g:SourceGroup)=>Number(specific[f.id].test(g.text))*8+Number(g.kinds.includes('text'))*2+Number(g.text.length>=60);
+  const ranked=[...matches].sort((a,b)=>score(b)-score(a)||b.text.length-a.text.length);
   const evidence:SourceGroup[]=[];
   for(const group of ranked){if(evidence.some(e=>e.text.includes(group.text)||group.text.includes(e.text)))continue;evidence.push(group);if(evidence.length===3)break;}
   const words=[...new Set(evidence.map(e=>e.text.match(f.match)?.[0]).filter((v):v is string=>!!v))];
