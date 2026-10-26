@@ -7,7 +7,7 @@ import { useEffect } from "react";
  * - F12, Ctrl+Shift+I/J/C, Ctrl+U, Ctrl+S, Ctrl+P 차단
  * - 우클릭 컨텍스트 메뉴 차단
  * - 텍스트 선택/드래그 제한
- * - 개발자도구 감지 시 페이지 콘텐츠 흐림 처리
+ * - 브라우저 배율·창 크기와 무관하게 보고서 열람 유지
  * - 콘솔 메시지 무력화
  *
  * ⚠️ 완벽한 차단은 불가능. 일반 사용자(광고주)의 진입장벽 높이는 용도.
@@ -114,91 +114,24 @@ export default function ContentProtection() {
       return false;
     };
 
-    // ===== 5. 개발자도구 감지 (창 크기 기반) =====
-    let blockerEl: HTMLDivElement | null = null;
-    const createBlocker = (): HTMLDivElement => {
-      const el = document.createElement("div");
-      el.id = "ms-devtools-blocker";
-      el.style.cssText = [
-        "position:fixed",
-        "inset:0",
-        "background:rgba(0,0,0,0.96)",
-        "z-index:2147483647",
-        "display:flex",
-        "flex-direction:column",
-        "align-items:center",
-        "justify-content:center",
-        "color:#fff",
-        "font-family:Pretendard,-apple-system,system-ui,sans-serif",
-        "padding:24px",
-        "text-align:center",
-      ].join(";");
-      el.innerHTML = `
-        <div style="font-size:64px;margin-bottom:24px;">🔒</div>
-        <div style="font-size:14px;font-weight:900;letter-spacing:2px;color:#e31b23;margin-bottom:12px;">
-          PROTECTED CONTENT
-        </div>
-        <div style="font-size:28px;font-weight:900;line-height:1.4;margin-bottom:16px;max-width:560px;">
-          개발자 도구가 감지되었습니다
-        </div>
-        <div style="font-size:14px;line-height:1.7;max-width:520px;color:#bbb;">
-          본 리포트는 진짜마케팅 내부 컨설팅 자료로,<br/>
-          외부 임의 추출·재배포가 제한됩니다.<br/>
-          개발자 도구를 닫으면 리포트를 다시 확인할 수 있습니다.
-        </div>
-      `;
-      return el;
-    };
+    // Window dimensions also change with zoom, browser chrome and side panels.
+    // They cannot establish whether DevTools is open and must never gate report access.
+    // Authentication, ownership and retention are enforced by the shared-report route.
 
-    const showBlocker = () => {
-      if (blockerEl) return;
-      blockerEl = createBlocker();
-      document.body.appendChild(blockerEl);
-    };
-    const hideBlocker = () => {
-      if (!blockerEl) return;
-      blockerEl.remove();
-      blockerEl = null;
-    };
-
-    const detectDevTools = () => {
-      const widthDiff = window.outerWidth - window.innerWidth;
-      const heightDiff = window.outerHeight - window.innerHeight;
-      const threshold = 160; // 픽셀
-      // 모바일은 outerWidth 의미 다름 → 너비 600 미만이면 검사 안 함
-      if (window.innerWidth < 600) {
-        hideBlocker();
-        return;
-      }
-      if (widthDiff > threshold || heightDiff > threshold) {
-        showBlocker();
-      } else {
-        hideBlocker();
-      }
-    };
-
-    // ===== 6. 이벤트 리스너 등록 =====
+    // ===== 5. 이벤트 리스너 등록 =====
     document.addEventListener("contextmenu", handleContextMenu);
     document.addEventListener("keydown", handleKeyDown);
     document.addEventListener("dragstart", handleDragStart);
     document.addEventListener("copy", handleCopy);
     document.addEventListener("cut", handleCut);
 
-    // 개발자도구 감지 폴링 (1초 간격)
-    const devtoolsTimer = setInterval(detectDevTools, 1000);
-    detectDevTools(); // 즉시 1회 실행
-    window.addEventListener("resize", detectDevTools);
-
-    // ===== 7. 정리 =====
+    // ===== 6. 정리 =====
     return () => {
       document.removeEventListener("contextmenu", handleContextMenu);
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("dragstart", handleDragStart);
       document.removeEventListener("copy", handleCopy);
       document.removeEventListener("cut", handleCut);
-      clearInterval(devtoolsTimer);
-      window.removeEventListener("resize", detectDevTools);
-      hideBlocker();
     };
   }, []);
 
