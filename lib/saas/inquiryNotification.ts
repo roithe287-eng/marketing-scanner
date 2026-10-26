@@ -22,7 +22,7 @@ export function inquiryEmailContent(inquiry: Inquiry) {
       `접수 시간: ${new Date(inquiry.createdAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })} (한국시간)`,
       `이름: ${oneLine(inquiry.name)}`,
       `회사명: ${oneLine(inquiry.company) || '미입력'}`,
-      `광고대행 문의: ${inquiryServiceLabels(inquiry.services).join(' · ') || '미선택'}`,
+      `광고대행 상담 선택: ${inquiryServiceLabels(inquiry.services).join(' · ') || '미선택'}`,
       `이용 안내: ${inquiryPlanLabel(inquiry.planId) || '일반 이용 문의'}`, '',
       '연락처와 전체 문의 내용은 관리자 화면에서 확인해 주세요.',
       'https://www.mktscanner.com/manage#admin-inquiries', '',

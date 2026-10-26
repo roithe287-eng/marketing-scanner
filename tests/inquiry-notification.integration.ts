@@ -48,6 +48,27 @@ test('missing email setup preserves inquiry and exposes an honest admin state', 
   assert.deepEqual(body.inquiries[0].services,['naver-ads','meta-ads']);
 });
 
+test('a visitor outside allowed IPs can submit scanner-only interest that survives admin and email rendering', async () => {
+  const submit = (services: string[], email: string) => leadPost(new NextRequest('https://scanner.example/api/lead', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', origin: 'https://scanner.example', 'x-vercel-forwarded-for': '203.0.113.90' },
+    body: JSON.stringify({ ...input, services, email, planId: 'single' }),
+  }));
+  const accepted = await submit(['no-agency'], 'scanner-only@example.com');
+  assert.equal(accepted.status, 200);
+  const admin = await (await adminGet(request('/api/admin'))).json();
+  const inquiry = admin.inquiries.find((item: Inquiry) => item.email === 'scanner-only@example.com');
+  assert.deepEqual(inquiry.services, ['no-agency']);
+  assert.equal(inquiry.status, 'pending', 'an inquiry does not grant account access');
+  assert.equal(inquiry.planId, 'single');
+  const email = inquiryEmailContent(inquiry).text;
+  assert.match(email, /광고대행 상담 선택: 대행문의 필요없음/);
+  assert.doesNotMatch(email, /네이버 광고대행 문의|메타 광고대행 문의/);
+  const rejected = await submit(['no-agency', 'meta-ads'], 'invalid-choice@example.com');
+  assert.equal(rejected.status, 400);
+  assert.ok(!(await listInquiries()).some(item => item.email === 'invalid-choice@example.com'));
+});
+
 test('successful delivery goes only to owner, includes both channels, and deduplicates concurrent/repeated sends', async t => {
   process.env.RESEND_API_KEY='test-only-key';
   process.env.INQUIRY_EMAIL_FROM='alerts@example.com';

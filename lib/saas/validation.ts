@@ -27,7 +27,10 @@ export const inquirySchema = z.object({
   url: z.string().trim().max(2048).default(""),
   message: z.string().trim().max(2000).default(""),
   services: z.array(z.enum(inquiryServiceIds)).max(2).default([])
-    .transform(services => [...new Set(services)]),
+    .transform(services => [...new Set(services)])
+    .refine(services => !services.includes('no-agency') || services.length === 1, {
+      message: '대행문의 필요없음은 광고대행 문의와 함께 선택할 수 없습니다.',
+    }),
   planId: z.string().max(40).refine(id => !!inquiryPlanLabel(id)).optional(),
   consent: z.literal(true),
   website: z.string().max(0).optional(),

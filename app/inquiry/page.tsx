@@ -1,27 +1,27 @@
 import AccessShell from "@/components/access/AccessShell";
 import InquiryForm from "@/components/access/InquiryForm";
+import InquiryPreview from "@/components/access/InquiryPreview";
 import { inquiryPlanLabel } from '@/lib/pricing';
+import './inquiry.css';
+
+export const metadata = { title: '마케팅스캐너 이용 문의 | 진단 결과 미리보기' };
 export default async function InquiryPage({ searchParams }: { searchParams: Promise<{ plan?: string | string[] }> }) {
   const { plan } = await searchParams;
   const selectedPlan = inquiryPlanLabel(typeof plan === 'string' ? plan : undefined);
   return (
     <AccessShell
       eyebrow="START WITH YOUR GOAL"
-      title="우리 사이트의 다음 변화를 함께 정합니다"
-      description="사이트와 고민을 알려 주세요. 필요한 진단 범위와 이용 조건을 안내해 드립니다."
+      title="광고비를 늘리기 전, 바꿀 곳부터 찾으세요."
+      description="검색·AI 노출부터 경쟁사 비교, 바로 바꿀 문장까지. 어떤 결과를 받는지 먼저 확인하고, 우리 사이트의 진단을 문의하세요."
+      wide
+      className="inquiry-page"
     >
-      <ol className="access-steps">
-        <li>
-          <b>01</b> 이용 문의
-        </li>
-        <li>
-          <b>02</b> 상담·승인
-        </li>
-        <li>
-          <b>03</b> 계정 활성화
-        </li>
-      </ol>
-      <InquiryForm selectedPlan={selectedPlan} selectedPlanId={selectedPlan && typeof plan === 'string' ? plan : undefined} />
+      <div className="inquiry-layout">
+        <InquiryPreview />
+        <div id="inquiry-request" className="inquiry-request" tabIndex={-1}>
+          <InquiryForm selectedPlan={selectedPlan} selectedPlanId={selectedPlan && typeof plan === 'string' ? plan : undefined} />
+        </div>
+      </div>
     </AccessShell>
   );
 }
