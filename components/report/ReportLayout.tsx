@@ -67,7 +67,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
   return <SiteGuideProvider report={report}><ReportWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`}><div className="report-v2 report-focused report-continuous" id="report-area">
     <ReportHeader report={report} data={data} actions={actions}/>
     <ReportNavigation chapters={chapters}/>
-    <Chapter id="overview" number="01" title={opening?'홈페이지의 강점과 보강할 내용을 함께 보세요':'먼저 파악할 핵심'} note="아래로 이어서 읽고, 각 영역에서 필요한 세부 내용을 선택하세요.">
+    <Chapter id="overview" number="01" title={opening?'홈페이지의 강점과 보강할 내용을 함께 보세요':'먼저 파악할 핵심'} note="핵심 요약부터 실행 과제까지 아래로 이어집니다. 목차를 누르면 해당 내용으로 바로 이동합니다.">
       <ReportSections chapter="overview" items={[
         {id:'overview-main',label:opening?'홈페이지 근거':'핵심 진단',children:opening?<SiteContentOverview report={report}/>:<><TodayWork plan={execution}/><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview}/></>},
         ...(!opening?[{id:'overview-content',label:'홈페이지 근거',children:<SiteContentOverview report={report}/>}]:[]),
@@ -84,10 +84,10 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
         {id:'geo-brand',label:'브랜드 표현 검토',children:<BrandReview data={data}/>},
         {id:'geo-sources',label:'AI 인용 출처',children:<SourceDirectory data={data}/>},
         {id:'geo-readiness',label:'페이지 준비도',children:<><GeoIntroduction/>{report.discoverability&&<DiscoverabilityPanel discoverability={report.discoverability} observedOnly={!!report.evidenceReview}/>}</>},
-        {id:'geo-comparison',label:'이전 관측 비교',children:<GeoComparisonPanel report={report}/>},
+        ...(report.geoBaseline?[{id:'geo-comparison',label:'이전 관측 비교',children:<GeoComparisonPanel report={report}/>}]:[]),
       ]}/>
     </Chapter>
-    <Chapter id="search" number="03" title="페이지를 확인하고 바로 다듬기" note="수정안, 원문, 검색 점검을 필요한 화면에서 확인하세요.">
+    <Chapter id="search" number="03" title="페이지를 확인하고 바로 다듬기" note="문구 개선, 원문·링크, 검색 점검을 순서대로 확인하세요.">
       <ReportSections chapter="search" items={[
         {id:'search-edits',label:'문구 개선',children:<PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'search-sources',label:'원문·링크',children:<SiteGuidebookOverview report={report}/>},
