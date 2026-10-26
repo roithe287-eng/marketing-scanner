@@ -12,6 +12,7 @@ export function sourcePageUrl(value:string):string|null{
  const safe=safeHttpUrl(value);if(!safe)return null;
  const url=new URL(safe);
  if(url.hash.includes(':~:'))url.hash=url.hash.split(':~:')[0].replace(/^#$/,'');
+ if(url.href.endsWith('#'))url.hash='';
  for(const key of [...url.searchParams.keys()])if(/^utm_|^(?:fbclid|gclid|msclkid)$/i.test(key))url.searchParams.delete(key);
  return url.href;
 }

@@ -33,6 +33,7 @@ test('source grouping deduplicates copy and tracking URLs without merging differ
  assert.equal(library.links.filter(l=>l.category==='page').length,1);
  assert.equal(sourcePageUrl('https://x.example/a?idx=3&utm_source=naver#:~:text=copy'),'https://x.example/a?idx=3');
  assert.equal(sourcePageUrl('https://x.example/a#apply'),'https://x.example/a#apply');
+ assert.equal(sourcePageUrl('https://x.example/a#'),'https://x.example/a');
  assert.equal(sourcePageUrl('https://x.example/a#apply:~:text=copy'),'https://x.example/a#apply');
  assert.equal(sourcePageUrl('https://x.example/#/courses/1'),'https://x.example/#/courses/1');
  assert.equal(sourcePageUrl('javascript:alert(1)'),null);assert.equal(sourcePageUrl('https://user:secret@x.example/'),null);
@@ -64,6 +65,10 @@ test('task workspace starts with one visible chapter and panel while keeping all
  const report=serviceReviewReport(),before=JSON.stringify(report),$=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
  assert.equal($('.report-chapter:not([hidden])').length,1);assert.equal($('#report-overview [data-report-panel]:not([hidden])').length,1);
  assert.equal($('#report-overview .site-content-overview').length,1);assert.equal($('details:not([open])').length,0);
+ for(const group of ['execution-tasks','growth-tasks','answer-questions','naver-checks','official-docs']){
+  assert.ok($(`[data-report-item-group="${group}"]`).length>1,group);
+  assert.equal($(`[data-report-item-group="${group}"]:not([hidden])`).length,1,`${group} bounds visible detail while retaining every item`);
+ }
  const ids=$('[id]').toArray().map(e=>$(e).attr('id'));assert.equal(ids.length,new Set(ids).size);
  for(const link of $('a[href^="#"]').toArray())assert.ok(ids.includes($(link).attr('href')!.slice(1)),$(link).attr('href'));
  assert.equal(JSON.stringify(report),before);
