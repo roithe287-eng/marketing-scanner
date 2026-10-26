@@ -45,7 +45,13 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const articleTypes=(data.schemaTypes||[]).filter(t=>/^(?:Article|BlogPosting|NewsArticle|TechArticle|ScholarlyArticle)$/i.test(t));
   const courseTypes=(data.schemaTypes||[]).filter(t=>/^(?:Course|EducationalOccupationalProgram)$/i.test(t));
   const structuredKind=articleTypes.length?'content':courseTypes.length?'education':undefined;
-  const candidate=structuredKind||(['public_service','content','education','organization','service'] as const).find(k=>matched[k].length>=2||(matched[k].some(u=>/title|description|^h1$/.test(u.locator))&&(k!=='service'||actions.some(a=>Object.values(actionPatterns).some(re=>re.test(a.text))))));
+  const primaryWeight=(u:{locator:string})=>u.locator==='head > title'?16:u.locator==='h1'?12:u.locator==='meta[name="description"]'?10:0;
+  const purposeScore=(key:keyof typeof patterns)=>matched[key].reduce((n,u)=>n+primaryWeight(u),0)+Math.min(6,matched[key].filter(u=>u.locator==='h2').length*2)+Math.min(3,matched[key].filter(u=>!primaryWeight(u)&&u.locator!=='h2').length);
+  // A secondary training/blog section must not outrank the page's own title,
+  // description and main heading. Explicit Article/Course types stay authoritative.
+  const candidate=structuredKind||(['public_service','content','education','organization','service'] as const)
+    .filter(k=>matched[k].length>=2||(matched[k].some(u=>primaryWeight(u)>0)&&(k!=='service'||actions.some(a=>Object.values(actionPatterns).some(re=>re.test(a.text))))))
+    .sort((a,b)=>purposeScore(b)-purposeScore(a))[0];
   const purchase=actions.filter(a=>actionPatterns.purchase.test(a.text));
   const commerce=purchase.length>0||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
   const kind:PurposeKind=commerce?(candidate&&candidate!=='content'?'mixed':'commerce'):candidate||'unknown';

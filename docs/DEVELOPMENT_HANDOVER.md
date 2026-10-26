@@ -1,4 +1,6 @@
-> Latest purpose update: [비커머스 목적별 분석·질문·해당 없음·PDF](NONCOMMERCE_PURPOSE_2026-10-23.md).
+> Latest purpose correction: [대표 목적 분류·본문 행동 누락 교정](PRIMARY_PURPOSE_2026-10-26.md).
+
+> Previous purpose update: [비커머스 목적별 분석·질문·해당 없음·PDF](NONCOMMERCE_PURPOSE_2026-10-23.md).
 
 > Previous general evidence: [일반 URL 공통 적용·긴 원문·보관 키워드 일치](GENERAL_EVIDENCE_2026-10-23.md).
 
