@@ -43,7 +43,16 @@ export function ReportWorkspace({children}:{children:React.ReactNode}){
   };
   document.addEventListener('report:reveal',activate);document.addEventListener('click',fromLink);
   window.addEventListener('hashchange',fromHash);window.addEventListener('popstate',fromHash);fromHash();
-  return()=>{document.removeEventListener('report:reveal',activate);document.removeEventListener('click',fromLink);window.removeEventListener('hashchange',fromHash);window.removeEventListener('popstate',fromHash);};
+  // Font swapping changes the height of preceding sections in a long report.
+  // Align the initial deep link again once fonts settle, unless the reader has interacted.
+  const initialHash=window.location.hash,interactions=['pointerdown','wheel','touchstart','keydown'] as const;
+  let cancelled=false;
+  const stopInitialAlignment=()=>{cancelled=true;interactions.forEach(type=>window.removeEventListener(type,stopInitialAlignment));};
+  if(initialHash&&document.fonts){
+   interactions.forEach(type=>window.addEventListener(type,stopInitialAlignment,{once:true,passive:true}));
+   void document.fonts.ready.then(()=>{const align=!cancelled&&window.location.hash===initialHash;stopInitialAlignment();if(align)fromHash();});
+  }
+  return()=>{stopInitialAlignment();document.removeEventListener('report:reveal',activate);document.removeEventListener('click',fromLink);window.removeEventListener('hashchange',fromHash);window.removeEventListener('popstate',fromHash);};
  },[]);
  return <WorkspaceContext.Provider value={selection}>{children}</WorkspaceContext.Provider>;
 }
