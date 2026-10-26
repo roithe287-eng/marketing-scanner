@@ -1,4 +1,5 @@
 "use client";
+import ReportJumpLink from './ReportJumpLink';
 import {RoleBox,RoleLabel} from './ReportRole';
 import React,{useId,useState} from 'react';
 import {fillRewriteTemplate,rewriteFields,rewriteInstruction,type ExecutableRewrite,type RewriteValues} from '@/lib/keywordExecution';
@@ -9,7 +10,7 @@ export default function RewriteExecutionGuide({plan,values,onChange}:{plan:Execu
   return <details open className="report-execution-guide">
     <summary><span><strong>이 URL에서 따라하기</strong><small>원문 근거 → 수정 순서 → 문장 완성 → 완료 확인</small></span><b aria-hidden="true">+</b></summary>
     <div className="report-execution-content">
-      <RoleBox className="report-execution-source" role="current" label="수집한 원문"><span className="report-pill">{g.evidence.length?'원문 근거 연결':'문구 위치 확인 필요'}</span><h5>{g.site}</h5>{g.url&&<a href={g.url} target="_blank" rel="noopener noreferrer">{g.url} ↗</a>}<p className="report-note">{g.coverage}</p>
+      <RoleBox className="report-execution-source" role="current" label="수집한 원문"><span className="report-pill">{g.evidence.length?'원문 근거 연결':'문구 위치 확인 필요'}</span><h5>{g.site}</h5>{g.url&&<ReportJumpLink id="report-site-guide">원문·링크 모음</ReportJumpLink>}<p className="report-note">{g.coverage}</p>
         {g.evidence.length?g.evidence.map((e,i)=><blockquote key={`${e.label}-${i}`}><span>{e.label}</span><p>{e.text}</p></blockquote>):<p className="report-empty">이 표현과 일치하는 원문을 저장된 범위에서 찾지 못했습니다. 페이지에 없다는 뜻은 아닙니다. 먼저 원문에서 위치를 확인하세요.</p>}
       </RoleBox>
       <ol className="report-execution-steps">{g.steps.map((s,i)=><li key={s.title}><span aria-hidden="true">0{i+1}</span><div><h5>{s.title}</h5><p>{s.detail}</p></div></li>)}</ol>

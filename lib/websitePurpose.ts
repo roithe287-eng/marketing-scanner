@@ -34,6 +34,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const add=(text:string,locator:string)=>{const value=short(text);if(value&&!units.some(u=>u.text===value))units.push({text:value,locator});};
   add(data.title,'head > title');add(data.description||data.ogDescription||'','meta[name="description"]');
   (data.h1||[]).slice(0,4).forEach(h=>add(h,'h1'));(data.h2||[]).slice(0,8).forEach(h=>add(h,'h2'));
+  for(const section of data.siteEditing?.contentSections||[])add(section.text,section.heading||'service-content');
   const body=elements.filter(e=>['heading','text'].includes(e.kind));
   if(body.length)body.slice(0,20).forEach(e=>add(e.text,e.selector));
   else (data.bodyText||'').split(/\n+/).slice(0,20).forEach(t=>add(t,'body · 수집 텍스트'));

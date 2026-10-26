@@ -40,6 +40,9 @@ export function answerSources(data:AnswerPageData):AnswerSource[]{
   if(data.productContext?.status==='observed')for(const p of data.productContext.sources){
     add([p.name,...p.categories].join(' · '),'product','확인한 자사 상품',undefined,p.url);
   }
+  for(const section of data.siteEditing?.contentSections||[])if(!section.truncated){
+    for(const line of section.text.split(/(?<=[.!?。])\s+/u))add(line,'body',section.heading||'서비스 본문',undefined,section.url);
+  }
   const elements=data.siteEditing?.elements||[];
   const usable=elements.filter(e=>!e.truncated&&!['nav','header','footer'].includes(e.region||'')&&['text','heading'].includes(e.kind));
   for(const e of usable)add(e.text,e.kind==='heading'?'heading':'body',e.section?.label||e.heading||'본문',e.selector);

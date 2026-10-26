@@ -1,0 +1,40 @@
+'use client';
+import React,{createContext,useContext,useEffect,useState} from 'react';
+import {revealReportTarget} from './ReportJumpLink';
+
+type Selection={chapter:string;panels:Record<string,string>};
+const WorkspaceContext=createContext<Selection|null>(null);
+export function ReportWorkspace({children}:{children:React.ReactNode}){
+ const [selection,setSelection]=useState<Selection>({chapter:'overview',panels:{}});
+ useEffect(()=>{
+  const activate=(event:Event)=>{
+   const id=(event as CustomEvent<{id:string}>).detail?.id,target=id?document.getElementById(id):null;
+   const chapter=target?.closest<HTMLElement>('[data-chapter]')?.dataset.chapter;
+   const panel=target?.closest<HTMLElement>('[data-report-panel]')?.dataset.reportPanel;
+   if(chapter)setSelection(previous=>({chapter,panels:panel?{...previous.panels,[chapter]:panel}:previous.panels}));
+  };
+  const fromHash=()=>{let id='';try{id=decodeURIComponent(window.location.hash.slice(1));}catch{return;}if(id)revealReportTarget(id,false);else setSelection(p=>({...p,chapter:'overview'}));};
+  const fromLink=(event:MouseEvent)=>{
+   if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
+   const link=(event.target as Element)?.closest<HTMLAnchorElement>('a[href^="#"]');
+   if(!link?.closest('#report-area'))return;
+   const id=link.getAttribute('href')!.slice(1);
+   if(revealReportTarget(id))event.preventDefault();
+  };
+  document.addEventListener('report:reveal',activate);document.addEventListener('click',fromLink);
+  window.addEventListener('hashchange',fromHash);window.addEventListener('popstate',fromHash);fromHash();
+  return()=>{document.removeEventListener('report:reveal',activate);document.removeEventListener('click',fromLink);window.removeEventListener('hashchange',fromHash);window.removeEventListener('popstate',fromHash);};
+ },[]);
+ return <WorkspaceContext.Provider value={selection}>{children}</WorkspaceContext.Provider>;
+}
+export function useReportSelection(){return useContext(WorkspaceContext);}
+export function ReportSections({chapter,items}:{chapter:string;items:{id:string;label:string;children:React.ReactNode}[]}){
+ const selection=useReportSelection(),selected=items.some(i=>i.id===selection?.panels[chapter])?selection!.panels[chapter]:items[0]?.id;
+ return <div className="report-section-workspace"><div className="report-section-nav" role="group" aria-label={`${chapter} 세부 결과 선택`}>{items.map(item=><button type="button" key={item.id} aria-pressed={selected===item.id} aria-controls={`report-view-${item.id}`} onClick={()=>revealReportTarget(`report-view-${item.id}`)}>{item.label}</button>)}</div>
+  {items.map(item=><div key={item.id} id={`report-view-${item.id}`} data-report-panel={item.id} hidden={selected!==item.id} className="report-section-panel"><div className="report-stack">{item.children}</div></div>)}
+ </div>;
+}
+export function ReportNavigation({chapters}:{chapters:readonly (readonly [string,string])[]}){
+ const selection=useReportSelection();
+ return <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} aria-current={selection?.chapter===id?'page':undefined} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(`report-${id}`))event.preventDefault();}}><span>0{i+1}</span>{label}</a>)}</nav>;
+}

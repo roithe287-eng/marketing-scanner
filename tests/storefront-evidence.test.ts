@@ -11,6 +11,7 @@ import {buildAnswerContentDocument} from '../lib/answerContentDocument';
 import {MarketingReportSchema} from '../lib/reportSchema';
 import {storefrontObservations} from '../lib/storefrontEvidence';
 import AnswerContentPanel from '../components/report/AnswerContentPanel';
+import {buildSourceLibrary} from '../lib/reportContent';
 import {answerPage} from './fixtures/answer-content';
 import {fixture} from './fixtures/report';
 
@@ -66,7 +67,9 @@ test('verified products supply question topics and source links, never price, ef
 test('shared, rendered and PDF question plans preserve product provenance and catalog-only limits',()=>{
   const plan=buildAnswerContentPlan(page),report=MarketingReportSchema.parse({...fixture,productContext:page.productContext,answerContentPlan:plan});
   const html=renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan:report.answerContentPlan}));
-  assert.match(html,/페이지·상품 표본 기반/);assert.match(html,/https:\/\/shop.example.com\/goods\//);
+  assert.match(html,/페이지·상품 표본 기반/);assert.match(html,/#report-site-guide/);
+  assert.ok(buildSourceLibrary(report).links.some(link=>link.url==='https://shop.example.com/goods/1'));
+  assert.ok(buildSourceLibrary(report).links.some(link=>link.url==='https://shop.example.com/goods/2'));
   assert.match(buildAnswerContentDocument(report).map(b=>b.text).join('\n'),/입력 페이지·자사 상품 표본/);
   assert.match(plan.notice,/답변 근거가 아닙니다/);
 });
