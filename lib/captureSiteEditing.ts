@@ -11,9 +11,15 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
   const generators=$('meta[name="generator" i]').map((_,e)=>$(e).attr('content')||'').get();
   const assets=$('script[src],link[rel="stylesheet"][href],img[src]').toArray().flatMap(e=>{try{return [new URL($(e).attr('src')||$(e).attr('href')||'',finalUrl)];}catch{return [];}});
   const host=(domain:string)=>assets.some(u=>u.hostname===domain||u.hostname.endsWith('.'+domain));
+  // Product images can survive a platform migration. Require an active script,
+  // stylesheet or explicit generator for the additional commerce platforms.
+  const runtimeAssets=$('script[src],link[rel="stylesheet"][href]').toArray().flatMap(e=>{try{return [new URL($(e).attr('src')||$(e).attr('href')||'',finalUrl)];}catch{return [];}});
+  const runtimeHost=(domain:string)=>runtimeAssets.some(u=>u.hostname===domain||u.hostname.endsWith('.'+domain));
   const generator=(rx:RegExp)=>generators.filter(g=>rx.test(g)).map(g=>`generator: ${g.slice(0,180)}`);
-  add('imweb','cms',[...generator(/imweb|아임웹/i),...(host('imweb.me')||host('imweb.me.s3.amazonaws.com')?['아임웹 도메인의 정적 리소스']:[])]);
-  add('cafe24','cms',[...generator(/cafe24/i),...(host('echosting.cafe24.com')||host('img.echosting.cafe24.com')?['카페24 echosting 정적 리소스']:[])]);
+  add('imweb','cms',[...generator(/imweb|아임웹/i),...(runtimeHost('imweb.me')||runtimeHost('imweb.me.s3.amazonaws.com')?['아임웹 도메인의 스크립트·스타일']:[]),...($('[data-widget-type]').length&&$('.section_wrap').length?['아임웹 위젯·구역 구조']:[])]);
+  add('cafe24','cms',[...generator(/cafe24/i),...(runtimeHost('echosting.cafe24.com')||runtimeHost('cafe24img.com')||runtimeHost('cafe24img.poxo.com')?['카페24 스크립트·스타일']:[]),...($('[class*="xans-"]').length&&runtimeAssets.some(u=>/\/ind-script\//.test(u.pathname))?['카페24 xans 모듈·ind-script 경로']:[])]);
+  add('godomall','cms',[...generator(/\bgodomall\b|\bgodo5\b|고도몰/i),...(runtimeHost('godomall.com')||runtimeHost('godo.co.kr')?['고도몰 도메인의 스크립트·스타일']:[]),...(runtimeAssets.some(u=>/\/data\/skin\/front\/[^/]+\/.*\bgd_[\w.-]+\.(?:js|css)$/i.test(u.pathname))?['고도몰 스킨의 gd_ 스크립트·스타일 경로']:[])]);
+  add('makeshop','cms',[...generator(/\bmakeshop\b|메이크샵/i),...(runtimeHost('makeshop.co.kr')||runtimeHost('makeshop.com')?['메이크샵 도메인의 스크립트·스타일']:[])]);
   add('wordpress','cms',[...generator(/wordpress/i),...(assets.some(u=>/\/wp-(content|includes)\//.test(u.pathname))?['wp-content / wp-includes 리소스 경로']:[])]);
   add('shopify','cms',[...generator(/shopify/i),...(host('cdn.shopify.com')?['cdn.shopify.com 리소스']:[])]);
   add('wix','cms',[...generator(/wix/i),...(host('wixstatic.com')||host('parastorage.com')?['Wix 정적 리소스 도메인']:[])]);

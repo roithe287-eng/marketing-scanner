@@ -1,5 +1,9 @@
 export const GUIDE_REVIEWED_AT='2026-10-06';
 export const GUIDE_SOURCES={
+ godomallDesign:{title:'고도몰 · 작업 스킨 편집',url:'https://godomall-help.nhn-commerce.com/beginner/design/skin-setting/pc'},
+ godomallSeo:{title:'고도몰 · 검색엔진 최적화 설정',url:'https://marketing-help.nhn-commerce.com/traffic-growth-strategies/godomall-seo-setting'},
+ makeshopSeo:{title:'메이크샵 · 상품별·페이지별 SEO',url:'https://help.makeshop.co.kr/faq/pc-and/seo'},
+ makeshopDesign:{title:'메이크샵 · 디자인 편집과 SEO',url:'https://help.makeshop.co.kr/guide/seo'},
  naverContent:{title:'네이버 · 유용한 콘텐츠 작성 원칙',url:'https://searchadvisor.naver.com/guide/content-basic'},
  naverCrawl:{title:'네이버 · 수집·검색 반영 기본 조건',url:'https://searchadvisor.naver.com/guide/seo-basic-intro'},
  social:{title:'Open Graph · 공유 메타데이터 규격',url:'https://ogp.me/'},
@@ -25,8 +29,8 @@ export const GUIDE_SOURCES={
  imwebSeo:{title:'아임웹 · SEO 항목별 설정 위치',url:'https://www.imweb.me/qna?mode=faq&q=71763'},
  imwebText:{title:'아임웹 · 텍스트 위젯',url:'https://www.imweb.me/qna?mode=faq&q=71142'},
  imwebButton:{title:'아임웹 · 버튼 위젯',url:'https://www.imweb.me/qna?mode=faq&q=71149'},
- cafe24Design:{title:'카페24 · 디자인 편집',url:'https://support.cafe24.com/hc/ko/articles/8466402024985'},
- cafe24Seo:{title:'카페24 · 페이지 제목·설명 설정',url:'https://support.cafe24.com/hc/ko/articles/8465663101721'},
+ cafe24Design:{title:'카페24 · 디자인 편집',url:'https://support.cafe24.com/hc/ko/articles/8466196671257'},
+ cafe24Seo:{title:'카페24 · 페이지 제목·설명 설정',url:'https://support.cafe24.com/hc/ko/articles/7671792396569'},
  wordpress:{title:'WordPress · 제목 블록',url:'https://wordpress.org/documentation/article/heading-block/'},
  wordpressBlocks:{title:'WordPress · 블록 편집',url:'https://wordpress.org/documentation/article/work-with-blocks/'},
  shopifySeo:{title:'Shopify · 페이지별 SEO 설정',url:'https://help.shopify.com/en/manual/promoting-marketing/seo/adding-keywords'},

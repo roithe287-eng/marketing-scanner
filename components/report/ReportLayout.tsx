@@ -1,5 +1,6 @@
 "use client";
 import {SiteGuideProvider,SiteGuidebookOverview} from './SiteGuidebook';
+import PlatformApplicationPanel from './PlatformApplicationPanel';
 import CompetitorLandscape,{ProductCollection} from './CompetitorLandscape';
 import {ReportWorkspace,ReportNavigation,ReportSections} from './ReportWorkspace';
 import SiteContentOverview from './SiteContentOverview';
@@ -90,6 +91,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
     </Chapter>
     <Chapter id="search" number="03" title="페이지를 확인하고 바로 다듬기" note="문구 개선, 원문·링크, 검색 점검을 순서대로 확인하세요.">
       <ReportSections chapter="search" items={[
+        {id:'search-platforms',label:'플랫폼별 적용',children:<PlatformApplicationPanel report={report}/>},
         {id:'search-edits',label:'문구 개선',children:<PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'search-sources',label:'원문·링크',children:<SiteGuidebookOverview report={report}/>},
         {id:'search-keywords',label:'키워드',children:<><KeywordWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} data={data}/>{report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}</>},
