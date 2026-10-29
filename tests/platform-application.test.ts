@@ -63,9 +63,23 @@ test('ready SEO values use own-page wording and before values are never generate
 });
 test('a real booking action in navigation can supply the button URL, while account controls cannot',()=>{
  const r=makeReport('<meta name="generator" content="imweb">');
+ r.exampleCopy={...r.exampleCopy,ctaText:'예약 신청하기'};
  r.pageEvidence!.siteEditing=captureSiteEditing(load('<html><body><header><nav><a href="/login">상담 회원 로그인</a><a href="/booking">진료 예약신청</a></nav></header></body></html>'),url,new Headers());
  const model=buildPlatformApplication(r);assert.equal(model.ctaUrl,'https://example.com/booking');assert.equal(model.fields.find(f=>f.id==='cta')!.before,'진료 예약신청');
  assert.ok(applicationRoute(model,'imweb').cta.path.includes('상단 디자인 편집'));
+});
+test('booking proposals never relabel tax-document requests or trust a mismatched generated current CTA',()=>{
+ const r=makeReport();r.exampleCopy={...r.exampleCopy,ctaText:'예약 신청하기',currentCtaText:'연말정산 서류신청'};
+ const capture=(body:string)=>captureSiteEditing(load(`<html><body>${body}</body></html>`),url,new Headers());
+ r.pageEvidence!.siteEditing=capture('<main><a href="/tax">연말정산 서류신청</a></main><header><nav><a href="/reservation">진료 예약신청</a></nav></header>');
+ let model=buildPlatformApplication(r);assert.equal(model.fields.find(f=>f.id==='cta')!.before,'진료 예약신청');assert.equal(model.ctaUrl,'https://example.com/reservation');
+ r.pageEvidence!.siteEditing=capture('<main><a href="/tax">연말정산 서류신청</a></main>');r.pageEvidence!.ctaButtons=['연말정산 서류신청','예약신청'];
+ model=buildPlatformApplication(r);assert.equal(model.fields.find(f=>f.id==='cta')!.before,'예약신청');assert.equal(model.ctaUrl,'');assert.equal(applicationHtml(initialApplicationValues(model),[],model.ctaUrl).hasCta,false);
+});
+test('a consultation about purchase conditions keeps its consultation destination',()=>{
+ const r=makeReport();r.exampleCopy={...r.exampleCopy,ctaText:'구매 조건 문의하기'};
+ r.pageEvidence!.siteEditing=captureSiteEditing(load('<body><main><a href="/buy">구매하기</a><a href="/contact">문의하기</a></main></body>'),url,new Headers());
+ const model=buildPlatformApplication(r);assert.equal(model.ctaUrl,'https://example.com/contact');
 });
 test('mismatched, legacy and truncated evidence cannot become complete current values or exact source paths',()=>{
  const r=makeReport('<meta name="generator" content="Cafe24">');
