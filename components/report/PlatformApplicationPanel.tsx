@@ -1,6 +1,7 @@
 'use client';
 import React,{useId,useMemo,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
+import {SITE_EDITING_SCOPE,APPLICATION_ASSET_SCOPE} from '@/lib/siteEditingScope';
 import {APPLICATION_PLATFORMS,APPLICATION_REVIEWED_AT,applicationHtml,applicationRoute,applicationTextReady,buildPlatformApplication,initialApplicationValues,platformApplicationBrief,type ApplicationFaq,type ApplicationPlatform,type OtherEditor} from '@/lib/platformApplication';
 
 function CopyApplication({text,label,disabled=false}:{text:string;label:string;disabled?:boolean}){
@@ -24,6 +25,7 @@ function ApplicationEditor({report}:{report:MarketingReport}){
  return <section className="report-card platform-application" id="report-platform-application" aria-labelledby={`${id}-heading`}>
   <header className="apply-heading"><p className="report-eyebrow">플랫폼 확인 → 수정안 복사 → 미리보기</p><h3 id={`${id}-heading`}>우리 사이트에 바로 적용하기</h3><p>플랫폼 아이콘을 누르면 적용 위치와 수정 문구가 펼쳐집니다.</p><strong className="apply-detected">{model.detected.label}</strong><p className="apply-url">진단한 페이지 · {model.url||'URL 확인 필요'}</p></header>
   <div className="apply-platforms" aria-label="플랫폼별 적용 가이드">{APPLICATION_PLATFORMS.map(p=><button type="button" key={p.id} aria-expanded={selected===p.id} aria-controls={`${id}-panel`} onClick={()=>setSelected(current=>current===p.id?null:p.id)}><span className="apply-platform-icon" aria-hidden="true">{p.icon}</span><strong>{p.label}</strong><small>{model.initialPlatform===p.id&&model.detected.platform?'감지된 플랫폼':p.id==='other'&&!model.detected.platform?'확인하고 선택':'가이드 보기'}</small><span aria-hidden="true">{selected===p.id?'−':'＋'}</span></button>)}</div>
+  <aside className="apply-usage-scope" aria-label="수정안 이용 범위"><p>{SITE_EDITING_SCOPE}</p><p>{APPLICATION_ASSET_SCOPE}</p></aside>
   {!selected&&<p className="apply-note">사용 중인 플랫폼을 누르면 수정안과 적용 순서를 볼 수 있습니다.</p>}
   <div id={`${id}-panel`} hidden={!selected}>
    {route&&selected&&<>

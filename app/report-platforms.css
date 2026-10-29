@@ -5,6 +5,8 @@
 .report-v2 .platform-application p,.report-v2 .platform-application small{overflow-wrap:anywhere;line-height:1.8}
 .report-v2 .apply-heading>p{font-size:15px;color:#526172}
 .apply-detected{display:inline-block;padding:7px 15px;margin-top:14px;background:#edf5ff;border:1px solid #cdddF0;border-radius:30px;color:#174c80;font-size:14px}
+.apply-usage-scope{padding:14px 16px;margin:0 0 18px;border:1px solid #dce4ee;border-radius:12px;background:#f8fafc;text-align:center;color:#526172}
+.report-v2 .apply-usage-scope p{font-size:13px;margin:0}.report-v2 .apply-usage-scope p+p{margin-top:7px}
 .report-v2 .apply-heading .apply-url{font-size:13px;margin-top:10px}
 .apply-platforms{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:18px}
 .apply-platforms>button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:150px;padding:16px 12px;border:1px solid #dce4ee;border-radius:16px;background:#f8fafc;text-align:center;transition:background .15s,border-color .15s;color:#24364a}
