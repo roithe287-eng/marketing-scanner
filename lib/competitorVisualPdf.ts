@@ -12,7 +12,7 @@ export function buildCompetitorVisualPage(report:MarketingReport,measure:TextMea
   text(`대표 키워드: ${model.analysis.searchKeyword} · ${model.profile.label} 기준`,48,126,694,17,'#285b98',700);
   text('X 상품·서비스 설명 · Y 선택·이용 근거 / 검색 순위·성과 점수 아님',48,162,694,14);
   const x0=112,y0=225,w=560,h=280;
-  rect(x0,y0,w/2,h/2,'#f2eff9',0);rect(x0+w/2,y0,w/2,h/2,'#eaf4ef',0);rect(x0,y0+h/2,w/2,h/2,'#f8f2e8',0);rect(x0+w/2,y0+h/2,w/2,h/2,'#edf3fc',0);
+  rect(x0,y0,w/2,h/2,'#f8fafc',0);rect(x0+w/2,y0,w/2,h/2,'#f3f6fa',0);rect(x0,y0+h/2,w/2,h/2,'#f3f6fa',0);rect(x0+w/2,y0+h/2,w/2,h/2,'#f8fafc',0);
   rect(x0+w/2,y0,1,h,'#a4b5c8',0);rect(x0,y0+h/2,w,1,'#a4b5c8',0);
   text('Y · 선택·이용 근거',48,197,400,15,'#202936',700);
   [100,50,0].forEach(n=>text(`${n}`,67,y0+h*(.15+.7*(1-n/100))-11,36,13));

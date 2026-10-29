@@ -1,0 +1,94 @@
+/* Report surfaces stay quiet. Accent belongs to navigation, data and short labels. */
+.report-v2.report-focused {
+  --report-accent:#2657ab; --report-accent-soft:#f3f6fc;
+  --report-ink:#263449; --report-line:#dce3ec; --report-soft:#f8fafc;
+  --reading-blue:#f8fafc; --reading-blue-line:#dce3ec; --reading-blue-ink:#2657ab;
+  --reading-lavender:#f8fafc; --reading-lavender-line:#dce3ec; --reading-lavender-ink:#2657ab;
+  --reading-mint:#ffffff; --reading-mint-line:#bad7cf; --reading-mint-ink:#087569;
+  --reading-peach:#fffbf4; --reading-peach-line:#e3cfb2; --reading-peach-ink:#9a4b0a;
+}
+.report-v2.report-focused .report-chapter[data-chapter] { --chapter-color:var(--report-accent); --chapter-surface:var(--report-soft); }
+.report-v2.report-focused .report-chapter-heading { background:#fff; border-color:var(--report-line); border-left:3px solid var(--report-accent); }
+.report-v2.report-focused .report-chapter-heading>.report-chapter-symbol { background:var(--report-accent-soft); color:var(--report-accent); border:1px solid #d3deef; }
+.report-v2.report-focused .report-card { border-color:var(--report-line); }
+.report-v2.report-focused .report-card-heading { background:var(--report-soft); border-left-color:var(--report-accent); }
+.report-v2.report-focused .report-hero-bottom { background:var(--report-soft); }
+.report-v2.report-focused .report-hero-summary { border-left-color:#bacce6; }
+.report-v2.report-focused .report-outcome-links>a[data-outcome] { background:#fff; border-color:var(--report-line); color:var(--report-ink); border-top:3px solid var(--report-accent); }
+.report-v2.report-focused .report-outcome-number { background:var(--report-accent-soft); color:var(--report-accent); }
+.report-v2.report-focused .report-outcome-metric { border-color:var(--report-line); color:var(--report-accent); }
+
+/* Repeated facts and task cards share a neutral surface, regardless of position. */
+.report-v2.report-focused :is(.report-stat,.report-journey li,.report-evidence-types>section,.keyword-stats>div,
+ .work-today-grid>li,.work-owner-group[data-owner],.work-owner-group,
+ .report-priority-trio li,.report-roadmap-grid header,.report-checklist-stats>div,
+ .growth-concepts article[data-area],.growth-concepts article,.report-geo-intro,
+ .position-selection-flow li,.position-axis-cards article,.position-quadrant-key>span,
+ .report-source-rule>div[data-kind],.report-source-rule>div,.sector-journey>div) {
+  background:#fff; border-color:var(--report-line); color:var(--report-ink);
+}
+.report-v2.report-focused :is(.work-today-grid>li,.report-outcome-links>a,.growth-concepts article) { border-top:3px solid var(--report-accent); }
+.report-v2.report-focused :is(.report-stat strong,.keyword-stats strong,.sector-count strong) { color:var(--report-accent); }
+.report-v2.report-focused :is(.report-stat,.keyword-stats>div,.report-evidence-types>section,.report-journey li,.sector-journey>div) { border:1px solid var(--report-line); }
+.report-v2.report-focused :is(.report-journey .is-focus,.report-next-action) { background:var(--report-accent-soft); border-color:#b9cce7; color:var(--report-accent); }
+.report-v2.report-focused :is(.position-axis-cards h5,.position-axis-cards article>span,.position-axis-cards strong,.sector-journey strong) { color:var(--report-ink); }
+.report-v2.report-focused :is(.sector-journey span,.sector-journey b) { color:var(--report-accent); border-color:var(--report-line); }
+
+/* Semantic roles remain explicit through labels, icons and thin accent edges. */
+.report-v2.report-focused .report-role-box { border-top-width:2px; color:var(--report-ink); }
+.report-v2.report-focused .report-role-icon { background:color-mix(in srgb,var(--role-accent) 9%,white); color:var(--role-accent); border:1px solid color-mix(in srgb,var(--role-accent) 20%,white); }
+.report-v2.report-focused :is(.report-role-caption strong,.report-role-content :is(p,blockquote,pre,li)) { color:var(--report-ink); }
+.report-v2.report-focused :is(.guide-source-context,.guide-effect,.guide-proof,.guide-proposal,.guide-grounding,
+ .answer-question .answer-draft,.answer-missing,.answer-placement,.report-rewrite-template,
+ .naver-execution .naver-completion) { background:#fff; border-color:var(--report-line); color:var(--report-ink); }
+.report-v2.report-focused :is(.guide-source-context,.guide-proof,.answer-placement,.naver-execution .naver-completion) { border-left:3px solid var(--report-accent); }
+.report-v2.report-focused :is(.guide-effect,.guide-proposal,.answer-question .answer-draft,.report-rewrite-template) { border-top:2px solid #087569; }
+.report-v2.report-focused :is(.guide-grounding,.answer-missing) { border-left:3px solid #b07a31; }
+.report-v2.report-focused :is(.guide-proof summary,.guide-source-context>summary,.guide-original-actions :is(a,button)) { color:var(--report-accent); }
+.report-v2.report-focused .guide-original-actions :is(a,button) { border-color:#c4d2e6; }
+.report-v2.report-focused :is(.guide-proof p>strong,.guide-grounding>strong,.answer-draft>p,.naver-execution .naver-completion p) { color:var(--report-ink); }
+.report-v2.report-focused .answer-missing li { background:transparent; }
+.report-v2.report-focused :is(.guide-element[data-kind],.guide-element) { --source-ink:#2657ab; --source-bg:#f8fafc; border-top-width:2px; border-color:var(--report-line); border-top-color:var(--source-ink); }
+.report-v2.report-focused :is(.guide-element[data-kind=cta],.guide-element[data-kind=form]) { --source-ink:#087569; }
+.report-v2.report-focused :is(.guide-element blockquote,.guide-selector,.guide-settings article,.content-evidence-quotes,.content-evidence-quotes blockquote) { background:var(--report-soft); border-color:var(--report-line); color:var(--report-ink); }
+.report-v2.report-focused :is(.report-copy-pair,.work-before-after) mark { background:#e7f3ef; color:#11594f; }
+.report-v2.report-focused .report-rewrite-template mark { background:#fff1d6; color:#795020; }
+
+/* Selection is the strong blue signal; unselected options do not compete with it. */
+.report-v2.report-focused :is(.naver-categories button,.report-axis,.work-wireframe button:not([aria-pressed=true]),
+ .apply-platforms>button,.content-facet-tabs button:not([aria-pressed=true])) { background:#fff; border-color:var(--report-line); }
+.report-v2.report-focused .naver-categories button { color:var(--report-ink); }
+.report-v2.report-focused :is(.naver-categories button[aria-pressed=true],.report-axis[aria-pressed=true],
+ .work-wireframe button[aria-pressed=true],.apply-platforms>button[aria-expanded=true]) { background:var(--report-accent-soft); border-color:var(--report-accent); box-shadow:inset 0 2px var(--report-accent); }
+.report-v2.report-focused :is(.report-secondary-button,.work-tabs button:not([aria-pressed=true])) { background:#fff; border-color:#c4d2e6; color:var(--report-accent); }
+.report-v2.report-focused .report-secondary-button:hover { background:var(--report-accent-soft); }
+.report-v2.report-focused :is(.report-disclosure[open]>summary,.guide-details>summary,.report-detail-body,
+ .report-completion-check,.work-check,.work-wireframe,.work-compare-chart,
+ .growth-kpi-intro,.growth-kpi-result,.simple-kpi-result,.position-query,.position-evidence,
+ .position-size-guide,.sector-count,.sector-check>header,.sector-check-review>header,
+ .apply-context,.apply-setup-card>h5,.apply-check,.apply-current,.apply-value,
+ .answer-primary,.answer-secondary) { background:var(--report-soft); border-color:var(--report-line); }
+.report-v2.report-focused :is(.work-before-after>article:not([data-report-role]),.report-rewrite-comparison>div,
+ .report-rewrite-comparison>div:last-child,.growth-change-grid>div,.growth-change-grid>div:last-child) { background:#fff; border-color:var(--report-line); }
+.report-v2.report-focused :is(.work-before-after>article:last-child,.report-rewrite-comparison>div:last-child,.growth-change-grid>div:first-child) { border-top:2px solid #087569; }
+.report-v2.report-focused .sector-next { background:#fff; border-color:var(--report-line); }
+.report-v2.report-focused .sector-goal { background:var(--report-accent-soft); color:var(--report-ink); border:1px solid #c4d2e6; border-left:3px solid var(--report-accent); }
+.report-v2.report-focused :is(.sector-goal span,.sector-goal p) { color:var(--report-ink); }
+.report-v2.report-focused .sector-goal strong { color:var(--report-accent); }
+.report-v2.report-focused .apply-value { background:#fff; border:1px solid #c4d2e6; }
+.report-v2.report-focused .apply-check { background:#fff; }
+.report-v2.report-focused .apply-check>strong { color:#087569; }
+.report-v2.report-focused .apply-platform-icon { border-color:#d3deef; background:var(--report-accent-soft); }
+
+/* Muted chart furniture leaves the actual plotted series and status colors intact. */
+.report-v2.report-focused .report-radar-chart { background:var(--report-soft); border-color:var(--report-line); }
+.report-v2.report-focused .report-axis .report-axis-icon { background:transparent; }
+.report-v2.report-focused .position-plot { background:#fff; }
+.report-v2.report-focused .position-quadrants div { background:#f8fafc; }
+.report-v2.report-focused .position-quadrants :is(div:nth-child(2),div:nth-child(3)) { background:#f3f6fa; }
+.report-v2.report-focused .position-quadrant-key>span { border-left:3px solid #b9cce7; }
+.report-v2.report-focused .work-change-groups>details[data-change] { background:#fff; border-color:var(--report-line); }
+.report-v2.report-focused .work-change-groups>details[data-change=resolved] { border-left:3px solid #087569; }
+.report-v2.report-focused .work-change-groups>details[data-change=new] { border-left:3px solid #b07a31; }
+.report-v2.report-focused .work-change-groups>details[data-change=unknown] { border-left:3px solid #8191a7; }
+.report-v2.report-focused .work-finish .work-link { background:#fff; color:var(--report-accent); border-color:#fff; }
