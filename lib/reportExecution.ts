@@ -2,6 +2,7 @@ import {buildSiteGuide,guideInstruction,guideTopic} from './siteGuidebook';
 import type {MarketingReport} from './reportSchema';
 import {buildReportInsights, type ReportInsights} from './reportInsights';
 import {growthPageEvidence} from './growthPlan';
+import {buildPlatformApplication} from './platformApplication';
 
 export const workOwners=[{id:'direct',label:'직접 수정',note:'콘텐츠·운영 담당이 먼저 검토할 작업'},{id:'developer',label:'개발자 전달',note:'HTML·설정·동작 확인이 필요한 작업'},{id:'verify',label:'추가 확인',note:'근거·계정·사실 확인 후 결정할 작업'}] as const;
 export const workZones=[
@@ -49,11 +50,11 @@ export function executionBrief(report:MarketingReport,tasks:ExecutionPlan['tasks
  return [`마케팅스캐너 · ${owner||'전체'} 작업 지시서`,`대상 URL: ${report.url}`,'담당 구분과 수정 위치는 추천입니다. 원문·실제 설정을 확인한 뒤 적용하세요.',...tasks.map((t,i)=>`\n${i+1}. ${t.title}\n담당: ${workOwners.find(o=>o.id===t.owner)!.label}\n진단 출처: ${t.source}\n위치: ${t.location}\n확인 근거: ${t.evidence}\n실행: ${t.action}\n완료 확인: ${t.completion}\n관찰 KPI: ${t.kpi}\n\n${guideInstruction(buildSiteGuide(report,{title:t.title,scope:t.guideScope,instructions:t.instructions,completion:t.completion,current:t.current,evidence:t.evidence,proposal:t.action}))}`),'\n완료 후 같은 URL을 재진단하고, 실제 사업 성과는 같은 기간·채널·기기 조건으로 별도 비교하세요.'].join('\n');
 }
 export function buildPageEdits(report:MarketingReport) {
- const p=growthPageEvidence(report),site=report.meta?.siteName||report.meta?.domain||'[브랜드명]';
+ const p=growthPageEvidence(report),application=buildPlatformApplication(report);
  return [
    {id:'hero',label:'대표 제목',location:'첫 화면의 대표 제목',before:p?.h1.join('\n')||'',after:report.exampleCopy.heroHeadline,source:p?'수집 HTML의 H1':'H1 원문 미저장',missing:p?'정적 HTML에서 H1을 확인하지 못했습니다. 실제 화면과 렌더링 결과도 확인하세요.':'현재 대표 제목의 수집 원문이 없습니다.',check:'제공 대상·가치가 실제 서비스와 일치하는지 확인하고 대표 제목에 적용하세요.'},
-   {id:'title',label:'검색 제목',location:'CMS의 SEO 제목 · HTML title',before:p?.title||'',after:`[실제 서비스·주제] | ${site}`,source:p?'수집 HTML의 title':'title 원문 미저장',missing:'검색 제목 원문을 확인한 후 작성 틀과 대조하세요.',check:'대괄호를 실제 페이지 주제로 채우고 본문과 일치하는지 확인하세요. 검색엔진이 표시 제목을 다시 작성할 수 있습니다.'},
-   {id:'description',label:'검색 설명',location:'CMS의 SEO 설명 · meta description',before:p?.description||'',after:'[대상 고객]에게 [실제 제공 범위]를 제공합니다. [확인 가능한 차별점]과 [다음 행동]을 확인하세요.',source:p?'수집 HTML의 meta description':'메타 설명 원문 미저장',missing:'메타 설명 원문이 없습니다. 본문에서 확인한 사실로 작성하세요.',check:'대괄호를 사실로 채우고 가격·기간·성과 등 확인하지 않은 약속은 제거하세요.'},
+   {id:'title',label:'검색 제목',location:'CMS의 SEO 제목 · HTML title',before:p?.title||'',after:application.fields.find(f=>f.id==='title')!.value,source:p?'수집 HTML의 title':'title 원문 미저장',missing:'검색 제목 원문을 확인한 후 적용 문구와 대조하세요.',check:'원문의 주제·브랜드로 만든 적용안 또는 현재 제목 유지안입니다. 본문과 일치하는지 확인하세요. 검색엔진이 표시 제목을 다시 작성할 수 있습니다.'},
+   {id:'description',label:'검색 설명',location:'CMS의 SEO 설명 · meta description',before:p?.description||'',after:application.fields.find(f=>f.id==='description')!.value,source:p?'수집 HTML의 meta description':'메타 설명 원문 미저장',missing:'메타 설명 원문이 없습니다. 본문에서 확인한 사실로 작성하세요.',check:'수집된 검색 설명 유지안 또는 본문 기반 문장입니다. 가격·기간·성과 등 조건과 사실을 확인한 뒤 적용하세요.'},
    {id:'cta',label:'CTA 버튼',location:'핵심 행동 버튼 · 연결된 화면',before:p?.ctaButtons.join('\n')||'',after:report.exampleCopy.ctaText,source:p?'수집된 버튼 문구 · 모든 버튼이 아닐 수 있음':'버튼 문구 원문 미저장',missing:'수집한 버튼 문구가 없습니다. 실제 화면의 주요 버튼을 먼저 확인하세요.',check:'이전 문구가 여러 개면 실제 바꿀 버튼 하나를 정하고, 제안 문구와 클릭 후 행동이 일치하는지 확인하세요.'},
  ];
 }

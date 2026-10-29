@@ -1,6 +1,6 @@
 import {z} from 'zod';
 
-export const PlatformIdSchema=z.enum(['imweb','cafe24','wordpress','shopify','wix','nextjs','cloudflare','vercel']);
+export const PlatformIdSchema=z.enum(['imweb','cafe24','godomall','makeshop','wordpress','shopify','wix','nextjs','cloudflare','vercel']);
 export const PageElementSchema=z.object({
   key:z.string().max(40),kind:z.enum(['title','description','heading','text','cta','image','form']),
   tag:z.string().max(20),selector:z.string().max(1000),text:z.string().max(1400),
@@ -14,7 +14,7 @@ export const PageElementSchema=z.object({
 });
 export const SiteEditingSchema=z.object({
   version:z.literal(1),source:z.literal('static-html'),
-  signals:z.array(z.object({id:PlatformIdSchema,kind:z.enum(['cms','framework','delivery']),evidence:z.array(z.string().max(250)).max(8)})).max(8),
+  signals:z.array(z.object({id:PlatformIdSchema,kind:z.enum(['cms','framework','delivery']),evidence:z.array(z.string().max(250)).max(8)})).max(10),
   elements:z.array(PageElementSchema).max(100),elementsTruncated:z.boolean(),
   contentSections:z.array(z.object({id:z.string().max(40),heading:z.string().max(180),text:z.string().max(1200),truncated:z.boolean(),url:z.string().max(4000).optional()})).max(32).optional(),
   settings:z.array(z.object({name:z.string().max(100),selector:z.string().max(1000),value:z.string().max(3000),truncated:z.boolean()})).max(30).optional(),
