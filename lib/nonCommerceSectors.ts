@@ -123,6 +123,20 @@ export const SECTOR_PROFILES:Profile[]=[
 
 export function sectorProfile(id:NonCommerceSector['id']){return SECTOR_PROFILES.find(p=>p.id===id)!;}
 
+/** Explicit service actions may live in navigation; ordinary menu links stay excluded. */
+export function sectorActionPattern(id:NonCommerceSector['id']):RegExp{
+  const patterns:Record<NonCommerceSector['id'],RegExp>={
+    legal:/상담|상담\s*신청|상담\s*문의|전화\s*문의/,
+    medical:/예약|진료\s*접수|상담\s*(?:신청|문의)|온라인\s*상담/,
+    property_sales:/방문\s*예약|분양\s*(?:문의|상담)|관심\s*고객\s*(?:등록|신청)/,
+    insurance:/보험\s*상담|보장\s*분석|상담\s*(?:신청|문의)|전화\s*상담/,
+    rehabilitation:/회생\s*상담|파산\s*상담|상담\s*(?:신청|문의)|전화\s*상담/,
+    startup:/창업\s*(?:상담|문의)|개설\s*문의|상담\s*(?:신청|문의)/,
+    franchise:/(?:가맹|창업|개설)\s*(?:문의|상담|신청)|상담\s*(?:신청|문의)/,
+  };
+  return patterns[id];
+}
+
 /** Prefer a literal service phrase to generic CTA words when AI assistance is unavailable. */
 export function sectorTopicPatterns(id:NonCommerceSector['id']):RegExp[]{
   const patterns:Record<NonCommerceSector['id'],RegExp[]>={

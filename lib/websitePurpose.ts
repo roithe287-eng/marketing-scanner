@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
-import {NonCommerceSectorSchema,analyzeNonCommerceSector} from './nonCommerceSectors';
+import {NonCommerceSectorSchema,analyzeNonCommerceSector,sectorActionPattern} from './nonCommerceSectors';
 
 export const PurposeKindSchema=z.enum(['commerce','service','organization','education','content','public_service','mixed','unknown']);
 const source=z.object({text:z.string().max(600),locator:z.string().max(1000)});
@@ -17,7 +17,7 @@ export type PurposeKind=WebsitePurpose['kind'];
 type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'productContext'|'productDiscovery'|'seoEvidence'|'schemaTypes'>>;
 const labels:Record<PurposeKind,string>={commerce:'상품 판매형',service:'서비스·상담형',organization:'기업·기관 소개형',education:'교육·프로그램형',content:'정보·콘텐츠형',public_service:'공공·지원 안내형',mixed:'판매·비커머스 혼합형',unknown:'목적 확인 필요'};
 const patterns={
-  public_service:/지원사업|신청\s*자격|지원\s*대상|공공\s*서비스|민원|공익|복지|보조금|public service|eligibility/i,
+  public_service:/지원사업|공공\s*서비스|행정\s*민원|복지\s*(?:서비스|사업|지원|급여|시설)|보조금|(?:정부|지자체|공공).{0,12}지원|public service/i,
   education:/교육|강의|수강|커리큘럼|학습|유학|연수|훈련|curriculum|training|course|learning/i,
   content:/칼럼|연구\s*자료|자료실|매거진|블로그|뉴스레터|기술\s*문서|사용자\s*가이드|기사|article|documentation|research|newsletter/i,
   organization:/회사\s*소개|기업\s*소개|기관\s*소개|사업\s*분야|기업\s*연혁|제조|생산|연구개발|manufactur|about us/i,
@@ -44,6 +44,10 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const ctaElements=elements.filter(e=>e.kind==='cta');
   if(data.siteEditing)ctaElements.forEach(e=>actions.push({text:short(e.text),locator:e.selector}));
   else for(const text of new Set([...(data.buttons||[]),...(data.ctaButtons||[])]))actions.push({text:short(text),locator:'button · a · input[type="submit"] 표본'});
+  const actionSector=analyzeNonCommerceSector(units,[]);
+  if(actionSector)for(const e of data.siteEditing?.elements||[]){
+    if(e.kind==='cta'&&['nav','header','footer'].includes(e.region||'')&&sectorActionPattern(actionSector.id).test(e.text)&&!actions.some(a=>a.text===short(e.text)))actions.push({text:short(e.text),locator:e.selector});
+  }
   const matched=Object.fromEntries(Object.entries(patterns).map(([key,re])=>[key,units.filter(u=>re.test(u.text))]));
   const articleTypes=(data.schemaTypes||[]).filter(t=>/^(?:Article|BlogPosting|NewsArticle|TechArticle|ScholarlyArticle)$/i.test(t));
   const courseTypes=(data.schemaTypes||[]).filter(t=>/^(?:Course|EducationalOccupationalProgram)$/i.test(t));

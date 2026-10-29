@@ -89,3 +89,11 @@ test('legal criteria prefer direct service explanations and excerpt around the m
   assert.ok(process.evidence.some(e=>e.text.includes('상담 절차')));assert.ok(process.evidence.every(e=>e.text.length<=240));
   assert.equal(sector.checks.find(c=>c.id==='contact')!.evidence[0].text,'법률 상담 문의');
 });
+test('a ministry-designated hospital remains medical and can use an explicit navigation booking action',async t=>{
+  const data=await extract(t,'<html><head><title>복지부 지정 관절전문, 해봄병원</title><meta name="description" content="복지부 지정 관절전문병원, 관절·척추 치료 안내"></head><body><header><nav><a href="/login">로그인</a><a href="/reserve">인터넷 진료 예약</a></nav></header><main><p>의료진 소개와 진료 시간·내원 준비사항을 안내합니다.</p><a href="/documents">진료서류 발급 신청</a></main></body></html>');
+  const p=analyzeWebsitePurpose(data);assert.equal(p.kind,'service');assert.equal(p.sector?.id,'medical');assert.equal(p.goal.key,'booking');assert.ok(p.goal.evidence.some(e=>e.text==='인터넷 진료 예약'));
+});
+test('insurance eligibility wording alone does not imply a public support program',async t=>{
+  const data=await extract(t,'<html><head><title>보험 신청 자격·가입 조건</title><meta name="description" content="보험 가입 조건과 보장 범위, 보험료 상담"></head><body><main><p>보험료 산정 조건과 면책·감액·제외 사항을 약관에서 확인합니다.</p><a href="/consult">보험 상담 문의</a></main></body></html>');
+  assert.equal(analyzeWebsitePurpose(data).sector?.id,'insurance');assert.equal(analyzeWebsitePurpose(data).kind,'service');
+});
