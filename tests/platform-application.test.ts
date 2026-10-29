@@ -12,6 +12,7 @@ import {buildPageEdits} from '../lib/reportExecution';
 import PlatformApplicationPanel from '../components/report/PlatformApplicationPanel';
 import {fixture} from './fixtures/report';
 import type {AnswerContentPlan} from '../lib/answerContentSchema';
+import {SITE_EDITING_SCOPE,APPLICATION_ASSET_SCOPE} from '../lib/siteEditingScope';
 
 const url='https://example.com/service?item=1';
 const title='브랜드 · 실제 서비스',description='실제 서비스의 포함 범위와 상담 절차를 안내합니다.';
@@ -112,4 +113,13 @@ test('copy packages, document export and report PDF include the same default val
  for(const f of model.fields){assert.ok(copy.includes(f.value));assert.ok(doc.includes(f.value));}
  for(const platform of APPLICATION_PLATFORMS)assert.ok(doc.includes(`${platform.label} 적용 가이드`));
  assert.ok(full.includes('플랫폼별 적용 패키지'));assert.ok(doc.includes(applicationHtml(initialApplicationValues(model),model.faqs,model.ctaUrl).html));assert.ok(copy.includes('확인 대기 · HTML 제외'));assert.equal(JSON.stringify(r),before);
+});
+test('application guidance limits reuse to authorized sites and its HTML never imports source theme assets',()=>{
+ const r=makeReport('<link rel="stylesheet" href="https://fonts.cafe24.com/source-font.css"><script src="https://third-party.example/paid-theme.js"></script>'),model=buildPlatformApplication(r);
+ const body=applicationHtml(initialApplicationValues(model),[],model.ctaUrl),$=load(body.html);
+ assert.equal($('link,script,img,iframe,object,embed,source,video,audio').length,0);assert.ok(!body.html.includes('fonts.cafe24.com'));assert.ok(!body.html.includes('paid-theme.js'));assert.ok(!body.html.includes('@font-face'));
+ const ui=renderToStaticMarkup(React.createElement(PlatformApplicationPanel,{report:r})),copy=platformApplicationBrief(model,'cafe24'),doc=buildPlatformApplicationDocument(r).map(b=>b.text).join('\n');
+ for(const text of [ui,copy,doc]){assert.ok(text.includes(SITE_EDITING_SCOPE));assert.ok(text.includes(APPLICATION_ASSET_SCOPE));}
+ for(const platform of ['cafe24','godomall','makeshop'] as const)assert.match(applicationRoute(model,platform).code.instruction,/이용·수정 권한/);
+ assert.ok(!copy.includes('디자인을 복사해'));assert.ok(!copy.includes('스킨을 복사해'));
 });

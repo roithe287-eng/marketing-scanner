@@ -1,12 +1,14 @@
 import type {MarketingReport} from './reportSchema';
 import type {ReportBlock} from './reportDocument';
 import {APPLICATION_PLATFORMS,APPLICATION_REVIEWED_AT,applicationHtml,applicationRoute,applicationTextReady,buildPlatformApplication,initialApplicationValues} from './platformApplication';
+import {SITE_EDITING_SCOPE,APPLICATION_ASSET_SCOPE} from './siteEditingScope';
 
 /** Keep default report/share/PDF proposals in sync; transient browser edits are copied separately. */
 export function buildPlatformApplicationDocument(report:MarketingReport):ReportBlock[]{
  const model=buildPlatformApplication(report),values=initialApplicationValues(model),body=applicationHtml(values,model.faqs,model.ctaUrl);
  const blocks:ReportBlock[]=[{kind:'heading',text:'플랫폼별 적용 패키지 · 문구·위치·확인'},
  {kind:'body',text:`대상 URL: ${model.url} · ${model.detected.label}`},
+ {kind:'body',text:SITE_EDITING_SCOPE},{kind:'body',text:APPLICATION_ASSET_SCOPE},
  {kind:'body',text:'진단 당시의 수정 초안입니다. 사실·현재 조건을 확인하고 해당 URL에만 적용하세요. 관리자·스킨 버전에 따라 편집 메뉴가 다를 수 있습니다. 원본 파일 전체 교체나 자동 설치 완료를 의미하지 않습니다.'}];
  for(const field of model.fields){
   blocks.push({kind:'subheading',text:`${field.label} · ${applicationTextReady(field.value)?'사실 확인 후 적용':'내용 입력 필요'}`},
