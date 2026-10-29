@@ -10,7 +10,7 @@ import { citationFailure, httpCitationFailure, incompleteCitationFailure, Citati
 import {keywordEvidence,marketKeywordCandidates} from './competitorResearch';
 import {analyzeWebsitePurpose,isNonCommerce,outOfPurpose,purposePrompt} from './websitePurpose';
 
-const VERSION = 'geo-v3.1-primary-page-purpose';
+const VERSION = 'geo-v3.2-noncommerce-sectors';
 const TIMEOUT = 22_000;
 const QuestionSchema = z.object({question:z.string().min(5).max(250),type:z.enum(['brand','industry','service','local']),journey:z.string().max(40)});
 export type CitationQuestion = z.infer<typeof QuestionSchema>;
@@ -39,6 +39,11 @@ export function citationFallbackQuestions(data:ExtractedWebsiteData,brand:string
   }
   const grounded=marketKeywordCandidates(data)[0]?.keyword||(data.h1||[]).find(h=>h!==brand&&h.length>=2&&h.length<=50)||purpose.label;
   const make=(question:string,type:Question['type'],journey:string):Question=>({question,type,journey});
+  if(purpose.sector)return [
+    make(`${brand}(${host})의 ${purpose.sector.label} 안내 범위는 무엇인가요?`,'brand','운영 주체 확인'),
+    ...purpose.sector.questions.map((q,i)=>make(q.question,i?'service':'industry',purpose.sector!.journey[i])),
+    make(`${grounded}의 실제 ${purpose.goal.label} 경로와 준비사항은 어디에서 확인하나요?`,'service','다음 행동 확인'),
+  ];
   if(purpose.kind==='content')return [make(`${brand}(${host})는 어떤 주제의 자료를 제공하나요?`,'brand','발행 주체 확인'),make(`${grounded}의 핵심 내용과 적용 범위는 무엇인가요?`,'industry','주제 이해'),make(`${grounded} 자료의 작성자·원출처·확인 날짜는 어떻게 확인하나요?`,'industry','근거 확인'),make(`${grounded}를 해석할 때 어떤 조건과 예외를 확인해야 하나요?`,'service','읽기 전 확인'),make(`${grounded}의 변경된 기준과 추가 자료는 어디에서 확인하나요?`,'service','자료 활용')];
   if(purpose.kind==='education')return [make(`${brand}(${host})의 교육 프로그램은 무엇인가요?`,'brand','프로그램 확인'),make(`${grounded} 학습 대상과 필요한 선수 조건은 무엇인가요?`,'industry','학습 대상'),make(`${grounded} 커리큘럼과 학습 범위는 어떻게 비교하나요?`,'industry','과정 비교'),make(`${grounded} 신청 전 일정·운영 방식·준비사항은 어떻게 확인하나요?`,'service','신청 전'),make(`${grounded} 학습 자료와 이용 중 지원은 어떻게 확인하나요?`,'service','학습 중')];
   if(purpose.kind==='public_service')return [make(`${brand}(${host})가 안내하는 지원·공공 서비스는 무엇인가요?`,'brand','운영 주체 확인'),make(`${grounded}의 대상과 신청 자격은 어떻게 확인하나요?`,'industry','대상 확인'),make(`${grounded}의 지원 범위와 제외 조건은 어떻게 확인하나요?`,'industry','조건 비교'),make(`${grounded} 신청 절차·기간·준비 서류는 어디에서 확인하나요?`,'service','신청 전'),make(`${grounded}의 원공고·변경 사항·문의 경로는 어디에서 확인하나요?`,'service','최신성 확인')];

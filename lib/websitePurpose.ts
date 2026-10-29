@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
+import {NonCommerceSectorSchema,analyzeNonCommerceSector} from './nonCommerceSectors';
 
 export const PurposeKindSchema=z.enum(['commerce','service','organization','education','content','public_service','mixed','unknown']);
 const source=z.object({text:z.string().max(600),locator:z.string().max(1000)});
@@ -9,6 +10,7 @@ export const WebsitePurposeSchema=z.object({
   goal:z.object({key:z.enum(['purchase','contact','booking','application','download','subscribe','read','unknown']),label:z.string().max(100),observed:z.boolean(),evidence:z.array(source).max(4)}),
   pricingObserved:z.boolean(),note:z.string().max(1000),
   checks:z.array(z.object({id:z.string().max(80),label:z.string().max(150),status:z.enum(['observed','review','not_applicable']),evidence:z.array(source).max(3),guide:z.string().max(1200)})).max(8),
+  sector:NonCommerceSectorSchema.optional(),
 });
 export type WebsitePurpose=z.infer<typeof WebsitePurposeSchema>;
 export type PurposeKind=WebsitePurpose['kind'];
@@ -16,7 +18,7 @@ type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'descriptio
 const labels:Record<PurposeKind,string>={commerce:'상품 판매형',service:'서비스·상담형',organization:'기업·기관 소개형',education:'교육·프로그램형',content:'정보·콘텐츠형',public_service:'공공·지원 안내형',mixed:'판매·비커머스 혼합형',unknown:'목적 확인 필요'};
 const patterns={
   public_service:/지원사업|신청\s*자격|지원\s*대상|공공\s*서비스|민원|공익|복지|보조금|public service|eligibility/i,
-  education:/교육|강의|수강|커리큘럼|학습|연수|훈련|curriculum|training|course|learning/i,
+  education:/교육|강의|수강|커리큘럼|학습|유학|연수|훈련|curriculum|training|course|learning/i,
   content:/칼럼|연구\s*자료|자료실|매거진|블로그|뉴스레터|기술\s*문서|사용자\s*가이드|기사|article|documentation|research|newsletter/i,
   organization:/회사\s*소개|기업\s*소개|기관\s*소개|사업\s*분야|기업\s*연혁|제조|생산|연구개발|manufactur|about us/i,
   service:/컨설팅|대행|세무|법률|설계|진료|의원|클리닉|서비스|소프트웨어|솔루션|consulting|agency|clinic|software|saas/i,
@@ -50,16 +52,22 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const purposeScore=(key:keyof typeof patterns)=>matched[key].reduce((n,u)=>n+primaryWeight(u),0)+Math.min(6,matched[key].filter(u=>u.locator==='h2').length*2)+Math.min(3,matched[key].filter(u=>!primaryWeight(u)&&u.locator!=='h2').length);
   // A secondary training/blog section must not outrank the page's own title,
   // description and main heading. Explicit Article/Course types stay authoritative.
-  const candidate=structuredKind||(['public_service','content','education','organization','service'] as const)
+  const genericCandidate=structuredKind||(['public_service','content','education','organization','service'] as const)
     .filter(k=>matched[k].length>=2||(matched[k].some(u=>primaryWeight(u)>0)&&(k!=='service'||actions.some(a=>Object.values(actionPatterns).some(re=>re.test(a.text))))))
     .sort((a,b)=>purposeScore(b)-purposeScore(a))[0];
+  const sectorCandidate=analyzeNonCommerceSector(units,actions);
+  const sectorPrimary=sectorCandidate?.evidence.reduce((n,u)=>n+primaryWeight(u),0)||0;
+  const informative=genericCandidate&&['content','education','public_service'].includes(genericCandidate)&&purposeScore(genericCandidate)>=sectorPrimary;
+  const competingPrimary=!sectorPrimary&&genericCandidate&&matched[genericCandidate].some(u=>primaryWeight(u)>0);
+  const sector=structuredKind||competingPrimary||(informative&&!(genericCandidate==='public_service'&&sectorCandidate?.id==='startup'))?undefined:sectorCandidate;
+  const candidate=sector?(genericCandidate==='public_service'?'public_service':'service'):genericCandidate;
   const purchase=actions.filter(a=>actionPatterns.purchase.test(a.text));
   const commerce=purchase.length>0||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
   const kind:PurposeKind=commerce?(candidate&&candidate!=='content'?'mixed':'commerce'):candidate||'unknown';
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
   const action=preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
   const goalKey=action||(['content','organization','education','public_service'].includes(kind)?'read':'unknown');
-  const evidence=(structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:candidate?matched[candidate]:units).slice(0,commerce?6:8);
+  const evidence=(structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?matched[candidate]:units).slice(0,commerce?6:8);
   if(commerce&&evidence.length<8)evidence.push(...purchase.slice(0,8-evidence.length));
   const pricingPattern=/가격|비용|요금|견적|유료|무료|수강료|구독료|수수료|참가비|pricing|fees|\bcost\b/i;
   const pricingObserved=units.some(u=>pricingPattern.test(u.text));
@@ -87,12 +95,13 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
     check('process',kind==='organization'?'실적·프로젝트·담당 주체':'이용 절차와 준비사항',/사례|프로젝트|실적|담당|절차|단계|준비|진행|process|project|team/i,'공개 가능한 실제 사례·담당 주체·진행 절차를 대조하세요. 수집하지 못한 수치나 고객 후기를 만들지 않습니다.');
     check('proof','전문성과 확인 가능한 근거',/경력|사례|프로젝트|연혁|담당|출처|기술|자격|인증|team|experience|reference/i,'업무에 맞는 담당자·이력·사례·출처를 확인하세요. 모든 사이트에 후기·별점·인증을 필수로 요구하지 않습니다.');
   }
-  check('price','가격·거래 조건 적용 범위',pricingPattern,pricingApplies&&pricingObserved?'관측한 비용 표현의 적용 대상·포함 범위·추가 협의 조건을 확인하세요.':'이 페이지에는 판매 가격을 필수로 요구하지 않습니다. 별도 유료 신청·거래가 있다면 해당 경로에서 조건을 확인하세요.',pricingApplies);
+  if(sector&&!commerce){checks.splice(0,checks.length,...sector.checks);}
+  else check('price','가격·거래 조건 적용 범위',pricingPattern,pricingApplies&&pricingObserved?'관측한 비용 표현의 적용 대상·포함 범위·추가 협의 조건을 확인하세요.':'이 페이지에는 판매 가격을 필수로 요구하지 않습니다. 별도 유료 신청·거래가 있다면 해당 경로에서 조건을 확인하세요.',pricingApplies);
   checks.push({id:'goal',label:`다음 행동 · ${actionLabels[goalKey]}`,status:action?'observed':'review',evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,3):[],guide:goalKey==='read'?'본문·출처·관련 자료를 실제로 읽고 이동하는 경로를 확인하세요. 버튼 개수·문의 폼 유무를 성과로 평가하지 않습니다.':`${actionLabels[goalKey]} 경로를 실제로 실행해 연결 대상·준비사항·완료 기준을 확인하세요. 입력 폼이나 완료 화면은 정적 HTML만으로 검증하지 않습니다.`});
-  return WebsitePurposeSchema.parse({version:1,kind,label:labels[kind],sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,goal:{key:goalKey,label:actionLabels[goalKey],observed:!!action,evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,4):[]},pricingObserved,checks,note:'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});
+  return WebsitePurposeSchema.parse({version:1,kind,label:labels[kind],sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,...(sector&&!commerce?{sector}:{}),goal:{key:goalKey,label:actionLabels[goalKey],observed:!!action,evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,4):[]},pricingObserved,checks,note:'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});
 }
 
-export function purposePrompt(data:PurposeInput){const p=analyzeWebsitePurpose(data);return JSON.stringify({kind:p.kind,label:p.label,goal:p.goal,evidence:p.evidence,checks:p.checks.map(c=>({label:c.label,applicable:c.status!=='not_applicable'})),rule:'페이지 목적에 맞춰 분석한다. 정보형·기업형·공공형에 상품 가격·배송·재고·장바구니·후기·별점을 필수로 요구하지 않는다. 미확인 목적·수치·운영 조건은 추측하지 않는다.'});}
+export function purposePrompt(data:PurposeInput){const p=analyzeWebsitePurpose(data);return JSON.stringify({kind:p.kind,label:p.label,goal:p.goal,evidence:p.evidence,sector:p.sector,checks:p.checks.map(c=>({label:c.label,applicable:c.status!=='not_applicable'})),rule:'페이지 목적과 업종별 기준에 맞춰 분석한다. sector가 있으면 해당 업종의 실제 제공 범위·담당 주체·조건·상담 행동을 우선하며 각 evidence를 현재 원문으로만 취급한다. 기준 항목과 추천 질문은 업체가 제공한다고 확인된 사실이 아니다. 정보형·기업형·공공형과 비커머스 서비스에 상품 배송·재고·장바구니·후기·별점을 필수로 요구하지 않는다. 업종의 caution을 지키며 미확인 목적·수치·운영 조건은 추측하지 않는다.'});}
 export function outOfPurpose(text:string,p:WebsitePurpose){
   if(!isNonCommerce(p))return false;
   const retail='(?:장바구니|재고|배송비|배송.?정책|반품.?정책|최소.?주문|구매.?버튼|결제.?버튼|상품.?가격|판매.?상품)';

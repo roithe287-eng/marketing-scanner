@@ -14,6 +14,7 @@ import {startRedisBridge} from './helpers/redisBridge';
 import {fixture} from './fixtures/report';
 import {generalEvidenceCases,generalPageResponse} from './fixtures/general-evidence';
 import {noncommerceCases,noncommerceResponse} from './fixtures/noncommerce';
+import {sectorIntegrationCases,sectorResponse} from './fixtures/noncommerce-sectors';
 
 const office='203.0.113.64',principal={kind:'internal'} as const;
 const envNames=['UPSTASH_REDIS_REST_URL','UPSTASH_REDIS_REST_TOKEN','VERCEL','VERCEL_ENV','LOGIN_FREE_IP_HASHES','OPENAI_API_KEY','OPENAI_BASE_URL','ENABLE_LLM_CITATION','NAVER_CLIENT_ID','NAVER_CLIENT_SECRET'] as const;
@@ -27,12 +28,12 @@ before(async()=>{
 beforeEach(async()=>{await bridge.command(['FLUSHDB']);});
 after(async()=>{await bridge?.close();for(const name of envNames){if(previous[name]===undefined)delete process.env[name];else process.env[name]=previous[name];}});
 
-const cases=process.env.EVIDENCE_CASE_FAMILY==='noncommerce'?noncommerceCases:process.env.EVIDENCE_CASE_FAMILY==='general'?generalEvidenceCases:[...generalEvidenceCases,...noncommerceCases];
+const cases=process.env.EVIDENCE_CASE_FAMILY==='noncommerce'?noncommerceCases:process.env.EVIDENCE_CASE_FAMILY==='general'?generalEvidenceCases:process.env.EVIDENCE_CASE_FAMILY==='sectors'?sectorIntegrationCases:[...generalEvidenceCases,...noncommerceCases,...sectorIntegrationCases];
 for(const site of cases)test(`general API returns and stores shared evidence for ${'kind' in site?'purpose:':''}${site.id}`,async t=>{
   const nativeFetch=globalThis.fetch;
   t.mock.method(console,'log',()=>{});t.mock.method(console,'warn',()=>{});
   const fetched:string[]=[];
-  t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>{fetched.push(String(input));return 'kind' in site?noncommerceResponse(input):generalPageResponse(input);});
+  t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>{fetched.push(String(input));return 'sector' in site?sectorResponse(input):'kind' in site?noncommerceResponse(input):generalPageResponse(input);});
   t.mock.method(globalThis,'fetch',async(input:Parameters<typeof fetch>[0],init?:RequestInit)=>{
     const url=new URL(typeof input==='string'||input instanceof URL?String(input):input.url);
     if(url.origin===new URL(bridge.url).origin)return nativeFetch(input,init);
@@ -57,6 +58,7 @@ for(const site of cases)test(`general API returns and stores shared evidence for
     if(!['mixed','unknown'].includes(site.kind))assert.ok(fetched.every(u=>new URL(u).pathname==='/robots.txt'||new URL(u).pathname===new URL(site.url).pathname),'clear non-commerce pages do not trigger product recovery crawls');
     if(site.kind==='content'||site.kind==='public_service')assert.equal(report.checklist?.find(c=>c.id==='price_info')?.status,'not_applicable');
   }
+  if('sector' in site){assert.equal(report.sitePurpose?.sector?.id,site.sector);assert.equal(report.sitePurpose?.kind,'service');assert.equal(report.sitePurpose.sector.checks.length,6);}
   const id=await saveSharedReport(report,principal);assert.ok(id);
   const stored=await getSharedReport(id!,principal);assert.ok(stored);
   assert.deepEqual(stored!.evidenceReview,report.evidenceReview);
