@@ -23,6 +23,20 @@ export const hasUnfilledFacts=(value:string)=>/\[[^\]\n]+\]|\{\{[^}]+\}\}/.test(
 export const applicationTextReady=(value:string)=>!!value.trim()&&!hasUnfilledFacts(value);
 const htmlEscape=(value:string)=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 
+function intendedAction(text:string):RegExp|undefined{
+ // "신청" alone cannot distinguish an appointment from a tax-document request.
+ // Prefer the final specific action (e.g. 구매 조건 문의 → 문의) before generic 신청.
+ const actions=[...text.matchAll(/예약|접수|상담|문의|견적|구매|결제|장바구니|다운로드|구독|contact|consult|book|checkout|buy|download|subscribe/gi)];
+ const action=actions.at(-1)?.[0]||'';
+ if(/예약|접수|book/i.test(action))return /예약|접수|book/i;
+ if(/상담|문의|견적|contact|consult/i.test(action))return /상담|문의|견적|contact|consult/i;
+ if(/구매|결제|장바구니|checkout|buy/i.test(action))return /구매|결제|장바구니|checkout|buy|cart/i;
+ if(/다운로드|download/i.test(action))return /다운로드|download/i;
+ if(/구독|subscribe/i.test(action))return /구독|subscribe/i;
+ if(/신청|청약|지원|apply|enroll/i.test(text))return /신청|청약|지원|apply|enroll/i;
+ return undefined;
+}
+
 /** Derived from the frozen report: no extra crawl, admin probing or model call. */
 export function buildPlatformApplication(report:MarketingReport){
  const page=editingEvidence(report),detected=editingPlatform(report),elements=page?.siteEditing?.elements||[];
@@ -35,14 +49,17 @@ export function buildPlatformApplication(report:MarketingReport){
  const hasTopicAndBrand=titleComplete&&groundedKeyword&&brand&&titleComplete.includes(groundedKeyword)&&titleComplete.includes(brand);
  const seoTitle=hasTopicAndBrand?titleComplete:groundedKeyword&&brand&&!hasUnfilledFacts(brand)?(groundedKeyword.includes(brand)?groundedKeyword:`${groundedKeyword} | ${brand}`):titleComplete;
  const introSource=elements.find(e=>e.kind==='text'&&!e.truncated&&!['nav','header','footer'].includes(e.region||'')&&e.text.length>=20&&e.text.length<=300);
- const ctas=elements.filter(e=>e.kind==='cta'&&!e.truncated&&e.region!=='footer'&&!/로그인|회원가입|개인정보|이용약관|마이페이지|log.?in|sign.?in/i.test(e.text)&&/상담|문의|예약|신청|구매|장바구니|접수|수강|다운로드|contact|apply|buy|book/i.test(e.text));
- const cta=ctas.find(e=>e.text===report.exampleCopy.currentCtaText)||ctas.find(e=>e.region==='main')||ctas[0];
+ const ctas=elements.filter(e=>e.kind==='cta'&&!e.truncated&&e.region!=='footer'&&!/로그인|회원가입|개인정보|이용약관|마이페이지|log.?in|sign.?in/i.test(e.text));
+ const intent=intendedAction(report.exampleCopy.ctaText)||intendedAction(report.sitePurpose?.goal.label||'');
+ const matchingCtas=intent?ctas.filter(e=>intent.test(e.text)):[];
+ const cta=matchingCtas.find(e=>e.text===report.exampleCopy.currentCtaText)||matchingCtas.find(e=>e.region==='main')||matchingCtas[0];
+ const capturedCta=cta?.text||(intent?page?.ctaButtons.find(text=>intent.test(text)):'')||'';
  const fields:ApplicationField[]=[
   {id:'title',label:'검색 제목',before:page?.title||'',value:seoTitle,basis:seoTitle&&seoTitle!==titleComplete?'원문에서 확인한 주제·브랜드로 구성':seoTitle?'수집된 검색 제목 유지안':'작성할 원문 확인 필요',check:'이 URL의 주제·브랜드가 맞는지 확인하세요. 상품·개별 페이지 설정을 우선합니다.',focus:elements.find(e=>e.kind==='title')},
   {id:'description',label:'검색 설명',before:page?.description||'',value:descriptionComplete||introSource?.text||'',basis:descriptionComplete?'수집된 검색 설명 유지안':introSource?'수집된 본문 문장으로 구성':'작성할 원문 확인 필요',check:'실제 제공 범위·조건과 맞는지 확인하세요. 검색 결과의 표시 문구는 달라질 수 있습니다.',focus:elements.find(e=>e.kind==='description')},
   {id:'hero',label:'첫 화면 제목',before:page?.h1.join('\n')||'',value:report.exampleCopy.heroHeadline,basis:'진단 보고서의 문구 개선 초안',check:'새 제목을 추가하기보다 해당 대표 제목을 수정하세요. 성과·효능·자격 등 표현의 사실을 확인하세요.',focus:elements.find(e=>e.kind==='heading'&&e.tag==='h1')},
   {id:'intro',label:'첫 화면 소개',before:introSource?.text||'',value:report.exampleCopy.subHeadline,basis:'진단 보고서의 문구 개선 초안',check:'제공 대상과 범위가 실제 서비스와 맞는지 확인하세요. 원문 위치가 다르면 해당 소개 문장을 찾아 적용합니다.',focus:introSource},
-  {id:'cta',label:'행동 버튼 문구',before:cta?.text||'',value:report.exampleCopy.ctaText,basis:'진단 보고서의 버튼 개선 초안',check:'선택한 버튼 하나의 문구와 연결 주소를 함께 대조하세요. 클릭 후 화면이 약속한 행동과 같아야 합니다.',focus:cta},
+  {id:'cta',label:'행동 버튼 문구',before:capturedCta,value:report.exampleCopy.ctaText,basis:'진단 보고서의 버튼 개선 초안',check:'제안한 행동과 목적이 맞는 버튼 하나의 문구·주소를 대조하세요. 예약과 서류 신청처럼 목적이 다르면 바꾸지 않습니다. 맞는 링크를 수집하지 못하면 연결 주소를 직접 확인하세요.',focus:cta},
  ];
  const faqs:ApplicationFaq[]=(plan?.questions||[]).map(q=>({id:q.id,question:q.question,answer:q.draft||q.template,missingFacts:q.missingFacts,evidence:q.evidence.map(e=>e.text),included:q.status==='supported'&&applicationTextReady(q.question)&&!!q.draft&&q.evidence.some(e=>e.kind==='body')&&!q.missingFacts.length&&!hasUnfilledFacts(q.draft)}));
  const isNamed=APPLICATION_PLATFORMS.some(p=>p.id===detected.platform);
