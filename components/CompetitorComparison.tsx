@@ -6,7 +6,6 @@ import CompetitorDeepDiveModal from '@/components/CompetitorDeepDiveModal';
 import {competitorDisplay} from '@/lib/competitorDisplay';
 type Props={competitorAnalysis:NonNullable<MarketingReport['competitorAnalysis']>;ourUrl:string;ourTitle?:string};
 function getDomainFromUrl(url:string){try{return new URL(url).hostname.replace(/^www\./,'');}catch{return '';}}
-function getFaviconUrl(domain:string){return `https://www.google.com/s2/favicons?sz=64&domain=${encodeURIComponent(domain)}`;}
 export default function CompetitorComparison({competitorAnalysis:storedAnalysis,ourUrl,ourTitle}:Props){
   const competitorAnalysis=competitorDisplay(storedAnalysis);
   const competitors=competitorAnalysis.competitors||[],ourDomain=getDomainFromUrl(ourUrl);
@@ -30,17 +29,6 @@ export default function CompetitorComparison({competitorAnalysis:storedAnalysis,
                   <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-jm-black text-white text-xs font-black shrink-0">
                     {comp.rank}
                   </span>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={getFaviconUrl(comp.domain)}
-                    alt=""
-                    width={20}
-                    height={20}
-                    className="h-5 w-5 rounded shrink-0 bg-jm-light-gray"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.visibility = "hidden";
-                    }}
-                  />
                   <a
                     href={safeHttpUrl(comp.link)||undefined}
                     target="_blank"

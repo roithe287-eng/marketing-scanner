@@ -4,7 +4,6 @@ import {editingEvidence,editingPlatform,editorRoute,PLATFORM_NAMES} from './site
 import {safeHttpUrl} from './citationMeasurement';
 import {canonicalPage} from './geoComparison';
 import {GUIDE_SOURCES} from './guideKnowledge';
-import {SITE_EDITING_SCOPE,APPLICATION_ASSET_SCOPE} from './siteEditingScope';
 
 export const APPLICATION_REVIEWED_AT='2026-10-29';
 export const APPLICATION_PLATFORMS=[
@@ -17,12 +16,9 @@ export const APPLICATION_PLATFORMS=[
 export type ApplicationPlatform=typeof APPLICATION_PLATFORMS[number]['id'];
 export type OtherEditor='unknown'|'wordpress'|'shopify'|'wix'|'custom';
 export type ApplicationField={id:'title'|'description'|'hero'|'intro'|'cta';label:string;before:string;value:string;basis:string;check:string;focus?:PageElement};
-export type ApplicationValues=Record<ApplicationField['id'],string>;
-export type ApplicationFaq={id:string;question:string;answer:string;missingFacts:string[];included:boolean;evidence:string[]};
 const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
 export const hasUnfilledFacts=(value:string)=>/\[[^\]\n]+\]|\{\{[^}]+\}\}/.test(value);
 export const applicationTextReady=(value:string)=>!!value.trim()&&!hasUnfilledFacts(value);
-const htmlEscape=(value:string)=>value.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 
 function intendedAction(text:string):RegExp|undefined{
  // "신청" alone cannot distinguish an appointment from a tax-document request.
@@ -62,41 +58,40 @@ export function buildPlatformApplication(report:MarketingReport){
   {id:'intro',label:'첫 화면 소개',before:introSource?.text||'',value:report.exampleCopy.subHeadline,basis:'진단 보고서의 문구 개선 초안',check:'제공 대상과 범위가 실제 서비스와 맞는지 확인하세요. 원문 위치가 다르면 해당 소개 문장을 찾아 적용합니다.',focus:introSource},
   {id:'cta',label:'행동 버튼 문구',before:capturedCta,value:report.exampleCopy.ctaText,basis:'진단 보고서의 버튼 개선 초안',check:'제안한 행동과 목적이 맞는 버튼 하나의 문구·주소를 대조하세요. 예약과 서류 신청처럼 목적이 다르면 바꾸지 않습니다. 맞는 링크를 수집하지 못하면 연결 주소를 직접 확인하세요.',focus:cta},
  ];
- const faqs:ApplicationFaq[]=(plan?.questions||[]).map(q=>({id:q.id,question:q.question,answer:q.draft||q.template,missingFacts:q.missingFacts,evidence:q.evidence.map(e=>e.text),included:q.status==='supported'&&applicationTextReady(q.question)&&!!q.draft&&q.evidence.some(e=>e.kind==='body')&&!q.missingFacts.length&&!hasUnfilledFacts(q.draft)}));
  const isNamed=APPLICATION_PLATFORMS.some(p=>p.id===detected.platform);
  const initialPlatform:ApplicationPlatform=isNamed?detected.platform as ApplicationPlatform:'other';
  const otherEditor:OtherEditor=['wordpress','shopify','wix'].includes(detected.platform||'')?detected.platform as OtherEditor:detected.platform===undefined?'unknown':'custom';
- return {url:safeHttpUrl(page?.finalUrl||report.url)||'',capturedAt:page?.capturedAt,hasEvidence:!!page,detected,initialPlatform,otherEditor,fields,faqs,ctaUrl:safeHttpUrl(cta?.href||'')||'',signals:page?.siteEditing?.signals||[]};
+ return {url:safeHttpUrl(page?.finalUrl||report.url)||'',capturedAt:page?.capturedAt,hasEvidence:!!page,detected,initialPlatform,otherEditor,fields,ctaUrl:safeHttpUrl(cta?.href||'')||'',signals:page?.siteEditing?.signals||[]};
 }
 export type PlatformApplication=ReturnType<typeof buildPlatformApplication>;
-export function initialApplicationValues(model:PlatformApplication):ApplicationValues {return Object.fromEntries(model.fields.map(f=>[f.id,f.value])) as ApplicationValues;}
+export type PlatformSetupGuide={id:string;title:string;path:string[];steps:string[];check:string;sources:{title:string;url:string}[]};
 
+/** Explain existing admin settings; do not generate a page template or installer. */
 export function applicationRoute(model:PlatformApplication,platform:ApplicationPlatform,other:OtherEditor=model.otherEditor){
  const editor:PlatformId|undefined=platform==='other'?(['wordpress','shopify','wix'].includes(other)?other as PlatformId:undefined):platform;
- const titleRoute=editorRoute(editor,'title',model.url);
- const seo={...titleRoute,path:titleRoute.path.map(part=>part==='페이지 제목'?'페이지 제목·설명':part)},hero=editorRoute(editor,'heading',model.url,model.fields.find(f=>f.id==='hero')?.focus),cta=editorRoute(editor,'cta',model.url,model.fields.find(f=>f.id==='cta')?.focus);
- const code=platform==='imweb'?{path:['디자인 모드','해당 페이지','위젯 추가 → 코드','우클릭 → 코드 설정'],instruction:'아래 본문 HTML만 새 코드 위젯에 넣고 미리보기에서 확인하세요. 제목·설명 설정값은 코드 위젯에 넣지 않습니다. 기본 위젯에서 문구만 바꿀 수 있다면 위의 텍스트 수정을 먼저 사용하세요.'}:
- platform==='other'?{path:other==='wordpress'?['해당 페이지 편집','사용 중인 편집기의 HTML 블록 지원 확인']:other==='shopify'?['테마 편집','해당 페이지의 사용자 지정 HTML·Liquid 지원 확인']:other==='wix'?['사이트 에디터','HTML 삽입 기능 지원 확인']:['실제 페이지 편집 방식 확인','본문 HTML 삽입을 지원하는 영역'],instruction:'별도 추가 구역의 예시입니다. 기존 소스 전체 교체본이 아닙니다. Next.js 등 소스 편집 사이트는 담당 저장소·컴포넌트가 확인돼야 정확한 파일 수정본을 만들 수 있습니다. 지원되지 않으면 위의 문구를 기본 편집 요소에 나누어 넣으세요.'}:
- {path:hero.path,instruction:'해당 사이트에서 이용·수정 권한이 있는 스킨의 작업 화면에서 본문 구역을 추가할 때 사용하세요. 유료 스킨의 이용 조건과 기존 권리 표시는 유지합니다. 기존 페이지 전체나 상품·주문 모듈을 덮어쓰지 않습니다. 카페24 모듈·고도몰 치환코드·메이크샵 가상태그는 유지하세요. 별도 모바일 스킨이 있으면 함께 확인합니다.'};
- const sourceIds=[...new Set([...seo.sources,...hero.sources,...cta.sources,...(platform==='imweb'?['imwebCode' as const]:[])])];
+ const titleRoute=editorRoute(editor,'title',model.url),hero=editorRoute(editor,'heading',model.url,model.fields.find(f=>f.id==='hero')?.focus),cta=editorRoute(editor,'cta',model.url,model.fields.find(f=>f.id==='cta')?.focus),faq=editorRoute(editor,'ai',model.url);
+ const seo={...titleRoute,path:titleRoute.path.map(part=>part==='페이지 제목'?'페이지 제목·설명':part)};
+ const verification:Record<ApplicationPlatform,{path:string[];steps:string[];sources:{title:string;url:string}[]}>= {
+  cafe24:{path:['쇼핑몰 설정','기본 설정 → 쇼핑몰 정보','검색 엔진 최적화(SEO)','기본설정 → 검색엔진 서비스 연결'],steps:['Search Console 또는 서치어드바이저에서 해당 도메인을 등록하고 소유 확인 메타 태그를 받습니다.','검색엔진 서비스 연결의 해당 입력란에 발급받은 태그를 입력하고 저장합니다.','발급한 검색도구로 돌아가 소유 확인을 실행합니다.'],sources:[GUIDE_SOURCES.cafe24Seo]},
+  godomall:{path:['기본설정','기본정책','외부서비스 설정','외부 스크립트 등록 → 상단 공통 영역'],steps:['검색도구에서 해당 도메인의 소유 확인 메타 태그를 받습니다.','외부 스크립트 등록에서 서비스명을 입력하고, 상단 공통 영역의 PC·모바일 입력란에 태그를 붙여 넣고 저장합니다.','해당 검색도구에서 소유 확인을 실행합니다.'],sources:[{title:'고도몰 · 검색도구 소유 확인',url:'https://godomall-help.nhn-commerce.com/beginner/search_engine/google'}]},
+  makeshop:{path:['디자인','디자인 스킨 관리','디자인 편집하기','HEAD 입력란'],steps:['검색도구에서 해당 도메인의 소유 확인 메타 태그를 받습니다.','해당 사이트의 디자인 편집 화면에서 HEAD 입력란의 기존 태그를 확인하고, 발급받은 소유 확인 태그를 추가해 저장합니다.','태그를 발급한 검색도구에서 소유 확인을 실행합니다.'],sources:[GUIDE_SOURCES.makeshopDesign]},
+  imweb:{path:['설정','SEO','고급 설정 → 공통 코드 삽입','Header Code 상단'],steps:['검색도구에서 해당 도메인의 소유 확인 메타 태그를 받습니다.','Header Code 상단에 소유 확인 태그를 입력하고 저장합니다. 본문 텍스트 위젯에는 넣지 않습니다.','해당 검색도구에서 소유 확인을 실행합니다.'],sources:[{title:'아임웹 · 공통 코드 입력 위치',url:'https://imweb.me/qna?mode=faq&q=71387'}]},
+  other:{path:['현재 사이트의 운영 관리자','사이트 인증·검색도구 연결 설정'],steps:['사용 중인 관리 도구에서 사이트 인증 입력란이 있는지 확인합니다.','입력란이 있으면 검색도구에서 발급받은 태그를 등록합니다. 입력란이 없으면 도메인 관리자의 DNS 인증 방법을 확인합니다.','검색도구의 소유 확인 결과를 확인합니다.'],sources:[{title:'Google · 사이트 소유 확인',url:'https://support.google.com/webmasters/answer/9008080'}]},
+ };
+ const routeSources=(ids:typeof seo.sources)=>ids.map(id=>GUIDE_SOURCES[id]);
+ const guides:PlatformSetupGuide[]=[
+  {id:'seo',title:'검색 제목·설명 설정',path:seo.path,steps:['진단한 URL과 같은 페이지의 SEO 설정을 엽니다. 상품 상세라면 해당 상품의 개별 설정을 선택합니다.','아래 수정값의 검색 제목과 설명을 각각 입력하고 저장합니다.',seo.instruction],check:'같은 URL을 다시 열어 제목·설명이 반영됐는지 재진단합니다.',sources:routeSources(seo.sources)},
+  {id:'hero',title:'첫 화면 문구 변경',path:hero.path,steps:['해당 URL의 첫 화면에서 현재 제목·소개 문구가 있는 항목을 찾습니다.','아래 수정값 중 첫 화면 제목과 소개를 해당 문구 입력란에 각각 넣습니다.',hero.instruction],check:'PC·모바일 미리보기에서 문구와 줄바꿈을 확인한 뒤 게시합니다.',sources:routeSources(hero.sources)},
+  {id:'cta',title:'버튼 문구·연결 설정',path:cta.path,steps:[model.fields.find(f=>f.id==='cta')?.before?`현재 “${model.fields.find(f=>f.id==='cta')!.before}” 버튼의 설정을 엽니다.`:'실제 페이지에서 변경할 버튼 하나를 먼저 선택합니다.','버튼 문구를 입력하고 기존 링크·전화·예약창 연결 중 실제 동작을 대조합니다.',cta.instruction],check:'버튼을 눌러 의도한 화면이나 동작으로 이어지는지 확인합니다.',sources:routeSources(cta.sources)},
+  {id:'faq',title:'질문·답변 등록',path:faq.path,steps:['보고서의 고객 질문·답변에서 사용할 내용을 확인합니다.','해당 페이지의 텍스트·FAQ 입력 항목에 질문과 답변을 각각 등록합니다. 비용·조건처럼 빠진 정보는 실제 운영 내용으로 채웁니다.','저장 후 PC·모바일에서 질문과 답변을 읽을 수 있는지 확인하고 게시합니다.'],check:'질문·답변이 실제 페이지 본문에 반영됐는지 확인합니다.',sources:routeSources(faq.sources)},
+  {id:'verification',title:'검색도구 인증 태그 설치',...verification[platform],check:'Search Console 또는 서치어드바이저에서 해당 도메인이 소유 확인 완료로 표시되는지 확인합니다.'},
+ ];
+ const sources=[...new Map(guides.flatMap(g=>g.sources).map(source=>[source.url,source])).values()];
  const label=APPLICATION_PLATFORMS.find(p=>p.id===platform)!.label;
- return {label,editor,seo,hero,cta,code,sources:sourceIds.map(id=>GUIDE_SOURCES[id]),scope:platform===model.initialPlatform&&model.detected.platform?`${PLATFORM_NAMES[model.detected.platform]} 흔적을 기준으로 선택했습니다. 실제 사용 플랫폼·스킨은 관리자에서 대조하세요.`:`${label} 이용 시 참고 가이드입니다. 이 버튼 선택으로 진단된 플랫폼이 바뀌지는 않습니다.`,checks:['권한 있는 사이트의 변경 전 문구와 설정을 기록합니다.','해당 URL만 수정했는지 확인하고 PC·모바일 미리보기를 엽니다.','문구·줄바꿈·버튼 연결을 확인한 뒤 게시합니다.','게시한 같은 URL을 재진단해 반영을 확인합니다. 검색·문의 성과는 실제 지표로 따로 비교합니다.']};
+ return {label,editor,seo,hero,cta,faq,guides,sources,scope:platform===model.initialPlatform&&model.detected.platform?`${PLATFORM_NAMES[model.detected.platform]} 감지 기준`:`${label} 선택 기준`,checks:['변경 전 입력값을 기록합니다.','해당 URL에만 적용했는지 확인합니다.','게시 후 같은 URL에서 내용과 동작을 확인하고 재진단합니다.']};
 }
 
-export function applicationHtml(values:ApplicationValues,faqs:ApplicationFaq[],ctaUrl:string){
- const readyFaqs=faqs.filter(q=>q.included&&applicationTextReady(q.question)&&applicationTextReady(q.answer));
- const lines=['<section lang="ko" style="max-width:960px;margin:24px auto;padding:24px;border:1px solid #dce4ee;border-radius:16px;background:#fff;color:#24364a;line-height:1.8;overflow-wrap:anywhere">'];
- // H2 is intentional for an additional section; the original hero's H1 is edited separately.
- if(applicationTextReady(values.hero))lines.push(`  <h2 style="font-size:1.5rem;line-height:1.5;margin:0 0 12px">${htmlEscape(values.hero)}</h2>`);
- if(applicationTextReady(values.intro))lines.push(`  <p style="white-space:pre-line;margin:0 0 16px">${htmlEscape(values.intro)}</p>`);
- if(readyFaqs.length){lines.push('  <h3 style="font-size:1.2rem;margin:24px 0 12px">자주 묻는 질문</h3>');for(const q of readyFaqs)lines.push(`  <details style="padding:12px 0;border-top:1px solid #dce4ee"><summary style="cursor:pointer;font-weight:700">${htmlEscape(q.question)}</summary><p style="white-space:pre-line;margin:12px 0 0">${htmlEscape(q.answer)}</p></details>`);}
- const href=safeHttpUrl(ctaUrl);
- if(href&&applicationTextReady(values.cta))lines.push(`  <a href="${htmlEscape(href)}" style="display:inline-block;max-width:100%;box-sizing:border-box;margin-top:20px;padding:12px 20px;border-radius:10px;background:#174c80;color:#fff;text-decoration:none;font-weight:700">${htmlEscape(values.cta)}</a>`);
- lines.push('</section>');
- return {html:lines.join('\n'),readyFaqs,omittedFaqs:faqs.length-readyFaqs.length,hasContent:applicationTextReady(values.hero)||applicationTextReady(values.intro)||!!readyFaqs.length||!!(href&&applicationTextReady(values.cta)),hasCta:!!(href&&applicationTextReady(values.cta))};
-}
-
-export function platformApplicationBrief(model:PlatformApplication,platform:ApplicationPlatform,values=initialApplicationValues(model),faqs=model.faqs,ctaUrl=model.ctaUrl,other=model.otherEditor){
- const route=applicationRoute(model,platform,other),body=applicationHtml(values,faqs,ctaUrl);
- return [`마케팅스캐너 · ${route.label} 적용 패키지`,`대상 URL: ${model.url}`,`감지 결과: ${model.detected.label}`,SITE_EDITING_SCOPE,APPLICATION_ASSET_SCOPE,route.scope,'관리자·스킨 버전에 따라 메뉴가 다를 수 있습니다. 원문과 현재 설정을 보관한 뒤 이 URL에만 적용하세요.',`검색 설정: ${route.seo.path.join(' → ')}\n${route.seo.instruction}`,`첫 화면 편집: ${route.hero.path.join(' → ')}\n${route.hero.instruction}`,`버튼 편집: ${route.cta.path.join(' → ')}\n${route.cta.instruction}`,...model.fields.map(f=>`${f.label} · ${applicationTextReady(values[f.id])?'사실 확인 후 적용':'작성 필요'}\n현재: ${f.before||'수집 원문 미확인'}\n적용 문구: ${values[f.id]||'입력 필요'}\n출처: ${f.value===values[f.id]?f.basis:'직접 다듬은 초안'}\n확인: ${f.check}`),`버튼 연결 주소: ${safeHttpUrl(ctaUrl)||'확인 필요 · HTML에서 버튼 제외'}`,...faqs.map(q=>`FAQ · ${q.included&&applicationTextReady(q.answer)&&applicationTextReady(q.question)?'HTML 포함':'확인 대기 · HTML 제외'}\nQ. ${q.question}\nA. ${q.answer}\n게시 전 확인: ${q.missingFacts.join(' / ')||'원문·현재 조건과 일치 여부'}`),`추가 구역 HTML 적용 위치: ${route.code.path.join(' → ')}\n${route.code.instruction}`,`본문 HTML · 제외된 FAQ ${body.omittedFaqs}개\n${body.hasContent?body.html:'사용할 문구 입력 필요'}`,'게시 후 확인',...route.checks.map(c=>'□ '+c),'문구·FAQ는 검토 초안입니다. 비용·성과·효능·법적 적합성은 자동 검증하지 않았습니다. 원본 파일 전체 교체·자동 설치·게시 완료를 의미하지 않습니다.',...route.sources.map(s=>`${s.title}: ${s.url}`),`플랫폼 가이드 확인일: ${APPLICATION_REVIEWED_AT}`].join('\n\n');
+export function platformApplicationBrief(model:PlatformApplication,platform:ApplicationPlatform,other=model.otherEditor){
+ const route=applicationRoute(model,platform,other);
+ return [`마케팅스캐너 · ${route.label} 설정·설치 방법`,`대상 URL: ${model.url}`,`감지 결과: ${model.detected.label}`,route.scope,...route.guides.map(g=>`${g.title}\n입력 위치: ${g.path.join(' → ')}\n${g.steps.map((step,i)=>`${i+1}. ${step}`).join('\n')}\n완료 확인: ${g.check}`),'입력할 수정값',...model.fields.map(f=>`${f.label}\n현재: ${f.before||'실제 화면에서 확인'}\n입력할 값: ${f.value||'실제 내용으로 작성'}\n확인: ${f.check}`),`버튼 연결: ${model.ctaUrl||'현재 버튼의 링크·전화·예약창 동작에서 확인'}`,...route.sources.map(s=>`${s.title}: ${s.url}`)].join('\n\n');
 }
