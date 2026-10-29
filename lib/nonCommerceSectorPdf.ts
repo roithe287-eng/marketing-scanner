@@ -17,10 +17,10 @@ export function buildSectorVisualPage(report:MarketingReport,measure:TextMeasure
   text('MARKETING SCANNER · YOUR INDUSTRY',48,48,694,10,700,'#526172',1);
   text(sector.label+' · 고객이 판단하는 6가지 정보',48,74,694,23,800,'#173b62',1);
   text('입력 URL에서 읽은 문구를 업종별 선택 기준과 연결했습니다. 원문 신호 관측이며 품질·성과 점수가 아닙니다.',48,117,694,12,400,'#526172',2);
-  sector.journey.forEach((s,i)=>{const x=48+i*235;rect(x,169,224,57,'#edf7f5');text(`0${i+1}  ${s}`,x+12,186,200,12,700,'#234e45',2);});
+  sector.journey.forEach((s,i)=>{const x=48+i*235;rect(x,169,224,57,'#f8fafc');text(`0${i+1}  ${s}`,x+12,186,200,12,700,'#234e45',2);});
   sector.checks.forEach((c,i)=>{
     const x=48+(i%2)*353,y=245+Math.floor(i/2)*220,w=341;
-    rect(x,y,w,208,'#f3f7fc');text(c.label,x+14,y+12,w-28,15,750,'#1c3551',1);
+    rect(x,y,w,208,'#f8fafc');text(c.label,x+14,y+12,w-28,15,750,'#1c3551',1);
     text(c.status==='observed'?'홈페이지 문구 확인':'보강 검토 · 실제 화면 대조',x+14,y+40,w-28,11,650,c.status==='observed'?'#18564d':'#795020',1);
     text(c.evidence[0]?.text||'연결할 원문을 수집하지 못했습니다. 실제 안내 화면과 대조하세요.',x+14,y+65,w-28,12,400,'#33475c',3);
     text('개선 방향',x+14,y+126,w-28,11,750,'#1f568f',1);

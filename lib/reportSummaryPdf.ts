@@ -35,12 +35,12 @@ export function buildReportSummaryPage(report:MarketingReport,measure:TextMeasur
   if(report.sitePurpose)text(`${report.sitePurpose.sector?.label||report.sitePurpose.label} · 다음 행동: ${report.sitePurpose.goal.label}`,48,156,508,10,600,muted,1);
   if(opening){
     const blue='#174ca5',teal='#126477';
-    rect(590,48,152,110,'#edf8fb');text('콘텐츠 개선 방향',606,60,120,11,700,teal,1);
+    rect(590,48,152,110,'#f3f6fc');text('콘텐츠 개선 방향',606,60,120,11,700,teal,1);
     text(opening.questions.length?`${opening.questions.length}개 고객 질문`:'목적별 가이드',606,84,120,18,700,teal,2);
     text('페이지 주제 기반',606,133,120,10,400,muted,1);
     text('01  주요 주제와 다음 행동',48,178,342,15,700,ink,1);
     text('02  고객이 먼저 궁금해할 질문',422,178,320,15,700,ink,1);
-    rect(48,211,342,304,'#edf8fb');text('대표 키워드·주제',68,232,302,12,700,teal,1);
+    rect(48,211,342,304,'#f8fafc');rect(48,211,3,304,blue,0);text('대표 키워드·주제',68,232,302,12,700,teal,1);
     text(opening.topic,68,263,302,26,800,blue,3);
     text(`이어질 행동 · ${opening.goal}`,68,391,302,14,700,teal,2);
     text('키워드 → 고객 질문 → 홈페이지 답변',68,463,302,11,600,muted,2);
