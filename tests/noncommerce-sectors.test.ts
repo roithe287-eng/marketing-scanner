@@ -1,0 +1,80 @@
+import {test,type TestContext} from 'node:test';
+import assert from 'node:assert/strict';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {load} from 'cheerio';
+import {sectorCases,sectorHtml} from './fixtures/noncommerce-sectors';
+import {fixture} from './fixtures/report';
+import {extractWebsite} from '../lib/extractWebsite';
+import {websiteHttp} from '../lib/security/safeFetch';
+import {analyzeWebsitePurpose,isNonCommerce,purposePrompt} from '../lib/websitePurpose';
+import {classifyIndustry} from '../lib/industryClassifier';
+import {finalizeReportEvidence} from '../lib/evidenceReview';
+import {capturePageEvidence} from '../lib/pageEvidence';
+import {MarketingReportSchema,type MarketingReport} from '../lib/reportSchema';
+import {buildAnswerContentPlan} from '../lib/answerContent';
+import {citationFallbackQuestions} from '../lib/analyzeCitation';
+import {buildReportDocument} from '../lib/reportDocument';
+import {buildReportSummaryPage} from '../lib/reportSummaryPdf';
+import {buildVisualPdfPages} from '../lib/reportVisualPdf';
+import ReportLayout from '../components/report/ReportLayout';
+import type {PdfTextStyle} from '../lib/pdfLayout';
+
+const measure=(s:string,t:PdfTextStyle)=>Array.from(s).reduce((n,c)=>n+(/[ -~]/.test(c)?.55:1)*t.size,0);
+async function extract(t:TestContext,html:string,url='https://page.example.com/'){
+  t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>{const u=new URL(String(input));const r=new Response(u.pathname==='/robots.txt'?'User-agent: *\nAllow: /':html,{headers:{'content-type':'text/html;charset=utf-8'}});Object.defineProperty(r,'url',{value:u.href});return r;});
+  return extractWebsite(url);
+}
+function render(report:MarketingReport){Object.assign(globalThis,{React});return load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));}
+for(const item of sectorCases)test(`URL-backed sector classification, report, questions and export: ${item.id}`,async t=>{
+  const data=await extract(t,sectorHtml(item),`https://${item.id}.example.com/`),purpose=analyzeWebsitePurpose(data);
+  assert.ok(isNonCommerce(purpose));assert.equal(purpose.sector?.id,item.id);assert.equal(await classifyIndustry(data),item.category);
+  assert.ok(purpose.goal.observed);assert.ok(purpose.goal.evidence.some(e=>e.text===item.action));
+  const sector=purpose.sector!;assert.equal(sector.checks.length,6);assert.ok(sector.evidence.length);assert.equal(purpose.checks.length,7);
+  const corpus=[data.title,data.description,...data.h1,...data.h2,data.bodyText,...data.siteEditing!.elements.map(e=>e.text)].join('\n');
+  for(const c of sector.checks)for(const e of c.evidence)assert.ok(corpus.includes(e.text),'only literal page evidence');
+  assert.equal(JSON.parse(purposePrompt(data)).sector.id,item.id);
+  const plan=buildAnswerContentPlan(data);assert.deepEqual(plan.questions.map(q=>q.intent),sector.questions.map(q=>q.intent));
+  assert.ok(plan.primaryKeyword);assert.notEqual(plan.primaryKeyword.term,'상담');assert.ok(corpus.includes(plan.primaryKeyword.term));
+  assert.deepEqual(plan.questions.map(q=>q.question),sector.questions.map(q=>q.question));
+  for(const q of plan.questions)assert.equal(q.draft,'','fallback never writes invented answers');
+  const questions=citationFallbackQuestions(data,'해봄');assert.equal(questions.length,5);assert.ok(questions[0].question.includes(new URL(data.url).hostname));
+  for(const q of sector.questions)assert.ok(questions.some(v=>v.question===q.question));
+  assert.doesNotMatch(JSON.stringify(questions),/장바구니|배송|재고|반품|구매 전/);
+  const report=MarketingReportSchema.parse(JSON.parse(JSON.stringify(finalizeReportEvidence({...fixture,url:data.url,pageEvidence:capturePageEvidence(data),answerContentPlan:plan},data))));
+  const before=JSON.stringify(report),$=render(report);
+  assert.equal($('.sector-check').length,6);assert.equal($('.sector-journey>div').length,3);assert.equal($('.report-hero-score').length,0);
+  assert.match($('.report-hero-purpose').text(),new RegExp(sector.label.replace(/[·]/g,'.')));
+  for(const c of sector.checks){assert.ok($('.sector-check-grid').text().includes(c.label));assert.ok($('.sector-check-grid').text().includes(c.guide));}
+  assert.equal($('#report-view-overview-main .report-radar').length,0);assert.equal($('#report-view-overview-questions .answer-content').length,1);
+  const blocks=buildReportDocument(report);for(const c of sector.checks){assert.ok(blocks.some(b=>b.text.includes(c.guide)));for(const e of c.evidence)assert.ok(blocks.some(b=>b.text.includes(e.text)));}
+  const summary=buildReportSummaryPage(report,measure);assert.ok(summary.lines.some(l=>l.text.includes(sector.label)));
+  for(const p of [summary,...buildVisualPdfPages(report,measure)])for(const l of p.lines){assert.ok(l.x>=47&&l.x+l.width<=743,l.text);assert.ok(l.y+l.lineHeight<=1045,l.text);}
+  assert.equal(JSON.stringify(report),before,'UI/export do not mutate observations');
+});
+
+test('secondary education and blog sections cannot reclassify a franchise homepage',async t=>{
+  const item=sectorCases.find(x=>x.id==='franchise')!;
+  const data=await extract(t,sectorHtml(item,'<h2>교육 프로그램</h2><p>교육·학습 커리큘럼과 자료실·칼럼 안내입니다.</p>'));
+  assert.equal(analyzeWebsitePurpose(data).sector?.id,'franchise');
+});
+test('an actual insurance article keeps its informational purpose',async t=>{
+  const data=await extract(t,'<html><head><title>보험 보장 비교 칼럼</title><meta name="description" content="보험 약관 연구 자료와 출처 안내"></head><body><main><h1>보험 보장 비교 칼럼</h1><p>보험료와 면책을 다루는 연구 자료입니다.</p></main></body></html>');
+  assert.equal(analyzeWebsitePurpose(data).kind,'content');assert.equal(analyzeWebsitePurpose(data).sector,undefined);
+});
+test('commerce, mixed, unknown and navigation-only sector mentions keep their existing layouts',async t=>{
+  const data=await extract(t,'<html><head><title>기본 온라인 쇼핑몰</title></head><body><nav>보험 법무법인</nav><main><h1>기본 온라인 쇼핑몰</h1><p>의류 상품을 판매합니다.</p><a href="/buy">구매하기</a></main><footer>개인회생 프랜차이즈</footer></body></html>');
+  const p=analyzeWebsitePurpose(data);assert.equal(p.kind,'commerce');assert.equal(p.sector,undefined);
+  const report=finalizeReportEvidence({...fixture,url:data.url},data),$=render(report);assert.equal($('.sector-overview').length,0);assert.equal($('#report-view-overview-main [aria-label="8개 영역 근거와 측정 범위"]').length,1);
+  const legacy=render(fixture);assert.equal(legacy('.sector-overview').length,0);assert.equal(legacy('.report-radar').length,1);
+});
+test('a medical page without cost text is a review, not a failed price test',async t=>{
+  const data=await extract(t,'<html><head><title>해봄의원 진료 안내</title></head><body><main><h1>해봄의원 진료 안내</h1><p>의료진 소개와 진료 시간·위치를 안내합니다.</p><a href="/reserve">진료 예약</a></main></body></html>');
+  const report=finalizeReportEvidence({...fixture,url:data.url},data),price=report.sitePurpose!.sector!.checks.find(c=>c.id==='price')!;
+  assert.equal(price.status,'review');assert.equal(price.evidence.length,0);assert.equal(report.checklist!.find(c=>c.id==='price_info')!.status,'review');
+  assert.doesNotMatch(report.checklist!.find(c=>c.id==='trust_review')!.guide,/후기.*추가|전후.*추가/);
+});
+test('an unrelated service main topic wins over incidental sector paragraphs',async t=>{
+  const data=await extract(t,'<html><head><title>브랜드 마케팅 컨설팅 서비스</title><meta name="description" content="광고대행과 컨설팅 제공 범위"></head><body><main><h1>브랜드 마케팅 컨설팅</h1><p>법무법인 마케팅 사례를 소개합니다.</p><p>변호사 광고 캠페인을 지원합니다.</p><a href="/contact">상담 문의</a></main></body></html>');
+  assert.equal(analyzeWebsitePurpose(data).kind,'service');assert.equal(analyzeWebsitePurpose(data).sector,undefined);
+});

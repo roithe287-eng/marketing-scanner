@@ -1,6 +1,7 @@
 import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { IndustryCategory } from "./reportSchema";
+import {analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
 
 /**
  * v45-W3: AI 업종 자동 분류기
@@ -63,6 +64,11 @@ const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
  * 키워드 기반 빠른 예비 분류 (AI 호출 전 힌트)
  */
 function quickClassify(data: ExtractedWebsiteData): IndustryCategory | null {
+  const purpose=analyzeWebsitePurpose(data);
+  if(isNonCommerce(purpose)&&purpose.sector){
+    const categories:Record<NonNullable<typeof purpose.sector>['id'],IndustryCategory>={legal:'legal',medical:'medical',property_sales:'realestate',insurance:'finance',rehabilitation:'legal',startup:'consulting',franchise:'consulting'};
+    return categories[purpose.sector.id];
+  }
   if(data.productContext?.sources.length&&(data.productContext.commerce===true||data.productContext.discovery==='public_catalog'))return 'ecommerce';
   const text = [
     data.title,

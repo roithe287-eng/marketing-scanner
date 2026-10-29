@@ -2,6 +2,7 @@ import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {marketKeywordCandidates} from './competitorResearch';
 import {analyzeWebsitePurpose,isNonCommerce,outOfPurpose,type WebsitePurpose} from './websitePurpose';
+import {sectorProfile,sectorTopicPatterns} from './nonCommerceSectors';
 import {AnswerContentPlanSchema,AnswerIntentSchema,type AnswerContentPlan,type AnswerSource,type AnswerKeyword,type AnswerIntent,type AnswerQuestion} from './answerContentSchema';
 
 export const ANSWER_CONTENT_TITLE='네이버 AI 브리핑 대응 콘텐츠 개선안';
@@ -82,6 +83,7 @@ const RawQuestionSchema=z.object({question:z.string().min(5).max(160),intent:Ans
 export const AnswerSuggestionSchema=z.object({primaryKeyword:z.string().min(2).max(40),secondaryKeywords:z.array(z.string().min(2).max(40)).max(2),topicScope:z.enum(['focused','mixed','unknown']),questions:z.array(RawQuestionSchema).length(3)});
 
 function defaultIntents(k:string,pool:AnswerSource[],purpose:WebsitePurpose):AnswerIntent[]{
+  if(purpose.sector)return purpose.sector.questions.map(q=>q.intent);
   if(purpose.kind==='content')return ['definition','choice','proof'];
   if(purpose.kind==='education')return ['scope','eligibility','process'];
   if(purpose.kind==='public_service')return ['eligibility','process','proof'];
@@ -98,6 +100,13 @@ function defaultIntents(k:string,pool:AnswerSource[],purpose:WebsitePurpose):Ans
 
 function purposeGuide(intent:AnswerIntent,p:WebsitePurpose):IntentGuide{
   const base=ANSWER_GUIDES[intent];
+  if(p.sector){
+    const q=p.sector.questions.find(q=>q.intent===intent);
+    if(q){const check=sectorProfile(p.sector.id).checks.find(c=>c.id===q.checkId)!;
+      return {...base,question:()=>q.question,fields:q.fields,placement:q.placement,match:check.match,
+        template:()=>q.fields.map(field=>`${field}: [현재 운영 자료로 확인한 내용]`).join('\n')};
+    }
+  }
   if(p.kind==='content'){
     if(intent==='definition')return {...base,question:k=>`${k}의 핵심 내용과 적용 범위는 무엇인가요?`,fields:['핵심 설명','적용 범위'],template:k=>`${k}는 [원문으로 확인한 핵심 설명]입니다. [적용 범위와 예외]를 함께 확인해 주세요.`};
     if(intent==='choice')return {...base,question:k=>`${k} 자료를 읽을 때 어떤 조건과 예외를 확인해야 하나요?`,fields:['적용 조건','해석 시 주의할 예외'],template:k=>`${k}는 [적용 조건]에서 설명합니다. [예외 또는 해석 시 주의사항]은 원자료와 함께 확인해 주세요.`};
@@ -114,7 +123,10 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
   const purpose=analyzeWebsitePurpose(data);
   const pool=answerSources(data),products=data.productContext?.status==='observed'&&!isNonCommerce(purpose)?data.productContext.sources:[];
   const productKeywords=products.length?marketKeywordCandidates({title:data.title,description:data.description,h1:data.h1,h2:data.h2,productSources:products}).map(c=>keyword(c.keyword,pool)).filter((k):k is AnswerKeyword=>!!k).slice(0,3):[];
-  const fallback=productKeywords.length?productKeywords:fallbackKeywords(pool);
+  const sectorKeywords=purpose.sector?sectorTopicPatterns(purpose.sector.id).flatMap(re=>{
+    const term=pool.map(p=>p.text.match(re)?.[0]).find(Boolean);const candidate=term&&keyword(term,pool);return candidate?[candidate]:[];
+  }).filter((k,i,a)=>a.findIndex(v=>compact(v.term)===compact(k.term))===i):[];
+  const fallback=productKeywords.length?productKeywords:sectorKeywords.length?sectorKeywords:fallbackKeywords(pool);
   const parsed=AnswerSuggestionSchema.safeParse(suggestion);
   const ai=parsed.success?parsed.data:null;
   const proposed=ai&&keyword(ai.primaryKeyword,pool);

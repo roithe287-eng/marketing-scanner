@@ -7,6 +7,7 @@ import ReportHeader from './ReportHeader';
 import ReportRetentionNotice from './ReportRetentionNotice';
 import ReportEvidenceGuide from './ReportEvidenceGuide';
 import WebsitePurposePanel from './WebsitePurposePanel';
+import NonCommerceSectorPanel from './NonCommerceSectorPanel';
 import {showProductCollection} from '@/lib/websitePurpose';
 import {nonCommerceOpening} from '@/lib/reportOpening';
 import AnswerContentPanel from './AnswerContentPanel';
@@ -69,7 +70,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
     <ReportNavigation chapters={chapters}/>
     <Chapter id="overview" number="01" title={opening?'홈페이지의 강점과 보강할 내용을 함께 보세요':'먼저 파악할 핵심'} note="핵심 요약부터 실행 과제까지 아래로 이어집니다. 목차를 누르면 해당 내용으로 바로 이동합니다.">
       <ReportSections chapter="overview" items={[
-        {id:'overview-main',label:opening?'홈페이지 근거':'핵심 진단',children:opening?<SiteContentOverview report={report}/>:<><TodayWork plan={execution}/><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview}/></>},
+        {id:'overview-main',label:opening?'홈페이지 근거':'핵심 진단',children:opening?<>{report.sitePurpose?.sector&&<NonCommerceSectorPanel purpose={report.sitePurpose}/>}<SiteContentOverview report={report}/></>:<><TodayWork plan={execution}/><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview}/></>},
         ...(!opening?[{id:'overview-content',label:'홈페이지 근거',children:<SiteContentOverview report={report}/>}]:[]),
         {id:'overview-questions',label:'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst={!!opening}/>},
         {id:'overview-priority',label:opening?'우선 할 일':'고객 행동 흐름',children:opening?<TodayWork plan={execution}/>:<ConversionPath data={data}/>},

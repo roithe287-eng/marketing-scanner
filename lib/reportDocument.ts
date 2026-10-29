@@ -49,7 +49,15 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     {kind:'body',text:opening?.summary||report.oneLineSummary},
     {kind:'body',text:'전체 상세 내용이 포함된 결과 스냅샷입니다. AI 진단과 시뮬레이션은 검토를 위한 참고 자료이며 성과를 보장하지 않습니다.'},
   ];
-  if(opening){blocks.push({kind:'body',text:`분석 방향: ${opening.purpose} · 다음 행동: ${opening.goal}`},...buildAnswerContentDocument(report,true));}
+  if(opening){
+    blocks.push({kind:'body',text:`분석 방향: ${opening.purpose} · 다음 행동: ${opening.goal}`});
+    const sector=report.sitePurpose?.sector;
+    if(sector){blocks.push({kind:'heading',text:`${sector.label} · 업종 맞춤 진단`},{kind:'body',text:sector.journey.join(' → ')},{kind:'body',text:'입력 URL의 관련 문구 관측입니다. 항목 수는 품질 점수·성과·법적 적합성 판정이 아닙니다.'});
+      for(const c of sector.checks){blocks.push({kind:'subheading',text:`${c.label} · ${c.status==='observed'?'문구 확인':'보강 검토'}`},{kind:'body',text:`개선 방향: ${c.guide}`});for(const e of c.evidence)blocks.push({kind:'body',text:`원문: ${e.text}`});}
+      blocks.push({kind:'body',text:sector.caution});
+    }
+    blocks.push(...buildAnswerContentDocument(report,true));
+  }
   if(report.sitePurpose){const p=report.sitePurpose;blocks.push({kind:'heading',text:'페이지 목적별 분석'},{kind:'body',text:`분류 후보: ${p.label} · 다음 행동 후보: ${p.goal.label}`},{kind:'body',text:p.note},{kind:'body',text:`원문 ${p.sourceUrl} · 수집 ${p.capturedAt||'미기록'}`});for(const c of p.checks){blocks.push({kind:'subheading',text:c.label+' · '+({observed:'원문 신호 확인',review:'추가 확인',not_applicable:'해당 없음'}[c.status])},{kind:'body',text:c.guide});for(const e of c.evidence)blocks.push({kind:'body',text:`원문: ${e.text} · 위치: ${e.locator}`});}}
   if(report.productContext&&showProductCollection(report.sitePurpose)){const p=report.productContext;blocks.push({kind:'heading',text:p.sources.length?`상품 정보 보완 · 공개 상품 표본 ${p.sources.length}개`:'상품 정보 수집 범위와 확인 상태'},{kind:'body',text:p.note});for(const s of p.sources)blocks.push({kind:'body',text:s.name+' · '+s.url,href:safeHttpUrl(s.url)||undefined});}
   blocks.push({kind:'heading',text:'광고비·목표 CPA 시나리오'},{kind:'body',text:AD_BUDGET_NOTE+' 화면 입력값은 저장되지 않습니다. CPA=광고비÷전환 수, 목표 예산=직접 정한 목표 CPA×현재 전환 수입니다. 절감 효과 예측이 아닙니다.'});

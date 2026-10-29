@@ -51,6 +51,12 @@ export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebs
     facts[11].guide=purpose.checks.find(c=>c.id==='price')!.guide;
     const priceEvidence=purpose.checks.find(c=>c.id==='price')!.evidence;
     facts[11].value=priceEvidence.length?`가격·조건 관련 원문: ${priceEvidence.map(e=>e.text).join(' / ')}`:'가격·조건 관련 원문 신호 미감지 · 실제 부재 판정 아님';
+    if(purpose.sector){
+      const proof=purpose.sector.checks.find(c=>c.id==='proof')!;
+      facts[9].label=proof.label+' 확인';facts[9].value=proof.evidence.map(e=>e.text).join(' / ')||'관련 원문 신호 미감지 · 실제 부재 판정 아님';facts[9].guide=proof.guide;facts[9].note='담당 주체·사례 관련 원문 신호를 관측했습니다. 실제 역할·자격·사례의 정확성은 해당 자료와 대조해야 합니다.';
+      facts[10].label='담당 주체·이력 근거 확인';facts[10].value=facts[9].value;facts[10].guide=proof.guide;facts[10].note='페이지에 적힌 운영 주체·이력과 공식 소개·확인 자료를 대조하는 검토 항목입니다.';
+      facts[11].label=purpose.sector.checks.find(c=>c.id==='price')!.label+' 확인';
+    }
   }
   const notApplicable=new Set<string>();
   if(purpose.checks.find(c=>c.id==='price')?.status==='not_applicable')notApplicable.add('price_info');

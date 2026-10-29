@@ -1,4 +1,5 @@
 import {reportForPresentation} from './reportPresentation';
+import {buildSectorVisualPage} from './nonCommerceSectorPdf';
 import {buildInsightsPdfPages} from './reportInsightsPdf';
 import {buildNaverVisualPage} from './naverVisualPdf';
 import {buildCompetitorVisualPage} from './competitorVisualPdf';
@@ -15,6 +16,7 @@ const short=(s:string,n=110)=>s.length>n?s.slice(0,n)+'…':s;
 export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer):VisualPdfPage[] {
   report=reportForPresentation(report);
   const pages:VisualPdfPage[]=[];let page:VisualPdfPage;let y=0;
+  const sectorPage=buildSectorVisualPage(report,measure);if(sectorPage)pages.push(sectorPage);
   const style=(size=14,color=ink,weight=400):PdfTextStyle=>({size,color,weight,lineHeight:size*1.55});
   const wrapped=(text:string,width:number,size=14,weight=400)=>wrapPdfText(text,style(size,ink,weight),measure,width);
   function text(value:string,x:number,top:number,width:number,size=14,color=ink,weight=400) {
