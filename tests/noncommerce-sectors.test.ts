@@ -78,3 +78,14 @@ test('an unrelated service main topic wins over incidental sector paragraphs',as
   const data=await extract(t,'<html><head><title>브랜드 마케팅 컨설팅 서비스</title><meta name="description" content="광고대행과 컨설팅 제공 범위"></head><body><main><h1>브랜드 마케팅 컨설팅</h1><p>법무법인 마케팅 사례를 소개합니다.</p><p>변호사 광고 캠페인을 지원합니다.</p><a href="/contact">상담 문의</a></main></body></html>');
   assert.equal(analyzeWebsitePurpose(data).kind,'service');assert.equal(analyzeWebsitePurpose(data).sector,undefined);
 });
+test('legal criteria prefer direct service explanations and excerpt around the matched words',async t=>{
+  const address='서울 사무소 : 서울특별시 테헤란로 103 (형사, 민사) 부산 사무소 : 부산광역시 중앙대로 100. '.repeat(5);
+  const long='페이지의 일반 안내입니다. '.repeat(28)+'상담 절차는 준비 서류를 확인한 뒤 사건을 검토하는 순서입니다.';
+  const data=await extract(t,`<html><head><title>법무법인 | 형사·민사 사건 안내</title><meta name="description" content="형사·민사 사건의 취급 업무와 상담 안내"></head><body><main><h1>법무법인 안내</h1><p>${address}</p><p>취급 업무는 형사·민사 사건입니다.</p><p>변호사로서의 윤리와 공정을 실천하겠습니다.</p><p>${long}</p><a href="/consult">법률 상담 문의</a></main></body></html>`);
+  const sector=analyzeWebsitePurpose(data).sector!;
+  assert.equal(sector.checks.find(c=>c.id==='scope')!.evidence[0].text,'취급 업무는 형사·민사 사건입니다.');
+  assert.equal(sector.checks.find(c=>c.id==='proof')!.status,'review','an ethics slogan is not a lawyer biography');
+  const process=sector.checks.find(c=>c.id==='process')!;
+  assert.ok(process.evidence.some(e=>e.text.includes('상담 절차')));assert.ok(process.evidence.every(e=>e.text.length<=240));
+  assert.equal(sector.checks.find(c=>c.id==='contact')!.evidence[0].text,'법률 상담 문의');
+});
