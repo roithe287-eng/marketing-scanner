@@ -67,7 +67,7 @@ export const SECTOR_PROFILES:Profile[]=[
     journey:['업무 분야 확인','담당자·절차·비용 검토','법률 상담 연결'],
     checks:[
       check('scope','취급 업무·사건 분야',/업무\s*분야|취급\s*(?:사건|업무)|형사|민사|이혼|상속|노동|기업\s*법무/,'실제 취급하는 사건·업무를 고객 상황별로 설명하고 제외 범위를 확인하세요.'),
-      check('proof','담당 변호사·이력',/변호사|담당\s*전문가|구성원|경력|이력/,'담당 변호사와 역할·이력을 실제 소개 원문에 연결하세요. 전문 자격을 추측하지 않습니다.'),
+      check('proof','담당 변호사·이력',/변호사\s*소개|(?:대표|담당|소속|파트너)\s*변호사|담당\s*전문가|구성원|경력|이력|약력/,'담당 변호사와 역할·이력을 실제 소개 원문에 연결하세요. 전문 자격을 추측하지 않습니다.'),
       check('process','상담·수임 진행 절차',/상담\s*절차|수임|진행\s*절차|사건\s*검토|준비\s*서류/,'문의·사건 검토·수임·진행 안내의 실제 단계와 고객 준비자료를 연결하세요.'),
       check('price','상담료·수임 비용 기준',/상담료|수임료|보수|비용|견적/,'비용 산정 기준과 포함·별도 항목을 확인하세요. 상담 버튼만으로 가격 공개 여부를 판정하지 않습니다.'),
       check('reference','사례의 조건·출처',/사건\s*사례|수행\s*사례|성공\s*사례|판결|사례/,'공개 가능한 사례의 사실관계·담당 범위·출처를 확인하고 결과를 일반화하지 마세요.'),
@@ -152,8 +152,11 @@ export function analyzeNonCommerceSector(units:SectorEvidence[],actions:SectorEv
   const p=selected.p;
   return NonCommerceSectorSchema.parse({version:1,id:p.id,label:p.label,evidence:selected.evidence.slice(0,4),journey:p.journey,questions:p.questions,caution:p.caution,
     checks:p.checks.map(c=>{
-      const rank=(u:SectorEvidence)=>actions.includes(u)?(c.id==='contact'?12:0):primary(u)?1:u.locator==='h2'?2:8;
-      const evidence=[...units,...actions].filter(u=>c.match.test(u.text)).sort((a,b)=>rank(b)-rank(a)).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3);
+      const rank=(u:SectorEvidence)=>(actions.includes(u)?(c.id==='contact'?12:0):primary(u)?1:u.locator==='h2'?2:8)-(u.text.length>300?5:0)-(/사무소.{0,180}사무소|(?:로|길)\s*\d/.test(u.text)?20:0);
+      const evidence=[...units,...actions].filter(u=>c.match.test(u.text)).sort((a,b)=>rank(b)-rank(a)).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3).map(u=>{
+        if(u.text.length<=240)return u;
+        const start=Math.max(0,u.text.search(c.match)-45);return {...u,text:u.text.slice(start,start+240)};
+      });
       return {id:c.id,label:c.label,status:evidence.length?'observed':'review',evidence,guide:c.guide};
     })});
 }
