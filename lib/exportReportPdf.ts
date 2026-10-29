@@ -77,7 +77,6 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
 
 /** Draw the complete snapshot directly, without cloning or capturing the app DOM. */
 export async function exportReportPdf(report:MarketingReport,onProgress:(text:string)=>void,signal?:AbortSignal,scope:PdfScope='full') {
-  await Promise.race([document.fonts.ready,new Promise(resolve=>setTimeout(resolve,2500))]);
   signal?.throwIfAborted();
-  return renderReportPdf(report,onProgress,document.createElement('canvas'),getComputedStyle(document.body).fontFamily||PDF_FONT,signal,scope);
+  return renderReportPdf(report,onProgress,document.createElement('canvas'),PDF_FONT,signal,scope);
 }

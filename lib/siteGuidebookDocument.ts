@@ -1,5 +1,4 @@
 import type {MarketingReport} from './reportSchema';
-import {SITE_EDITING_SCOPE} from './siteEditingScope';
 import type {ReportBlock} from './reportDocument';
 import {buildReportInsights} from './reportInsights';
 import {buildPageEdits} from './reportExecution';
@@ -26,7 +25,6 @@ export function guidebookRequests(report:MarketingReport):GuideRequest[]{
 export function buildSiteGuidebookDocument(report:MarketingReport):ReportBlock[]{
  const blocks:ReportBlock[]=[{kind:'heading',text:'URL 맞춤 편집 가이드북 · 위치·기대효과·검증'},
  {kind:'body',text:`제작 도구: ${editingPlatform(report).label} · 공식 문서 검토 ${GUIDE_REVIEWED_AT}`},
- {kind:'body',text:SITE_EDITING_SCOPE},
  {kind:'body',text:'공개 HTML의 원문과 문서 순서를 연결합니다. 브라우저 화면 캡처·관리자 화면·화면 좌표는 수집하지 않았습니다. 공식 문서는 작동 원리를 뒷받침하며 해당 사이트의 순위·매출·문의 상승을 실증하거나 보장하지 않습니다.'}];
  for(const [i,r] of guidebookRequests(report).filter(r=>!report.evidenceReview||!r.keyword).entries()){
   const g=buildSiteGuide(report,r),add=(text:string)=>blocks.push({kind:'body',text});
