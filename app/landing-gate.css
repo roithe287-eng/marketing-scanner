@@ -54,7 +54,7 @@
 .scanner-landing--gate .scanner-feature-card { border-color:#e0e5ed; box-shadow:none; }
 .scanner-landing--gate .scanner-feature-card>div:first-child { background-color:#f6f8fb; }
 .scanner-landing--gate .scanner-features-heading h2 { color:#141922; }
-.scanner-gate-preview { max-width:860px; margin:48px auto 0; }
+.scanner-gate-preview { width:100%; max-width:none; margin:48px auto 0; }
 .scanner-gate-preview .scanner-preview { background:#fff; border-color:#dae1ec; box-shadow:none; }
 .scanner-gate-preview .scanner-preview-heading { background:#f5f7fa; }
 .scanner-gate-preview .scanner-preview-heading h2 { color:#202833; }
