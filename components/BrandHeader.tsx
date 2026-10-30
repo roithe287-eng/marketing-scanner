@@ -1,13 +1,24 @@
+import type { ReactNode } from 'react';
+
 type Props = {
   /** true면 좌측 로고가 메인('/')으로 이동하지 않음 (공유 페이지용) */
   lockHome?: boolean;
   /** 첫 화면 상단에 채널톡 문의 버튼 표시 */
   showInquiry?: boolean;
+  landing?: boolean;
+  accountMenu?: ReactNode;
 };
 
-export default function BrandHeader({ lockHome = false, showInquiry = false }: Props) {
+export default function BrandHeader({ lockHome = false, showInquiry = false, landing = false, accountMenu }: Props) {
   const brandUrl =
     process.env.NEXT_PUBLIC_BRAND_URL || "https://prorealmkt.com";
+
+  if (landing) return <header className="scanner-home-header">
+    <div className="jm-container scanner-home-header-bar">
+      <a href="/" className="scanner-home-wordmark">마케팅스캐너<small>by 진짜마케팅</small></a>
+      <div className="scanner-home-header-actions"><a href="/pricing">이용요금</a>{accountMenu}</div>
+    </div>
+  </header>;
 
   // 좌측 로고 + 칩 영역 공통 콘텐츠
   const logoContent = (

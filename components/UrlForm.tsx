@@ -46,8 +46,8 @@ export default function UrlForm({onSubmit,loading}:Props) {
   return <form onSubmit={handleSubmit} className="scanner-url-form">
     <label htmlFor="scanner-url" className="scanner-url-label">진단할 웹사이트 URL</label>
     <div className="scanner-url-row">
-      <input id="scanner-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="예: https://prorealmkt.com" aria-label="분석할 웹사이트 URL" className="scanner-url-input" disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby={smartstore?'scanner-url-help smartstore-url-notice':'scanner-url-help'}/>
-      <button type="submit" disabled={loading||baselineLoading} className={`jm-button scanner-submit${smartstore?' scanner-submit-store':''}`}>{loading?'분석 중...':smartstore?'스토어 제한 분석 시작':baseline?'같은 URL로 재진단·비교':'내 사이트 진단 시작'}</button>
+      <input id="scanner-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="웹사이트 URL 입력" aria-label="분석할 웹사이트 URL" className="scanner-url-input" disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby={smartstore?'scanner-url-help smartstore-url-notice':'scanner-url-help'}/>
+      <button type="submit" disabled={loading||baselineLoading} className={`jm-button scanner-submit${smartstore?' scanner-submit-store':''}`}>{loading?'분석 중...':smartstore?'스토어 제한 분석 시작':baseline?'같은 URL로 재진단·비교':'진단 시작'}<span aria-hidden="true">→</span></button>
     </div>
     <p id="scanner-url-help" className="scanner-url-help">홈페이지·서비스 소개·광고 랜딩·스마트스토어·브랜드스토어 URL을 입력해 주세요.</p>
     {smartstore&&<aside id="smartstore-url-notice" className="smartstore-notice" role="status"><strong><span aria-hidden="true">⚠️ </span>{storePlatformLabel(url)} · 콘텐츠 분석 대부분 제한</strong><p>{SMARTSTORE_NOTICE}</p><p>주소 입력 예: {storePlatformLabel(url)==='브랜드스토어'?'brand.naver.com/dongwon':'smartstore.naver.com/wodkq'} · 상품 주소도 분석 범위는 동일하게 제한됩니다.</p></aside>}

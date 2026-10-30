@@ -1,6 +1,6 @@
 "use client";
 import type { AccessState } from "./useAccess";
-export default function AccessBar({ access }: { access: AccessState }) {
+export default function AccessBar({ access, compact = false }: { access: AccessState; compact?: boolean }) {
   async function logout() {
     const r = await fetch("/api/logout", {
       method: "POST",
@@ -9,6 +9,12 @@ export default function AccessBar({ access }: { access: AccessState }) {
     });
     if (r.ok) window.location.assign("/");
   }
+  const accountMenu = <nav aria-label="계정 메뉴">
+    {access.admin && <a href="/manage">이용 관리</a>}
+    {(access.kind === 'account' || access.kind === 'internal') && <a href="/account">보관함·이용 현황</a>}
+    {access.kind === 'account' || access.admin ? <button onClick={logout}>로그아웃</button> : <a href="/login">로그인</a>}
+  </nav>;
+  if (compact) return <div className="scanner-home-account">{accountMenu}</div>;
   return (
     <div className="access-bar">
       <div className="jm-container">
@@ -21,17 +27,7 @@ export default function AccessBar({ access }: { access: AccessState }) {
                 ? "이용 상태 확인 중…"
                 : "사이트의 다음 변화를 찾으세요"}
         </span>
-        <nav aria-label="계정 메뉴">
-          {access.admin && <a href="/manage">이용 관리</a>}
-          {(access.kind === "account" || access.kind === "internal") && (
-            <a href="/account">보관함·이용 현황</a>
-          )}
-          {access.kind === "account" || access.admin ? (
-            <button onClick={logout}>로그아웃</button>
-          ) : (
-            <a href="/login">로그인</a>
-          )}
-        </nav>
+        {accountMenu}
       </div>
     </div>
   );
