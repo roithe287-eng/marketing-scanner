@@ -1,0 +1,17 @@
+.report-v2 .report-opening-radar {margin:0 0 24px;scroll-margin-top:100px;min-width:0}
+.report-v2 .report-radar-featured {border:1px solid #cbd9f0;border-top:4px solid #315bc3;background:#fff;box-shadow:0 8px 24px #23477808}
+.report-v2 .report-radar-featured>.report-card-heading {background:linear-gradient(105deg,#eef4ff,#fbfcff);border-left:3px solid #315bc3}
+.report-v2 .report-radar-featured .report-radar-layout {grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr);align-items:center}
+.report-v2 .report-radar-featured .report-radar-chart .diagnosis-radar-graphic {display:block;width:100%;height:auto;max-width:620px;margin:12px auto}
+.report-v2 .report-radar-site {margin:7px 0;font-size:14px;font-weight:700;color:#3b5e8e;overflow-wrap:anywhere}
+.report-v2 .report-radar-scope {margin:10px 0 0;padding:9px 11px;border-left:3px solid #b99557;border-radius:0 6px 6px 0;background:#fff8ec;color:#775420;font-size:12px;line-height:1.7}
+.report-v2 .report-radar-featured .report-axis-detail {align-self:stretch;display:flex;flex-direction:column;justify-content:center}
+.report-v2 .report-radar-featured .report-axis-grid {margin-top:20px}
+@media(max-width:767px){
+ .report-v2 .report-radar-featured .report-radar-layout {grid-template-columns:minmax(0,1fr)}
+ .report-v2 .report-radar-featured .report-radar-chart {padding:14px 5px}
+ .report-v2 .report-radar-featured .report-radar-chart-heading {padding:0 8px}
+ .report-v2 .report-radar-featured .report-axis-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+ .report-v2 .report-opening-radar {margin-bottom:18px}
+}
+@media print {.report-v2 .report-opening-radar {break-before:auto;break-inside:auto}}

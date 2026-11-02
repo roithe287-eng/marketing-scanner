@@ -22,6 +22,7 @@ import {reportForPresentation} from '@/lib/reportPresentation';
 import {buildReportInsights} from '@/lib/reportInsights';
 import {CollectionCoverage,ConversionPath,AnswerPageMap,BrandReview,SourceDirectory,MessageMap} from './InsightPanels';
 import ScoreRadar from '@/components/ScoreRadar';
+import EvidenceReviewPanel from './EvidenceReviewPanel';
 import KeywordWorkspace from './KeywordWorkspace';
 import DiagnosisCard from '@/components/DiagnosisCard';
 import PriorityMatrix from '@/components/PriorityMatrix';
@@ -68,7 +69,8 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
     {!!report.analysisWarnings?.length&&<aside className="report-empty" role="status">{report.analysisWarnings.map(w=><p key={w.key}>{w.label} · {w.status==='timeout'?'응답 시간 초과':w.status==='unavailable'?'수집되지 않음':'일시적 오류'}</p>)}</aside>}
   </>;
   return <SiteGuideProvider report={report}><ReportWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`}><div className="report-v2 report-focused report-continuous" id="report-area">
-    <ReportHeader report={report} data={data} actions={actions}/>
+    <div className="report-opening-radar" id="report-top"><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview} featured siteName={report.meta?.siteName||report.meta?.domain||report.url}/></div>
+    <ReportHeader report={report} data={data} actions={actions} topAnchor={false}/>
     <ReportNavigation chapters={chapters}/><ReportReadingKey/>
     <Chapter id="overview" number="01" title="우리 홈페이지, 무엇부터 바꾸면 될까요?" note="홈페이지 내용 → 고객 질문과 답변 → 우선 할 일 순서로 확인하세요.">
       <ReportSections chapter="overview" diagrams={diagrams} items={[
@@ -76,7 +78,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
         {id:'overview-questions',label:'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst/>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
         ...(report.sitePurpose?.sector?[{id:'overview-sector',label:'업종별 확인',children:<NonCommerceSectorPanel purpose={report.sitePurpose}/>}]:[]),
-        {id:'overview-observations',label:'영역별 진단',children:<><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview}/><ConversionPath data={data}/></>},
+        {id:'overview-observations',label:'영역별 근거',children:<>{report.evidenceReview&&<EvidenceReviewPanel review={report.evidenceReview}/>}<ConversionPath data={data}/></>},
         ...(report.diagnosisBaseline?[{id:'overview-comparison',label:'이전 결과 비교',children:<DiagnosisComparisonPanel report={report}/>}]:[]),
       ]}/>
     </Chapter>

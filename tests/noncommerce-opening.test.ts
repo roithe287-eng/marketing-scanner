@@ -72,7 +72,7 @@ test('legacy, mixed and unknown reports keep their established overview and scor
   const purposes=['mixed','unknown'].map(kind=>({version:1 as const,kind:kind as 'mixed'|'unknown',label:'목적 후보',sourceUrl:fixture.url,evidence:[],goal:{key:'unknown' as const,label:'다음 행동 확인',observed:false,evidence:[]},pricingObserved:false,note:'검토',checks:[]}));
   for(const sitePurpose of [undefined,...purposes]){
     const report={...fixture,sitePurpose};assert.equal(nonCommerceOpening(report),null);
-    const $=render(report);assert.equal($('.report-hero-score').length,1);assert.equal($('#report-overview .report-radar').length,1);
+    const $=render(report);assert.equal($('.report-hero-score').length,1);assert.equal($('#report-top .report-radar').length,1);
   }
 });
 
