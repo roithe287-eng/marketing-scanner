@@ -1,0 +1,101 @@
+/* Chapter color locates the reader; role color explains the meaning of a block. */
+.report-v2 {--chapter-color:#315bc3;--chapter-surface:#f1f5ff;--chapter-line:#d3def7}
+.report-v2.report-focused .report-chapter[data-chapter=overview],.report-v2 .report-nav [data-chapter-link=overview] {--chapter-color:#315bc3;--chapter-surface:#f1f5ff;--chapter-line:#d3def7}
+.report-v2.report-focused .report-chapter[data-chapter=geo],.report-v2 .report-nav [data-chapter-link=geo] {--chapter-color:#7045a8;--chapter-surface:#f6f1fc;--chapter-line:#e1d4ef}
+.report-v2.report-focused .report-chapter[data-chapter=search],.report-v2 .report-nav [data-chapter-link=search] {--chapter-color:#0b746b;--chapter-surface:#eef9f6;--chapter-line:#c7e4db}
+.report-v2.report-focused .report-chapter[data-chapter=competition],.report-v2 .report-nav [data-chapter-link=competition] {--chapter-color:#925819;--chapter-surface:#fff8ed;--chapter-line:#ecdbbf}
+.report-v2.report-focused .report-chapter[data-chapter=actions],.report-v2 .report-nav [data-chapter-link=actions] {--chapter-color:#245477;--chapter-surface:#eff6fb;--chapter-line:#cce0ed}
+.report-v2.report-focused .report-chapter-heading {border:1px solid var(--chapter-line);border-left:4px solid var(--chapter-color);background:linear-gradient(100deg,var(--chapter-surface),#fff 78%)}
+.report-v2.report-focused .report-chapter-heading>.report-chapter-symbol {border-color:var(--chapter-line);background:var(--chapter-surface);color:var(--chapter-color)}
+.report-v2.report-focused .report-chapter .report-card-heading {background:linear-gradient(90deg,var(--chapter-surface),#fbfcfe 85%);border-left:3px solid var(--chapter-color)}
+.report-v2 .report-chapter .report-card-heading>.report-eyebrow {color:var(--chapter-color)}
+.report-v2 .report-nav a[data-chapter-link] {position:relative;border-top:3px solid var(--chapter-line);border-radius:10px 10px 7px 7px}
+.report-v2 .report-nav a[data-chapter-link][aria-current=location] {background:var(--chapter-color);border-color:var(--chapter-color);color:#fff;box-shadow:0 3px 9px #20324b14}
+.report-v2 .report-section-nav a[aria-current=location] {background:var(--chapter-color);border-color:var(--chapter-color);color:#fff}
+.report-v2 .report-section-nav {border-color:var(--chapter-line);background:var(--chapter-surface)}
+.report-v2 .report-reading-key {display:flex;align-items:center;flex-wrap:wrap;gap:7px 12px;margin:14px 0 28px;padding:12px 16px;border:1px solid #e0e6ee;border-radius:12px;background:#fff}
+.report-v2 .report-reading-key>strong {font-size:12px;color:#4a5d76;margin-right:3px}
+.report-v2 .report-reading-key>span {display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:6px;background:var(--role-bg);color:var(--role-accent);font-size:11px;font-weight:700;line-height:1.5;border:1px solid var(--role-border)}
+.report-v2 .report-reading-key i {width:5px;height:12px;border-radius:2px;background:var(--role-accent)}
+.report-v2 .report-section-divider {display:flex;align-items:center;gap:10px;margin:8px 0 14px;color:var(--chapter-color);min-width:0}
+.report-v2 .report-section-divider>span {display:grid;place-items:center;min-width:30px;height:27px;padding:0 6px;border:1px solid var(--chapter-line);border-radius:7px;background:var(--chapter-surface);font-size:11px;font-weight:800;font-variant-numeric:tabular-nums}
+.report-v2 .report-section-divider>strong {font-size:14px;line-height:1.6;flex:none;max-width:75%;overflow-wrap:anywhere}
+.report-v2 .report-section-divider>i {height:1px;flex:1;min-width:12px;background:linear-gradient(90deg,var(--chapter-line),transparent)}
+.report-v2 .report-section-panel+.report-section-panel {padding-top:26px;margin-top:20px;border-top:1px solid var(--chapter-line)}
+.report-v2 .report-section-diagram {margin:0 0 18px;padding:21px 22px 16px;border:1px solid var(--chapter-line);border-radius:17px;background:linear-gradient(130deg,#fff 55%,var(--chapter-surface));min-width:0;box-shadow:0 3px 12px #21395804}
+.report-v2 .report-section-diagram>figcaption {display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px 18px;margin-bottom:18px}
+.report-v2 .report-section-diagram>figcaption>div {display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;min-width:0}
+.report-v2 .report-diagram-kicker {flex:none;padding:4px 8px;font-size:10px;font-weight:800;letter-spacing:.04em;border:1px solid var(--chapter-line);border-radius:6px;color:var(--chapter-color);background:var(--chapter-surface)}
+.report-v2 .report-section-diagram>figcaption strong {font-size:16px;line-height:1.6;font-weight:750;color:#243b56;overflow-wrap:anywhere}
+.report-v2 .report-section-diagram>figcaption>small {padding:4px 0;font-size:10px;line-height:1.7;color:#60748d}
+.report-v2 .report-diagram-nodes {display:grid;grid-template-columns:repeat(var(--diagram-columns),minmax(0,1fr));gap:34px;padding:0;margin:0;list-style:none}
+.report-v2 .report-diagram-nodes>li {position:relative;padding:15px 16px;min-width:0;border:1px solid var(--role-border);border-top:3px solid var(--role-accent);border-radius:12px;background:linear-gradient(120deg,#fff 25%,var(--role-bg));box-shadow:0 3px 10px #243b5605}
+.report-v2 .report-diagram-node-top {display:flex;align-items:center;gap:7px;margin-bottom:10px;min-width:0}
+.report-v2 .report-diagram-node-icon {display:grid;place-items:center;width:32px;height:32px;flex:none;border:1px solid var(--role-border);border-radius:9px;background:var(--role-bg);color:var(--role-accent)}
+.report-v2 .report-diagram-node-icon .report-line-icon {width:19px;height:19px}
+.report-v2 .report-diagram-node-index {font-size:10px;font-weight:800;color:var(--role-accent)}
+.report-v2 .report-diagram-node-role {margin-left:auto;padding:3px 6px;border-radius:5px;font-size:10px;line-height:1.4;font-weight:700;background:var(--role-bg);color:var(--role-accent);white-space:nowrap}
+.report-v2 .report-diagram-node-copy>strong {display:block;font-size:15px;line-height:1.6;color:#243b56;overflow-wrap:anywhere}
+.report-v2 .report-diagram-node-copy>p {margin:4px 0 0;font-size:12px;line-height:1.75;color:#526780;overflow-wrap:anywhere}
+.report-v2 .report-diagram-value {display:inline-flex;align-items:center;margin-top:10px;padding:4px 9px;border-radius:6px;border:1px solid var(--role-border);font-size:15px;line-height:1.5;font-weight:800;color:var(--role-accent);background:var(--role-bg);font-variant-numeric:tabular-nums}
+.report-v2 .report-diagram-connector {position:absolute;left:calc(100% + 1px);top:50%;transform:translateY(-50%);width:32px;height:27px;color:var(--chapter-color);opacity:.7}
+.report-v2 .report-diagram-note {display:flex;align-items:flex-start;gap:7px;margin:13px 0 0;padding-top:11px;border-top:1px solid var(--chapter-line);font-size:11px;line-height:1.8;color:#536b86;overflow-wrap:anywhere}
+.report-v2 .report-diagram-note>svg {flex:none;margin-top:2px;color:var(--chapter-color)}
+.report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes {gap:16px;position:relative;padding-top:13px}
+.report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes::before {content:'';position:absolute;top:0;left:16%;right:16%;height:1px;background:var(--chapter-line)}
+.report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes>li::before {content:'';position:absolute;top:-16px;left:50%;width:1px;height:13px;background:var(--chapter-line)}
+.report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-connector {display:none}
+.report-v2 .report-section-diagram[data-diagram-kind=cycle] .report-diagram-note {border-top-style:dashed}
+
+/* The same role tint continues through raw evidence, interpretation and execution. */
+.report-v2.report-focused .report-role-box[data-report-role] {background:var(--role-bg);border-color:var(--role-border);border-top-color:var(--role-accent);border-top-width:3px}
+.report-v2.report-focused .report-role-box .report-role-caption strong {color:var(--role-accent)}
+.report-v2.report-focused .report-role-content {color:#263449}
+.report-v2.report-focused .answer-question .answer-draft {background:#eef9f4;border-color:#bad7cf;border-top:3px solid #087569}
+.report-v2.report-focused .answer-missing {background:#fff8eb;border-color:#e3cfb2;border-left:3px solid #9a4b0a}
+.report-v2.report-focused .answer-placement {background:#eff5ff;border-color:#c4d2e6;border-left:3px solid #2657ab}
+.report-v2.report-focused .guide-proposal {background:#eef9f4;border-color:#bad7cf}
+.report-v2 .report-reading-points>li {padding:7px 10px 7px 19px;border-left:2px solid var(--role-border,#d7e2ef);border-radius:0 6px 6px 0;background:color-mix(in srgb,var(--role-bg,#f5f8fc) 65%,white)}
+.report-v2 .report-reading-points>li::before {left:8px;top:1.15em;background:var(--role-accent,#537091)}
+.report-v2 .report-item-navigation {border-left:3px solid var(--chapter-color,#315bc3);background:var(--chapter-surface,#f1f5ff)}
+.report-v2 .report-item-panel {border-top:1px solid var(--chapter-line,#d3def7);padding-top:14px}
+.report-v2 .page-pattern-guide {border-color:var(--chapter-line,#d3def7);background:linear-gradient(120deg,#fcfdff,var(--chapter-surface,#f1f5ff))}
+.report-v2 .page-pattern-guide figcaption strong {color:var(--chapter-color,#315bc3)}
+.report-v2 .page-pattern-card {box-shadow:0 4px 12px #284f7905;border-color:#d8e3f0;background:linear-gradient(180deg,#fff,#fcfdff)}
+.report-v2 .page-pattern-card .report-source-sketch {max-width:240px;max-height:136px;filter:drop-shadow(0 2px 3px #2a507910)}
+.report-v2 .report-source-patterns .report-source-sketch {max-height:125px}
+.report-v2 .report-visual-steps li {border-top:2px solid var(--chapter-color,#315bc3);background:var(--chapter-surface,#f1f5ff)}
+.report-v2 .report-visual-step-number {color:var(--chapter-color,#315bc3)}
+.report-v2 .work-today-grid>li>.report-source-sketch {max-width:230px;max-height:140px}
+.report-v2 .report-role-box,.report-v2 .report-section-diagram,.report-v2 .page-pattern-card {transition:border-color .16s ease,box-shadow .16s ease}
+.report-v2 .report-role-box:focus-within {box-shadow:0 0 0 3px color-mix(in srgb,var(--role-accent) 15%,transparent)}
+@media(max-width:700px){
+ .report-v2 .report-reading-key {padding:10px 12px;gap:6px 8px;margin-bottom:20px}
+ .report-v2 .report-reading-key>strong {width:100%}
+ .report-v2 .report-section-panel+.report-section-panel {padding-top:18px;margin-top:14px}
+ .report-v2 .report-section-diagram {padding:15px 14px 12px;border-radius:14px}
+ .report-v2 .report-section-diagram>figcaption {margin-bottom:14px}
+ .report-v2 .report-section-diagram>figcaption>div {gap:7px}
+ .report-v2 .report-section-diagram>figcaption strong {font-size:15px}
+ .report-v2 .report-diagram-nodes {grid-template-columns:minmax(0,1fr);gap:23px}
+ .report-v2 .report-diagram-nodes>li {display:grid;grid-template-columns:32px minmax(0,1fr);gap:0 10px;padding:12px;border-top-width:1px;border-left:3px solid var(--role-accent)}
+ .report-v2 .report-diagram-node-top {display:contents}
+ .report-v2 .report-diagram-node-icon {grid-column:1;grid-row:1/4;align-self:center}
+ .report-v2 .report-diagram-node-index {display:none}
+ .report-v2 .report-diagram-node-role {grid-column:2;justify-self:start;margin:0 0 4px;padding:2px 5px;font-size:10px}
+ .report-v2 .report-diagram-node-copy {grid-column:2}
+ .report-v2 .report-diagram-node-copy>strong {font-size:14px}
+ .report-v2 .report-diagram-node-copy>p {font-size:12px}
+ .report-v2 .report-diagram-value {grid-column:2;justify-self:start;margin-top:7px;font-size:13px}
+ .report-v2 .report-diagram-connector {left:calc(50% - 13px);top:calc(100% + 1px);transform:rotate(90deg);width:25px;height:23px}
+ .report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes {padding:0 0 0 12px;gap:10px}
+ .report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes::before {left:0;top:12%;bottom:12%;width:1px;height:auto;right:auto}
+ .report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes>li::before {left:-15px;top:50%;width:12px;height:1px}
+ .report-v2 .report-diagram-note {font-size:11px}
+ .report-v2 .page-pattern-card .report-source-sketch {max-height:125px}
+}
+@media(prefers-reduced-motion:reduce){.report-v2 .report-role-box,.report-v2 .report-section-diagram,.report-v2 .page-pattern-card {transition:none}}
+@media print {
+ .report-v2 .report-reading-key,.report-v2 .report-section-diagram,.report-v2 .report-section-divider {break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+ .report-v2 .report-source-sketch {filter:none!important}
+}

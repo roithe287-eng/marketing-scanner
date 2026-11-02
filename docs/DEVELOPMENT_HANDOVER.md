@@ -1,3 +1,5 @@
+> Latest diagram system: [전체 결과 도식·역할 색·섹션 구분](REPORT_DIAGRAM_SYSTEM_2026-11-02.md).
+
 > Latest report opening: [핵심요약 순서·쉬운 설명·페이지 도식](READABLE_OVERVIEW_2026-11-02.md).
 
 > Latest visual update: [하위 섹션 요약·도식과 원문 보존](CONCISE_VISUAL_SECTIONS_2026-10-26.md).

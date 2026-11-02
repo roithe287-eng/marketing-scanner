@@ -14,6 +14,8 @@ import AnswerContentPanel from './AnswerContentPanel';
 import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
 import DiagnosisComparisonPanel from './DiagnosisComparisonPanel';
 import {buildExecutionPlan} from '@/lib/reportExecution';
+import {buildReportDiagrams} from '@/lib/reportDiagrams';
+import {ReportReadingKey} from './ReportSectionDiagram';
 import React,{useEffect,useMemo,useState} from 'react';
 import type {MarketingReport,DiagnosisBaseline} from '@/lib/reportSchema';
 import {reportForPresentation} from '@/lib/reportPresentation';
@@ -56,6 +58,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
     return()=>{clearTimeout(timer);window.removeEventListener('pageshow',check);document.removeEventListener('visibilitychange',check);};
   },[expiry]);
   const data=useMemo(()=>buildReportInsights(report),[report]);
+  const diagrams=useMemo(()=>buildReportDiagrams(report,data),[report,data]);
   const execution=useMemo(()=>buildExecutionPlan(report,data),[report,data]);
   if(expired)return <section className="report-card" role="status"><h2 className="text-xl font-bold">보고서 보관 기간이 만료되었습니다</h2><p className="mt-3">이 결과에 포함된 보관·비교 자료는 더 이상 열람할 수 없습니다. 새 진단으로 현재 상태를 확인해 주세요.</p><a className="jm-button mt-4" href="/">새로 진단하기</a></section>;
   const scope=<>
@@ -66,9 +69,9 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
   </>;
   return <SiteGuideProvider report={report}><ReportWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`}><div className="report-v2 report-focused report-continuous" id="report-area">
     <ReportHeader report={report} data={data} actions={actions}/>
-    <ReportNavigation chapters={chapters}/>
+    <ReportNavigation chapters={chapters}/><ReportReadingKey/>
     <Chapter id="overview" number="01" title="우리 홈페이지, 무엇부터 바꾸면 될까요?" note="홈페이지 내용 → 고객 질문과 답변 → 우선 할 일 순서로 확인하세요.">
-      <ReportSections chapter="overview" items={[
+      <ReportSections chapter="overview" diagrams={diagrams} items={[
         {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
         {id:'overview-questions',label:'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst/>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
@@ -78,7 +81,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
       ]}/>
     </Chapter>
     <Chapter id="geo" number="02" title="AI가 브랜드를 읽는 방식" note="실제 답변·출처·페이지 준비도를 나누어 확인하세요.">
-      <ReportSections chapter="geo" items={[
+      <ReportSections chapter="geo" diagrams={diagrams} items={[
         {id:'geo-observations',label:'실제 AI 답변',children:report.llmCitationTest?<LlmCitationCard citation={report.llmCitationTest}/>:<p className="report-empty">저장된 AI 답변 관측이 없습니다.</p>},
         {id:'geo-questions',label:'질문별 페이지',children:<AnswerPageMap data={data}/>},
         {id:'geo-brand',label:'브랜드 표현 검토',children:<BrandReview data={data}/>},
@@ -88,7 +91,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
       ]}/>
     </Chapter>
     <Chapter id="search" number="03" title="페이지를 확인하고 바로 다듬기" note="문구 개선, 원문·링크, 검색 점검을 순서대로 확인하세요.">
-      <ReportSections chapter="search" items={[
+      <ReportSections chapter="search" diagrams={diagrams} items={[
         {id:'search-platforms',label:'플랫폼별 적용',children:<PlatformApplicationPanel report={report}/>},
         {id:'search-edits',label:'문구 개선',children:<PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'search-sources',label:'원문·링크',children:<SiteGuidebookOverview report={report}/>},
@@ -100,7 +103,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
       ]}/>
     </Chapter>
     <Chapter id="competition" number="04" title="비교 후보에서 찾는 차이" note="비교 지도, 표현, 실제 페이지를 나누어 살펴보세요.">
-      <ReportSections chapter="competition" items={[
+      <ReportSections chapter="competition" diagrams={diagrams} items={[
         {id:'competition-map',label:'비교 지도',children:<>{(competitorLoading||report.competitorStatus?.status==='pending')&&<p className="report-empty" role="status">경쟁사 정보를 수집 중입니다.</p>}<CompetitorStatusNotice report={report} onRetry={onRetry}/><CompetitorLandscape report={report}/></>},
         {id:'competition-messages',label:'메시지 비교',children:<MessageMap data={data}/>},
         ...(report.competitorAnalysis&&(data.competitorCount>0||report.competitorAnalysis.filtering)?[{id:'competition-pages',label:'후보 페이지 원문',children:<CompetitorComparison competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/>}]:[]),
@@ -108,7 +111,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
       ]}/>
     </Chapter>
     <Chapter id="actions" number="05" title="확인한 내용을 실행으로" note="담당 업무와 수정안, 일정, 목표 지표를 각각 확인하세요.">
-      <ReportSections chapter="actions" items={[
+      <ReportSections chapter="actions" diagrams={diagrams} items={[
         {id:'actions-board',label:'담당자별 작업',children:<><ExecutionBoard report={report} plan={execution}/><PageWorkMap plan={execution}/></>},
         {id:'actions-guide',label:'실행 가이드',children:<GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'actions-issues',label:'핵심 이슈',children:<div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} key={`${issue.title}-${index}`}/>)}</div>},
