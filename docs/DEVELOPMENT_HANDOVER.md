@@ -1,3 +1,5 @@
+> Latest radar fix: [결과 최상단 레이더 복원](RADAR_TOP_RESTORE_2026-11-02.md).
+
 > Latest diagram system: [전체 결과 도식·역할 색·섹션 구분](REPORT_DIAGRAM_SYSTEM_2026-11-02.md).
 
 > Latest report opening: [핵심요약 순서·쉬운 설명·페이지 도식](READABLE_OVERVIEW_2026-11-02.md).

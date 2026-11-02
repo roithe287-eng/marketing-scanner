@@ -24,7 +24,8 @@ test('every report opens with homepage content then customer questions, with sco
   assert.equal($('#report-view-overview-main .report-radar, #report-view-overview-main .work-today, #report-view-overview-main .sector-overview').length,0);
   assert.equal($('#report-view-overview-questions .answer-content').length,1);
   assert.equal($('#report-view-overview-priority .work-today').length,1);
-  assert.equal($('#report-view-overview-observations .report-radar').length,1);
+  assert.equal($('#report-top .report-radar-featured').length,1);
+  assert.equal($('#report-view-overview-observations .diagnosis-radar-graphic').length,0);
   assert.equal($('.site-content-overview').length,1);
   for(const quote of $('.content-evidence-quotes blockquote p').toArray())assert.ok($(quote).text().length<=242);
   assert.equal(JSON.stringify(report),before);

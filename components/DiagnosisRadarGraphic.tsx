@@ -6,11 +6,12 @@ type Props = {
   selected: number;
   example?: boolean;
   previousScores?:readonly number[];
+  reference?:boolean;
 };
 const labels = [[220,18],[350,62],[405,172],[350,282],[220,326],[90,282],[35,172],[90,62]];
 
 /** The same geometry and palette connect the landing preview and actual report. */
-export default function DiagnosisRadarGraphic({scores,selected,example=false,previousScores}:Props) {
+export default function DiagnosisRadarGraphic({scores,selected,example=false,previousScores,reference=false}:Props) {
   const clipId=useId();
   const values = diagnosisAxes.map((_,i)=>Math.max(0,Math.min(100,scores[i]??0)));
   const average = Math.round(values.reduce((sum,value)=>sum+value,0)/values.length);
@@ -23,7 +24,7 @@ export default function DiagnosisRadarGraphic({scores,selected,example=false,pre
   const tip=point(direction,91),base=point(direction,77),tail=point(direction,32);
   const angle=direction*Math.PI/4-Math.PI/2;
   const wing=(offset:number)=>`${base.x+Math.cos(angle+Math.PI/2)*offset},${base.y+Math.sin(angle+Math.PI/2)*offset}`;
-  return <svg className="diagnosis-radar-graphic" viewBox="0 0 440 344" role="img" aria-label={`8방향 레이더 차트 · 8개 영역 진단 ${example?'예시':'결과'}. 평균 ${average}점. ${diagnosisAxes.map((a,i)=>`${a.label} ${previousScores?`이전 ${previousScores[i]}점, 현재 `:''}${values[i]}점`).join(', ')}. 바깥쪽이 100점입니다.`}>
+  return <svg className="diagnosis-radar-graphic" viewBox="0 0 440 344" role="img" aria-label={`8방향 레이더 차트 · 8개 영역 진단 ${example?'예시':reference?'AI 참고 평가':'결과'}. 평균 ${average}점. ${diagnosisAxes.map((a,i)=>`${a.label} ${previousScores?`이전 ${previousScores[i]}점, 현재 `:''}${values[i]}점`).join(', ')}. 바깥쪽이 100점입니다.`}>
     <defs><clipPath id={clipId}><polygon points={polygon(100)}/></clipPath></defs>
     <polygon data-radar-boundary points={polygon(100)} fill="#edf3ff"/>
     {[25,50,75,100].map(level=><polygon key={level} points={polygon(level)} fill="none" stroke="#b7c8e5" strokeWidth="1"/>)}
@@ -42,6 +43,6 @@ export default function DiagnosisRadarGraphic({scores,selected,example=false,pre
     </g>;})}
     <circle cx="220" cy="172" r="31" fill="white" stroke="#cedaef"/>
     <text className="diagnosis-radar-average" x="220" y="168" textAnchor="middle" fontSize="25" fontWeight="850" fill="#192a4d">{average}</text>
-    <text className="diagnosis-radar-average-note" x="220" y="187" textAnchor="middle" fontSize="11" fontWeight="650" fill="#526078">{example?'평균 · 예시':'평균'}</text>
+    <text className="diagnosis-radar-average-note" x="220" y="187" textAnchor="middle" fontSize="11" fontWeight="650" fill="#526078">{example?'평균 · 예시':reference?'AI 평균':'평균'}</text>
   </svg>;
 }
