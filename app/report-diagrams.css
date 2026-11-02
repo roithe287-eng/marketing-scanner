@@ -88,6 +88,7 @@
  .report-v2 .report-diagram-node-copy>p {font-size:12px}
  .report-v2 .report-diagram-value {grid-column:2;justify-self:start;margin-top:7px;font-size:13px}
  .report-v2 .report-diagram-connector {left:calc(50% - 13px);top:calc(100% + 1px);transform:rotate(90deg);width:25px;height:23px}
+ .report-v2 .report-section-diagram[data-diagram-kind=equation] .report-diagram-connector {transform:none}
  .report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes {padding:0 0 0 12px;gap:10px}
  .report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes::before {left:0;top:12%;bottom:12%;width:1px;height:auto;right:auto}
  .report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes>li::before {left:-15px;top:50%;width:12px;height:1px}
