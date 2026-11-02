@@ -1,3 +1,5 @@
+> Latest report opening: [핵심요약 순서·쉬운 설명·페이지 도식](READABLE_OVERVIEW_2026-11-02.md).
+
 > Latest visual update: [하위 섹션 요약·도식과 원문 보존](CONCISE_VISUAL_SECTIONS_2026-10-26.md).
 
 > Latest non-commerce report opening: [고객 질문·콘텐츠 중심의 시작 화면과 PDF](NONCOMMERCE_OPENING_2026-10-26.md).

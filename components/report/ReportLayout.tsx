@@ -10,7 +10,6 @@ import ReportEvidenceGuide from './ReportEvidenceGuide';
 import WebsitePurposePanel from './WebsitePurposePanel';
 import NonCommerceSectorPanel from './NonCommerceSectorPanel';
 import {showProductCollection} from '@/lib/websitePurpose';
-import {nonCommerceOpening} from '@/lib/reportOpening';
 import AnswerContentPanel from './AnswerContentPanel';
 import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
 import DiagnosisComparisonPanel from './DiagnosisComparisonPanel';
@@ -47,7 +46,6 @@ import {REPORT_CHAPTERS as chapters,ReportChapter as Chapter} from './ReportChap
 function Disclosure({title,note,children}:{title:string;note:string;children:React.ReactNode}) {return <details open className="report-disclosure"><summary><span><strong>{title}</strong><small>{note}</small></span><b aria-hidden="true">+</b></summary><div className="report-legacy">{children}</div></details>;}
 export default function ReportLayout({report:storedReport,actions,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
   const report=useMemo(()=>reportForPresentation(storedReport),[storedReport]);
-  const opening=nonCommerceOpening(report);
   const expiry=Math.min(...[report.sharedRetention?.expiresAt,report.diagnosisBaseline?.expiresAt,report.geoBaseline?.expiresAt].filter((v):v is number=>typeof v==='number'));
   const [expired,setExpired]=useState(false);
   useEffect(()=>{
@@ -69,13 +67,13 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
   return <SiteGuideProvider report={report}><ReportWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`}><div className="report-v2 report-focused report-continuous" id="report-area">
     <ReportHeader report={report} data={data} actions={actions}/>
     <ReportNavigation chapters={chapters}/>
-    <Chapter id="overview" number="01" title={opening?'홈페이지의 강점과 보강할 내용을 함께 보세요':'먼저 파악할 핵심'} note="핵심 요약부터 실행 과제까지 아래로 이어집니다. 목차를 누르면 해당 내용으로 바로 이동합니다.">
+    <Chapter id="overview" number="01" title="우리 홈페이지, 무엇부터 바꾸면 될까요?" note="홈페이지 내용 → 고객 질문과 답변 → 우선 할 일 순서로 확인하세요.">
       <ReportSections chapter="overview" items={[
-        {id:'overview-main',label:opening?'홈페이지 근거':'핵심 진단',children:opening?<>{report.sitePurpose?.sector&&<NonCommerceSectorPanel purpose={report.sitePurpose}/>}<SiteContentOverview report={report}/></>:<><TodayWork plan={execution}/><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview}/></>},
-        ...(!opening?[{id:'overview-content',label:'홈페이지 근거',children:<SiteContentOverview report={report}/>}]:[]),
-        {id:'overview-questions',label:'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst={!!opening}/>},
-        {id:'overview-priority',label:opening?'우선 할 일':'고객 행동 흐름',children:opening?<TodayWork plan={execution}/>:<ConversionPath data={data}/>},
-        ...(opening?[{id:'overview-observations',label:'영역별 진단',children:<><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview}/><ConversionPath data={data}/></>}]:[]),
+        {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
+        {id:'overview-questions',label:'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst/>},
+        {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
+        ...(report.sitePurpose?.sector?[{id:'overview-sector',label:'업종별 확인',children:<NonCommerceSectorPanel purpose={report.sitePurpose}/>}]:[]),
+        {id:'overview-observations',label:'영역별 진단',children:<><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview}/><ConversionPath data={data}/></>},
         ...(report.diagnosisBaseline?[{id:'overview-comparison',label:'이전 결과 비교',children:<DiagnosisComparisonPanel report={report}/>}]:[]),
       ]}/>
     </Chapter>
