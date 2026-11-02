@@ -62,10 +62,10 @@ test('an actual insurance article keeps its informational purpose',async t=>{
   const data=await extract(t,'<html><head><title>보험 보장 비교 칼럼</title><meta name="description" content="보험 약관 연구 자료와 출처 안내"></head><body><main><h1>보험 보장 비교 칼럼</h1><p>보험료와 면책을 다루는 연구 자료입니다.</p></main></body></html>');
   assert.equal(analyzeWebsitePurpose(data).kind,'content');assert.equal(analyzeWebsitePurpose(data).sector,undefined);
 });
-test('commerce, mixed, unknown and navigation-only sector mentions keep their existing layouts',async t=>{
+test('commerce and navigation-only sector mentions retain their evidence after the content-first opening',async t=>{
   const data=await extract(t,'<html><head><title>기본 온라인 쇼핑몰</title></head><body><nav>보험 법무법인</nav><main><h1>기본 온라인 쇼핑몰</h1><p>의류 상품을 판매합니다.</p><a href="/buy">구매하기</a></main><footer>개인회생 프랜차이즈</footer></body></html>');
   const p=analyzeWebsitePurpose(data);assert.equal(p.kind,'commerce');assert.equal(p.sector,undefined);
-  const report=finalizeReportEvidence({...fixture,url:data.url},data),$=render(report);assert.equal($('.sector-overview').length,0);assert.equal($('#report-view-overview-main [aria-label="8개 영역 근거와 측정 범위"]').length,1);
+  const report=finalizeReportEvidence({...fixture,url:data.url},data),$=render(report);assert.equal($('.sector-overview').length,0);assert.equal($('#report-view-overview-observations [aria-label="8개 영역 근거와 측정 범위"]').length,1);
   const legacy=render(fixture);assert.equal(legacy('.sector-overview').length,0);assert.equal(legacy('.report-radar').length,1);
 });
 test('a medical page without cost text is a review, not a failed price test',async t=>{

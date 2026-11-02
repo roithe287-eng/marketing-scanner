@@ -1,5 +1,5 @@
 'use client';
-import {CompactText,VisualSteps} from './ReportVisualSummary';
+import {CompactText,VisualSteps,SourceSketch} from './ReportVisualSummary';
 import WorkLink from './ReportJumpLink';
 import ReportItemPanels from './ReportItemPanels';
 import {Guidebook} from './SiteGuidebook';
@@ -8,6 +8,7 @@ import {RoleBox,RoleLabel} from './ReportRole';
 import EvidenceFlow from './EvidenceFlow';
 import React,{useId,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
+import {plainGuide} from '@/lib/reportPlainLanguage';
 import {buildPageEdits,changedText,executionBrief,groupExecutionTasks,workOwners,workZones,type ExecutionPlan} from '@/lib/reportExecution';
 
 function Heading({eyebrow,title,note}:{eyebrow:string;title:string;note:string}) {return <div className="report-card-heading"><p className="report-eyebrow">{eyebrow}</p><h3>{title}</h3><CompactText className="report-note" text={note}/></div>;}
@@ -18,8 +19,8 @@ export function CopyWork({text,label='작업 지시서 복사'}:{text:string;lab
 }
 export function TodayWork({plan}:{plan:ExecutionPlan}) {
  return <section className="report-card report-workflow work-today" id="report-today" aria-label="오늘 먼저 할 일">
-  <Heading eyebrow="START WITH THREE" title="오늘, 여기부터 바꿔 보세요" note="우선 작업 3개 · 바꿀 위치 → 할 일 → 완료 확인"/>
-  {plan.first.length?<ol className="work-today-grid">{plan.first.map((t,i)=><li key={t.id}><div className="work-card-top"><span className="work-number">0{i+1}</span><span>{workOwners.find(o=>o.id===t.owner)!.label}</span></div><h4>{t.title}</h4><div className="report-role-stack"><RoleBox role="location" label="바꿀 곳"><p>{t.location}</p></RoleBox><RoleBox role="proposal" label="할 일"><CompactText text={t.action}/></RoleBox></div><WorkLink id={t.anchor}>수정 방법과 근거 열기</WorkLink></li>)}</ol>:<p className="work-empty">현재 저장된 진단에 보완 항목이 없습니다.</p>}
+  <Heading eyebrow="03 · 우선 할 일" title="먼저 확인할 작업, 한눈에 보세요" note="바꿀 곳과 할 일을 짧게 정리했습니다. 각 항목에서 원래 진단과 자세한 수정 방법을 확인할 수 있습니다."/>
+  {plan.first.length?<ol className="work-today-grid">{plan.first.map((t,i)=>{const g=plainGuide(t.title,t.guideScope==='account'?'account':undefined);return <li key={t.id}><div className="work-card-top"><span className="work-number">0{i+1}</span><span>{workOwners.find(o=>o.id===t.owner)!.label}</span></div><SourceSketch type={g.patterns[0].kind}/><h4>{g.title}</h4><div className="report-role-stack"><RoleBox role="location" label="확인할 곳"><p>{g.location}</p></RoleBox><RoleBox role="proposal" label={t.status==='review'?'확인할 내용':'할 일'}><p>{t.status==='review'?'실제 화면·설정을 먼저 대조하세요. ':''}{g.action}</p></RoleBox></div><WorkLink id={t.anchor}>이 진단의 근거·수정 방법 보기</WorkLink></li>;})}</ol>:<p className="work-empty">현재 저장된 진단에 보완 항목이 없습니다.</p>}
  </section>;
 }
 export function PageEditPreview({report}:{report:MarketingReport}) {

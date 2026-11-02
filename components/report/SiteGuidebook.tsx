@@ -1,6 +1,7 @@
 'use client';
 import {RoleBox,RoleLabel} from './ReportRole';
 import EvidenceFlow from './EvidenceFlow';
+import PagePatternGuide from './PagePatternGuide';
 import React,{createContext,useContext,useMemo,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {buildSiteGuide,guideInstruction,type GuideRequest} from '@/lib/siteGuidebook';
@@ -21,6 +22,7 @@ function GuidebookContent(props:GuideRequest&{compact?:boolean}){
  const g=guide,sources=[...new Set([...g.effect.sources,...g.route.sources])];
  async function copyGuide(){try{await navigator.clipboard.writeText(guideInstruction(g));setStatus('실행 가이드를 복사했습니다.');setFallback(false);}catch{setFallback(true);setStatus('아래 작업 지시서를 선택해 복사하세요.');}}
  return <div className="guidebook guidebook-compact">
+  {!props.compact&&<PagePatternGuide title={props.title} topic={g.topic}/>}
   {!props.compact&&<section className="guide-application" aria-label="적용 체크포인트">
    <header className="guide-application-heading"><RoleLabel role="proposal" label="적용 체크포인트"/><button type="button" className="report-secondary-button" onClick={copyGuide}>실행 가이드 복사</button></header>
    {g.targets.length>1&&<label className="guide-target-select">수정할 내용<select value={g.focus?.key||''} onChange={e=>setSelectedKey(e.target.value)}>{g.targets.map((e,i)=><option key={e.key} value={e.key}>{i+1}. {e.text.slice(0,90)||'이미지'}{g.targets.filter(t=>t.text===e.text).length>1?` · ${e.section?.label||e.href||e.tag.toUpperCase()}`:''}</option>)}</select></label>}

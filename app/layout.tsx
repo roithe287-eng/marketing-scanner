@@ -18,6 +18,7 @@ import "./report-workspace.css";
 import "./report-sectors.css";
 import "./report-platforms.css";
 import "./report-color-balance.css";
+import "./report-plain-language.css";
 import "./landing-gate.css";
 import "./landing-result-preview.css";
 

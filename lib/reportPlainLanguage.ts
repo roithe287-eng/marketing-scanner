@@ -1,0 +1,29 @@
+import type {GuideTopic} from './guideKnowledge';
+import {guideTopic} from './siteGuidebook';
+
+export type PageSketchKind='hero'|'search'|'cost'|'faq'|'proof'|'action'|'image'|'settings'|'flow';
+export type PagePattern={kind:PageSketchKind;title:string;detail:string};
+type PlainGuide={title:string;meaning:string;location:string;action:string;patterns:PagePattern[]};
+
+/** Reading aids only. Original findings, conditions and execution instructions stay intact. */
+export const PLAIN_GUIDES:Record<GuideTopic,PlainGuide>={
+ heading:{title:'첫 화면의 큰 제목을 확인하세요',meaning:'큰 글씨와 검색엔진이 읽는 대표 제목(H1)은 다를 수 있습니다.',location:'홈페이지 첫 화면의 대표 제목',action:'무엇을 제공하는 페이지인지 제목에 쓰고, 제목 설정도 함께 확인하세요.',patterns:[{kind:'hero',title:'첫 화면 제목',detail:'누구를 위한 · 어떤 상품이나 서비스'},{kind:'settings',title:'제목 설정',detail:'글자 크기와 H1 설정을 함께 확인'}]},
+ title:{title:'검색 결과에 나올 제목을 다듬으세요',meaning:'검색 제목은 검색 결과의 제목 후보로 쓰이는 문구입니다.',location:'페이지 관리 → 검색 제목 입력란',action:'실제 상품·서비스명과 브랜드를 짧게 연결하세요.',patterns:[{kind:'search',title:'검색 결과 제목',detail:'[상품·서비스명] | [브랜드]'},{kind:'hero',title:'본문과 대조',detail:'제목에서 약속한 내용이 본문에도 있는지'}]},
+ description:{title:'검색 제목 아래의 소개를 다듬으세요',meaning:'검색 설명은 이 페이지를 짧게 소개하는 문장입니다.',location:'페이지 관리 → 검색 설명 입력란',action:'대상 고객과 제공 내용을 한두 문장으로 정리하세요.',patterns:[{kind:'search',title:'제목 아래 설명',detail:'누구에게 · 무엇을 제공하는지'},{kind:'proof',title:'사실 확인',detail:'본문에 있는 내용만 소개'}]},
+ cta:{title:'고객이 누를 버튼을 분명하게 만드세요',meaning:'CTA는 구매·예약·문의처럼 다음 행동으로 연결하는 버튼입니다.',location:'상품·서비스 설명 다음의 주요 버튼',action:'누르면 무엇이 진행되는지 쓰고, 연결 화면까지 확인하세요.',patterns:[{kind:'hero',title:'설명 먼저',detail:'제공 내용을 이해한 다음'},{kind:'action',title:'버튼 한 번',detail:'[견적 요청] · [예약하기] 등 실제 행동'},{kind:'flow',title:'연결 화면',detail:'클릭 → 작성·선택 → 완료 확인'}]},
+ form:{title:'문의 양식을 끝까지 써 보세요',meaning:'입력부터 제출 완료까지 이어져야 문의가 접수됩니다.',location:'문의 양식과 제출 완료 화면',action:'필수 항목·안내를 확인하고 실제로 제출해 수신 여부를 확인하세요.',patterns:[{kind:'settings',title:'입력 항목',detail:'꼭 필요한 정보만 명확하게'},{kind:'action',title:'제출 버튼',detail:'무엇을 신청하는지 표시'},{kind:'flow',title:'접수 확인',detail:'완료 안내와 실제 수신 대조'}]},
+ content:{title:'고객이 받을 내용을 구체적으로 쓰세요',meaning:'서비스 이름만으로는 제공 범위와 이용 방법을 알기 어렵습니다.',location:'상품·서비스 소개 본문',action:'이용 대상·제공 내용·진행 순서를 나누어 적으세요.',patterns:[{kind:'hero',title:'이용 대상',detail:'누구에게 맞는 상품·서비스인지'},{kind:'cost',title:'제공 범위',detail:'포함되는 것 / 별도로 확인할 것'},{kind:'flow',title:'진행 순서',detail:'신청 → 확인 → 제공'}]},
+ trust:{title:'주장 옆에 확인할 근거를 보여주세요',meaning:'경력·사례·성과는 고객이 확인할 자료와 함께 보여야 이해가 쉽습니다.',location:'사례·소개 문구 바로 옆',action:'해당 사례의 조건과 날짜, 확인 자료를 연결하세요.',patterns:[{kind:'proof',title:'확인 가능한 사례',detail:'어떤 상황에서 무엇을 했는지'},{kind:'faq',title:'조건과 출처',detail:'적용 대상 · 시점 · 원문 자료'}]},
+ ai:{title:'고객 질문 바로 아래에 답을 쓰세요',meaning:'고객이 묻는 내용을 페이지 안에서 바로 읽을 수 있게 만드는 작업입니다.',location:'상품·서비스 설명 아래의 질문과 답변',action:'질문 하나에 답변 하나를 붙이고, 가격·기간 등 조건을 함께 쓰세요.',patterns:[{kind:'faq',title:'고객 질문',detail:'구매·이용 전에 실제로 궁금한 내용'},{kind:'cost',title:'구체적인 답변',detail:'확인한 사실 + 조건·범위'},{kind:'action',title:'다음 행동',detail:'답을 읽은 다음 문의·신청'}]},
+ image:{title:'이미지 내용을 글로도 설명하세요',meaning:'이미지를 읽지 못하는 환경을 위한 짧은 설명이 대체 텍스트(alt)입니다.',location:'해당 이미지의 설명 설정',action:'무엇이 보이는지 간결하게 적으세요. 장식용 이미지는 용도를 먼저 확인하세요.',patterns:[{kind:'image',title:'실제 이미지',detail:'사진이 전달하는 정보 확인'},{kind:'faq',title:'짧은 설명',detail:'[제품명]의 [실제로 보이는 특징]'}]},
+ crawl:{title:'검색엔진이 페이지에 접근할 수 있는지 확인하세요',meaning:'수집은 검색엔진이 페이지를 읽는 과정입니다. 읽었다고 검색 노출이 확정되지는 않습니다.',location:'사이트 공개·검색 수집 설정',action:'공개할 페이지인지 먼저 정하고, 진단에서 지목한 접근 설정을 확인하세요.',patterns:[{kind:'settings',title:'공개 범위',detail:'공개할 페이지와 보호할 페이지 구분'},{kind:'flow',title:'수집 허용',detail:'검색 로봇이 읽을 수 있는지 확인'},{kind:'search',title:'노출 별도 확인',detail:'수집 허용만으로 노출이 보장되지는 않음'}]},
+ canonical:{title:'같은 내용의 대표 주소를 정하세요',meaning:'canonical은 비슷한 주소 중 대표 페이지 주소를 알려주는 설정입니다.',location:'해당 페이지의 대표 URL 설정',action:'같은 내용인지 먼저 확인하고, 의도한 대표 주소를 지정하세요.',patterns:[{kind:'flow',title:'여러 주소',detail:'같거나 비슷한 페이지인지 대조'},{kind:'settings',title:'대표 주소 하나',detail:'의도한 URL로 연결되는지 확인'}]},
+ schema:{title:'페이지 정보를 검색엔진용 양식으로 정리하세요',meaning:'구조화 데이터는 본문의 상품·업체 정보를 정해진 형식으로 전달하는 설정입니다.',location:'페이지 템플릿의 구조화 데이터 설정',action:'사용할 정보 유형을 정하고, 본문과 같은 사실만 입력하세요.',patterns:[{kind:'hero',title:'실제 본문',detail:'현재 공개한 정보부터 확인'},{kind:'settings',title:'정보 양식',detail:'유형에 맞는 이름·값 입력'},{kind:'proof',title:'일치 확인',detail:'본문·설정·검사 도구 결과 대조'}]},
+ speed:{title:'모바일에서 읽고 누르기 편한지 확인하세요',meaning:'속도 수치와 실제 이용 경험은 함께 확인해야 합니다.',location:'모바일 페이지의 이미지·글·버튼',action:'같은 URL을 휴대폰에서 열고 로딩·화면 밀림·버튼 반응을 확인하세요.',patterns:[{kind:'image',title:'화면 열기',detail:'글·이미지가 표시되는지'},{kind:'hero',title:'화면 안정성',detail:'읽는 도중 위치가 밀리지 않는지'},{kind:'action',title:'직접 누르기',detail:'버튼·입력 동작이 이어지는지'}]},
+ viewport:{title:'휴대폰 너비에 맞는 화면인지 확인하세요',meaning:'뷰포트는 모바일 화면을 어떤 너비로 표시할지 정하는 설정입니다.',location:'모바일 화면과 페이지 너비 설정',action:'가로로 밀거나 확대하지 않아도 글과 버튼을 이용할 수 있는지 확인하세요.',patterns:[{kind:'hero',title:'모바일 너비',detail:'화면 안에 내용이 들어오는지'},{kind:'action',title:'글과 버튼',detail:'확대하지 않아도 읽고 누르는지'}]},
+ social:{title:'링크 공유 시 보이는 미리보기를 확인하세요',meaning:'공유 미리보기(OG)는 링크를 보낼 때 표시되는 제목·설명·이미지입니다.',location:'페이지의 공유 제목·설명·이미지 설정',action:'현재 페이지와 맞는 미리보기인지 확인하고 실제 링크 공유로 대조하세요.',patterns:[{kind:'image',title:'공유 이미지',detail:'이 페이지를 대표하는 이미지'},{kind:'search',title:'제목·설명',detail:'이미지와 같은 내용을 소개'}]},
+ measurement:{title:'클릭과 완료가 각각 기록되는지 확인하세요',meaning:'버튼 클릭과 구매·문의 완료는 서로 다른 행동입니다.',location:'광고·분석 계정의 이벤트 설정',action:'실제 동작을 한 뒤 해당 이벤트가 올바른 이름으로 기록되는지 확인하세요.',patterns:[{kind:'action',title:'버튼 클릭',detail:'관심을 보인 행동'},{kind:'flow',title:'구매·문의 완료',detail:'목표 행동을 끝낸 순간'},{kind:'settings',title:'기록 대조',detail:'분석 계정에서 각각 확인'}]},
+ account:{title:'담당 계정에서 설정을 확인하세요',meaning:'로그인한 계정 안의 설정은 홈페이지 문구만으로 확인할 수 없습니다.',location:'이 항목에서 안내한 운영 계정',action:'아래의 원래 작업 순서에 따라 계정의 실제 상태를 확인하세요.',patterns:[{kind:'settings',title:'담당 계정',detail:'설정 권한과 메뉴 확인'},{kind:'proof',title:'작업 결과',detail:'원래 진단의 완료 조건과 대조'}]},
+};
+export function plainGuide(title:string,topic?:GuideTopic){return PLAIN_GUIDES[topic||guideTopic(title)];}
+
