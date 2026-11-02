@@ -8,6 +8,7 @@ import PagePatternGuide,{PagePatternGrid} from '../components/report/PagePattern
 import {TodayWork} from '../components/report/ExecutionWorkflow';
 import {buildSourceLibrary,buildContentFacets,isBoilerplateSource} from '../lib/reportContent';
 import {buildExecutionPlan} from '../lib/reportExecution';
+import {ANSWER_GUIDES,answerTopicSubject} from '../lib/answerContent';
 import {PLAIN_GUIDES} from '../lib/reportPlainLanguage';
 import {fixture} from './fixtures/report';
 import {serviceReviewReport} from './fixtures/service-review-report';
@@ -68,4 +69,13 @@ test('starting cards keep explanations short even when original technical instru
  assert.ok($('.work-today-grid>li').toArray().every(el=>$(el).text().length<360));
  assert.ok(plan.tasks.some(t=>t.action.includes(long)),'the original instructions remain in the execution plan');
  assert.equal(JSON.stringify(report),before);
+});
+
+
+test('generated Korean question guides use a natural topic particle without altering source evidence',()=>{
+ assert.equal(answerTopicSubject('상담'),'상담은');
+ assert.equal(answerTopicSubject('유니폼'),'유니폼은');
+ assert.equal(answerTopicSubject('과잠바'),'과잠바는');
+ assert.equal(ANSWER_GUIDES.eligibility.question('상담'),'상담은 어떤 조건에서 이용할 수 있나요?');
+ assert.match(ANSWER_GUIDES.definition.template('유니폼'),/^유니폼은 /);
 });

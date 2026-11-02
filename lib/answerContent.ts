@@ -12,19 +12,25 @@ const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
 const compact=(text:string)=>clean(text).replace(/\s/g,'').toLocaleLowerCase();
 export type AnswerPageData=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'ogDescription'|'h1'|'h2'|'bodyText'|'isJsHeavy'|'siteEditing'|'seoEvidence'|'productContext'>;
 
+/** Korean topic particle for generated guide copy; source quotes are never rewritten. */
+export function answerTopicSubject(keyword:string){
+ const last=keyword.trim().charCodeAt(keyword.trim().length-1);
+ return keyword+(last>=0xac00&&last<=0xd7a3&&(last-0xac00)%28!==0?'은':'는');
+}
+
 type IntentGuide={question:(keyword:string)=>string;fields:string[];template:(keyword:string)=>string;placement:string;match:RegExp};
 export const ANSWER_GUIDES:Record<AnswerIntent,IntentGuide>={
-  definition:{question:k=>`${k}는 어떤 제품·서비스인가요?`,fields:['대상 고객','핵심 기능·제공 가치'],template:k=>`${k}는 [대상 고객]을 위한 [제품·서비스 유형]입니다. [핵심 기능 또는 제공 범위]를 제공합니다.`,placement:'대표 소개 문단 아래',match:/입니다|제공|위한|서비스|제품|소개/},
+  definition:{question:k=>`${answerTopicSubject(k)} 어떤 제품·서비스인가요?`,fields:['대상 고객','핵심 기능·제공 가치'],template:k=>`${answerTopicSubject(k)} [대상 고객]을 위한 [제품·서비스 유형]입니다. [핵심 기능 또는 제공 범위]를 제공합니다.`,placement:'대표 소개 문단 아래',match:/입니다|제공|위한|서비스|제품|소개/},
   price:{question:k=>`${k}의 가격은 무엇에 따라 달라지나요?`,fields:['가격 또는 견적 산정 기준','포함·별도 비용'],template:k=>`${k}의 [가격 또는 견적]은 [산정 기준]에 따라 정해집니다. [포함 항목]은 포함되며, [추가 비용 발생 조건]은 별도로 안내합니다.`,placement:'가격·견적 안내와 문의 버튼 사이',match:/가격|비용|요금|견적|원\b|원입니다|부가세|유료|무료|할인/},
   delivery:{question:k=>`${k} 제작·배송에는 얼마나 걸리나요?`,fields:['기간 산정 시작 기준','제작 기간','배송 포함 여부'],template:k=>`${k} 제작은 [기간 산정 시작 기준]부터 [제작 기간]이 소요됩니다. 배송은 [포함 여부 및 배송 기간]이며, [일정이 달라지는 조건]은 주문 전 확인해 주세요.`,placement:'주문·제작 안내 아래',match:/제작|배송|납기|영업일|소요|기간|일정/},
-  minimum:{question:k=>`${k}는 몇 ${/과잠|의류|단체복|유니폼/.test(k)?'벌':'개'}부터 주문할 수 있나요?`,fields:['최소 주문 수량','혼합·추가 주문 조건'],template:k=>`${k}의 최소 주문 수량은 [최소 수량]입니다. [사이즈·옵션 혼합 가능 범위]이며, 추가 주문 시 [적용 조건]을 확인해 주세요.`,placement:'상품 옵션·주문 안내 아래',match:/최소|수량|벌|개부터|장부터|추가 주문|소량/},
-  process:{question:k=>`${k} 이용은 어떤 순서로 진행되나요?`,fields:['진행 단계','고객 준비사항','완료 기준'],template:k=>`${k}는 [첫 단계] → [중간 단계] → [완료 단계] 순서로 진행합니다. 시작 전 [고객 준비사항]이 필요하며, [완료 기준]을 확인한 뒤 마무리합니다.`,placement:'이용 절차 안내와 신청 버튼 사이',match:/절차|단계|진행|신청|상담|계약|확정|접수/},
+  minimum:{question:k=>`${answerTopicSubject(k)} 몇 ${/과잠|의류|단체복|유니폼/.test(k)?'벌':'개'}부터 주문할 수 있나요?`,fields:['최소 주문 수량','혼합·추가 주문 조건'],template:k=>`${k}의 최소 주문 수량은 [최소 수량]입니다. [사이즈·옵션 혼합 가능 범위]이며, 추가 주문 시 [적용 조건]을 확인해 주세요.`,placement:'상품 옵션·주문 안내 아래',match:/최소|수량|벌|개부터|장부터|추가 주문|소량/},
+  process:{question:k=>`${k} 이용은 어떤 순서로 진행되나요?`,fields:['진행 단계','고객 준비사항','완료 기준'],template:k=>`${answerTopicSubject(k)} [첫 단계] → [중간 단계] → [완료 단계] 순서로 진행합니다. 시작 전 [고객 준비사항]이 필요하며, [완료 기준]을 확인한 뒤 마무리합니다.`,placement:'이용 절차 안내와 신청 버튼 사이',match:/절차|단계|진행|신청|상담|계약|확정|접수/},
   scope:{question:k=>`${k}에는 어떤 항목이 포함되나요?`,fields:['기본 포함 항목','제외·추가 항목'],template:k=>`${k}의 기본 제공 범위는 [포함 항목]입니다. [제외 또는 추가 항목]은 별도이며, [적용 조건]에 따라 범위가 달라집니다.`,placement:'서비스·상품 구성 안내 아래',match:/포함|제외|제공|범위|구성|별도/},
   choice:{question:k=>`${k} 선택 시 무엇을 확인해야 하나요?`,fields:['선택 기준','조건별 차이','실제 사례'],template:k=>`${k} 선택 시 [선택 기준]을 확인해 주세요. [사용 조건 A]에는 [적합한 조건], [사용 조건 B]에는 [다른 조건]을 비교할 수 있습니다.`,placement:'특징 설명 아래 비교표와 함께',match:/선택|비교|기준|적합|권장|장점|단점|원단|소재/},
   care:{question:k=>`${k} 사용·관리 방법은 무엇인가요?`,fields:['사용·관리 방법','주의사항'],template:k=>`${k} 사용·관리 시 [사용·관리 방법]을 확인해 주세요. [주의해야 할 조건]에서는 [확인할 조치]가 필요합니다.`,placement:'사용법·관리 안내 아래',match:/세탁|관리|사용법|보관|주의|취급|사용 방법/},
   comparison:{question:k=>`${k}의 종류별 차이는 무엇인가요?`,fields:['비교할 종류','동일 기준의 차이','선택 조건'],template:k=>`${k}의 [종류 A]와 [종류 B]는 [비교 기준]에서 차이가 있습니다. [조건별 차이]를 확인하고 [사용 목적]에 맞춰 선택해 주세요.`,placement:'종류·옵션 설명 아래 비교표',match:/차이|비교|종류|옵션|장단점|특징/},
-  location:{question:k=>`${k}는 어디에서 이용할 수 있나요?`,fields:['제공 지역·위치','이용·예약 조건'],template:k=>`${k}는 [제공 지역 또는 위치]에서 이용할 수 있습니다. [운영 시간·예약 조건]을 확인한 뒤 [이용 방법]으로 신청해 주세요.`,placement:'위치·이용 안내 아래',match:/주소|위치|지역|방문|예약|운영 시간|영업 시간/},
-  eligibility:{question:k=>`${k}는 어떤 조건에서 이용할 수 있나요?`,fields:['이용 대상','필수 조건','제외 조건'],template:k=>`${k}는 [이용 대상]이 [필수 조건]을 충족할 때 이용할 수 있습니다. [제외 조건]에 해당하면 [별도 확인사항]을 먼저 확인해 주세요.`,placement:'이용 대상·신청 자격 안내 아래',match:/자격|대상|조건|제외|신청|필수/},
+  location:{question:k=>`${answerTopicSubject(k)} 어디에서 이용할 수 있나요?`,fields:['제공 지역·위치','이용·예약 조건'],template:k=>`${answerTopicSubject(k)} [제공 지역 또는 위치]에서 이용할 수 있습니다. [운영 시간·예약 조건]을 확인한 뒤 [이용 방법]으로 신청해 주세요.`,placement:'위치·이용 안내 아래',match:/주소|위치|지역|방문|예약|운영 시간|영업 시간/},
+  eligibility:{question:k=>`${answerTopicSubject(k)} 어떤 조건에서 이용할 수 있나요?`,fields:['이용 대상','필수 조건','제외 조건'],template:k=>`${answerTopicSubject(k)} [이용 대상]이 [필수 조건]을 충족할 때 이용할 수 있습니다. [제외 조건]에 해당하면 [별도 확인사항]을 먼저 확인해 주세요.`,placement:'이용 대상·신청 자격 안내 아래',match:/자격|대상|조건|제외|신청|필수/},
   proof:{question:k=>`${k}의 실제 사례는 어디에서 확인하나요?`,fields:['공개 가능한 실제 사례','기간·조건','결과 확인 자료'],template:k=>`${k}의 [실제 사례명]은 [진행 기간과 조건]에 따라 진행했습니다. [확인 가능한 결과]와 [검증 자료 또는 사례 페이지]를 함께 확인해 주세요.`,placement:'사례·후기 영역 아래',match:/사례|실적|후기|결과|검증|포트폴리오/},
 };
 
@@ -108,8 +114,8 @@ function purposeGuide(intent:AnswerIntent,p:WebsitePurpose):IntentGuide{
     }
   }
   if(p.kind==='content'){
-    if(intent==='definition')return {...base,question:k=>`${k}의 핵심 내용과 적용 범위는 무엇인가요?`,fields:['핵심 설명','적용 범위'],template:k=>`${k}는 [원문으로 확인한 핵심 설명]입니다. [적용 범위와 예외]를 함께 확인해 주세요.`};
-    if(intent==='choice')return {...base,question:k=>`${k} 자료를 읽을 때 어떤 조건과 예외를 확인해야 하나요?`,fields:['적용 조건','해석 시 주의할 예외'],template:k=>`${k}는 [적용 조건]에서 설명합니다. [예외 또는 해석 시 주의사항]은 원자료와 함께 확인해 주세요.`};
+    if(intent==='definition')return {...base,question:k=>`${k}의 핵심 내용과 적용 범위는 무엇인가요?`,fields:['핵심 설명','적용 범위'],template:k=>`${answerTopicSubject(k)} [원문으로 확인한 핵심 설명]입니다. [적용 범위와 예외]를 함께 확인해 주세요.`};
+    if(intent==='choice')return {...base,question:k=>`${k} 자료를 읽을 때 어떤 조건과 예외를 확인해야 하나요?`,fields:['적용 조건','해석 시 주의할 예외'],template:k=>`${answerTopicSubject(k)} [적용 조건]에서 설명합니다. [예외 또는 해석 시 주의사항]은 원자료와 함께 확인해 주세요.`};
     if(intent==='proof')return {...base,question:k=>`${k}의 원출처와 최신 정보는 어디에서 확인하나요?`,fields:['작성자·발행 주체','원출처','확인 날짜'],placement:'문서의 작성자·출처·수정일 영역',match:/작성|저자|출처|참고|발행|수정|날짜|author|source|updated/i,template:k=>`${k} 자료는 [작성자 또는 발행 주체]의 [원출처]를 바탕으로 작성했습니다. [실제 확인 날짜] 기준의 내용이며 변경 사항은 원자료에서 확인해 주세요.`};
   }
   if(p.kind==='organization'&&intent==='definition')return {...base,question:k=>`${k}의 사업 분야와 제공 역량은 무엇인가요?`,fields:['사업 분야','확인 가능한 제공 역량'],template:k=>`${k}의 사업 분야는 [실제 사업 분야]입니다. [담당 조직과 확인 가능한 제공 역량]을 안내합니다.`};
