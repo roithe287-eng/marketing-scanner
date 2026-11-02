@@ -1,10 +1,10 @@
 /** Reading roles, not pass/fail states. A proposal is never a completed change. */
 export const reportRoles = {
   current: {accent:'#475569', background:'#f8fafc', border:'#dce3ec', ink:'#263449'},
-  review: {accent:'#9a4b0a', background:'#ffffff', border:'#e3cfb2', ink:'#263449'},
-  proposal: {accent:'#087569', background:'#ffffff', border:'#bad7cf', ink:'#263449'},
-  verify: {accent:'#2657ab', background:'#ffffff', border:'#c4d2e6', ink:'#263449'},
-  location: {accent:'#2657ab', background:'#ffffff', border:'#c4d2e6', ink:'#263449'},
+  review: {accent:'#9a4b0a', background:'#fff8eb', border:'#e3cfb2', ink:'#263449'},
+  proposal: {accent:'#087569', background:'#eef9f4', border:'#bad7cf', ink:'#263449'},
+  verify: {accent:'#6343a0', background:'#f5f1fc', border:'#c4d2e6', ink:'#263449'},
+  location: {accent:'#2657ab', background:'#eff5ff', border:'#c4d2e6', ink:'#263449'},
 } as const;
 export type ReportRole = keyof typeof reportRoles;
 

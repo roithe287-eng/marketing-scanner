@@ -1,7 +1,8 @@
 import React from 'react';
 import DiagnosisIcon from './DiagnosisIcon';
 import {reportReadingPoints} from '@/lib/conciseReport';
-import type {PageSketchKind} from '@/lib/reportPlainLanguage';
+import SourceSketch from './PageModelGraphic';
+export {SourceSketch};
 
 /** Keep source values exact; turn long explanations into complete, distinct reading points. */
 export function CompactText({text,summary,verbatim=false,className=''}:{text:string;summary?:string;verbatim?:boolean;className?:string;label?:string}){
@@ -36,22 +37,6 @@ const sourceCards=[
  {type:'proof',title:'사례와 증빙',detail:'주장 옆에 확인 근거'},
  {type:'action',title:'문의 동선',detail:'설명 다음에 문의 버튼'},
 ] as const;
-export function SourceSketch({type}:{type:PageSketchKind}){
- return <svg viewBox="0 0 180 92" className="report-source-sketch" aria-hidden="true" focusable="false">
-  <rect x="10" y="6" width="160" height="80" rx="9" fill="white" stroke="currentColor" strokeOpacity=".2"/>
-  <path d="M10 23h160" stroke="currentColor" strokeOpacity=".15"/>
-  <circle cx="22" cy="15" r="2" fill="currentColor"/><circle cx="29" cy="15" r="2" fill="currentColor" opacity=".4"/>
-  {type==='hero'?<><rect x="22" y="32" width="136" height="40" rx="5" fill="currentColor" opacity=".07"/><path d="M32 43h100" stroke="currentColor" strokeWidth="5" strokeLinecap="round"/><path d="M32 54h78" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity=".5"/><rect x="32" y="62" width="39" height="6" rx="3" fill="currentColor"/></>:
-   type==='search'?<><path d="M25 36h62" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity=".4"/><path d="M25 47h127" stroke="currentColor" strokeWidth="4" strokeLinecap="round"/><path d="M25 59h127m-127 9h98" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity=".5"/></>:
-   type==='image'?<><rect x="23" y="32" width="62" height="39" rx="5" fill="currentColor" opacity=".1"/><path d="m30 63 15-15 10 9 10-12 14 18" stroke="currentColor" fill="none" strokeWidth="2"/><circle cx="39" cy="42" r="4" fill="currentColor" opacity=".5"/><path d="M97 40h49m-49 10h54m-54 10h35" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></>:
-   type==='settings'?<><path d="M27 40h126m-126 14h126m-126 14h126" stroke="currentColor" strokeWidth="2" strokeLinecap="round" opacity=".3"/>{[[59,40],[118,54],[78,68]].map(([x,y])=><rect key={y} x={x-7} y={y-5} width="14" height="10" rx="3" fill="currentColor"/>)}</>:
-   type==='flow'?<>{[24,73,122].map((x,i)=><g key={x}><rect x={x} y="37" width="34" height="30" rx="5" fill="currentColor" opacity={i===2?.18:.07}/><path d={`M${x+8} 48h18m-18 8h12`} stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></g>)}<path d="M61 52h8m-3-3 3 3-3 3m44-3h8m-3-3 3 3-3 3" stroke="currentColor" fill="none" strokeWidth="1.5"/></>:
-   type==='cost'?<><rect x="23" y="35" width="62" height="36" rx="5" fill="currentColor" opacity=".12"/><rect x="95" y="35" width="62" height="36" rx="5" fill="currentColor" opacity=".05"/><path d="M32 45h32m-32 12h42m30-12h32m-32 12h42" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></>:
-   type==='faq'?<><rect x="23" y="32" width="134" height="19" rx="5" fill="currentColor" opacity=".12"/><path d="M33 42h90m-90 19h114m-114 9h76" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><path d="m141 39 3 3-3 3" fill="none" stroke="currentColor"/></>:
-   type==='proof'?<><rect x="23" y="34" width="47" height="37" rx="5" fill="currentColor" opacity=".1"/><path d="m31 60 10-10 7 6 10-14" fill="none" stroke="currentColor" strokeWidth="2"/><path d="M83 40h66m-66 11h49" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/><circle cx="91" cy="67" r="7" fill="currentColor"/><path d="m87 67 3 3 5-6" stroke="white" fill="none" strokeWidth="1.5"/><path d="M105 67h40" stroke="currentColor" strokeWidth="3" strokeLinecap="round"/></>:
-   <><path d="M36 37h108m-96 9h84" stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity=".4"/><rect x="57" y="59" width="66" height="17" rx="8.5" fill="currentColor"/><path d="M75 67h30m-4-3 4 3-4 3" fill="none" stroke="white" strokeWidth="1.5"/></>}
- </svg>;
-}
 export function SourceReferenceDiagram({details}:{details:React.ReactNode}){
  return <aside className="report-source-reference" aria-label="외부 출처 활용 안내">
   <div className="report-source-rule"><div data-kind="use"><span>참고할 것</span><strong>정보를 보여주는 구성</strong></div><div data-kind="skip"><span>업종이 다르면 비교 제외</span><strong>상품·가격·경쟁력</strong></div></div>
