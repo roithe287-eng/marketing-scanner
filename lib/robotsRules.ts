@@ -38,8 +38,10 @@ export function evaluateRobots(text:string,agent:'Yeti'|'Ads-Naver'|'Googlebot'|
   }
   const specific=groups.filter(g=>g.agents.includes(agent.toLowerCase()));
   const selected=specific.length?specific:agent==='Ads-Naver'?[]:groups.filter(g=>g.agents.includes('*'));
-  const rules=selected.flatMap(g=>g.rules);
-  if(rules.some(r=>/%[0-9a-f]{2}|[^\x20-\x7e]/i.test(r.path))||/%[0-9a-f]{2}/i.test(path)) return {allowed:null,rule:'인코딩 경로는 관리 도구에서 확인',explicit:specific.length>0};
+  const rules=selected.flatMap(g=>g.rules).map(r=>({...r,path:r.path.replace(/%([0-9a-f]{2})/gi,(match,hex)=>{const c=String.fromCharCode(parseInt(hex,16));return /[A-Za-z0-9._~-]/.test(c)?c:match.toUpperCase();})}));
+  // Unrelated Shopify %2B filter rules cannot make every ASCII product/page unknown.
+  // Non-ASCII rules and encoded requested paths retain the prior conservative review state.
+  if(rules.some(r=>/%(?:[89a-f][0-9a-f])|[^\x20-\x7e]/i.test(r.path))||/%[0-9a-f]{2}|[^\x20-\x7e]/i.test(path)) return {allowed:null,rule:'인코딩 경로는 관리 도구에서 확인',explicit:specific.length>0};
   const matching=rules.filter(r=>{
     const end=r.path.endsWith('$');const raw=end?r.path.slice(0,-1):r.path;
     const pattern=raw.split('*').map(p=>p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*');

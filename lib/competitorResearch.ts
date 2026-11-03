@@ -2,12 +2,13 @@
 import type {ExtractedWebsiteData} from './extractWebsite';
 import type {OwnProductSource} from './ownProductSchema';
 import {isEmploymentQuery} from './competitorRoles';
-export type QuerySite = {title?:string;ogTitle?:string;description?:string;ogDescription?:string;keywords?:string;h1?:string[];h2?:string[];bodyText?:string;productSources?:OwnProductSource[]};
+import type {BusinessDocument} from './businessContext';
+export type QuerySite = {title?:string;ogTitle?:string;description?:string;ogDescription?:string;keywords?:string;h1?:string[];h2?:string[];bodyText?:string;productSources?:OwnProductSource[];businessDocuments?:BusinessDocument[];businessKeywords?:string[]};
 /** Reuse the already collected page; omit known navigation, footer and licence-only text. */
-export function competitorOwnText(data:Pick<ExtractedWebsiteData,'bodyText'|'siteEditing'>):string {
+export function competitorOwnText(data:Pick<ExtractedWebsiteData,'bodyText'|'siteEditing'|'businessDocuments'>):string {
   const elements=data.siteEditing?.elements||[];
   const chrome=elements.filter(e=>['header','footer','nav'].includes(e.region||'')).map(e=>e.text.replace(/\s+/g,' ').trim());
-  const lines=[...elements.filter(e=>!e.truncated&&['text','heading'].includes(e.kind)&&!['header','footer','nav'].includes(e.region||'')).map(e=>e.text),...(data.bodyText||'').split(/\n+/)];
+  const lines=[...(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt').flatMap(d=>[d.title,...d.sections.map(s=>s.text)]),...elements.filter(e=>!e.truncated&&['text','heading'].includes(e.kind)&&!['header','footer','nav'].includes(e.region||'')).map(e=>e.text),...(data.bodyText||'').split(/\n+/)];
   return [...new Set(lines.map(t=>t.replace(/\s+/g,' ').trim()).filter(t=>t.length>=4&&!chrome.some(c=>c.includes(t))&&!/판매업신고|사업자등록번호|통신판매업신고|copyright|개인정보처리방침|이용약관/i.test(t)))].join('\n').slice(0,8000);
 }
 export const normalizeSearchText=(text:string)=>text.normalize('NFKC').toLowerCase().replace(/\s+/g,'');
@@ -25,6 +26,7 @@ export function queryFields(site:QuerySite) {
     ...(site.h2||[]).slice(0,8).map(text=>({label:'H2',text,weight:1})),
     {label:'메타 키워드',text:site.keywords||'',weight:1},
     {label:'수집된 본문',text:site.bodyText||'',weight:1},
+    ...(site.businessDocuments||[]).flatMap(d=>[{label:`보완 원문 제목 · ${d.url}`,text:d.title,weight:3},...d.sections.map(s=>({label:`보완 원문 · ${d.url}`,text:s.text,weight:2}))]),
     ...(site.productSources||[]).flatMap(p=>[{label:`상품명 · ${new URL(p.url).pathname}`,text:p.name,weight:2},{label:`상품 분류 · ${new URL(p.url).pathname}`,text:p.categories.join(' · '),weight:3},{label:`상품 설명 · ${new URL(p.url).pathname}`,text:p.description,weight:1}])].filter(f=>f.text.trim());
 }
 export function keywordEvidence(keyword:string,site:QuerySite) {
@@ -84,13 +86,14 @@ export function usableMarketKeyword(query:string,site:QuerySite):boolean {
   if(isEmploymentQuery(query)&&!isEmploymentQuery([site.title,site.ogTitle,site.description,site.ogDescription,...site.h1||[]].join(' ')))return false;
   // A category embedded in a brand (e.g. 온누리식품) is insufficient on its own.
   const exactCategoryHeading=known&&queryFields(site).some(f=>['페이지 제목','H1','H2'].includes(f.label)&&normalizeSearchText(f.text)===q);
-  return exactCategoryHeading||evidence.evidence.some(e=>['메타 설명','메타 키워드','수집된 본문'].includes(e.field)||/^상품(?:명| 분류| 설명) · /.test(e.field));
+  return exactCategoryHeading||evidence.evidence.some(e=>['메타 설명','메타 키워드','수집된 본문'].includes(e.field)||/^(?:상품(?:명| 분류| 설명)|보완 원문(?: 제목)?) · /.test(e.field));
 }
 export function marketKeywordCandidates(site:QuerySite){
+  const business=(site.businessKeywords||[]).filter(k=>usableMarketKeyword(k,site)).map(k=>keywordEvidence(k,site));
   const existing=keywordCandidates(site,20),extra=[...marketTerms,...productKeywordSeeds(site)].filter(t=>keywordEvidence(t,site).grounded).map(t=>keywordEvidence(t,site));
   const seen=new Set<string>();
-  return [...existing,...extra].filter(c=>usableMarketKeyword(c.keyword,site)).filter(c=>{const k=normalizeSearchText(c.keyword);if(seen.has(k))return false;seen.add(k);return true;})
-    .sort((a,b)=>b.weightedSupport-a.weightedSupport||b.keyword.length-a.keyword.length).slice(0,5);
+  return [...business,...existing,...extra].filter(c=>usableMarketKeyword(c.keyword,site)).filter(c=>{const k=normalizeSearchText(c.keyword);if(seen.has(k))return false;seen.add(k);return true;})
+    .sort((a,b)=>Number(business.some(c=>c.keyword===b.keyword))-Number(business.some(c=>c.keyword===a.keyword))||b.weightedSupport-a.weightedSupport||b.keyword.length-a.keyword.length).slice(0,5);
 }
 export const COMPETITOR_API_NOTE='네이버 웹문서 API의 제한된 응답에서 찾은 비교 후보입니다. 응답 순서는 네이버 통합검색 순위·검색량·매출 순위가 아닙니다.';
 export const COMPETITOR_KEYWORD_NOTE='대표 키워드는 수집된 페이지 제목·설명·주요 제목·본문의 상품·서비스 관련성으로 선택합니다. 회사명 단독 조회와 페이지의 반복 횟수를 시장의 검색 수요로 사용하지 않습니다.';

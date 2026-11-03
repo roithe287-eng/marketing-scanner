@@ -9,6 +9,7 @@ export function answerContentPrompt(data:AnswerPageData):string{
 }
 export async function analyzeAnswerContent(data:AnswerPageData){
   const fallback=buildAnswerContentPlan(data);
+  if(fallback.scope==='submitted-page-and-business')return fallback;
   if(!process.env.OPENAI_API_KEY||(fallback.mode==='limited'&&!data.productContext?.sources.length)||!fallback.primaryKeyword)return fallback;
   try{
     const result=await getOpenAI().chat.completions.create({

@@ -20,7 +20,7 @@ export const AnswerQuestionSchema=z.object({
 export const AnswerContentPlanSchema=z.object({
   version:z.literal(1),source:z.literal('own-page'),mode:z.enum(['ai-assisted','basic','limited']),
   targetUrl:z.string().max(4000),observedAt:z.string().datetime(),
-  scope:z.enum(['submitted-page','submitted-page-and-products']),coverage:z.enum(['partial','limited']),
+  scope:z.enum(['submitted-page','submitted-page-and-products','submitted-page-and-business']),coverage:z.enum(['partial','limited']),
   observation:z.literal('not-measured'),notice:z.string().max(700),
   primaryKeyword:AnswerKeywordSchema.nullable(),secondaryKeywords:z.array(AnswerKeywordSchema).max(2),
   topicScope:z.enum(['focused','mixed','unknown']),

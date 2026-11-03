@@ -1,6 +1,7 @@
 import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {NonCommerceSectorSchema,analyzeNonCommerceSector,sectorActionPattern} from './nonCommerceSectors';
+import {BusinessContextSchema,analyzeBusinessContext,businessPrompt} from './businessContext';
 
 export const PurposeKindSchema=z.enum(['commerce','service','organization','education','content','public_service','mixed','unknown']);
 const source=z.object({text:z.string().max(600),locator:z.string().max(1000)});
@@ -11,10 +12,11 @@ export const WebsitePurposeSchema=z.object({
   pricingObserved:z.boolean(),note:z.string().max(1000),
   checks:z.array(z.object({id:z.string().max(80),label:z.string().max(150),status:z.enum(['observed','review','not_applicable']),evidence:z.array(source).max(3),guide:z.string().max(1200)})).max(8),
   sector:NonCommerceSectorSchema.optional(),
+  business:BusinessContextSchema.optional(),
 });
 export type WebsitePurpose=z.infer<typeof WebsitePurposeSchema>;
 export type PurposeKind=WebsitePurpose['kind'];
-type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'productContext'|'productDiscovery'|'seoEvidence'|'schemaTypes'>>;
+type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'productContext'|'productDiscovery'|'seoEvidence'|'schemaTypes'|'businessDocuments'>>;
 const labels:Record<PurposeKind,string>={commerce:'상품 판매형',service:'서비스·상담형',organization:'기업·기관 소개형',education:'교육·프로그램형',content:'정보·콘텐츠형',public_service:'공공·지원 안내형',mixed:'판매·비커머스 혼합형',unknown:'목적 확인 필요'};
 const patterns={
   public_service:/지원사업|공공\s*서비스|행정\s*민원|복지\s*(?:서비스|사업|지원|급여|시설)|보조금|(?:정부|지자체|공공).{0,12}지원|public service/i,
@@ -31,6 +33,7 @@ export const showProductCollection=(p:WebsitePurpose|undefined)=>!p||!isNonComme
 
 /** Submitted-page purpose candidates, not a verified business model or a performance score. */
 export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
+  const business=analyzeBusinessContext(data);
   const elements=(data.siteEditing?.elements||[]).filter(e=>!['nav','header','footer'].includes(e.region||''));
   const units:{text:string;locator:string}[]=[];
   const add=(text:string,locator:string)=>{const value=short(text);if(value&&!units.some(u=>u.text===value))units.push({text:value,locator});};
@@ -67,11 +70,12 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const candidate=sector?(genericCandidate==='public_service'?'public_service':'service'):genericCandidate;
   const purchase=actions.filter(a=>actionPatterns.purchase.test(a.text));
   const commerce=purchase.length>0||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
-  const kind:PurposeKind=commerce?(candidate&&candidate!=='content'?'mixed':'commerce'):candidate||'unknown';
+  const kind:PurposeKind=business?.kind||(commerce?(candidate&&candidate!=='content'?'mixed':'commerce'):candidate||'unknown');
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
-  const action=preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
-  const goalKey=action||(['content','organization','education','public_service'].includes(kind)?'read':'unknown');
-  const evidence=(structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?matched[candidate]:units).slice(0,commerce?6:8);
+  const action=business?(actions.some(a=>actionPatterns[business.goalKey].test(a.text))?business.goalKey:undefined):preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
+  const goalKey=business?.goalKey||action||(['content','organization','education','public_service'].includes(kind)?'read':'unknown');
+  const goalLabel=business?.goalLabel||actionLabels[goalKey];
+  const evidence=(business?business.evidence:structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?matched[candidate]:units).slice(0,commerce?6:8);
   if(commerce&&evidence.length<8)evidence.push(...purchase.slice(0,8-evidence.length));
   const pricingPattern=/가격|비용|요금|견적|유료|무료|수강료|구독료|수수료|참가비|pricing|fees|\bcost\b/i;
   const pricingObserved=units.some(u=>pricingPattern.test(u.text));
@@ -99,13 +103,18 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
     check('process',kind==='organization'?'실적·프로젝트·담당 주체':'이용 절차와 준비사항',/사례|프로젝트|실적|담당|절차|단계|준비|진행|process|project|team/i,'공개 가능한 실제 사례·담당 주체·진행 절차를 대조하세요. 수집하지 못한 수치나 고객 후기를 만들지 않습니다.');
     check('proof','전문성과 확인 가능한 근거',/경력|사례|프로젝트|연혁|담당|출처|기술|자격|인증|team|experience|reference/i,'업무에 맞는 담당자·이력·사례·출처를 확인하세요. 모든 사이트에 후기·별점·인증을 필수로 요구하지 않습니다.');
   }
-  if(sector&&!commerce){checks.splice(0,checks.length,...sector.checks);}
+  if(business){
+    checks.splice(0,checks.length,...business.checks);
+    const costEvidence=business.checks.flatMap(c=>c.evidence).filter(e=>pricingPattern.test(e.text)).slice(0,3);
+    checks.push({id:'price',label:'가격·거래·이용 조건',status:costEvidence.length?'observed':'review',evidence:costEvidence,guide:'상품·서비스별 현재 금액·통화·포함·별도 비용과 취소·이용 조건을 해당 상세 및 최종 선택 화면에서 대조하세요. 검색 요약이나 다른 상품의 조건을 합쳐 가격·무료 혜택을 확정하지 않습니다.'});
+  }
+  else if(sector&&!commerce){checks.splice(0,checks.length,...sector.checks);}
   else check('price','가격·거래 조건 적용 범위',pricingPattern,pricingApplies&&pricingObserved?'관측한 비용 표현의 적용 대상·포함 범위·추가 협의 조건을 확인하세요.':'이 페이지에는 판매 가격을 필수로 요구하지 않습니다. 별도 유료 신청·거래가 있다면 해당 경로에서 조건을 확인하세요.',pricingApplies);
-  checks.push({id:'goal',label:`다음 행동 · ${actionLabels[goalKey]}`,status:action?'observed':'review',evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,3):[],guide:goalKey==='read'?'본문·출처·관련 자료를 실제로 읽고 이동하는 경로를 확인하세요. 버튼 개수·문의 폼 유무를 성과로 평가하지 않습니다.':`${actionLabels[goalKey]} 경로를 실제로 실행해 연결 대상·준비사항·완료 기준을 확인하세요. 입력 폼이나 완료 화면은 정적 HTML만으로 검증하지 않습니다.`});
-  return WebsitePurposeSchema.parse({version:1,kind,label:labels[kind],sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,...(sector&&!commerce?{sector}:{}),goal:{key:goalKey,label:actionLabels[goalKey],observed:!!action,evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,4):[]},pricingObserved,checks,note:'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});
+  checks.push({id:'goal',label:`다음 행동 · ${goalLabel}`,status:action?'observed':'review',evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,3):[],guide:goalKey==='read'?'본문·출처·관련 자료를 실제로 읽고 이동하는 경로를 확인하세요. 버튼 개수·문의 폼 유무를 성과로 평가하지 않습니다.':`${goalLabel} 경로를 실제로 실행해 연결 대상·준비사항·완료 기준을 확인하세요. 입력 폼이나 완료 화면은 정적 HTML만으로 검증하지 않습니다.`});
+  return WebsitePurposeSchema.parse({version:1,kind,label:business?.label||labels[kind],sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,...(sector&&!commerce&&!business?{sector}:{}),...(business?{business}:{}),goal:{key:goalKey,label:goalLabel,observed:!!action,evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,4):[]},pricingObserved,checks,note:business?.note||'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});
 }
 
-export function purposePrompt(data:PurposeInput){const p=analyzeWebsitePurpose(data);return JSON.stringify({kind:p.kind,label:p.label,goal:p.goal,evidence:p.evidence,sector:p.sector,checks:p.checks.map(c=>({label:c.label,applicable:c.status!=='not_applicable'})),rule:'페이지 목적과 업종별 기준에 맞춰 분석한다. sector가 있으면 해당 업종의 실제 제공 범위·담당 주체·조건·상담 행동을 우선하며 각 evidence를 현재 원문으로만 취급한다. 기준 항목과 추천 질문은 업체가 제공한다고 확인된 사실이 아니다. 정보형·기업형·공공형과 비커머스 서비스에 상품 배송·재고·장바구니·후기·별점을 필수로 요구하지 않는다. 업종의 caution을 지키며 미확인 목적·수치·운영 조건은 추측하지 않는다.'});}
+export function purposePrompt(data:PurposeInput){const p=analyzeWebsitePurpose(data);return JSON.stringify({kind:p.kind,label:p.label,note:p.note,goal:p.goal,evidence:p.evidence,sector:p.sector,business:p.business?JSON.parse(businessPrompt(p.business)):undefined,checks:p.checks.map(c=>({label:c.label,applicable:c.status!=='not_applicable'})),rule:'페이지 목적과 업종별 기준에 맞춰 분석한다. sector가 있으면 해당 업종의 실제 제공 범위·담당 주체·조건·상담 행동을 우선하며 각 evidence를 현재 원문으로만 취급한다. 기준 항목과 추천 질문은 업체가 제공한다고 확인된 사실이 아니다. 정보형·기업형·공공형과 비커머스 서비스에 상품 배송·재고·장바구니·후기·별점을 필수로 요구하지 않는다. 업종의 caution을 지키며 미확인 목적·수치·운영 조건은 추측하지 않는다.'});}
 export function outOfPurpose(text:string,p:WebsitePurpose){
   if(!isNonCommerce(p))return false;
   const retail='(?:장바구니|재고|배송비|배송.?정책|반품.?정책|최소.?주문|구매.?버튼|결제.?버튼|상품.?가격|판매.?상품)';
