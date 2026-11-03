@@ -37,14 +37,16 @@ export function captureBusinessDocument(html:string,url:string,capturedAt=new Da
   }catch{/* Invalid catalogue data cannot become evidence. */}}
   // Remove styles/scripts and public reviews before collecting explanatory source text.
   $('script,style,noscript,template,form,blockquote,[class*="review" i],[id*="review" i],[class*="testimonial" i],[class*="comment" i],[id*="comment" i]').remove();
+  // Preserve visible line boundaries before the generic section collector collapses spaces.
+  $('br').replaceWith('\u001e');
   const sections=captureContentSections($,url).filter(s=>!s.truncated).flatMap(s=>{
-    const lines=s.text.match(/[^.!?。]+[.!?。]+(?:\s|$)|[^.!?。]+$/gu)||[s.text];
+    const lines=s.text.split(/\u001e+/u).flatMap(text=>text.split(/(?<=[.!?。])(?:\s+|(?=[-•]))/u));
     return lines.filter(text=>text.trim().length>=12&&text.trim().length<=600).map(text=>({heading:s.heading,text:clean(text)}));
   });
   // Keep multiple decision conditions, rather than the first ten generic introduction lines.
   const useful=(s:{text:string;heading:string})=>{
     const text=s.heading+' '+s.text;
-    return (/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label/i.test(text)?5:0);
+    return (/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label/i.test(text)?5:0);
   };
   const seen=new Set<string>();
   return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(seen.has(s.text))return false;seen.add(s.text);return true;}).slice(0,10)});

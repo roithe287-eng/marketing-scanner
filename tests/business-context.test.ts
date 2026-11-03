@@ -17,6 +17,9 @@ import {evaluateRobots} from '../lib/robotsRules';
 import {extractWebsite} from '../lib/extractWebsite';
 import type {ExtractedWebsiteData} from '../lib/extractWebsite';
 import {fixture} from './fixtures/report';
+import React from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import ScoreRadar from '../components/ScoreRadar';
 
 const urls={sydney:'https://sydneydutyfree.com.au/ko',sdf:'https://sdfkorea.com/index.html',pure:'https://pure-australia.com/',trip:'https://www.tripozzy.com/'};
 const doc=(url:string,title:string,text:string,source:BusinessDocument['source']='merchant_html'):BusinessDocument=>({url,title,source,capturedAt:'2026-11-03T06:00:00.000Z',sections:[{heading:title,text}]});
@@ -57,6 +60,18 @@ test('public travel catalogue extraction omits translations, user state, CSS, re
   const d=captureBusinessDocument(html,urls.trip),serialized=JSON.stringify(d);
   assert.match(serialized,/시드니 공항픽업/);assert.doesNotMatch(serialized,/SECRET|PRIVATE|css-123|color:red/);
   assert.equal(d.source,'merchant_html');
+});
+
+test('line-break delivery conditions survive Cafe24 collection and details outrank testimonials',()=>{
+  const html='<head><title>배송 안내</title></head><body><main><h2>배송안내</h2><div>제품 발송 후 교환 조건을 확인하세요.<br>한국배송: 최소 2일~최대 3일 (주말/공휴일 제외)<br>호주배송: 최소 4일~최대 14일 (호주 공휴일 제외)<br>개인 통관 수량 초과 시 추가 운송료가 발생합니다.</div></main></body>';
+  const d=captureBusinessDocument(html,'https://sdfkorea.com/shopinfo/guide.html');
+  assert.ok(d.sections.some(s=>s.text.includes('한국배송')&&s.text.includes('주말/공휴일 제외')));
+  assert.ok(d.sections.some(s=>s.text.includes('호주배송')&&s.text.includes('호주 공휴일 제외')));
+  assert.doesNotMatch(JSON.stringify(d),/\\u001e/);
+  const p={...cases[2][0],siteEditing:{version:1 as const,source:'static-html' as const,signals:[],elements:[],elementsTruncated:false,contentSections:[{id:'review',heading:'Customer Testimonials',text:'★★★★★ I love that these ingredients make me feel healthier.',truncated:false}]}};
+  const context=analyzeBusinessContext(p)!;
+  assert.ok(context.checks.find(c=>c.id==='business-formula')!.evidence.every(e=>!e.text.includes('★★★★★')));
+  assert.match(context.checks.find(c=>c.id==='business-regulatory')!.evidence[0].locator,/ldv20-official-information/);
 });
 
 test('supplemented merchant claims retain TGA limits instead of certifying efficacy',()=>{
@@ -105,6 +120,10 @@ test('robots-restricted search-only report never uses snippets as merchant facts
   const report=finalizeReportEvidence({...fixture,url:urls.trip,pageEvidence:capturePageEvidence(d)},d);
   assert.equal(report.evidenceReview?.assessed,0);assert.equal(report.evidenceReview?.score,null);
   assert.ok(report.checklist?.every(c=>c.status!=='pass'&&c.status!=='fail'));
+  assert.ok(report.criticalIssues.every(c=>c.evidenceStatus==='review'&&c.priority==='low'));
+  const radar=renderToStaticMarkup(React.createElement(ScoreRadar,{diagnosis:report.diagnosis,review:report.evidenceReview,featured:true}));
+  assert.match(radar,/평가 보류|미측정/);assert.match(radar,/8방향 레이더/);
+  assert.doesNotMatch(radar,/취약|AI 평균|평균 [0-9]+점|[0-9]+<small>\/100/);
 });
 
 test('explicit JinjjaScanner permission restores primary HTML collection and SVG titles are not metadata',async t=>{

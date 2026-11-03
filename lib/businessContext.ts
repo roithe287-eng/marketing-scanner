@@ -26,7 +26,7 @@ const profiles:Record<BusinessContext['id'],Profile>={
     keywords:['시드니 면세점','시드니면세점','면세 쇼핑','무료 수하물 보관','호주 기념품'],
     caution:'시내 매장·여행객 서비스와 한국 배송 직구몰의 목적을 구분한다. 면세 자격·출국·여권·봉인 조건은 업체 안내의 관측이며 현행 법규를 검증한 판정이 아니다. 한국 배송이나 온라인 결제를 확인 없이 가정하지 않는다.',
     checks:[
-      {id:'visit',label:'매장 위치·영업시간·방문 동선',match:/Liverpool|Sydney NSW|매장|영업시간|directions|Mon\s*-\s*Sun/i,guide:'여행 중 방문 고객이 매장 주소·시드니 현지 영업시간·지도·연락처를 바로 확인할 수 있는지 대조하세요. 지도 열기·전화·문의 클릭과 실제 방문·매장 매출은 따로 측정하세요.'},
+      {id:'visit',label:'매장 위치·영업시간·방문 동선',match:/Liverpool|Sydney NSW|주소|위치|영업시간|directions|Mon\s*-\s*Sun/i,guide:'여행 중 방문 고객이 매장 주소·시드니 현지 영업시간·지도·연락처를 바로 확인할 수 있는지 대조하세요. 지도 열기·전화·문의 클릭과 실제 방문·매장 매출은 따로 측정하세요.'},
       {id:'duty',label:'면세 이용 대상·준비물·수령 조건',match:/여권|항공권|출국|봉인|면세.*자격|passport|sealed|departure/i,guide:'FAQ의 면세 대상·여권·항공권·출국·봉인 조건을 현재 매장 운영 기준 및 공식 자료와 대조하고, 매장 방문 버튼 가까이에 안내를 연결하세요. 면세율·환급·배송 가능 여부를 추측하지 마세요.'},
       {id:'travel',label:'짐보관·공항픽업 등 여행객 서비스',match:/수하물|짐\s*보관|공항\s*픽업|SIM|tour desk|luggage|airport/i,guide:'무료·제휴 서비스의 이용 대상·시간·예약·수량 조건을 각 안내 페이지에서 확인하세요. 서비스 이용을 쇼핑 의무나 무조건 무료로 단정하지 말고 방문 전 문의 경로를 연결하세요.'},
       {id:'merchandise',label:'취급 브랜드·선물 탐색과 방문 연결',match:/브랜드|기념품|스킨케어|건강식품|brand|souvenir/i,guide:'실제 취급 브랜드·상품군별 소개에서 위치·면세 조건·문의로 이어지는지 확인하세요. 한국 출국 전 탐색 고객과 시드니 체류 고객은 광고 문구와 도착 페이지를 구분해 검토하세요.'},
@@ -83,7 +83,8 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   if((data.schemaTypes||[]).some(t=>/^(Article|BlogPosting|NewsArticle|Course)$/i.test(t)))return;
   const documents=data.businessDocuments||[];
   const primary=[data.title,data.description,data.ogDescription,...(data.h1||[]),...(data.h2||[]),...documents.map(d=>d.title)].join(' ');
-  const inputUnits=[{text:data.title,locator:'head > title'},{text:data.description||data.ogDescription||'',locator:'meta[name="description"]'},...(data.h1||[]).map(text=>({text,locator:'h1'})),...(data.siteEditing?.contentSections||[]).filter(s=>!s.truncated).map(s=>({text:s.text,locator:s.heading||'입력 페이지 본문'}))].filter(u=>u.text);
+  const testimonial=(text:string)=>/[★☆]|testimonial|고객.{0,5}후기|highly recommend|I.ve been using|I love that/i.test(text);
+  const inputUnits=[{text:data.title,locator:'head > title'},{text:data.description||data.ogDescription||'',locator:'meta[name="description"]'},...(data.h1||[]).map(text=>({text,locator:'h1'})),...(data.siteEditing?.contentSections||[]).filter(s=>!s.truncated).map(s=>({text:s.text,locator:s.heading||'입력 페이지 본문'}))].filter(u=>u.text&&!testimonial(u.text));
   const units=[...inputUnits,...documents.filter(d=>d.source!=='search_excerpt').flatMap(d=>[{text:d.title,locator:d.url},...d.sections.map(s=>({text:s.text,locator:d.url}))])].map(u=>({...u,text:u.text.slice(0,600)}));
   const all=[primary,...units.map(u=>u.text),...documents.filter(d=>d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
   let id:BusinessContext['id']|undefined;
@@ -94,7 +95,7 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   if(!id)return;
   const p=profiles[id],has=(keyword:string)=>all.toLowerCase().replace(/\s/g,'').includes(keyword.toLowerCase().replace(/\s/g,''));
   const evidence=units.filter(u=>/면세|duty.free|직구|구매대행|health foods|supplement|TGA|공항|투어|예약|ingredients/i.test(u.text)).slice(0,8);
-  const checks=p.checks.map(c=>{const found=units.filter(u=>c.match.test(u.text)).slice(0,3);return {id:'business-'+c.id,label:c.label,status:found.length?'observed' as const:'review' as const,evidence:found,guide:c.guide};});
+  const checks=p.checks.map(c=>{const found=units.filter(u=>c.match.test(u.text)).sort((a,b)=>Number(/^https?:/.test(b.locator)&&!documents.some(d=>d.url===b.locator&&d.url===data.finalUrl))-Number(/^https?:/.test(a.locator)&&!documents.some(d=>d.url===a.locator&&d.url===data.finalUrl))).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3);return {id:'business-'+c.id,label:c.label,status:found.length?'observed' as const:'review' as const,evidence:found,guide:c.guide};});
   const searchOnly=documents.length>0&&documents.every(d=>d.source==='search_excerpt');
   return BusinessContextSchema.parse({version:1,id,label:p.label,industry:p.industry,kind:p.kind,goalKey:p.goalKey,goalLabel:p.goalLabel,evidence,documents:documents.slice(0,4),keywords:p.keywords.filter(has).slice(0,5),checks,note:searchOnly?'사이트가 JinjjaScanner의 수집을 차단해 네이버 검색 요약으로 업종·고객 질문을 보완한 제한 진단입니다. HTML·본문 원문·가격·예약 조건·이벤트는 확인하지 않았으며 검색 요약을 답변 사실이나 HTML 통과 근거로 사용하지 않습니다. 사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 재진단하면 원문 검증이 가능합니다.':'입력 페이지와 허용된 자사 공개 상세·이용안내를 함께 검토했습니다. 보완 원문은 메인 페이지의 H1·메타·CTA 관측값에 합산하지 않습니다. 상품별 조건은 서로 분리하며 원문 신호 확인은 정확성·최신성·실제 동작 검증을 뜻하지 않습니다.'});
 }
