@@ -12,8 +12,10 @@ import {captureProductSeed,type OwnProductSeed} from './productDiscovery';
 import {captureBusinessDocument,hasBusinessResearch} from './businessResearch';
 import type {BusinessDocument} from './businessContext';
 import {restrictedBusinessWebsite} from './restrictedBusiness';
+import {captureSiteDiagnosticSeed,type SiteDiagnosticSeed} from './siteDiagnostics';
 
 export type ExtractedWebsiteData = {
+  diagnosticSeed?:SiteDiagnosticSeed;
   collectionNotice?:string;
   businessDocuments?:BusinessDocument[];
   productDiscovery?:OwnProductSeed;
@@ -400,6 +402,8 @@ export async function extractWebsite(
 
   const finalUrl = res.url || fetchedUrl;
   const productDiscovery=captureProductSeed(html,finalUrl);
+  const diagnosticSeed=captureSiteDiagnosticSeed(html,finalUrl);
+  if(/(?:^|[\s,:])(?:noindex|none)(?:$|[\s,])/i.test(res.headers.get('x-robots-tag')||''))diagnosticSeed.page.noindex=true;
   const businessDocuments=hasBusinessResearch(finalUrl)?[captureBusinessDocument(html,finalUrl)]:undefined;
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
@@ -709,6 +713,7 @@ export async function extractWebsite(
     url,
     finalUrl,
     productDiscovery,
+    diagnosticSeed,
     businessDocuments,
     siteEditing,
     officialSeoEvidence,

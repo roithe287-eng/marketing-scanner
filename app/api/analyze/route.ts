@@ -2,6 +2,7 @@ import {parseSmartstoreUrl} from '@/lib/smartstore';
 import {analyzeSmartstore} from '@/lib/analyzeSmartstore';
 import {analyzeOfficialSeo} from '@/lib/analyzeOfficialSeo';
 import {withBudget,optionalStage,remainingBudget} from '@/lib/runtime/budget';
+import {collectSiteDiagnostics} from '@/lib/collectSiteDiagnostics';
 import {requirePrincipal} from '@/lib/saas/auth';
 import {reserve} from '@/lib/saas/store';
 import {readJson,failure,AccessError} from '@/lib/security/request';
@@ -118,9 +119,10 @@ export async function POST(req: NextRequest) {
 
     // 1. 사이트 추출
     const websiteData = await withBudget(14_000,()=>extractWebsite(url),undefined,"페이지 수집 시간이 초과되었습니다. 최종 페이지 URL을 확인한 뒤 다시 시도해 주세요.");
-    const [products,businessDocuments]=await Promise.all([
+    const [products,businessDocuments,siteDiagnostics]=await Promise.all([
       !isNonCommerce(analyzeWebsitePurpose(websiteData))||websiteData.productDiscovery?.sources.length?collectOwnProductContext(websiteData.finalUrl,{seed:websiteData.productDiscovery,robots:websiteData.seoEvidence?.robots,budgetMs:7000}):Promise.resolve(undefined),
       websiteData.collectionNotice?Promise.resolve(websiteData.businessDocuments||[]):collectBusinessDocuments(websiteData.finalUrl,{seed:websiteData.businessDocuments?.[0],robots:websiteData.seoEvidence?.robots,productLinks:websiteData.productDiscovery?.productLinks,budgetMs:6000}),
+      collectSiteDiagnostics(websiteData.finalUrl,{seed:websiteData.diagnosticSeed,robots:websiteData.seoEvidence?.robots,limited:!!websiteData.collectionNotice,budgetMs:6000}),
     ]);
     if(products)websiteData.productContext=products;
     if(businessDocuments.length)websiteData.businessDocuments=businessDocuments;
@@ -146,6 +148,7 @@ export async function POST(req: NextRequest) {
 
     report.url = url;
     report.pageEvidence=pageEvidence;
+    report.siteDiagnostics=siteDiagnostics;
     if(websiteData.productContext)report.productContext=websiteData.productContext;
     report.diagnosisMethod=`${DIAGNOSIS_METHOD}:${process.env.OPENAI_MODEL||'gpt-4.1-mini'}`;
     if(diagnosisBaseline)report.diagnosisBaseline=diagnosisBaseline;

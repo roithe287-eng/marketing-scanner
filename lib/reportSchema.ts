@@ -1,4 +1,5 @@
 import {OfficialSeoAuditSchema} from './officialSeoSchema';
+import {SiteDiagnosticsSchema} from './siteDiagnosticsSchema';
 import {activeCitation} from './activeCitation';
 import { z } from "zod";
 import {EvidenceReviewSchema} from './evidenceReview';
@@ -404,6 +405,7 @@ export const MarketingReportSchema = z.object({
   analysisWarnings:z.array(z.object({key:z.string().max(40),label:z.string().max(80),status:z.enum(["timeout","unavailable","error"])})).max(10).optional(),
   url: z.string(),
   pageEvidence:PageEvidenceSchema.optional(),
+  siteDiagnostics:SiteDiagnosticsSchema.optional(),
   productContext:OwnProductContextSchema.optional(),
   diagnosisMethod:z.string().max(100).optional(),
   diagnosisBaseline:DiagnosisBaselineSchema.optional(),
