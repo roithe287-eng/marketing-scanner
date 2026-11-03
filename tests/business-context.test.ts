@@ -7,6 +7,7 @@ import {analyzeWebsitePurpose,purposePrompt} from '../lib/websitePurpose';
 import {buildAnswerContentPlan,answerSources} from '../lib/answerContent';
 import {citationFallbackQuestions} from '../lib/analyzeCitation';
 import {classifyIndustry} from '../lib/industryClassifier';
+import {analyzeBenchmark} from '../lib/analyzeBenchmark';
 import {finalizeReportEvidence} from '../lib/evidenceReview';
 import {MarketingReportSchema} from '../lib/reportSchema';
 import {capturePageEvidence} from '../lib/pageEvidence';
@@ -96,6 +97,7 @@ test('robots-restricted search-only report never uses snippets as merchant facts
   const d=await extractWebsite(urls.trip);assert.ok(d);assert.equal(requests.length,1);
   const p=analyzeWebsitePurpose(d),plan=buildAnswerContentPlan(d);
   assert.equal(d.title,'');assert.equal(d.bodyText,'');assert.equal(d.seoEvidence,undefined);
+  assert.equal(await analyzeBenchmark(d,fixture.diagnosis,'travel','limited-test'),null);
   assert.equal(p.business?.id,'travel_booking');assert.ok(p.checks.every(c=>c.status==='review'));
   assert.ok(plan.questions.every(q=>q.evidence.length===0&&q.draft===''));
   assert.ok(answerSources(d).every(s=>s.kind!=='body'));

@@ -3,6 +3,7 @@ import type { IndustryBenchmark, IndustryCategory } from './reportSchema';
 import { industryLabel } from './industryClassifier';
 import { saveBenchmarkSample, getBenchmarkStats, BENCHMARK_METRICS, METRIC_LABELS, BENCHMARK_NOTE, BENCHMARK_WINDOW_DAYS, type DiagnosisScores } from './benchmarkStore';
 export async function analyzeBenchmark(data: ExtractedWebsiteData, ourScores: DiagnosisScores, category: IndustryCategory, method: string): Promise<IndustryBenchmark | null> {
+    if(data.collectionNotice)return null; // Uncollected HTML cannot become an industry benchmark sample.
     if (category === 'etc')
         return { methodVersion: 2, category, categoryLabel: '업종 미확정', sampleSize: 0, hasSufficientSample: false, summary: '명확한 업종을 확인하지 못해 서로 다른 업종의 점수를 합산하지 않았습니다.', scopeNote: BENCHMARK_NOTE };
     const [, stats] = await Promise.all([saveBenchmarkSample(category, ourScores, data.finalUrl || data.url, method), getBenchmarkStats(category, data.finalUrl || data.url, method)]);
