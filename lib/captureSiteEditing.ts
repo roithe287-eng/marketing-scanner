@@ -53,7 +53,8 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
     const el=node as Element,item=$(node),tag=el.tagName;
     if(item.parents('script,style,noscript,template,[hidden],[aria-hidden="true"]').length||item.is('[hidden],[aria-hidden="true"]'))return;
     const control=tag==='a'||tag==='button'||item.attr('role')==='button'||(tag==='input'&&item.attr('type')?.toLowerCase()==='submit');
-    const text=clean(tag==='meta'?item.attr('content')||'':tag==='img'?item.attr('alt')||'':tag==='form'?'문의·입력 폼':control?item.text()||item.attr('value')||item.attr('aria-label')||'':item.text());
+    const visibleText=item.clone().find('script,style,noscript,template').remove().end().text();
+    const text=clean(tag==='meta'?item.attr('content')||'':tag==='img'?item.attr('alt')||'':tag==='form'?'문의·입력 폼':control?item.text()||item.attr('value')||item.attr('aria-label')||'':visibleText);
     if(!text&&tag!=='img')return;if(tag==='li'&&!control&&item.children('p,ul,ol,a').length)return;
     if(/^h[1-3]$/.test(tag))lastHeading=text.slice(0,300);
     const kind:PageElement['kind']=tag==='title'?'title':tag==='meta'?'description':/^h[1-3]$/.test(tag)?'heading':control?'cta':tag==='img'?'image':tag==='form'?'form':'text';

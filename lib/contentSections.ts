@@ -17,7 +17,7 @@ export function captureContentSections($:CheerioAPI,baseUrl?:string):ContentSect
   if(/^(?:div|section|article|li|td|dd|dt)$/.test(tag)&&item.find('p,div,section,article,li,table,dl,dd,dt,blockquote,h1,h2,h3').length)return;
   if(textContentIsControl(item))return;
   if(item.find('a,button,input,select,textarea').length&&clean(item.clone().find('a,button,input,select,textarea').remove().end().text()).length<24&&clean(item.text()).length<60)return;
-  const text=clean(item.text());if(!text)return;
+  const text=clean(item.clone().find('script,style,noscript,template').remove().end().text());if(!text)return;
   if(/^h[1-3]$/.test(tag)){heading=text.slice(0,180);return;}
   if((text.length<24&&!(text.length>=8&&/\d/.test(text)&&/경력|전문|센터|네트워크|교육기관|연속|수상/.test(text)))||/^(?:개인정보|이용약관|copyright|사업자등록|통신판매업)/i.test(text))return;
   const key=text.normalize('NFKC').toLowerCase();if(seen.has(key))return;seen.add(key);

@@ -1,5 +1,5 @@
 import {websiteHttp} from './security/safeFetch';
-import { blocksAllCrawling, type RobotsObservation } from "./robotsRules";
+import { blocksAllCrawling, evaluateRobots, type RobotsObservation } from "./robotsRules";
 import {collectOfficialSeoEvidence,type OfficialSeoEvidence} from './officialSeoEvidence';
 import {observeRobots} from "./observeRobots";
 import { getScannerContactUrl } from "./siteConfig";
@@ -9,8 +9,13 @@ import {captureSiteEditing} from './captureSiteEditing';
 import type {SiteEditing} from './siteEditingSchema';
 import type {OwnProductContext} from './ownProductSchema';
 import {captureProductSeed,type OwnProductSeed} from './productDiscovery';
+import {captureBusinessDocument,hasBusinessResearch} from './businessResearch';
+import type {BusinessDocument} from './businessContext';
+import {restrictedBusinessWebsite} from './restrictedBusiness';
 
 export type ExtractedWebsiteData = {
+  collectionNotice?:string;
+  businessDocuments?:BusinessDocument[];
   productDiscovery?:OwnProductSeed;
   productContext?:OwnProductContext;
   officialSeoEvidence?:OfficialSeoEvidence;
@@ -275,8 +280,11 @@ export async function extractWebsite(
 ): Promise<ExtractedWebsiteData> {
   // v45-W5: robots.txt 전체 차단 사이트는 추출 거부 (법적 준수)
   const initialRobots = await observeRobots(url, SCANNER_UA);
-  const blocked = initialRobots.status === "ok" && blocksAllCrawling(initialRobots.text || "");
+  const requested=new URL(url);
+  const blocked = initialRobots.status === "ok" && blocksAllCrawling(initialRobots.text || "")&&evaluateRobots(initialRobots.text||'','JinjjaScanner',requested.pathname+requested.search).allowed!==true;
   if (blocked) {
+    const limited=await restrictedBusinessWebsite(url);
+    if(limited)return limited;
     throw new Error(
       "해당 사이트는 robots.txt에서 크롤링을 전면 차단하고 있어 진단할 수 없습니다."
     );
@@ -392,10 +400,11 @@ export async function extractWebsite(
 
   const finalUrl = res.url || fetchedUrl;
   const productDiscovery=captureProductSeed(html,finalUrl);
+  const businessDocuments=hasBusinessResearch(finalUrl)?[captureBusinessDocument(html,finalUrl)]:undefined;
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
   const officialSeoEvidence=collectOfficialSeoEvidence($,finalUrl,res.headers);
-  const titleCount = $("title").length;
+  const titleCount = $("head > title").length;
   const descriptionCount = $('meta[name="description" i]').length;
   const canonicals = $('link[rel~="canonical" i]').map((_, el) => $(el).attr("href") || "").get();
   const robotsMeta = $("head meta[name]").map((_,el) => ({agent:($(el).attr("name") || "").toLowerCase(),content:$(el).attr("content") || ""})).get().filter(m=>["robots","googlebot","yeti","ads-naver"].includes(m.agent));
@@ -420,7 +429,7 @@ export async function extractWebsite(
     .filter(Boolean)
     .slice(0, 30);
 
-  const title = $("title").first().text().trim();
+  const title = $("head > title").first().text().trim();
   const description =
     $('meta[name="description" i]').attr("content")?.trim() || "";
   const ogTitle = $('meta[property="og:title"]').attr("content")?.trim() || "";
@@ -700,6 +709,7 @@ export async function extractWebsite(
     url,
     finalUrl,
     productDiscovery,
+    businessDocuments,
     siteEditing,
     officialSeoEvidence,
     seoEvidence: {capturedAt:new Date().toISOString(),titleCount,descriptionCount,canonicals,robotsMeta,xRobotsTag:res.headers.get("x-robots-tag")||"",htmlLang:$("html").attr("lang")||"",jsonLdErrors,microdataCount,rdfaCount,imagesMissingAlt:imageWithoutAlt,imagesEmptyAlt,robots,httpStatus:res.status},

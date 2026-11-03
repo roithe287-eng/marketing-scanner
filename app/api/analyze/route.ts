@@ -28,6 +28,7 @@ import {collectOwnProductContext} from '@/lib/ownProductSources';
 import {finalizeReportEvidence} from '@/lib/evidenceReview';
 import {MarketingReportSchema} from '@/lib/reportSchema';
 import {analyzeWebsitePurpose,isNonCommerce} from '@/lib/websitePurpose';
+import {collectBusinessDocuments} from '@/lib/businessResearch';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -117,7 +118,12 @@ export async function POST(req: NextRequest) {
 
     // 1. 사이트 추출
     const websiteData = await withBudget(14_000,()=>extractWebsite(url),undefined,"페이지 수집 시간이 초과되었습니다. 최종 페이지 URL을 확인한 뒤 다시 시도해 주세요.");
-    if(!isNonCommerce(analyzeWebsitePurpose(websiteData))||websiteData.productDiscovery?.sources.length)websiteData.productContext=await collectOwnProductContext(websiteData.finalUrl,{seed:websiteData.productDiscovery,robots:websiteData.seoEvidence?.robots,budgetMs:7000});
+    const [products,businessDocuments]=await Promise.all([
+      !isNonCommerce(analyzeWebsitePurpose(websiteData))||websiteData.productDiscovery?.sources.length?collectOwnProductContext(websiteData.finalUrl,{seed:websiteData.productDiscovery,robots:websiteData.seoEvidence?.robots,budgetMs:7000}):Promise.resolve(undefined),
+      websiteData.collectionNotice?Promise.resolve(websiteData.businessDocuments||[]):collectBusinessDocuments(websiteData.finalUrl,{seed:websiteData.businessDocuments?.[0],robots:websiteData.seoEvidence?.robots,productLinks:websiteData.productDiscovery?.productLinks,budgetMs:6000}),
+    ]);
+    if(products)websiteData.productContext=products;
+    if(businessDocuments.length)websiteData.businessDocuments=businessDocuments;
     const pageEvidence=capturePageEvidence(websiteData);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
@@ -153,16 +159,17 @@ export async function POST(req: NextRequest) {
     report.adWasteSimulation=null; // Page scores cannot establish ad waste or savings.
 
     // Versioned, source-backed observations; account-only checks stay unverified.
-    report.naverOptimization = analyzeNaverOptimization(websiteData);
-    report.officialSeoAudit = analyzeOfficialSeo(websiteData);
+    report.naverOptimization = analyzeNaverOptimization(websiteData.collectionNotice?null:websiteData,websiteData.url);
+    report.officialSeoAudit = analyzeOfficialSeo(websiteData.collectionNotice?null:websiteData,websiteData.url);
     report.naverAiReadiness = null;
     report.naverBriefingReadiness = null;
     report.naverEcosystemReadiness = null;
     report.technicalSeo = null; // Replaced by scoped observations in naverOptimization.
-    report.keywordFrequency = analyzeKeywordFrequency(websiteData);
+    report.keywordFrequency = websiteData.collectionNotice?null:analyzeKeywordFrequency(websiteData);
     const benchmark=await optionalStage('benchmark','업종 비교 데이터',Math.max(1,Math.min(2500,remainingBudget()-500)),()=>category.value?analyzeBenchmark(websiteData,report.diagnosis,category.value,report.diagnosisMethod!):Promise.resolve(null));
     report.industryBenchmark=benchmark.value;
     report.analysisWarnings=[discoverability,llmCitation,keywordRank,category,benchmark,answerContent].flatMap(stage=>stage.warning?[stage.warning]:[]);
+    if(websiteData.collectionNotice)report.analysisWarnings.push({key:'source',label:websiteData.collectionNotice,status:'unavailable'});
     const reviewed=MarketingReportSchema.safeParse(finalizeReportEvidence(report,websiteData));
     if(!reviewed.success)throw new AccessError(502,'진단 결과의 필수 항목을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
     const reviewedReport=reviewed.data;

@@ -44,6 +44,7 @@ export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebs
     {id:'trust_certification',label:'인증·경력 확인',category:'trust',status:'review',value:`인증·신뢰 관련 표현 ${data.hasTrustKeyword?'감지':'미감지'}`,note:'키워드 감지와 실제 인증·경력 검증은 다릅니다.',guide:'기관·인증명·대상·기간과 확인 가능한 근거를 대조하세요.'},
     {id:'price_info',label:'가격·견적 확인',category:'conversion',status:'review',value:`가격·견적 관련 표현 ${data.hasPriceKeyword?'감지':'미감지'}`,note:'관련 표현만 관측했습니다. 실제 금액·포함 범위·추가 비용과 모든 서비스의 가격 공개 여부는 미확인입니다.',guide:'실제 서비스에 적용되는 금액·범위·별도 협의 조건을 확인하고 누락이 확인된 안내만 보완하세요.'},
   ];
+  if(data.collectionNotice)for(const fact of facts){fact.status='review';fact.value='HTML 원문 미수집 · 자체 수집 로봇 차단';fact.note=data.collectionNotice;fact.guide='사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 재진단하고 실제 원문·화면과 대조하세요. 검색 요약만으로 태그·버튼·가격·기능의 부재를 판단하거나 추가하지 않습니다.';}
   if(nonCommerce){
     facts[6].guide=purpose.checks.find(c=>c.id==='goal')!.guide;
     facts[7].guide=`${goal} 목적과 실제 페이지 길이·기기별 노출을 대조하세요. 버튼 반복 횟수나 구매 버튼 부재만으로 전환 손실을 단정하지 않습니다.`;
@@ -92,7 +93,7 @@ export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebs
   const discovery=report.discoverability?{...report.discoverability,summary:'수집 HTML에 대한 AI 검토 의견입니다. 실제 검색 노출이나 AI 인용 가능성을 점수로 검증한 결과가 아닙니다.',contentStructure:{...report.discoverability.contentStructure,status:'warning' as const,currentValue:h1,diagnosis:facts[3].note,guide:facts[3].guide},eeat:{...report.discoverability.eeat,status:'warning' as const,currentValue:nonCommerce?trust.evidence:contact,diagnosis:nonCommerce?'페이지 목적에 맞는 작성자·담당자·이력·출처를 실제 자료와 대조합니다. 키워드 관측만으로 신뢰성을 검증하지 않습니다.':facts[8].note,guide:nonCommerce?trust.nextStep:facts[8].guide},localBrand:{...report.discoverability.localBrand,status:'warning' as const,currentValue:nonCommerce?`${purpose.label} · 지역·위치 정보의 적용 범위 확인 필요`:contact,diagnosis:'브랜드·지역·NAP의 실제 일치와 지역 검색 노출은 별도 확인 대상입니다.',guide:nonCommerce?'지역·방문 위치가 실제 이용 목적에 필요한 경우에만 해당 원문과 운영 정보를 대조하세요.':facts[8].guide},priorityActions:(report.discoverability.priorityActions||[]).filter(applicable).map(s=>canonical(s)?.guide||s)}:report.discoverability;
   const scope=(s:string)=>canonical(s)?.guide||s,scoped=(rows:string[])=>rows.filter(applicable).map(scope);
   return {...report,sitePurpose:purpose,checklist,criticalIssues,discoverability:discovery,evidenceReview,
-    oneLineSummary:`HTML 기본 항목 ${measured.length}개 중 ${passed}개 충족 · ${purpose.label} · ${goal} 동선과 실제 화면은 별도 확인이 필요합니다.`,
+    oneLineSummary:data.collectionNotice?`${purpose.label} · 원문 수집 제한으로 검색 요약과 업종별 확인 과제를 제공합니다. HTML·기능의 부재나 충족 여부를 판정하지 않았습니다.`:`HTML 기본 항목 ${measured.length}개 중 ${passed}개 충족 · ${purpose.label} · ${goal} 동선과 실제 화면은 별도 확인이 필요합니다.`,
     exampleCopy:{...report.exampleCopy,...(nonCommerce&&/구매|결제|장바구니/.test(report.exampleCopy.ctaText)?{ctaText:purpose.goal.observed?purpose.goal.evidence[0].text:goal}:{})},
     finalCta:{...report.finalCta,title:'확인한 근거로 다음 실행을 정하세요',description:`수집한 HTML 기본 항목 ${measured.length}개 중 ${passed}개가 점검 기준을 충족했습니다. ${goal} 목적과 실제 화면·진행 과정·계정 데이터를 함께 대조해 필요한 개선 순서를 정리하세요.`},
     priorityRoadmap:{immediately:scoped(report.priorityRoadmap.immediately),thisWeek:scoped(report.priorityRoadmap.thisWeek),thisMonth:scoped(report.priorityRoadmap.thisMonth)},
