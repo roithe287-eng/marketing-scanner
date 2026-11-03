@@ -9,7 +9,13 @@ export type SiteDiagnosticSeed={page:DiagnosticPage;links:string[]};
 
 /** Parse declarations only. No script execution, external CSS/JS requests, or inferred tracking delivery. */
 export function captureSiteDiagnosticSeed(html:string,url:string):SiteDiagnosticSeed{
-  const $=cheerio.load(html),rawTitle=$('head > title').first().text().replace(/\s+/g,' ').trim(),rawDescription=($('head meta[name="description" i]').first().attr('content')||'').replace(/\s+/g,' ').trim(),title=clean(rawTitle);
+  const $=cheerio.load(html);
+  const headTitle=$('head > title').first().text().replace(/\s+/g,' ').trim();
+  const headDescription=($('head meta[name="description" i]').first().attr('content')||'').replace(/\s+/g,' ').trim();
+  // Next.js can stream metadata after </head>. SVG accessibility titles are never page titles.
+  const rawTitle=headTitle||$('title').filter((_,el)=>!$(el).closest('svg').length).first().text().replace(/\s+/g,' ').trim();
+  const rawDescription=headDescription||($('meta[name="description" i]').first().attr('content')||'').replace(/\s+/g,' ').trim();
+  const title=clean(rawTitle);
   const objects:Record<string,unknown>[]=[],ids=new Map<string,Record<string,unknown>>();
   const idKey=(id:string)=>{try{return new URL(id,url).href;}catch{return id;}};
   const walk=(v:unknown,depth=0)=>{if(depth>12||objects.length>=1500||!v||typeof v!=='object')return;if(Array.isArray(v)){v.slice(0,200).forEach(x=>walk(x,depth+1));return;}const o=v as Record<string,unknown>;objects.push(o);if(typeof o['@id']==='string'){const key=idKey(o['@id']),previous=ids.get(key);if(!previous||Object.keys(o).length>Object.keys(previous).length)ids.set(key,o);}Object.values(o).forEach(x=>walk(x,depth+1));};
@@ -46,8 +52,10 @@ export function captureSiteDiagnosticSeed(html:string,url:string):SiteDiagnostic
   let backgroundCandidates=0;
   $('[style]').each((_,el)=>{const node=$(el);if(/background(?:-image)?\s*:[^;]*url\s*\(/i.test(node.attr('style')||'')&&!clean(node.text())&&!clean(node.attr('aria-label'))&&node.attr('aria-hidden')!=='true'&&node.attr('role')!=='presentation')backgroundCandidates++;});
   const heading=clean($('h1').map((_,e)=>$(e).text()).get().join(' '),1000);
-  const page:DiagnosticPage={url,title,description:clean($('head meta[name="description" i]').first().attr('content'),1500),canonicals:$('head link[rel~="canonical" i]').slice(0,5).map((_,e)=>clean($(e).attr('href'),2048)).get(),noindex:$('head meta[name="robots" i],head meta[name="googlebot" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')),twitterCard:!!$('head meta[name="twitter:card" i]').attr('content'),jquery:[...jquery].slice(0,5),analytics:[...analytics],backgroundCandidates,medicalRelevant:medical.length>0||/병원|의원|한의원|치과|\b(?:hospital|clinic|dentist)\b/i.test(title+' '+heading),medical};
+  const page:DiagnosticPage={url,title,description:clean(rawDescription,1500),canonicals:$('head link[rel~="canonical" i]').slice(0,5).map((_,e)=>clean($(e).attr('href'),2048)).get(),noindex:$('meta[name="robots" i],meta[name="googlebot" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')),twitterCard:!!$('meta[name="twitter:card" i]').attr('content'),jquery:[...jquery].slice(0,5),analytics:[...analytics],backgroundCandidates,medicalRelevant:medical.length>0||/병원|의원|한의원|치과|\b(?:hospital|clinic|dentist)\b/i.test(title+' '+heading),medical};
   page.titleTruncated=rawTitle.length>500;page.descriptionTruncated=rawDescription.length>1500;
+  page.metadataOutsideHead=!!(!headTitle&&rawTitle||!headDescription&&rawDescription);
+  page.metadataDeferred=(!rawTitle||!rawDescription)&&($('script[src*="/_next/"]').length>0||$('script').toArray().some(el=>/\b__next_f\b/.test($(el).text())));
   return {page,links:$('a[href]').slice(0,400).map((_,e)=>$(e).attr('href')||'').get()};
 }
 
@@ -82,9 +90,11 @@ export function buildSiteDiagnosticFindings(pages:DiagnosticPage[]):DiagnosticFi
     if(comparable<2)add(`duplicate-${field}`,field==='title'?'페이지별 제목 중복':'페이지별 설명 중복','review',`전체 값을 비교할 수 있는 페이지가 ${comparable}개로 2개 미만입니다.`,'추가 페이지를 수집할 수 있을 때 다시 비교합니다.',pages.map(p=>p.url));
     else if(duplicates.length)for(const [i,g] of duplicates.entries())add(`duplicate-${field}-${i}`,field==='title'?'중복 제목 발견':'중복 설명 발견','action',`${g.length}개 표본의 ${field==='title'?'제목':'메타 설명'}이 같습니다: ${g[0][field].slice(0,500)}`,'같은 문서의 별칭 URL인지 canonical을 먼저 확인한 뒤, 서로 다른 서비스·상품 페이지라면 각 페이지의 내용을 구체적으로 작성합니다.',g.map(p=>p.url));
     else add(`duplicate-${field}`,field==='title'?'제목 중복 비교':'설명 중복 비교','observed',`${pages.length}개 표본 중 전체 값을 보관한 비어 있지 않은 ${field==='title'?'제목':'설명'}에서 동일값 중복이 발견되지 않았습니다.`,'검사한 표본에 한정한 결과입니다. 비어 있거나 부분 저장한 값은 각 페이지에서 따로 확인합니다.',pages.map(p=>p.url));
-    const empty=pages.filter(p=>!p[field]);if(empty.length)add(`missing-${field}`,field==='title'?'제목 미감지 페이지':'메타 설명 미감지 페이지','action',`${empty.length}개 수집 HTML에서 ${field==='title'?'head > title':'meta description'} 값이 미감지되었습니다.`,'원문 HTML을 확인하고 검색에 공개할 페이지별 설명을 작성합니다. JavaScript 주입 여부도 확인합니다.',empty.map(p=>p.url));
+    const empty=pages.filter(p=>!p[field]);
+    for(const deferred of [false,true]){const group=empty.filter(p=>!!p.metadataDeferred===deferred);if(group.length)add(`missing-${field}${deferred?'-deferred':''}`,field==='title'?'제목 미감지 페이지':'메타 설명 미감지 페이지',deferred?'review':'action',`${group.length}개 수집 HTML에서 ${field==='title'?'HTML title':'meta description'} 값이 미감지되었습니다.${deferred?' 동적 렌더링·스트리밍 가능성이 있어 실제 누락 판정을 보류합니다.':''}`,deferred?'렌더링한 페이지의 head와 검색엔진 URL 검사 결과를 확인합니다. 전달 시점 차이를 태그 부재로 단정하지 않습니다.':'원문 HTML을 확인하고 검색에 공개할 페이지별 설명을 작성합니다. JavaScript 주입 여부도 확인합니다.',group.map(p=>p.url));}
   }
   for(const [i,p] of pages.entries()){
+    if(p.metadataOutsideHead)add(`streamed-metadata-${i}`,'head 밖에서 전달된 메타 정보','review','수집 HTML의 head 밖에서 제목 또는 설명 값을 관측했습니다. 해당 값을 보존해 중복 비교에 사용했습니다.','프레임워크의 메타데이터 스트리밍 여부와 렌더링 후 head, 검색엔진 URL 검사 결과를 확인합니다. SVG title은 페이지 제목에서 제외합니다.',[p.url]);
     const canonicals=p.canonicals.map(c=>{try{return new URL(c,p.url).href;}catch{return '';}});
     if(canonicals.length>1||canonicals.some(c=>!c))add(`canonical-${i}`,'대표 URL 선언 확인','action',`canonical ${p.canonicals.length}개: ${p.canonicals.join(' · ').slice(0,800)}`,'문서 head에 유효한 대표 URL을 일관되게 선언합니다.',[p.url]);
     else if(canonicals[0]&&canonicals[0].replace(/#.*$/,'')!==p.url.replace(/#.*$/,''))add(`canonical-target-${i}`,'다른 URL을 대표로 선언','review',`수집 URL ${p.url} → canonical ${canonicals[0]}`,'의도한 중복 문서 통합인지 확인합니다. 외부 도메인·홈페이지로 향한다고 자동 오류로 판정하지 않습니다.',[p.url]);

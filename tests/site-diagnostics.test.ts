@@ -62,6 +62,15 @@ test('truncated metadata cannot turn a common prefix into a duplicate finding',(
   assert.equal(buildSiteDiagnosticFindings([a,b]).find(f=>f.id==='clipped-title')?.status,'review');
 });
 
+test('streamed metadata is preserved outside head, SVG titles are excluded, and Next.js unknown metadata stays review-only',()=>{
+  const page=captureSiteDiagnosticSeed('<html><head></head><body><svg><title>아이콘 제목</title></svg><main>서비스 안내</main><title>실제 문서 제목</title><meta name="description" content="늦게 전달된 설명"><script src="/_next/static/app.js"></script></body></html>',url).page;
+  assert.equal(page.title,'실제 문서 제목');assert.equal(page.description,'늦게 전달된 설명');assert.ok(page.metadataOutsideHead);
+  assert.ok(!buildSiteDiagnosticFindings([page]).some(f=>f.id.startsWith('missing-')));
+  const deferred=captureSiteDiagnosticSeed('<html><head></head><body><svg><title>아이콘 제목</title></svg><script>self.__next_f=[]</script></body></html>',url+'dynamic').page;
+  assert.equal(deferred.title,'');assert.ok(deferred.metadataDeferred);
+  assert.equal(buildSiteDiagnosticFindings([deferred]).find(f=>f.id==='missing-title-deferred')?.status,'review');
+});
+
 test('search, training and user-request declarations remain independent and unmeasured robots stay unknown',()=>{
   const policies=inspectCrawlerPolicies(robots('User-agent: *\nDisallow: /\nUser-agent: OAI-SearchBot\nAllow: /\nUser-agent: GPTBot\nDisallow: /'),url);
   assert.equal(policies.find(p=>p.agent==='OAI-SearchBot')?.status,'allowed');

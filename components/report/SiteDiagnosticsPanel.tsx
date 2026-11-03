@@ -10,7 +10,7 @@ const resourceStatus={observed:'응답 관측',missing:'해당 경로 없음',bl
 export default function SiteDiagnosticsPanel({audit}:{audit?:SiteDiagnostics}){
   const [filter,setFilter]=useState('all');
   if(!audit)return <section className="report-card"><h3>페이지·기술 정밀 점검</h3><p className="report-note">이 보고서는 추가 점검 이전에 생성되었습니다. URL을 다시 진단하면 페이지 중복·의료기관 정보·AI 봇 정책을 확인할 수 있습니다.</p></section>;
-  const rows=audit.findings.filter(f=>filter==='all'||filter==='medical'&&f.id.startsWith('medical-')||filter==='metadata'&&/^(?:duplicate|missing|clipped|canonical|noindex|twitter)/.test(f.id)||filter==='signals'&&/^(?:jquery|analytics|background|sitemap)/.test(f.id));
+  const rows=audit.findings.filter(f=>filter==='all'||filter==='medical'&&f.id.startsWith('medical-')||filter==='metadata'&&/^(?:duplicate|missing|clipped|streamed|canonical|noindex|twitter)/.test(f.id)||filter==='signals'&&/^(?:jquery|analytics|background|sitemap)/.test(f.id));
   return <section className="report-card official-seo site-diagnostics" aria-labelledby="site-diagnostics-title">
     <div className="report-card-heading"><div><p className="report-eyebrow">PAGE · ENTITY · CRAWLER</p><h3 id="site-diagnostics-title">페이지·기술 정밀 점검</h3></div><div className="naver-reviewed"><span>관측 시각</span><time dateTime={audit.observedAt}>{audit.observedAt.replace('T',' ').slice(0,19)} UTC</time></div></div>
     <p className="report-note">{audit.scopeNote}</p>

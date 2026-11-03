@@ -8,6 +8,7 @@ export const DiagnosticFindingSchema=z.object({
 export const DiagnosticPageSchema=z.object({
   url:HttpUrl,title:z.string().max(500),description:z.string().max(1500),
   titleTruncated:z.boolean().optional(),descriptionTruncated:z.boolean().optional(),
+  metadataOutsideHead:z.boolean().optional(),metadataDeferred:z.boolean().optional(),
   canonicals:z.array(z.string().max(2048)).max(5),noindex:z.boolean(),
   twitterCard:z.boolean(),jquery:z.array(z.string().max(100)).max(5),
   analytics:z.array(z.enum(['UA','GA4','GTM'])).max(3),backgroundCandidates:z.number().int().nonnegative(),
