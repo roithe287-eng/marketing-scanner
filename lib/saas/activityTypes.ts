@@ -8,6 +8,7 @@ export const ACTIVITY_LABELS = {
   pdf_save: 'PDF 브라우저 다운로드 요청', pdf_open: 'PDF 열어보기',
   pdf_save_started: 'PDF 파일 저장 시작', pdf_saved: 'PDF 파일 저장 완료',
   pdf_save_cancelled: 'PDF 파일 저장 취소', pdf_save_failed: 'PDF 파일 저장 실패',
+  report_html_export: 'HTML 보고서 다운로드 요청', report_markdown_export: 'Markdown 보고서 다운로드 요청',
   share_created: '공유 링크 생성', report_view: '공유 보고서 열람', comparison_loaded: '비교 보고서 연결',
   share_updated: '공유 보고서 갱신', account_created: '고객 계정 생성',
   account_approved: '계정 승인', account_updated: '이용 조건 변경', invite_reissued: '활성화 링크 재발급',

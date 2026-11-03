@@ -20,11 +20,12 @@ export type RobotsObservation = {
   status:'ok'|'missing'|'http_error'|'unavailable'|'non_text'|'too_large'; text?:string;
 };
 type Rule={allow:boolean;path:string};
+export type RobotsAgent='Yeti'|'Ads-Naver'|'Googlebot'|'OAI-SearchBot'|'JinjjaScanner'|'Google-Extended'|'GPTBot'|'ChatGPT-User'|'Claude-SearchBot'|'ClaudeBot'|'Claude-User'|'PerplexityBot'|'Perplexity-User';
 /** Evaluate the requested path, preserving case. Specific agent groups override '*'.
  * Ads-Naver intentionally ignores the general wildcard group (NAVER advertising FAQ).
  * Unsupported percent-encoded rules are left for manual inspection rather than guessed.
  */
-export function evaluateRobots(text:string,agent:'Yeti'|'Ads-Naver'|'Googlebot'|'OAI-SearchBot'|'JinjjaScanner',path:string):{allowed:boolean|null;rule:string;explicit:boolean} {
+export function evaluateRobots(text:string,agent:RobotsAgent,path:string):{allowed:boolean|null;rule:string;explicit:boolean} {
   const groups:{agents:string[];rules:Rule[]}[]=[];
   let group:{agents:string[];rules:Rule[]}|undefined;
   let directives=false;

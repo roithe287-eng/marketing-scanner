@@ -40,6 +40,7 @@ import GeoFocusPanel from '@/components/GeoFocusPanel';
 import AdWasteCalculator from '@/components/AdWasteCalculator';
 import NaverOptimizationPanel from './NaverOptimizationPanel';
 import OfficialSeoPanel from './OfficialSeoPanel';
+import SiteDiagnosticsPanel from './SiteDiagnosticsPanel';
 import KeywordRankCard from '@/components/KeywordRankCard';
 import IndustryBenchmarkCard from '@/components/IndustryBenchmarkCard';
 import Disclaimer from '@/components/Disclaimer';
@@ -100,6 +101,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
         {id:'search-keywords',label:'키워드',children:<><KeywordWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} data={data}/>{report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}</>},
         {id:'search-naver',label:'네이버 점검',children:<NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>},
         {id:'search-official',label:'공통 검색 점검',children:<OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>},
+        {id:'search-technical',label:'페이지·기술 점검',children:<SiteDiagnosticsPanel audit={report.siteDiagnostics}/>},
         {id:'search-scope',label:'수집·분석 범위',children:scope},
         ...(report.checklist?.length?[{id:'search-checklist',label:'기본 체크리스트',children:<DiagnosisChecklist checklist={report.checklist}/>}]:[]),
       ]}/>

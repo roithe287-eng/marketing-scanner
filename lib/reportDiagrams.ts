@@ -26,6 +26,7 @@ const guides:Record<string,ReportDiagram>={
  'search-keywords':diagram('자주 나온 표현이 곧 좋은 검색어는 아닙니다',[node('본문 표현','실제 페이지에서 수집한 단어','copywriting'),node('주제 적합성','상품·서비스를 대표하는지','trust','review'),node('자연스러운 문장','제목·설명·본문에 연결','seo','proposal')],'본문의 빈도와 검색량·인기·검색 순위는 다릅니다.'),
  'search-naver':diagram('검색·광고·상품, 확인할 영역부터 구분',[node('공개 페이지','문구·설정의 수집 근거','seo'),node('실제 운영 계정','등록·연동·이벤트 상태','mobileUx','location'),node('완료 확인','안내한 조건과 결과 대조','trust','verify')],'홈페이지에서 보이는 단서만으로 계정 연동 성공을 판단하지 않습니다.'),
  'search-official':diagram('공식 기준을 내 페이지에 맞게 적용',[node('공식 안내','해당 기능의 적용 조건','trust'),node('현재 페이지','실제로 쓰는 기능과 관측값','copywriting','review'),node('필요한 수정','해당 항목만 적용·확인','cta','proposal')],'모든 속성이 모든 사이트의 필수 항목인 것은 아닙니다.'),
+ 'search-technical':diagram('HTML 표본에서 페이지와 운영 정책을 함께 확인',[node('페이지 표본','입력 페이지와 공개된 내부 문서','copywriting'),node('표본 비교·정보 연결','중복 메타·의료기관 식별 속성','trust','review'),node('수집 정책','검색·학습·사용자 요청을 구분','seo','verify')],'페이지 표본과 정책 선언을 점검합니다. 전체 색인·태그 전송·면허·AI 인용 성공의 판정은 아닙니다.','branch'),
  'search-scope':diagram('어디까지 확인했는지부터 살펴보세요',[node('읽은 범위','입력 페이지·저장된 정보','firstView'),node('직접 확인할 범위','화면·계정·실제 성과','mobileUx','verify')],'수집하지 못한 정보는 실제로 없는 정보와 다릅니다.','compare'),
  'search-checklist':diagram('상태를 확인하고, 필요한 조치만',[node('현재 기록','관측값과 판정 상태','copywriting'),node('보완·검토','해당 근거와 조건을 확인','trust','review'),node('수정·재확인','안내된 조치 후 같은 항목 대조','cta','verify')],'판정 색상만 보지 말고 원문 근거와 적용 조건을 함께 보세요.'),
  'competition-map':diagram('수집한 후보에서 실제 비교 대상으로',[node('비교 후보','수집한 업체·페이지','adLanding'),node('관련성 확인','업종·상품·고객이 맞는지','trust','review'),node('같은 기준 비교','제목·설명·행동 안내 대조','copywriting','verify')],'비교 지도는 저장된 페이지 표현 기준이며 시장점유율 지도가 아닙니다.'),
@@ -45,6 +46,7 @@ export function buildReportDiagrams(report:MarketingReport,data:ReportInsights):
  const result=Object.fromEntries(Object.entries(guides).map(([id,g])=>[id,{...g,nodes:g.nodes.map(n=>({...n}))}]));
  const set=(id:string,index:number,value:string)=>{result[id].nodes[index].value=value;result[id].scope='저장된 보고서 기준';};
  const sources=buildSourceLibrary(report);
+ if(report.siteDiagnostics){set('search-technical',0,`${report.siteDiagnostics.pages.length}개 HTML`);set('search-technical',1,`${report.siteDiagnostics.findings.length}개 점검`);set('search-technical',2,`${report.siteDiagnostics.crawlers.length}개 봇 정책`);}
  if(!data.tasks.length)result['overview-priority']=diagram('과제가 생기면 이 순서로 실행합니다',[node('근거 확인','먼저 현재 페이지 기록을 확인','firstView'),node('할 일과 담당','실제 권한에 맞게 작업을 정리','copywriting','proposal'),node('완료 확인','적용 결과와 같은 항목을 대조','trust','verify')],'현재 저장된 보완 항목은 없습니다. 실행 방법을 설명하는 개념도입니다.');
  set('search-sources',0,`${sources.groups.length}개`);set('search-sources',2,`${sources.links.length}개`);
  set('competition-map',0,`${data.competitorCount}개 후보`);

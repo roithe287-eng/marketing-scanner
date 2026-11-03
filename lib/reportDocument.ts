@@ -4,6 +4,7 @@ import {nonCommerceOpening} from './reportOpening';
 import {evidenceScoreText} from './evidenceReview';
 import {showProductCollection} from './websitePurpose';
 import {buildOfficialSeoDocument} from './officialSeoDocument';
+import {buildSiteDiagnosticsDocument} from './siteDiagnosticsDocument';
 import {buildAnswerContentDocument} from './answerContentDocument';
 import {retentionTime} from './reportRetention';
 import {activeCitationReport} from './activeCitation';
@@ -160,6 +161,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   }
   blocks.push(...buildNaverReportDocument(report));
   blocks.push(...buildOfficialSeoDocument(report));
+  blocks.push(...buildSiteDiagnosticsDocument(report));
   if(!opening)blocks.push(...buildAnswerContentDocument(report));
   blocks.push({kind:'heading',text:REPORT_NOTICE_TITLE},{kind:'body',text:REPORT_NOTICE_LEAD});
   for(const item of REPORT_NOTICE_ITEMS) blocks.push({kind:'subheading',text:item.title},{kind:'body',text:item.text});

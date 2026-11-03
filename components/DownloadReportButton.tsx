@@ -74,9 +74,23 @@ export default function DownloadReportButton({report,direct=false,pending=false}
     void fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...form,url:report.url,overallScore:report.overallScore}),signal:AbortSignal.timeout(5000)}).catch(()=>{});
     await runDownload();
   }
+  async function downloadText(format:'html'|'markdown'){
+    if(busy.current||pending)return;
+    busy.current=true;setDownloading(true);setError('');
+    try{
+      await event({action:'document_export',eventId:crypto.randomUUID(),format,url:report.url,...(report.sharedRetention?.reportId?{reportId:report.sharedRetention.reportId}:{})});
+      const {exportReportText}=await import('@/lib/exportReportText');
+      const result=exportReportText(report,format),url=URL.createObjectURL(new Blob([result.text],{type:result.mime}));
+      const a=document.createElement('a');a.href=url;a.download=result.filename;document.body.append(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),30000);
+      setProgress(`${format==='html'?'HTML':'Markdown'} 전체 보고서를 브라우저 다운로드에 전달했습니다.`);
+    }catch(error){setError(error instanceof Error?error.message:'보고서를 내보내지 못했습니다.');}
+    finally{busy.current=false;setDownloading(false);}
+  }
   return <div className="report-download flex flex-col gap-2 max-w-md" data-hide-on-export>
     <div className="report-pdf-scope" role="group" aria-label="PDF 범위"><button type="button" disabled={downloading||saving||pending} aria-pressed={scope==='full'} onClick={()=>setScope('full')}>전체 상세</button><button type="button" disabled={downloading||saving||pending} aria-pressed={scope==='summary'} onClick={()=>setScope('summary')}>한 장 요약</button></div>
     {!ready&&<button type="button" className="jm-button" disabled={downloading || pending} onClick={()=>direct?void runDownload():setOpen(true)}>{pending?'추가 분석 완료 후 PDF 가능':downloading?'PDF 생성 중...':'PDF 리포트 다운로드'}</button>}
+    <div className="report-text-exports" role="group" aria-label="전체 보고서 다른 형식으로 다운로드"><span>전체 내용</span><button type="button" className="report-secondary-button" disabled={downloading||saving||pending} onClick={()=>void downloadText('html')}>HTML 저장</button><button type="button" className="report-secondary-button" disabled={downloading||saving||pending} onClick={()=>void downloadText('markdown')}>Markdown 저장</button></div>
     <p role="status" aria-live="polite" className="text-xs text-jm-gray">{progress}</p>
     {ready&&<div className="report-pdf-ready">
       <div className="report-pdf-actions"><button type="button" className="jm-button" disabled={saving} onClick={()=>void saveFile()}>{saving?'PDF 저장 중…':'PDF 파일 저장'}</button><a className="report-secondary-button" href={ready.url} target="_blank" rel="noopener noreferrer" onClick={()=>void trackClick(ready.ticket,'open')}>PDF 열어보기</a></div>
