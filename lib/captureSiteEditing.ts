@@ -1,4 +1,5 @@
 import {captureContentSections} from './contentSections';
+import {pageRegion} from './pageRegions';
 import type {CheerioAPI} from 'cheerio';
 import type {Element} from 'domhandler';
 import type {PageElement,PlatformId,SiteEditing} from './siteEditingSchema';
@@ -43,8 +44,8 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
   const controlPriority=(el:Element)=>{
     const item=$(el),text=clean(item.text()||item.attr('value')||item.attr('aria-label')||'');
     const actionable=/문의|상담|견적|예약|신청|수강|접수|다운로드|구독|구매|결제|장바구니|contact|consult|book|apply|enroll|download|subscribe|buy|checkout|add to cart/i.test(text);
-    const main=!!item.closest('main,[role="main"]').length,chrome=!!item.closest('header,nav,footer,[role="navigation"]').length;
-    return main&&actionable?0:main?1:!chrome&&actionable?2:chrome?4:3;
+    const region=pageRegion($,el),main=region==='main',chrome=['header','nav','footer'].includes(region);
+    return main&&actionable?0:main?1:!chrome&&actionable?2:chrome&&actionable?3:chrome?5:4;
   };
   const sampledControls=new Set($(controlSelector).toArray().filter(el=>{
     const item=$(el);return !item.parents('script,style,noscript,template,[hidden],[aria-hidden="true"]').length&&!item.is('[hidden],[aria-hidden="true"]')&&!!clean(item.text()||item.attr('value')||item.attr('aria-label')||'');
@@ -58,11 +59,11 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
     if(!text&&tag!=='img')return;if(tag==='li'&&!control&&item.children('p,ul,ol,a').length)return;
     if(/^h[1-3]$/.test(tag))lastHeading=text.slice(0,300);
     const kind:PageElement['kind']=tag==='title'?'title':tag==='meta'?'description':/^h[1-3]$/.test(tag)?'heading':control?'cta':tag==='img'?'image':tag==='form'?'form':'text';
+    const region=pageRegion($,el);
+    if(['nav','header','footer'].includes(region)&&['heading','text','image','form'].includes(kind))return;
     total++;order++;if(elements.length>=100||counts[kind]>=limits[kind]||(control&&!sampledControls.has(el)))return;counts[kind]++;
     let href:string|undefined;if(tag==='a'&&item.attr('href')?.trim()&&!/^javascript:/i.test(item.attr('href')!.trim())){try{const u=new URL(item.attr('href')!,finalUrl);if(/^https?:$/.test(u.protocol)&&!u.username&&!u.password)href=u.href.slice(0,4000);}catch{}}
     const id=item.attr('id'),anchor=id&&ids.get(id)===1&&id.length<=300?id:undefined;
-    const regionNode=item.closest('head,nav,header,footer,main,[role="main"],[role="navigation"]').get(0) as Element|undefined;
-    const region:PageElement['region']=regionNode?regionNode.attribs.role==='navigation'?'nav':regionNode.attribs.role==='main'?'main':regionNode.tagName as PageElement['region']:'body';
     const sectionNode=item.closest('section,article,[data-section],.section_wrap').get(0) as Element|undefined;
     const section=sectionNode?{selector:selector(sectionNode),label:clean($(sectionNode).attr('aria-label')||$(sectionNode).find('h1,h2,h3').first().text()||'제목 없는 구역').slice(0,300)}:undefined;
     const widgetNode=item.closest('[data-widget-type]').get(0) as Element|undefined;

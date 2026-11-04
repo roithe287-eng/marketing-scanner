@@ -94,7 +94,7 @@ export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebs
   const scope=(s:string)=>canonical(s)?.guide||s,scoped=(rows:string[])=>rows.filter(applicable).map(scope);
   return {...report,sitePurpose:purpose,checklist,criticalIssues,discoverability:discovery,evidenceReview,
     oneLineSummary:data.collectionNotice?`${purpose.label} · 원문 수집 제한으로 검색 요약과 업종별 확인 과제를 제공합니다. HTML·기능의 부재나 충족 여부를 판정하지 않았습니다.`:`HTML 기본 항목 ${measured.length}개 중 ${passed}개 충족 · ${purpose.label} · ${goal} 동선과 실제 화면은 별도 확인이 필요합니다.`,
-    exampleCopy:{...report.exampleCopy,...(nonCommerce&&/구매|결제|장바구니/.test(report.exampleCopy.ctaText)?{ctaText:purpose.goal.observed?purpose.goal.evidence[0].text:goal}:{})},
+    exampleCopy:{...report.exampleCopy,...(nonCommerce&&(/구매|결제|장바구니/.test(report.exampleCopy.ctaText)||outOfPurpose(report.exampleCopy.ctaText,purpose))?{ctaText:purpose.goal.observed?purpose.goal.evidence[0].text:goal}:{})},
     finalCta:{...report.finalCta,title:'확인한 근거로 다음 실행을 정하세요',description:`수집한 HTML 기본 항목 ${measured.length}개 중 ${passed}개가 점검 기준을 충족했습니다. ${goal} 목적과 실제 화면·진행 과정·계정 데이터를 함께 대조해 필요한 개선 순서를 정리하세요.`},
     priorityRoadmap:data.collectionNotice?{immediately:['사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 같은 URL을 재진단하세요.'],thisWeek:purpose.checks.slice(0,2).map(c=>c.guide),thisMonth:['광고 계정에서 실제 예약 확정·구매 이벤트와 금액·통화·중복 수신을 대조하세요.']}:{immediately:scoped(report.priorityRoadmap.immediately),thisWeek:scoped(report.priorityRoadmap.thisWeek),thisMonth:scoped(report.priorityRoadmap.thisMonth)},
     quickWins:report.quickWins?.filter(applicable),

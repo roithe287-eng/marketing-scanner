@@ -43,6 +43,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const body=elements.filter(e=>['heading','text'].includes(e.kind));
   if(body.length)body.slice(0,20).forEach(e=>add(e.text,e.selector));
   else (data.bodyText||'').split(/\n+/).slice(0,20).forEach(t=>add(t,'body · 수집 텍스트'));
+  for(const element of elements.filter(e=>e.kind==='form'))for(const field of element.fields||[])add(field.label,field.selector+' · 입력 항목 라벨');
   const actions:{text:string;locator:string}[]=[];
   const ctaElements=elements.filter(e=>e.kind==='cta');
   if(data.siteEditing)ctaElements.forEach(e=>actions.push({text:short(e.text),locator:e.selector}));
@@ -72,8 +73,9 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const commerce=purchase.length>0||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
   const kind:PurposeKind=business?.kind||(commerce?(candidate&&candidate!=='content'?'mixed':'commerce'):candidate||'unknown');
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
-  const action=business?(actions.some(a=>actionPatterns[business.goalKey].test(a.text))?business.goalKey:undefined):preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
-  const goalKey=business?.goalKey||action||(['content','organization','education','public_service'].includes(kind)?'read':'unknown');
+  const provider=sector?.id==='medical_consulting'&&!commerce;
+  const action=business?(actions.some(a=>actionPatterns[business.goalKey].test(a.text))?business.goalKey:undefined):provider?(actions.some(a=>actionPatterns.contact.test(a.text))?'contact':undefined):preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
+  const goalKey=business?.goalKey||(provider?'contact':action)||(['content','organization','education','public_service'].includes(kind)?'read':'unknown');
   const goalLabel=business?.goalLabel||actionLabels[goalKey];
   const evidence=(business?business.evidence:structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?matched[candidate]:units).slice(0,commerce?6:8);
   if(commerce&&evidence.length<8)evidence.push(...purchase.slice(0,8-evidence.length));
@@ -119,5 +121,6 @@ export function outOfPurpose(text:string,p:WebsitePurpose){
   if(!isNonCommerce(p))return false;
   const retail='(?:장바구니|재고|배송비|배송.?정책|반품.?정책|최소.?주문|구매.?버튼|결제.?버튼|상품.?가격|판매.?상품)';
   const change='(?:추가|등록|구현|설치|부재|없|누락|부족|노출|개선)';
+  if(p.sector?.id==='medical_consulting'&&/초진|내원\s*(?:준비|예약)|진료\s*(?:시간|과목|예약|접수)|비급여|의료진\s*(?:면허|자격|소개)/.test(text))return true;
   return new RegExp(`${retail}.{0,20}${change}|${change}.{0,12}${retail}|상품.?등록`).test(text)||(['content','public_service'].includes(p.kind)&&/후기.?부재|후기.?추가|가격표.?추가|고객.?리뷰.?추가|비용과 계약|제공 업체/.test(text));
 }
