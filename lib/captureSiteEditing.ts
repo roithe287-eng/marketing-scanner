@@ -59,6 +59,7 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
     if(!text&&tag!=='img')return;if(tag==='li'&&!control&&item.children('p,ul,ol,a').length)return;
     if(/^h[1-3]$/.test(tag))lastHeading=text.slice(0,300);
     const kind:PageElement['kind']=tag==='title'?'title':tag==='meta'?'description':/^h[1-3]$/.test(tag)?'heading':control?'cta':tag==='img'?'image':tag==='form'?'form':'text';
+    if(item.parents('form').length&&['heading','text','image'].includes(kind))return;
     const region=pageRegion($,el);
     if(['nav','header','footer'].includes(region)&&['heading','text','image','form'].includes(kind))return;
     total++;order++;if(elements.length>=100||counts[kind]>=limits[kind]||(control&&!sampledControls.has(el)))return;counts[kind]++;

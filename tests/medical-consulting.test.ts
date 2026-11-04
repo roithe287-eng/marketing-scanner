@@ -14,6 +14,7 @@ import {MarketingReportSchema} from '../lib/reportSchema';
 import {buildReportDocument} from '../lib/reportDocument';
 import {fixture} from './fixtures/report';
 import {captureSiteDiagnosticSeed,buildSiteDiagnosticFindings} from '../lib/siteDiagnostics';
+import {buildSourceLibrary,buildContentFacets} from '../lib/reportContent';
 
 // Reduced reproduction of observed CMS structure, source labels and provider identity.
 const title='메디컬컨설팅그룹 | 병원 전문 컨설팅, 마케팅, 홈페이지 제작 실행사';
@@ -22,7 +23,7 @@ const providerHtml=`<html><head><title>${title}</title><meta name="description" 
 <div id="mobile_slide_menu">${Array.from({length:36},(_,i)=>`<a href="/page-${i}">메뉴 ${i}</a>`).join('')}<a href="/contact">상담문의</a></div>
 <main><h1>병원 실무자 출신의 전문가</h1><p>개원 전부터 이후까지 지속적으로 관리를 도와드립니다. 컨설팅, 마케팅, 교육, 해외환자 유치 등 전반적인 업무를 도와드립니다.</p>
 <p>5단계 성공 로드맵</p><a href="/client-booking">환자 진료 예약 사례</a>
-<form><label for="hospital">병원명 / 지역</label><input id="hospital" value="NEVER_CAPTURE_VALUE"><label for="inquiry">희망하는 상담내용을 작성해주세요.</label><textarea id="inquiry">NEVER_CAPTURE_CONTENT</textarea><button type="submit">작성</button></form></main>
+<form><p>회원 가입 의사 확인, 회원제 서비스 제공에 따른 본인 식별·인증과 회원자격 유지를 목적으로 개인정보를 처리합니다.</p><label for="hospital">병원명 / 지역</label><input id="hospital" value="NEVER_CAPTURE_VALUE"><label for="inquiry">희망하는 상담내용을 작성해주세요.</label><textarea id="inquiry">NEVER_CAPTURE_CONTENT</textarea><button type="submit">작성</button></form></main>
 <div class="modal"><p>비공개 예약 메뉴의 내용은 본문 근거로 사용하지 않습니다.</p></div></body></html>`;
 
 async function extract(t:TestContext,html=providerHtml,url='https://www.mcg2023.com/'){
@@ -38,6 +39,8 @@ test('a hospital service provider is consulting; patient-related copy cannot cha
   const contact=p.sector.checks.find(c=>c.id==='contact')!;
   assert.ok(contact.evidence.some(e=>e.text==='병원명 / 지역'));
   assert.doesNotMatch(JSON.stringify(p),/NEVER_CAPTURE/);
+  assert.doesNotMatch(data.bodyText,/NEVER_CAPTURE|회원 가입 의사 확인/);
+  assert.doesNotMatch(JSON.stringify(data.siteEditing),/NEVER_CAPTURE|회원 가입 의사 확인/);
   assert.ok(purposePrompt(data).includes('병원이 고객인'));
   const plan=buildAnswerContentPlan(data),geo=citationFallbackQuestions(data,'메디컬컨설팅그룹');
   assert.match(plan.primaryKeyword!.term,/컨설팅/);assert.deepEqual(plan.questions.map(q=>q.intent),['scope','process','price']);
@@ -80,6 +83,8 @@ test('saved report and document use provider criteria and discard patient-care r
   assert.match(report.checklist!.find(c=>c.id==='trust_review')!.label,/담당 조직/);
   assert.match(report.checklist!.find(c=>c.id==='price_info')!.label,/견적 산정/);
   const text=buildReportDocument(report).map(b=>b.text).join('\n');
+  const offer=buildContentFacets(buildSourceLibrary(report)).find(f=>f.id==='offer')!;
+  assert.ok(offer.evidence.some(e=>e.text.includes('컨설팅')));assert.ok(offer.evidence.every(e=>!/회원 가입 의사|개인정보를 처리/.test(e.text)));
   for(const check of report.sitePurpose!.sector!.checks)assert.ok(text.includes(check.guide));
   assert.ok(text.includes('병원 컨설팅·마케팅'));assert.ok(text.includes('병원명 / 지역'));
 });
