@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import {evaluateRobots,type RobotsAgent,type RobotsObservation} from './robotsRules';
 import type {DiagnosticPage,DiagnosticFinding,SiteDiagnostics} from './siteDiagnosticsSchema';
+import {analyzeNonCommerceSector} from './nonCommerceSectors';
 
 const clean=(v:unknown,max=500)=>typeof v==='string'?v.replace(/\s+/g,' ').trim().slice(0,max):'';
 const types=(v:unknown):string[]=>Array.isArray(v)?v.flatMap(types):typeof v==='string'?[v.replace(/^https?:\/\/schema.org\//,'')]:[];
@@ -52,7 +53,8 @@ export function captureSiteDiagnosticSeed(html:string,url:string):SiteDiagnostic
   let backgroundCandidates=0;
   $('[style]').each((_,el)=>{const node=$(el);if(/background(?:-image)?\s*:[^;]*url\s*\(/i.test(node.attr('style')||'')&&!clean(node.text())&&!clean(node.attr('aria-label'))&&node.attr('aria-hidden')!=='true'&&node.attr('role')!=='presentation')backgroundCandidates++;});
   const heading=clean($('h1').map((_,e)=>$(e).text()).get().join(' '),1000);
-  const page:DiagnosticPage={url,title,description:clean(rawDescription,1500),canonicals:$('head link[rel~="canonical" i]').slice(0,5).map((_,e)=>clean($(e).attr('href'),2048)).get(),noindex:$('meta[name="robots" i],meta[name="googlebot" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')),twitterCard:!!$('meta[name="twitter:card" i]').attr('content'),jquery:[...jquery].slice(0,5),analytics:[...analytics],backgroundCandidates,medicalRelevant:medical.length>0||/병원|의원|한의원|치과|\b(?:hospital|clinic|dentist)\b/i.test(title+' '+heading),medical};
+  const provider=analyzeNonCommerceSector([{text:title,locator:'head > title'},{text:clean(rawDescription,600),locator:'meta[name="description"]'},...$('h1').slice(0,4).toArray().map(el=>({text:clean($(el).text(),600),locator:'h1'}))],[])?.id==='medical_consulting';
+  const page:DiagnosticPage={url,title,description:clean(rawDescription,1500),canonicals:$('head link[rel~="canonical" i]').slice(0,5).map((_,e)=>clean($(e).attr('href'),2048)).get(),noindex:$('meta[name="robots" i],meta[name="googlebot" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')),twitterCard:!!$('meta[name="twitter:card" i]').attr('content'),jquery:[...jquery].slice(0,5),analytics:[...analytics],backgroundCandidates,medicalRelevant:medical.length>0||(!provider&&/병원|의원|한의원|치과|\b(?:hospital|clinic|dentist)\b/i.test(title+' '+heading)),medical};
   page.titleTruncated=rawTitle.length>500;page.descriptionTruncated=rawDescription.length>1500;
   page.metadataOutsideHead=!!(!headTitle&&rawTitle||!headDescription&&rawDescription);
   page.metadataDeferred=(!rawTitle||!rawDescription)&&($('script[src*="/_next/"]').length>0||$('script').toArray().some(el=>/\b__next_f\b/.test($(el).text())));

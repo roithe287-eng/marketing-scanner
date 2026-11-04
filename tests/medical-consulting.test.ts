@@ -13,6 +13,7 @@ import {finalizeReportEvidence} from '../lib/evidenceReview';
 import {MarketingReportSchema} from '../lib/reportSchema';
 import {buildReportDocument} from '../lib/reportDocument';
 import {fixture} from './fixtures/report';
+import {captureSiteDiagnosticSeed,buildSiteDiagnosticFindings} from '../lib/siteDiagnostics';
 
 // Reduced reproduction of observed CMS structure, source labels and provider identity.
 const title='메디컬컨설팅그룹 | 병원 전문 컨설팅, 마케팅, 홈페이지 제작 실행사';
@@ -53,6 +54,13 @@ test('CMS document state classes keep main text while menu containers and overla
   assert.ok(elements.some(e=>e.kind==='text'&&e.region==='main'&&e.text.includes('개원 전부터')));
   assert.ok(elements.some(e=>e.kind==='cta'&&e.region==='nav'&&e.text==='상담문의'),'a late actionable navigation link survives bounded sampling');
   assert.ok(!elements.some(e=>e.kind==='text'&&e.text.startsWith('메뉴 ')));
+});
+
+test('technical entity diagnostics use the same provider distinction without hiding declared medical entities',()=>{
+  const page=captureSiteDiagnosticSeed(providerHtml,'https://www.mcg2023.com/').page;
+  assert.equal(page.medicalRelevant,false);assert.ok(!buildSiteDiagnosticFindings([page]).some(f=>f.id.startsWith('medical-')));
+  const declared=captureSiteDiagnosticSeed(providerHtml.replace('</head>','<script type="application/ld+json">{"@context":"https://schema.org","@type":"MedicalClinic","name":"실제로 선언된 값"}</script></head>'),'https://www.mcg2023.com/').page;
+  assert.equal(declared.medicalRelevant,true);assert.equal(declared.medical.length,1);assert.ok(buildSiteDiagnosticFindings([declared]).some(f=>f.id==='medical-0-0'));
 });
 
 test('current page evidence drives the profile independently of domain; clinics and editorial pages retain their purpose',async t=>{
