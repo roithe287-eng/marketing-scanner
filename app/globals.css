@@ -1619,3 +1619,14 @@ button,input,textarea,select { font-family:inherit; }
 @media(max-width:900px){.smartstore-report .store-unavailable-grid{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:640px){.smartstore-report .store-unavailable{padding:20px 16px}.store-unavailable-overlay{padding:20px 12px}.store-report-legend{padding:18px;gap:12px}.store-unavailable-overlay p{word-break:normal}.store-tool-note>span{display:table;margin-bottom:8px}}
 @media print{.store-example-blur{filter:blur(4px)!important;opacity:.4!important}.store-unavailable-overlay{display:flex!important}.store-demo-label{color:#333!important}.smartstore-report .store-unavailable-grid{grid-template-columns:minmax(0,1fr)}}
+.medical-classification{padding:16px 18px;margin:16px 0;background:#edf7f7;border-left:4px solid #007f82;border-radius:10px;display:flex;flex-wrap:wrap;gap:8px 18px;color:#163c46}
+.medical-classification p{flex-basis:100%;margin:0;font-size:13px}
+.medical-profile-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}
+.medical-profile{min-width:0;padding:18px;border:1px solid #d9e6ea;border-radius:12px;background:#f7fafb}
+.medical-profile h4{margin:0 0 10px;color:#076b75;font-size:17px;font-weight:700}
+.medical-profile p,.medical-profile li{font-size:14px;line-height:1.8;overflow-wrap:anywhere}
+.medical-profile strong{display:block;margin-top:12px;font-size:13px}
+.medical-profile ul{list-style:disc;padding-left:20px;margin:6px 0 12px}
+.medical-checks .naver-check-body>p{line-height:1.85}
+.medical-audit .naver-badge{white-space:nowrap}
+@media(max-width:700px){.medical-profile-grid{grid-template-columns:1fr}.medical-classification{padding:14px}.medical-audit .report-card-heading{flex-wrap:wrap}}

@@ -2,11 +2,12 @@ import * as cheerio from 'cheerio';
 import {evaluateRobots,type RobotsAgent,type RobotsObservation} from './robotsRules';
 import type {DiagnosticPage,DiagnosticFinding,SiteDiagnostics} from './siteDiagnosticsSchema';
 import {analyzeNonCommerceSector} from './nonCommerceSectors';
+import {captureMedicalEvidence} from './medicalEvidence';
 
 const clean=(v:unknown,max=500)=>typeof v==='string'?v.replace(/\s+/g,' ').trim().slice(0,max):'';
 const types=(v:unknown):string[]=>Array.isArray(v)?v.flatMap(types):typeof v==='string'?[v.replace(/^https?:\/\/schema.org\//,'')]:[];
 const MEDICAL=new Set(['MedicalClinic','Hospital','Dentist','Physician','PhysiciansOffice','IndividualPhysician']);
-export type SiteDiagnosticSeed={page:DiagnosticPage;links:string[]};
+export type SiteDiagnosticSeed={page:DiagnosticPage;links:string[];medicalLinks?:string[]};
 
 /** Parse declarations only. No script execution, external CSS/JS requests, or inferred tracking delivery. */
 export function captureSiteDiagnosticSeed(html:string,url:string):SiteDiagnosticSeed{
@@ -58,7 +59,17 @@ export function captureSiteDiagnosticSeed(html:string,url:string):SiteDiagnostic
   page.titleTruncated=rawTitle.length>500;page.descriptionTruncated=rawDescription.length>1500;
   page.metadataOutsideHead=!!(!headTitle&&rawTitle||!headDescription&&rawDescription);
   page.metadataDeferred=(!rawTitle||!rawDescription)&&($('script[src*="/_next/"]').length>0||$('script').toArray().some(el=>/\b__next_f\b/.test($(el).text())));
-  return {page,links:$('a[href]').slice(0,400).map((_,e)=>$(e).attr('href')||'').get()};
+  const medicalEvidence=captureMedicalEvidence(html,url,provider);
+  if(page.medicalRelevant||medicalEvidence.facilityCandidate){page.medicalEvidence=medicalEvidence;page.medicalRelevant=true;}
+  const links=$('a[href]').slice(0,400).map((_,e)=>$(e).attr('href')||'').get();
+  const groups=new Map<string,string[]>();
+  if(medicalEvidence.facilityCandidate)$('a[href]').slice(0,400).each((_,e)=>{
+    const a=$(e),text=clean(a.text())+' '+(a.attr('href')||'');
+    const group=/의료진|원장\s*(?:소개|약력)|doctor|staff/i.test(text)?'doctors':/진료\s*시간|오시는\s*길|주차|location|contact/i.test(text)?'visit':/비급여|진료비|비용|price/i.test(text)?'cost':/진료\s*(?:안내|과목|분야)|시술|검사|치료|treatment|service/i.test(text)?'services':null;
+    if(group)groups.set(group,[...groups.get(group)||[],a.attr('href')||'']);
+  });
+  const medicalLinks=[...groups.values()].flatMap(g=>g.slice(0,1)).concat([...groups.values()].flatMap(g=>g.slice(1,3)));
+  return {page,links,...(medicalLinks.length?{medicalLinks}: {})};
 }
 
 const BOT_SOURCES={google:'https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers',openai:'https://developers.openai.com/api/docs/bots',anthropic:'https://privacy.anthropic.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',perplexity:'https://docs.perplexity.ai/docs/resources/perplexity-crawlers'};
@@ -105,7 +116,7 @@ export function buildSiteDiagnosticFindings(pages:DiagnosticPage[]):DiagnosticFi
     if(p.jquery.length)add(`jquery-${i}`,'jQuery 선언 버전','review',`스크립트 URL 관측: ${p.jquery.join(' · ')}`,'운영자가 사용 중인 플러그인 호환성과 공식 보안 공지를 확인합니다. URL만으로 실제 실행 버전·취약점을 확정할 수 없습니다.',[p.url]);
     if(p.analytics.length)add(`analytics-${i}`,'분석 태그 선언','review',`${p.analytics.join(' · ')} 식별 신호 관측. ${p.analytics.includes('UA')?'Universal Analytics 흔적이 남아 있습니다. ':''}태그 설치·실제 이벤트 전송 성공은 별도입니다.`,'동의 설정과 GA4 DebugView·실시간 보고서에서 방문·전환 이벤트를 확인합니다. GTM 컨테이너 내부 태그는 이 검사로 알 수 없습니다.',[p.url]);
     if(p.backgroundCandidates)add(`background-${i}`,'배경 이미지의 정보 전달 확인','review',`인라인 배경 이미지 중 자체 텍스트·aria-label이 없는 요소 ${p.backgroundCandidates}개. 외부 CSS는 검사하지 않았습니다.`,'장식 이미지라면 조치가 필요하지 않습니다. 진료·상품 설명이 이미지에만 있다면 같은 내용을 접근 가능한 본문으로 제공합니다.',[p.url]);
-    if(p.medicalRelevant&&!p.medical.length)add(`medical-missing-${i}`,'의료기관 엔터티 검토','review','제목·H1에서 의료기관 관련 표현을 관측했지만 이 HTML의 JSON-LD에서 MedicalClinic·Hospital·Dentist·Physician 계열을 감지하지 못했습니다.','실제 의료기관 사이트인지 먼저 확인합니다. 해당할 때 공개된 기관·의료진 정보에 맞는 Schema.org 유형을 적용합니다. microdata·다른 페이지의 선언은 별도 확인합니다.',[p.url]);
+    if(p.medicalRelevant&&!p.medical.length&&!p.medicalEvidence?.entities.length)add(`medical-missing-${i}`,'의료기관 엔터티 검토','review','제목·H1 또는 기관 정보에서 의료기관 관련 표현을 관측했지만 이 HTML에서 해당 시설·의료인 엔터티를 감지하지 못했습니다.','실제 의료기관 사이트인지 먼저 확인합니다. 해당할 때 공개된 기관·의료진 정보에 맞는 Schema.org 유형을 적용합니다. 다른 페이지의 선언·렌더링 후 내용은 별도 확인합니다.',[p.url]);
     for(const [j,m] of p.medical.entries()){
       const missing=m.fields.filter(f=>f.state==='missing').map(f=>f.label),refs=m.fields.filter(f=>f.state==='reference').map(f=>f.label);
       add(`medical-${i}-${j}`,`${m.type} · ${m.name||'이름 미감지'}`,missing.length||refs.length?'review':'observed',`기관·의료진 식별 속성 관측. ${missing.length?`미감지: ${missing.join(', ')}. `:''}${refs.length?`참조 대상 확인 필요: ${refs.join(', ')}.`:''}${!missing.length&&!refs.length?'점검한 식별 속성을 모두 감지했습니다.':''}`,'이 목록은 정보 연결을 위한 보완 후보이며 모든 속성이 Schema.org 필수값이라는 뜻은 아닙니다. 원문과 일치하는 이름·주소·연락처·진료 분야만 기재하고, 의료진 직함·소속·자격은 실제 공개 근거로 연결합니다. 한의사·의사 구분, 진료 사실·면허는 운영자가 검증합니다.',[p.url]);

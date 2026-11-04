@@ -41,6 +41,7 @@ import AdWasteCalculator from '@/components/AdWasteCalculator';
 import NaverOptimizationPanel from './NaverOptimizationPanel';
 import OfficialSeoPanel from './OfficialSeoPanel';
 import SiteDiagnosticsPanel from './SiteDiagnosticsPanel';
+import MedicalAuditPanel from './MedicalAuditPanel';
 import KeywordRankCard from '@/components/KeywordRankCard';
 import IndustryBenchmarkCard from '@/components/IndustryBenchmarkCard';
 import Disclaimer from '@/components/Disclaimer';
@@ -78,7 +79,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
         {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
         {id:'overview-questions',label:'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst/>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
-        ...(report.sitePurpose?.sector?[{id:'overview-sector',label:'업종별 확인',children:<NonCommerceSectorPanel purpose={report.sitePurpose}/>}]:[]),
+        ...(report.sitePurpose?.sector||report.siteDiagnostics?.medicalAudit?[{id:'overview-sector',label:'업종별 확인',children:<>{report.sitePurpose&&<NonCommerceSectorPanel purpose={report.sitePurpose}/>}<MedicalAuditPanel audit={report.siteDiagnostics?.medicalAudit}/></>}]:[]),
         {id:'overview-observations',label:'영역별 근거',children:<>{report.evidenceReview&&<EvidenceReviewPanel review={report.evidenceReview}/>}<ConversionPath data={data}/></>},
         ...(report.diagnosisBaseline?[{id:'overview-comparison',label:'이전 결과 비교',children:<DiagnosisComparisonPanel report={report}/>}]:[]),
       ]}/>

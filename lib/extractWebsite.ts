@@ -14,8 +14,10 @@ import {captureBusinessDocument,hasBusinessResearch} from './businessResearch';
 import type {BusinessDocument} from './businessContext';
 import {restrictedBusinessWebsite} from './restrictedBusiness';
 import {captureSiteDiagnosticSeed,type SiteDiagnosticSeed} from './siteDiagnostics';
+import type {MedicalAudit} from './medicalAuditSchema';
 
 export type ExtractedWebsiteData = {
+  medicalAudit?:MedicalAudit;
   diagnosticSeed?:SiteDiagnosticSeed;
   collectionNotice?:string;
   businessDocuments?:BusinessDocument[];

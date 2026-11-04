@@ -2,6 +2,7 @@ import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {NonCommerceSectorSchema,analyzeNonCommerceSector,sectorActionPattern} from './nonCommerceSectors';
 import {BusinessContextSchema,analyzeBusinessContext,businessPrompt} from './businessContext';
+import {medicalPrompt} from './medicalAudit';
 
 export const PurposeKindSchema=z.enum(['commerce','service','organization','education','content','public_service','mixed','unknown']);
 const source=z.object({text:z.string().max(600),locator:z.string().max(1000)});
@@ -16,7 +17,7 @@ export const WebsitePurposeSchema=z.object({
 });
 export type WebsitePurpose=z.infer<typeof WebsitePurposeSchema>;
 export type PurposeKind=WebsitePurpose['kind'];
-type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'productContext'|'productDiscovery'|'seoEvidence'|'schemaTypes'|'businessDocuments'>>;
+type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'medicalAudit'|'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'productContext'|'productDiscovery'|'seoEvidence'|'schemaTypes'|'businessDocuments'>>;
 const labels:Record<PurposeKind,string>={commerce:'상품 판매형',service:'서비스·상담형',organization:'기업·기관 소개형',education:'교육·프로그램형',content:'정보·콘텐츠형',public_service:'공공·지원 안내형',mixed:'판매·비커머스 혼합형',unknown:'목적 확인 필요'};
 const patterns={
   public_service:/지원사업|공공\s*서비스|행정\s*민원|복지\s*(?:서비스|사업|지원|급여|시설)|보조금|(?:정부|지자체|공공).{0,12}지원|public service/i,
@@ -116,7 +117,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   return WebsitePurposeSchema.parse({version:1,kind,label:business?.label||labels[kind],sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,...(sector&&!commerce&&!business?{sector}:{}),...(business?{business}:{}),goal:{key:goalKey,label:goalLabel,observed:!!action,evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,4):[]},pricingObserved,checks,note:business?.note||'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});
 }
 
-export function purposePrompt(data:PurposeInput){const p=analyzeWebsitePurpose(data);return JSON.stringify({kind:p.kind,label:p.label,note:p.note,goal:p.goal,evidence:p.evidence,sector:p.sector,business:p.business?JSON.parse(businessPrompt(p.business)):undefined,checks:p.checks.map(c=>({label:c.label,applicable:c.status!=='not_applicable'})),rule:'페이지 목적과 업종별 기준에 맞춰 분석한다. sector가 있으면 해당 업종의 실제 제공 범위·담당 주체·조건·상담 행동을 우선하며 각 evidence를 현재 원문으로만 취급한다. 기준 항목과 추천 질문은 업체가 제공한다고 확인된 사실이 아니다. 정보형·기업형·공공형과 비커머스 서비스에 상품 배송·재고·장바구니·후기·별점을 필수로 요구하지 않는다. 업종의 caution을 지키며 미확인 목적·수치·운영 조건은 추측하지 않는다.'});}
+export function purposePrompt(data:PurposeInput){const p=analyzeWebsitePurpose(data);return JSON.stringify({kind:p.kind,label:p.label,note:p.note,goal:p.goal,evidence:p.evidence,sector:p.sector,business:p.business?JSON.parse(businessPrompt(p.business)):undefined,medical:medicalPrompt(data.medicalAudit),checks:p.checks.map(c=>({label:c.label,applicable:c.status!=='not_applicable'})),rule:'페이지 목적과 업종별 기준에 맞춰 분석한다. sector가 있으면 해당 업종의 실제 제공 범위·담당 주체·조건·상담 행동을 우선하며 각 evidence를 현재 원문으로만 취급한다. 기준 항목과 추천 질문은 업체가 제공한다고 확인된 사실이 아니다. 정보형·기업형·공공형과 비커머스 서비스에 상품 배송·재고·장바구니·후기·별점을 필수로 요구하지 않는다. 업종의 caution을 지키며 미확인 목적·수치·운영 조건은 추측하지 않는다.'});}
 export function outOfPurpose(text:string,p:WebsitePurpose){
   if(!isNonCommerce(p))return false;
   const retail='(?:장바구니|재고|배송비|배송.?정책|반품.?정책|최소.?주문|구매.?버튼|결제.?버튼|상품.?가격|판매.?상품)';

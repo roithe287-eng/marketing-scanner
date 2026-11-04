@@ -3,6 +3,7 @@ import {analyzeSmartstore} from '@/lib/analyzeSmartstore';
 import {analyzeOfficialSeo} from '@/lib/analyzeOfficialSeo';
 import {withBudget,optionalStage,remainingBudget} from '@/lib/runtime/budget';
 import {collectSiteDiagnostics} from '@/lib/collectSiteDiagnostics';
+import {withMedicalCitation} from '@/lib/medicalAudit';
 import {requirePrincipal} from '@/lib/saas/auth';
 import {reserve} from '@/lib/saas/store';
 import {readJson,failure,AccessError} from '@/lib/security/request';
@@ -126,6 +127,7 @@ export async function POST(req: NextRequest) {
     ]);
     if(products)websiteData.productContext=products;
     if(businessDocuments.length)websiteData.businessDocuments=businessDocuments;
+    if(siteDiagnostics.medicalAudit)websiteData.medicalAudit=siteDiagnostics.medicalAudit;
     const pageEvidence=capturePageEvidence(websiteData);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
@@ -155,6 +157,7 @@ export async function POST(req: NextRequest) {
     report.competitorAnalysis = null;
     report.discoverability = discoverability.value;
     report.llmCitationTest = llmCitation.value;
+    if(siteDiagnostics.medicalAudit)siteDiagnostics.medicalAudit=withMedicalCitation(siteDiagnostics.medicalAudit,llmCitation.value,websiteData.finalUrl);
     if (geoBaseline) report.geoBaseline = geoBaseline;
     report.keywordRankTracking = keywordRank.value;
     report.answerContentPlan = answerContent.value||buildAnswerContentPlan(websiteData);

@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {MedicalPageEvidenceSchema,MedicalAuditSchema} from './medicalAuditSchema';
 const HttpUrl=z.string().url().max(2048).refine(value=>{try{const u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;}catch{return false;}},'공개 HTTP URL이 필요합니다.');
 
 export const DiagnosticFindingSchema=z.object({
@@ -6,6 +7,7 @@ export const DiagnosticFindingSchema=z.object({
   evidence:z.string().max(2500),action:z.string().max(1500),urls:z.array(HttpUrl).max(8),
 });
 export const DiagnosticPageSchema=z.object({
+  medicalEvidence:MedicalPageEvidenceSchema.optional(),
   url:HttpUrl,title:z.string().max(500),description:z.string().max(1500),
   titleTruncated:z.boolean().optional(),descriptionTruncated:z.boolean().optional(),
   metadataOutsideHead:z.boolean().optional(),metadataDeferred:z.boolean().optional(),
@@ -19,9 +21,10 @@ export const DiagnosticPageSchema=z.object({
 });
 export const DiagnosticResourceSchema=z.object({url:HttpUrl,status:z.enum(['observed','missing','blocked','unavailable','unsupported']),note:z.string().max(1000)});
 export const SiteDiagnosticsSchema=z.object({
+  medicalAudit:MedicalAuditSchema.optional(),
   version:z.literal(1),observedAt:z.string(),targetUrl:HttpUrl,limited:z.boolean(),
-  scopeNote:z.string().max(1500),pages:z.array(DiagnosticPageSchema).max(4),
-  attempts:z.array(DiagnosticResourceSchema).max(8),
+  scopeNote:z.string().max(1500),pages:z.array(DiagnosticPageSchema).max(8),
+  attempts:z.array(DiagnosticResourceSchema).max(14),
   sitemap:DiagnosticResourceSchema.extend({declared:z.boolean(),entries:z.number().int().nonnegative(),lastmod:z.number().int().nonnegative(),invalidDates:z.number().int().nonnegative(),futureDates:z.number().int().nonnegative(),sampled:z.boolean()}),
   llms:DiagnosticResourceSchema,
   crawlers:z.array(z.object({agent:z.string().max(80),role:z.string().max(150),status:z.enum(['allowed','blocked','unknown']),rule:z.string().max(600),note:z.string().max(700),source:HttpUrl})).max(12),
