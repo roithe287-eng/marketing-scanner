@@ -15,6 +15,9 @@ import {buildReportDocument} from '../lib/reportDocument';
 import {fixture} from './fixtures/report';
 import {captureSiteDiagnosticSeed,buildSiteDiagnosticFindings} from '../lib/siteDiagnostics';
 import {buildSourceLibrary,buildContentFacets} from '../lib/reportContent';
+import {analyzeMarketing} from '../lib/analyzeMarketing';
+import {getOpenAI} from '../lib/openaiClient';
+import {MarketingModelReportSchema} from '../lib/marketingModelSchema';
 
 // Reduced reproduction of observed CMS structure, source labels and provider identity.
 const title='메디컬컨설팅그룹 | 병원 전문 컨설팅, 마케팅, 홈페이지 제작 실행사';
@@ -64,6 +67,21 @@ test('technical entity diagnostics use the same provider distinction without hid
   assert.equal(page.medicalRelevant,false);assert.ok(!buildSiteDiagnosticFindings([page]).some(f=>f.id.startsWith('medical-')));
   const declared=captureSiteDiagnosticSeed(providerHtml.replace('</head>','<script type="application/ld+json">{"@context":"https://schema.org","@type":"MedicalClinic","name":"실제로 선언된 값"}</script></head>'),'https://www.mcg2023.com/').page;
   assert.equal(declared.medicalRelevant,true);assert.equal(declared.medical.length,1);assert.ok(buildSiteDiagnosticFindings([declared]).some(f=>f.id==='medical-0-0'));
+});
+
+test('the actual marketing call requests a closed report schema with all required fields',async t=>{
+  const key=process.env.OPENAI_API_KEY;process.env.OPENAI_API_KEY='test-structured-report';
+  t.after(()=>{if(key===undefined)delete process.env.OPENAI_API_KEY;else process.env.OPENAI_API_KEY=key;});
+  const data=await extract(t);let called=false;
+  t.mock.method(getOpenAI().chat.completions,'create',async(request:any)=>{
+    called=true;assert.equal(request.response_format.type,'json_schema');assert.equal(request.response_format.json_schema.strict,true);
+    const visit=(node:any)=>{if(!node||typeof node!=='object')return;if(node.type==='object'){assert.equal(node.additionalProperties,false);assert.deepEqual([...node.required].sort(),Object.keys(node.properties).sort());}for(const value of Object.values(node))if(Array.isArray(value))value.forEach(visit);else visit(value);};
+    visit(request.response_format.json_schema.schema);
+    const model={...fixture,checklist:finalizeReportEvidence({...fixture,url:data.url},data).checklist!.slice(0,12),criticalIssues:fixture.criticalIssues.slice(0,4).map(i=>({...i,badExample:i.badExample||'',goodExample:i.goodExample||'',exampleNote:i.exampleNote||''})),quickWinsDetailed:(fixture.quickWinsDetailed||[]).slice(0,3).map(q=>({...q,beforeExample:q.beforeExample||'',afterExample:q.afterExample||''})),exampleCopy:{...fixture.exampleCopy,currentHeroHeadline:'',currentCtaText:''}};
+    assert.equal(MarketingModelReportSchema.safeParse(model).success,true);
+    return {choices:[{finish_reason:'stop',message:{content:JSON.stringify(model)}}]};
+  });
+  const report=await analyzeMarketing(data);assert.ok(called);assert.equal(MarketingReportSchema.safeParse(report).success,true);
 });
 
 test('current page evidence drives the profile independently of domain; clinics and editorial pages retain their purpose',async t=>{

@@ -5,6 +5,7 @@ import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { MarketingReport, MarketingReportSchema } from "./reportSchema";
 import {purposePrompt} from './websitePurpose';
+import {MARKETING_RESPONSE_FORMAT} from './marketingModelSchema';
 
 // v16: 기본값을 gpt-4.1-mini로 변경 (gpt-4o-mini 대비 속도 2배, 비용 비슷)
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
@@ -119,7 +120,7 @@ async function callOpenAI(
           { role: "system", content: SYSTEM_PROMPT },
           { role: "user", content: prompt },
         ],
-        response_format: { type: "json_object" },
+        response_format: MARKETING_RESPONSE_FORMAT,
         temperature: 0.4,
         max_tokens: maxTokens,
       },
@@ -157,13 +158,13 @@ export async function analyzeMarketing(
       name: "1차 lean",
       prompt: buildPrompt(data, "lean"),
       timeout: 35000, // 전체 요청 시간 안에서만 시도
-      maxTokens: 3500,
+      maxTokens: 4500,
     },
     {
       name: "2차 minimal",
       prompt: buildPrompt(data, "minimal"),
       timeout: 12000, // 남은 시간이 충분할 때만 재시도
-      maxTokens: 3000,
+      maxTokens: 3500,
     },
   ];
 
@@ -203,6 +204,7 @@ export function parseMarketingResponse(text:string):MarketingReport {
   try{
     const result=MarketingReportSchema.safeParse(robustJsonParse(text));
     if(result.success)return result.data;
+    console.warn('[AI] invalid output fields: '+result.error.issues.slice(0,8).map(issue=>`${issue.path.join('.')}:${issue.code}`).join(', '));
   }catch{ /* Invalid JSON and missing fields use the same controlled response. */ }
   throw new AccessError(502,'AI 진단 응답의 필수 항목을 확인하지 못했습니다. 다시 시도해 주세요.');
 }
