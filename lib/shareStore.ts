@@ -63,9 +63,20 @@ export async function getSharedReport(
   id: string,
   principal: Principal,
 ): Promise<MarketingReport | null> {
+  if (!principal) return null;
+  return readSharedReport(id, principal);
+}
+
+/** A share URL grants read-only access until the original retention deadline.
+ * Keep owner-scoped reads separate for comparison, account lists and mutations. */
+export async function getPublicSharedReport(id: string): Promise<MarketingReport | null> {
+  return readSharedReport(id, null);
+}
+
+async function readSharedReport(id: string, principal: Principal | null): Promise<MarketingReport | null> {
   if (!validId(id)) return null;
   const stored=await db().eval<unknown[],[unknown,number,number,string]|null>(READ_REPORT_LUA,[reportKey(id)],retentionArgs());
-  if(!stored||!Array.isArray(stored)||!canReadOwner(stored[3],principal))return null;
+  if(!stored||!Array.isArray(stored)||(principal&&!canReadOwner(stored[3],principal)))return null;
   const record=decode<Stored>(stored[0]);if(!record)return null;
   const parsed=MarketingReportSchema.safeParse(record.report);
   if(!parsed.success)return null;
