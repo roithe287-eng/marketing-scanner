@@ -4,7 +4,7 @@ const evidenceSchema=z.object({text:z.string().max(600),locator:z.string().max(1
 export type SectorEvidence=z.infer<typeof evidenceSchema>;
 const intentSchema=z.enum(['scope','process','proof','price','eligibility','choice','location','comparison']);
 export const NonCommerceSectorSchema=z.object({
-  version:z.literal(1),id:z.enum(['legal','medical','property_sales','insurance','rehabilitation','startup','franchise']),
+  version:z.literal(1),id:z.enum(['legal','medical','medical_consulting','property_sales','insurance','rehabilitation','startup','franchise']),
   label:z.string().max(80),evidence:z.array(evidenceSchema).min(1).max(4),
   checks:z.array(z.object({id:z.string().max(80),label:z.string().max(80),status:z.enum(['observed','review']),evidence:z.array(evidenceSchema).max(3),guide:z.string().max(600)})).length(6),
   journey:z.array(z.string().max(80)).length(3),
@@ -21,6 +21,20 @@ const question=(intent:Question['intent'],text:string,fields:string[],placement:
 // These are review criteria, never claims that a provider actually offers a service.
 // Specific services outrank broader professions only when the submitted page supports them.
 export const SECTOR_PROFILES:Profile[]=[
+  {id:'medical_consulting',label:'병원 컨설팅·마케팅',match:/(?:병원|의료기관)\s*(?:전문\s*)?(?:컨설팅|마케팅|브랜딩)|(?:메디컬|medical)\s*(?:컨설팅|consulting)|병원.{0,12}(?:경영\s*지원|MSO)/i,
+    journey:['병원 과제·서비스 범위 확인','담당자·사례·진행 조건 비교','상담·견적 문의 연결'],
+    checks:[
+      check('scope','병원 대상 서비스·제공 범위',/개원\s*컨설팅|경영\s*(?:지원|분석|전략)|MSO|병원\s*(?:컨설팅|마케팅|브랜딩)|홈페이지\s*제작|의료\s*서비스\s*교육|CS\s*교육|해외\s*환자\s*유치/i,'개원·경영지원·마케팅·홈페이지 제작·교육 등 원문에서 확인한 업무를 서비스별로 구분하고 대상 병원·산출물·제외 범위를 연결하세요. 진료과나 환자 치료 범위로 바꾸지 않습니다.'),
+      check('proof','담당 조직·병원 실무 경험',/병원\s*실무자|담당\s*(?:조직|전문가|컨설턴트)|조직도|구성원|경력|이력|실무\s*경험/,'병원 실무 경험과 담당 조직·역할을 소개 원문에서 확인하세요. 병원 근무 경험을 의료진 면허나 진료 자격으로 해석하지 않습니다.'),
+      check('process','진단→전략→실행→사후관리',/상담\s*및\s*현황|전략\s*수립|시스템\s*구축|성과\s*분석|사후\s*관리|진행\s*절차|서비스\s*과정|단계|로드맵|프로세스/,'현황 진단·전략 수립·실행·성과 분석·사후관리의 실제 단계와 병원이 준비할 자료를 연결하세요. 클릭·문의 접수·유효 상담·계약을 구분해 계정에서 측정하세요.'),
+      check('reference','병원 사례·성과의 확인 조건',/클라이언트\s*후기|수행\s*사례|프로젝트|포트폴리오|병원\s*사례|파트너스|성과\s*분석/,'공개 가능한 병원 사례의 담당 범위·기간·측정 기준과 출처를 확인하세요. 파트너 로고나 성과 분석 문구만으로 매출·환자 수 증가를 확정하지 않습니다.'),
+      check('price','견적 산정·계약·업무 범위',/견적|수수료|계약\s*(?:기간|조건)|포함\s*(?:항목|범위)|별도\s*비용|비용\s*(?:산정|기준)/,'상담 전 확인할 병원 현황·필요 업무·예산과 견적의 포함·별도 항목, 계약·보고 범위를 안내하세요. 정액 가격이 없다는 이유로 실패로 판정하거나 금액·성과를 추정하지 않습니다.'),
+      check('contact','병원명·지역·상담 분야와 문의',/상담\s*문의|문의\s*상담|견적\s*문의|병원명|희망하는\s*상담|문의\s*분야|상담\s*분야/,'서비스별 상담 경로와 병원명·지역·상담 분야·연락처 입력 및 동의 안내를 대조하세요. 폼 존재·제출 동작·실제 상담 연결은 각각 확인하고 환자 예약을 목표로 제안하지 않습니다.'),
+    ],questions:[
+      question('scope','병원 컨설팅·마케팅에서 개원·경영지원·홈페이지 제작 등 제공 범위는 어떻게 확인하나요?',['대상 병원·과제','서비스별 제공·제외 범위'],'서비스 소개와 해당 상담 경로 사이','scope'),
+      question('process','병원 현황 진단부터 전략·실행·성과 분석·사후관리까지 어떤 절차로 진행되나요?',['실제 진행 단계','병원 준비 자료','담당자와 보고 범위'],'서비스 과정과 상담 안내 옆','process'),
+      question('price','병원 컨설팅·마케팅 상담 전 어떤 자료와 견적·계약 조건을 확인해야 하나요?',['병원명·지역·필요 업무','견적 산정·포함·별도 항목','계약·보고 조건'],'견적 기준과 상담 폼 가까이','price'),
+    ],caution:'병원이 고객인 사업자 대상 컨설팅·마케팅 서비스입니다. 업체 자체를 병의원으로 분류하거나 환자 초진·진료 예약·비급여·의료진 면허를 요구하지 않습니다. 매출·환자 수·광고 성과·법적 적합성을 추정하거나 보장하지 않습니다.'},
   {id:'rehabilitation',label:'회생·파산·채무조정',match:/개인\s*회생|개인\s*파산|채무\s*조정|도산\s*(?:전문|상담|사건)/i,
     journey:['대상·조건 확인','서류·비용·절차 비교','개별 상담 연결'],
     checks:[
@@ -126,6 +140,7 @@ export function sectorProfile(id:NonCommerceSector['id']){return SECTOR_PROFILES
 /** Explicit service actions may live in navigation; ordinary menu links stay excluded. */
 export function sectorActionPattern(id:NonCommerceSector['id']):RegExp{
   const patterns:Record<NonCommerceSector['id'],RegExp>={
+    medical_consulting:/상담\s*문의|문의\s*상담|상담\s*신청|견적\s*문의|전화\s*문의|컨설팅\s*(?:문의|상담)/,
     legal:/상담|상담\s*신청|상담\s*문의|전화\s*문의/,
     medical:/예약|진료\s*접수|상담\s*(?:신청|문의)|온라인\s*상담/,
     property_sales:/방문\s*예약|분양\s*(?:문의|상담)|관심\s*고객\s*(?:등록|신청)/,
@@ -140,6 +155,7 @@ export function sectorActionPattern(id:NonCommerceSector['id']):RegExp{
 /** Prefer a literal service phrase to generic CTA words when AI assistance is unavailable. */
 export function sectorTopicPatterns(id:NonCommerceSector['id']):RegExp[]{
   const patterns:Record<NonCommerceSector['id'],RegExp[]>={
+    medical_consulting:[/병원\s*(?:전문\s*)?컨설팅/,/개원\s*컨설팅/,/병원\s*(?:전문\s*)?마케팅/,/경영\s*지원/,/홈페이지\s*제작/],
     legal:[/(?:형사|민사|이혼|상속|노동|기업)\s*(?:사건|소송|상담|법무)/, /법률\s*상담/,/법무\s*법인/],
     medical:[/[가-힣]{2,10}(?:의원|병원|치과|클리닉)/,/진료\s*과목/,/진료\s*안내/],
     property_sales:[/[가-힣a-z0-9]{2,12}\s*(?:아파트|오피스텔)\s*분양/i,/아파트\s*분양/,/입주자\s*모집/],
@@ -161,7 +177,7 @@ export function analyzeNonCommerceSector(units:SectorEvidence[],actions:SectorEv
   }).filter(c=>c.anchored||c.evidence.length>=2).sort((a,b)=>b.score-a.score||a.index-b.index);
   let selected=candidates[0];if(!selected)return;
   // A dedicated debt/franchise page specializes law/startup, but a sidebar cannot.
-  const specialty=candidates.find(c=>c.anchored&&((selected.p.id==='legal'&&c.p.id==='rehabilitation')||(selected.p.id==='startup'&&c.p.id==='franchise')));
+  const specialty=candidates.find(c=>c.anchored&&((selected.p.id==='legal'&&c.p.id==='rehabilitation')||(selected.p.id==='startup'&&c.p.id==='franchise')||(selected.p.id==='medical'&&c.p.id==='medical_consulting'&&c.evidence.some(u=>u.locator==='head > title'&&!/칼럼|블로그|사례|소식|뉴스|가이드/.test(u.text)))));
   if(specialty)selected=specialty;
   const p=selected.p;
   return NonCommerceSectorSchema.parse({version:1,id:p.id,label:p.label,evidence:selected.evidence.slice(0,4),journey:p.journey,questions:p.questions,caution:p.caution,

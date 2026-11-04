@@ -67,7 +67,7 @@ function quickClassify(data: ExtractedWebsiteData): IndustryCategory | null {
   const purpose=analyzeWebsitePurpose(data);
   if(purpose.business)return purpose.business.industry;
   if(isNonCommerce(purpose)&&purpose.sector){
-    const categories:Record<NonNullable<typeof purpose.sector>['id'],IndustryCategory>={legal:'legal',medical:'medical',property_sales:'realestate',insurance:'finance',rehabilitation:'legal',startup:'consulting',franchise:'consulting'};
+    const categories:Record<NonNullable<typeof purpose.sector>['id'],IndustryCategory>={legal:'legal',medical:'medical',medical_consulting:'consulting',property_sales:'realestate',insurance:'finance',rehabilitation:'legal',startup:'consulting',franchise:'consulting'};
     return categories[purpose.sector.id];
   }
   if(data.productContext?.sources.length&&(data.productContext.commerce===true||data.productContext.discovery==='public_catalog'))return 'ecommerce';

@@ -1,8 +1,8 @@
 import type {CheerioAPI} from 'cheerio';
 import type {Element} from 'domhandler';
+import {pageRegion} from './pageRegions';
 
 export type ContentSection={id:string;heading:string;text:string;truncated:boolean;url?:string};
-const chromeToken=/(?:^|[\s_-])(?:gnb|lnb|snb|nav|navigation|navbar|menu|header|footer|breadcrumb|cookie|popup|modal)(?:$|[\s_-])/i;
 const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
 /** Excerpts from the fetched public document, excluding menus, hidden widgets and forms. */
 export function captureContentSections($:CheerioAPI,baseUrl?:string):ContentSection[]{
@@ -13,7 +13,7 @@ export function captureContentSections($:CheerioAPI,baseUrl?:string):ContentSect
   const el=node as Element,item=$(el),tag=el.tagName;
   if(item.parents('script,style,noscript,template,nav,header,footer,form,aside,[role="navigation"],[hidden],[aria-hidden="true"]').length||item.is('[hidden],[aria-hidden="true"]'))return;
   const lineage=[el,...item.parents().toArray()];
-  if(lineage.some(n=>{const a=$(n);return chromeToken.test(`${a.attr('id')||''} ${a.attr('class')||''}`)||/(?:display\s*:\s*none|visibility\s*:\s*hidden)/i.test(a.attr('style')||'');}))return;
+  if(['nav','header','footer'].includes(pageRegion($,el))||lineage.some(n=>/(?:display\s*:\s*none|visibility\s*:\s*hidden)/i.test($(n).attr('style')||'')))return;
   if(/^(?:div|section|article|li|td|dd|dt)$/.test(tag)&&item.find('p,div,section,article,li,table,dl,dd,dt,blockquote,h1,h2,h3').length)return;
   if(textContentIsControl(item))return;
   if(item.find('a,button,input,select,textarea').length&&clean(item.clone().find('a,button,input,select,textarea').remove().end().text()).length<24&&clean(item.text()).length<60)return;
