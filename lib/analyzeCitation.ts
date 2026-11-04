@@ -11,7 +11,7 @@ import {keywordEvidence,marketKeywordCandidates} from './competitorResearch';
 import {analyzeWebsitePurpose,isNonCommerce,outOfPurpose,purposePrompt} from './websitePurpose';
 import {businessProfile} from './businessContext';
 
-const VERSION = 'geo-v3.5-provider-purpose';
+const VERSION = 'geo-v3.6-provider-consent-evidence';
 const TIMEOUT = 22_000;
 const QuestionSchema = z.object({question:z.string().min(5).max(250),type:z.enum(['brand','industry','service','local']),journey:z.string().max(40)});
 export type CitationQuestion = z.infer<typeof QuestionSchema>;

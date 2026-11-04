@@ -2,6 +2,7 @@ import type {MarketingReport} from './reportSchema';
 import type {PageElement} from './siteEditingSchema';
 import {editingEvidence} from './siteGuidebook';
 import {safeHttpUrl} from './citationMeasurement';
+import {isConsentBoilerplate} from './contentBoilerplate';
 
 const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
 export type SourceGroup={id:string;text:string;kinds:PageElement['kind'][];occurrences:number;heading:string;chrome:boolean;truncated:boolean;linkIds:string[]};
@@ -70,7 +71,7 @@ export type ContentFacetId=typeof CONTENT_FACETS[number]['id'];
 /** Legal/footer copy can contain words such as ‘지원’; it is not a service claim. */
 export function isBoilerplateSource(group:SourceGroup){
  const text=group.text;
- return group.chrome||/(?:사업자\s*등록\s*번호|통신\s*판매업?\s*(?:신고|등록)(?:번호)?)\s*[:：\-]?\s*(?:제)?\d{2,}|copyright|all\s+rights?\s+reserved|terms\s*(?:&|and)\s*conditions?|privacy\s*policy|^(?:이용약관|개인정보\s*(?:처리방침|취급방침))$/i.test(text);
+ return group.chrome||isConsentBoilerplate(text)||/(?:사업자\s*등록\s*번호|통신\s*판매업?\s*(?:신고|등록)(?:번호)?)\s*[:：\-]?\s*(?:제)?\d{2,}|copyright|all\s+rights?\s+reserved|terms\s*(?:&|and)\s*conditions?|privacy\s*policy|^(?:이용약관|개인정보\s*(?:처리방침|취급방침))$/i.test(text);
 }
 /** Explain the mapping with literal words from the page, never assert a business claim is verified. */
 export function buildContentFacets(library:SourceLibrary){
@@ -81,7 +82,8 @@ export function buildContentFacets(library:SourceLibrary){
   const score=(g:SourceGroup)=>Number(specific[f.id].test(g.text))*8+Number(g.kinds.includes('text'))*2+Number(g.text.length>=60);
   const ranked=[...matches].sort((a,b)=>score(b)-score(a)||b.text.length-a.text.length);
   const evidence:SourceGroup[]=[];
-  for(const group of ranked){if(evidence.some(e=>e.text.includes(group.text)||group.text.includes(e.text)))continue;evidence.push(group);if(evidence.length===3)break;}
+  const comparable=(text:string)=>text.normalize('NFKC').replace(/\s/g,'').toLowerCase();
+  for(const group of ranked){const value=comparable(group.text);if(evidence.some(e=>comparable(e.text).includes(value)||value.includes(comparable(e.text))))continue;evidence.push(group);if(evidence.length===3)break;}
   const words=[...new Set(evidence.map(e=>e.text.match(f.match)?.[0]).filter((v):v is string=>!!v))];
   return {...f,count:matches.length,evidence:evidence.map(e=>{const at=Math.max(0,e.text.search(f.match));const start=e.text.length>240?Math.max(0,at-60):0;const end=Math.min(e.text.length,start+240);return {...e,excerpt:(start?'…':'')+e.text.slice(start,end)+(end<e.text.length?'…':''),excerpted:start>0||end<e.text.length};}),why:words.length?`원문에 ${words.map(w=>`‘${w}’`).join('·')} 표현이 있습니다. ‘${f.label}’ 항목에 연결했습니다. 실제 제공 범위와 조건은 본문과 대조하세요.`:'수집한 원문에서 이 내용을 찾지 못했습니다. 실제 페이지에 있는지 먼저 확인하세요.'};
  });

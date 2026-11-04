@@ -1,5 +1,6 @@
 import {captureContentSections} from './contentSections';
 import {pageRegion} from './pageRegions';
+import {CONSENT_WIDGET_SELECTOR} from './contentBoilerplate';
 import type {CheerioAPI} from 'cheerio';
 import type {Element} from 'domhandler';
 import type {PageElement,PlatformId,SiteEditing} from './siteEditingSchema';
@@ -48,13 +49,15 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
     return main&&actionable?0:main?1:!chrome&&actionable?2:chrome&&actionable?3:chrome?5:4;
   };
   const sampledControls=new Set($(controlSelector).toArray().filter(el=>{
-    const item=$(el);return !item.parents('script,style,noscript,template,[hidden],[aria-hidden="true"]').length&&!item.is('[hidden],[aria-hidden="true"]')&&!!clean(item.text()||item.attr('value')||item.attr('aria-label')||'');
+    const item=$(el);return !item.closest(CONSENT_WIDGET_SELECTOR).length&&!item.parents('script,style,noscript,template,[hidden],[aria-hidden="true"]').length&&!item.is('[hidden],[aria-hidden="true"]')&&!!clean(item.text()||item.attr('value')||item.attr('aria-label')||'');
   }).sort((a,b)=>controlPriority(a as Element)-controlPriority(b as Element)).slice(0,limits.cta));
   $(`head title,head meta[name="description" i],body h1,body h2,body h3,body p,body li,${controlSelector},body img,body form`).each((_,node)=>{
     const el=node as Element,item=$(node),tag=el.tagName;
     if(item.parents('script,style,noscript,template,[hidden],[aria-hidden="true"]').length||item.is('[hidden],[aria-hidden="true"]'))return;
+    if(item.closest(CONSENT_WIDGET_SELECTOR).length)return;
     const control=tag==='a'||tag==='button'||item.attr('role')==='button'||(tag==='input'&&item.attr('type')?.toLowerCase()==='submit');
-    const visibleText=item.clone().find('script,style,noscript,template').remove().end().text();
+    const copy=item.clone();copy.find('script,style,noscript,template').remove();copy.find('br').replaceWith(' ');
+    const visibleText=copy.text();
     const text=clean(tag==='meta'?item.attr('content')||'':tag==='img'?item.attr('alt')||'':tag==='form'?'문의·입력 폼':control?item.text()||item.attr('value')||item.attr('aria-label')||'':visibleText);
     if(!text&&tag!=='img')return;if(tag==='li'&&!control&&item.children('p,ul,ol,a').length)return;
     if(/^h[1-3]$/.test(tag))lastHeading=text.slice(0,300);
