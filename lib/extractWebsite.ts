@@ -668,6 +668,9 @@ export async function extractWebsite(
 
   // v46-W2: thin content 판정용 원본 길이 (slice 전)
   const textBody = $("body").clone();
+  // Forms have a separate label-only inventory. Consent boilerplate and entered
+  // textarea/select values must not become the site's service or answer copy.
+  textBody.find("form,input,textarea,select").remove();
   textBody.find("br").replaceWith("\n");
   textBody.find("p,div,section,article,header,footer,nav,aside,h1,h2,h3,h4,h5,h6,li,tr,td,th,dt,dd,blockquote").each((_,el)=>{ $(el).prepend("\n").append("\n"); });
   const fullBodyText = textBody.text().replace(/[^\S\n]+/g, " ").replace(/ *\n */g,"\n").replace(/\n{2,}/g,"\n").trim();
