@@ -4,6 +4,7 @@ import {marketKeywordCandidates} from './competitorResearch';
 import {analyzeWebsitePurpose,isNonCommerce,outOfPurpose,type WebsitePurpose} from './websitePurpose';
 import {sectorProfile,sectorTopicPatterns} from './nonCommerceSectors';
 import {businessProfile} from './businessContext';
+import {isConsentBoilerplate} from './contentBoilerplate';
 import {AnswerContentPlanSchema,AnswerIntentSchema,type AnswerContentPlan,type AnswerSource,type AnswerKeyword,type AnswerIntent,type AnswerQuestion} from './answerContentSchema';
 
 export const ANSWER_CONTENT_TITLE='네이버 AI 브리핑 대응 콘텐츠 개선안';
@@ -39,7 +40,7 @@ export const ANSWER_GUIDES:Record<AnswerIntent,IntentGuide>={
 export function answerSources(data:AnswerPageData):AnswerSource[]{
   const sources:AnswerSource[]=[];const seen=new Set<string>();
   const add=(text:string,kind:AnswerSource['kind'],location:string,selector?:string,url?:string)=>{
-    const value=clean(text);if(value.length<2||value.length>700||seen.has(value)||sources.length>=100)return;
+    const value=clean(text);if(value.length<2||value.length>700||isConsentBoilerplate(value)||seen.has(value)||sources.length>=100)return;
     seen.add(value);sources.push({id:`p${sources.length+1}`,text:value,kind,location:location.slice(0,300),...(selector?{selector}: {}),...(url?{url}: {})});
   };
   add(data.title||'','title','페이지 제목','title');
