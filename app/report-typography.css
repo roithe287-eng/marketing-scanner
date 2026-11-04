@@ -1,0 +1,170 @@
+/* One reading scale for existing, new and shared reports. Presentation only. */
+.report-v2,
+.report-modal {
+  --report-type-body:1rem;
+  --report-type-small:.875rem;
+  --report-type-label:1.125rem;
+  --report-type-item:1.25rem;
+  --report-type-panel:1.625rem;
+  --report-type-chapter:1.875rem;
+  font-family:var(--font-sans);
+  font-size:var(--report-type-body);
+  font-weight:400;
+  line-height:1.8;
+  letter-spacing:-.012em;
+  word-break:keep-all;
+  overflow-wrap:anywhere;
+}
+
+/* Inputs, canvas-adjacent SVG labels and code excerpts use the same typeface. */
+:is(.report-v2,.report-modal) :is(button,input,select,textarea,pre,code,svg text) {
+  font-family:var(--font-sans);
+}
+:is(.report-v2,.report-modal) :where(h1,h2,h3,h4,h5,h6,p,li,dt,dd,blockquote,figcaption,summary) {
+  min-width:0;
+  overflow-wrap:anywhere;
+  word-break:keep-all;
+}
+.report-v2.report-focused :where(p,li,blockquote) {
+  font-size:var(--report-type-body); font-weight:400; line-height:1.8;
+}
+.report-v2.report-focused h4 { font-size:var(--report-type-item); font-weight:750; line-height:1.55; }
+.report-v2.report-focused :is(h5,h6) { font-size:var(--report-type-label); font-weight:750; line-height:1.55; }
+.report-v2.report-focused .report-hero-summary { font-size:1.125rem; font-weight:500; line-height:1.8; }
+.report-v2.report-focused h1 { font-size:2.25rem; font-weight:800; line-height:1.35; }
+.report-v2.report-focused .report-chapter-heading h2 {
+  font-size:var(--report-type-chapter); font-weight:800; line-height:1.45;
+}
+.report-v2.report-focused :is(.report-card-heading h3,.report-issue-heading h3,
+ .answer-heading h3,.sector-heading h3,.apply-heading h3,.report-disclosure>summary>span>strong) {
+  font-size:var(--report-type-panel); font-weight:800; line-height:1.5; letter-spacing:-.025em;
+}
+.report-v2.report-focused :is(.report-role-caption strong,.report-evidence-flow dt,
+ .guide-element-heading>strong,.report-diagram-node-copy>strong,.page-pattern-card>strong,
+ .sector-check h4,.platform-application h5,.work-today-grid h4) {
+  font-size:var(--report-type-label); font-weight:750; line-height:1.55; letter-spacing:-.015em;
+}
+.report-v2.report-focused :is(.report-diagram-node-copy>strong,.page-pattern-card>strong) {
+  display:block; margin-bottom:.375rem;
+}
+.report-v2.report-focused :is(.report-role-content,.report-role-content>p,
+ .report-role-content>blockquote,.report-role-content>.report-compact-text,
+ .report-role-content .report-reading-points>li,.report-evidence-flow dd,
+ .report-diagram-node-copy>p,.sector-current blockquote,.sector-current p,.sector-next p,
+ .apply-current p,.apply-value p,.apply-location p,.apply-check p,.apply-setup-card>ol,
+ .content-evidence-quotes blockquote p,.work-card-action>p) {
+  font-size:var(--report-type-body); font-weight:400; line-height:1.8; letter-spacing:-.012em;
+}
+.report-v2.report-focused .report-role-content { margin-top:.875rem; }
+.report-v2.report-focused .report-role-content>p+p { margin-top:.75rem; }
+.report-v2.report-focused :is(.report-role-kicker,.report-diagram-kicker,
+ .report-diagram-node-role,.report-reading-key>span,.report-reading-key>strong,
+ .report-eyebrow,.page-pattern-number) {
+  font-size:.8125rem; font-weight:700; line-height:1.6; letter-spacing:.015em;
+}
+.report-v2.report-focused :is(.report-note,.report-domain,.report-role-footnote,
+ .report-role-content>small,.report-diagram-note,.report-section-diagram>figcaption>small,
+ .page-pattern-card>small,.page-pattern-guide figcaption>span,.plain-page-meaning>span,
+ .answer-quick-note,.content-evidence-scope,.sector-scope,.sector-status,
+ .sector-current>span,.sector-next>span,.apply-location>strong,.apply-check>strong,
+ .apply-current>strong,.apply-value>strong,.apply-sources,.apply-context>small,
+ .report-chapter-heading p,.report-source-meta,.guide-source-badge,.guide-source-link,
+ .report-diagram-node-index,.source-browser-list button>span) {
+  font-size:var(--report-type-small); line-height:1.75;
+}
+.report-v2.report-focused :is(.page-pattern-card>small,.report-diagram-note,
+ .report-section-diagram>figcaption>small,.content-evidence-scope,.answer-quick-note) {
+  color:#4b6079;
+}
+.report-v2.report-focused :is(.medical-profile>p,.medical-profile li,.naver-check-body>p) {
+  font-size:var(--report-type-body); font-weight:400; line-height:1.8;
+}
+.report-v2.report-focused .medical-profile>strong { font-size:var(--report-type-label); font-weight:750; }
+.report-v2.report-focused :is(.report-role-content strong,.report-role-content b) { font-weight:700; }
+
+/* Intrinsic sizing lets complete sentences wrap instead of widening their cards. */
+.report-v2.report-focused :is(.report-role-box,.report-card,.report-diagram-node-copy,
+ .report-role-label,.report-role-caption,.report-diagram-node-top,.page-pattern-card,
+ .sector-check,.apply-field,.apply-setup-card,.source-browser-list button,
+ .report-item-navigation,.report-outcome-metric) { min-width:0; }
+.report-v2.report-focused :is(.report-role-box,.report-card,.report-diagram-node-copy,
+ .page-pattern-card,.sector-check,.apply-field,.apply-setup-card)>* { min-width:0; }
+.report-v2.report-focused :is(.report-role-icon,.report-diagram-node-icon,.report-chapter-symbol) { flex-shrink:0; }
+.report-v2.report-focused :is(.report-diagram-node-top,.report-item-navigation,
+ .report-item-navigation>div,.report-outcome-metric,.report-reading-key>span) { flex-wrap:wrap; }
+.report-v2.report-focused :is(.report-diagram-node-role,.report-diagram-value,
+ .report-pill,.report-axis-grade,.report-secondary-button,.work-link,
+ .report-section-nav a,.keyword-included,.source-browser-list button>strong) {
+  max-width:100%; white-space:normal; overflow-wrap:anywhere;
+}
+.report-v2.report-focused .source-browser-list button>strong {
+  overflow:visible; text-overflow:clip; font-size:1rem; font-weight:650; line-height:1.65;
+}
+.report-v2.report-focused .work-card-action>p {
+  display:block; -webkit-line-clamp:unset; line-clamp:unset; overflow:visible;
+}
+.report-v2.report-focused pre { white-space:pre-wrap; overflow-wrap:anywhere; max-width:100%; }
+.report-v2.report-focused :is(input,textarea,select) { max-width:100%; min-width:0; font-size:1rem; }
+.report-v2.report-focused textarea { resize:vertical; }
+.report-v2.report-focused :is(button,.report-secondary-button,.work-link,summary) {
+  min-height:2.75rem; height:auto; line-height:1.6;
+}
+.report-v2.report-focused :is(button,a,summary,input,select,textarea):focus-visible {
+  outline:3px solid #254caa; outline-offset:3px;
+}
+.report-v2.report-focused :is(.report-section-nav,.report-nav) a { white-space:normal; }
+.report-v2.report-focused .report-diagram-nodes { align-items:stretch; }
+.report-v2.report-focused .report-section-diagram { container:report-diagram / inline-size; }
+.report-v2.report-focused .sector-journey { gap:1.5rem; }
+.report-v2.report-focused .sector-journey b { right:-1.5rem; }
+
+/* Match the diagram to its own card width as well as to the viewport. */
+@container report-diagram (max-width:44rem) {
+ .report-v2.report-focused .report-diagram-nodes { grid-template-columns:minmax(0,1fr); gap:1.5rem; }
+ .report-v2.report-focused .report-diagram-nodes>li {
+   display:grid; grid-template-columns:2rem minmax(0,1fr); gap:0 .75rem;
+ }
+ .report-v2.report-focused .report-diagram-node-top { display:contents; }
+ .report-v2.report-focused .report-diagram-node-icon { grid-column:1; grid-row:1 / 4; align-self:start; }
+ .report-v2.report-focused .report-diagram-node-index { display:none; }
+ .report-v2.report-focused .report-diagram-node-role { grid-column:2; justify-self:start; margin:0 0 .5rem; }
+ .report-v2.report-focused .report-diagram-node-copy { grid-column:2; }
+ .report-v2.report-focused .report-diagram-value { grid-column:2; justify-self:start; }
+ .report-v2.report-focused .report-diagram-connector {
+   left:calc(50% - 13px); top:calc(100% + 1px); transform:rotate(90deg); width:25px; height:23px;
+ }
+ .report-v2.report-focused [data-diagram-kind=equation] .report-diagram-connector { transform:none; }
+ .report-v2.report-focused [data-diagram-kind=branch] .report-diagram-nodes { padding:0 0 0 .75rem; gap:.75rem; }
+ .report-v2.report-focused [data-diagram-kind=branch] .report-diagram-nodes::before {
+   left:0; top:12%; bottom:12%; width:1px; height:auto; right:auto;
+ }
+ .report-v2.report-focused [data-diagram-kind=branch] .report-diagram-nodes>li::before {
+   left:-15px; top:50%; width:12px; height:1px;
+ }
+}
+
+@media(max-width:767px) {
+ .report-v2 { --report-type-label:1.0625rem; --report-type-panel:1.4375rem; --report-type-chapter:1.5rem; }
+ .report-v2.report-focused h1 { font-size:1.875rem; }
+ .report-v2.report-focused .report-nav { grid-template-columns:repeat(3,minmax(0,1fr)); gap:.375rem; }
+ .report-v2.report-focused .report-nav a { font-size:.875rem; padding:.5rem; }
+ .report-v2.report-focused .report-nav a span { font-size:.8125rem; }
+ .report-v2.report-focused [id] { scroll-margin-top:15rem; }
+ .report-v2.report-focused .report-role-box { padding:1rem; }
+ .report-v2.report-focused :is(.report-role-pair,.report-role-stack,.report-evidence-flow) { grid-template-columns:minmax(0,1fr); }
+ .report-v2.report-focused .report-item-navigation>div { white-space:normal; }
+ .report-v2.report-focused .report-diagram-nodes>li { padding:.875rem; }
+ .report-v2.report-focused .page-pattern-grid { grid-template-columns:minmax(0,1fr); }
+ .report-v2.report-focused .page-pattern-card:last-child:nth-child(odd):not(:first-child) {
+   display:flex; flex-direction:column; text-align:center;
+ }
+ .report-v2.report-focused .page-pattern-card:last-child:nth-child(odd):not(:first-child)>:is(strong,small) { align-self:auto; }
+ .report-v2.report-focused .sector-journey b { right:50%; bottom:-1.5rem; }
+}
+@media(prefers-reduced-motion:reduce) {
+ .report-v2.report-focused :is(button,a,summary) { transition:none; scroll-behavior:auto; }
+}
+@media print {
+ .report-v2 { font-family:var(--font-sans); }
+ .report-v2.report-focused .report-diagram-nodes { grid-template-columns:minmax(0,1fr); }
+}
