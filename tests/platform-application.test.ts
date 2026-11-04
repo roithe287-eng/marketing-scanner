@@ -126,12 +126,13 @@ test('copied instructions and the full PDF retain matching installation steps wi
  for(const text of [copy,doc])assert.doesNotMatch(text,/<section|<style|@font-face|저작권|라이선스|본문 HTML|추가 구역/);
  assert.equal(JSON.stringify(r),before);
 });
-test('web, Pocket and PDF use system rendering with no bundled or downloaded font dependency',()=>{
+test('reports and PDF use self-hosted Pretendard while Pocket has no added font dependency',()=>{
  const root=JSON.parse(readFileSync(new URL('../package.json',import.meta.url),'utf8')),pocket=JSON.parse(readFileSync(new URL('../consumer-app/package.json',import.meta.url),'utf8'));
- assert.ok(!root.dependencies.pretendard);assert.ok(!pocket.dependencies.pretendard);assert.equal(PDF_FONT,'system-ui, sans-serif');assert.ok(readFileSync(new URL('../next.config.js',import.meta.url),'utf8').includes("font-src 'none'"));
- for(const path of ['../app/layout.tsx','../app/globals.css','../tailwind.config.ts','../components/ContentProtection.tsx','../consumer-app/src/main.tsx','../consumer-app/src/style.css','../public/logo.svg']){
+ assert.ok(!root.dependencies.pretendard);assert.ok(!pocket.dependencies.pretendard);assert.match(PDF_FONT,/Pretendard/);assert.ok(readFileSync(new URL('../next.config.js',import.meta.url),'utf8').includes("font-src 'self'"));
+ for(const path of ['../consumer-app/src/main.tsx','../consumer-app/src/style.css','../public/logo.svg']){
   assert.doesNotMatch(readFileSync(new URL(path,import.meta.url),'utf8'),/next\/font|@font-face|fonts\.cafe24|fonts\.google|fonts\.gstatic|[Pp]retendard|\.(woff2?|ttf|otf)\b/);
  }
- const publicFiles=readdirSync(new URL('../public',import.meta.url),{recursive:true});assert.ok(!publicFiles.some(p=>/\.(woff2?|ttf|otf)$/i.test(String(p))));
+ const publicFiles=readdirSync(new URL('../public',import.meta.url),{recursive:true});assert.ok(publicFiles.some(p=>String(p)==='fonts/pretendard/PretendardVariable.woff2'));
+ assert.match(readFileSync(new URL('../app/globals.css',import.meta.url),'utf8'),/font-weight:\s*100 900/);
  assert.doesNotMatch(readFileSync(new URL('../components/CompetitorComparison.tsx',import.meta.url),'utf8'),/getFaviconUrl|google\.com\/s2\/favicons|<img/);
 });

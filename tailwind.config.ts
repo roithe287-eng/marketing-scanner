@@ -19,7 +19,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["system-ui", "sans-serif"],
+        sans: ["var(--font-sans)"],
       },
     },
   },

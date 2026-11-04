@@ -24,6 +24,7 @@ import "./landing-gate.css";
 import "./landing-result-preview.css";
 import "./report-diagrams.css";
 import "./report-opening-radar.css";
+import "./report-typography.css";
 
 export const metadata: Metadata = {
   title: "마케팅스캐너 | URL 하나로 확인하는 우리 사이트의 마케팅 약점",
@@ -48,6 +49,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        <link rel="preload" href="/fonts/pretendard/PretendardVariable.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+      </head>
       <body>{children}</body>
     </html>
   );

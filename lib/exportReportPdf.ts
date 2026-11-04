@@ -78,5 +78,9 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
 /** Draw the complete snapshot directly, without cloning or capturing the app DOM. */
 export async function exportReportPdf(report:MarketingReport,onProgress:(text:string)=>void,signal?:AbortSignal,scope:PdfScope='full') {
   signal?.throwIfAborted();
+  // Load every exported weight before measuring Korean text or drawing the PDF.
+  onProgress('PDF 글꼴을 준비 중...');
+  await Promise.all([400,500,600,700,800,900].map(weight=>document.fonts.load(`${weight} 16px "Pretendard Variable"`,'가나다 ABC 0123')));
+  signal?.throwIfAborted();
   return renderReportPdf(report,onProgress,document.createElement('canvas'),PDF_FONT,signal,scope);
 }
