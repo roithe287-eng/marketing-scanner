@@ -116,7 +116,7 @@ export default function ContentProtection() {
 
     // Window dimensions also change with zoom, browser chrome and side panels.
     // They cannot establish whether DevTools is open and must never gate report access.
-    // Authentication, ownership and retention are enforced by the shared-report route.
+    // Shared links allow public viewing; retention is enforced by the server route.
 
     // ===== 5. 이벤트 리스너 등록 =====
     document.addEventListener("contextmenu", handleContextMenu);

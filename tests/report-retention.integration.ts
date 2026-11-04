@@ -2,20 +2,53 @@ import {test,before,after,beforeEach} from 'node:test';
 import assert from 'node:assert/strict';
 import {startRedisBridge} from './helpers/redisBridge';
 import {db,key} from '../lib/saas/store';
-import {saveSharedReport,getSharedReport,updateSharedReportCompetitor,listOwnReports} from '../lib/shareStore';
+import {saveSharedReport,getSharedReport,getPublicSharedReport,updateSharedReportCompetitor,listOwnReports} from '../lib/shareStore';
 import {migrateReportRetention,reportKey,READ_REPORT_LUA,retentionArgs} from '../lib/reportRetentionStore';
 import {REPORT_RETENTION_SECONDS} from '../lib/reportRetention';
 import {digest} from '../lib/security/request';
 import {createDiagnosisBaseline} from '../lib/diagnosisComparison';
 import {fixture} from './fixtures/report';
 import {NextRequest} from 'next/server';
-import {GET} from '../app/api/share/route';
+import {GET,POST,PATCH} from '../app/api/share/route';
 let bridge:Awaited<ReturnType<typeof startRedisBridge>>;
 const principal={kind:'internal'} as const,day=86400000;
 before(async()=>{bridge=await startRedisBridge();process.env.UPSTASH_REDIS_REST_URL=bridge.url;process.env.UPSTASH_REDIS_REST_TOKEN='local-test-token';process.env.VERCEL_ENV='preview';process.env.VERCEL='1';process.env.ALLOWED_IPS='203.0.113.10';process.env.LOGIN_FREE_IP_HASHES=digest('203.0.113.10');});
 after(async()=>bridge?.close());
 beforeEach(async()=>{await bridge.command(['FLUSHDB']);});
 const stored=(age:number,report=fixture)=>({version:2,ownerId:'internal',createdAt:Date.now()-age,report});
+
+test('existing customer share links are public read-only capabilities; private APIs still require authentication',async()=>{
+ const id='public123456';
+ await db().set(reportKey(id),{...stored(day),ownerId:'customer-owner'},{ex:6*86400});
+ const report=await getPublicSharedReport(id);assert.ok(report?.sharedRetention);assert.equal(report.url,fixture.url);assert.equal(report.sharedRetention.reportId,id);
+ assert.equal('ownerId' in report,false);
+ assert.equal(await getSharedReport(id,undefined as never),null,'owner-scoped reads fail closed without a principal');
+ assert.equal(await getSharedReport(id,principal),null,'public viewing does not broaden private owner access');
+ assert.equal(await updateSharedReportCompetitor(id,{},principal),false);
+ assert.deepEqual(await listOwnReports(principal),[]);
+ const before=await db().get(reportKey(id));
+ for(const method of ['GET','POST','PATCH'] as const){
+  const request=new NextRequest(`https://scanner.example/api/share?id=${id}&mode=diagnosis`,{method,headers:{'x-vercel-forwarded-for':'198.51.100.20',origin:'https://scanner.example','content-type':'application/json'},...(method==='GET'?{}:{body:JSON.stringify({id,report:fixture,competitorAnalysis:{}})})});
+  const response=await ({GET,POST,PATCH}[method])(request);
+  assert.equal(response.status,401,`${method} remains authenticated`);
+ }
+ assert.deepEqual(await db().get(reportKey(id)),before);
+ const reread=await getPublicSharedReport(id);assert.ok(reread?.sharedRetention);
+ assert.ok(reread.sharedRetention.expiresAt<=report.sharedRetention.expiresAt);
+});
+
+test('public reads reject missing, malformed and expired links and inherit comparison source expiry',async()=>{
+ for(const id of ['','../private','not-found','abcdefghijklm','missing12345'])assert.equal(await getPublicSharedReport(id),null);
+ await db().set(reportKey('expired7'),stored(7*day),{ex:21*86400});
+ assert.equal(await getPublicSharedReport('expired7'),null);assert.equal(await db().exists(reportKey('expired7')),0);
+ await db().set(reportKey('prior123'),stored(6*day),{ex:21*86400});
+ const prior=await getPublicSharedReport('prior123');assert.ok(prior?.sharedRetention);
+ await db().set(reportKey('publiccmp'),stored(0,{...fixture,diagnosisBaseline:createDiagnosisBaseline(prior,'prior123')}),{ex:21*86400});
+ const comparison=await getPublicSharedReport('publiccmp');assert.ok(comparison?.sharedRetention);
+ assert.ok(comparison.sharedRetention.expiresAt<=prior.sharedRetention.expiresAt);
+ await db().del(reportKey('prior123'));
+ assert.equal(await getPublicSharedReport('publiccmp'),null);
+});
 
 test('saved reports and owner indexes expire within seven days; reads, resaves and patches cannot extend them',async()=>{
  const id=await saveSharedReport(fixture,principal);assert.ok(id);

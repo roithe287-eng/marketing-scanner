@@ -5,8 +5,8 @@ import { savePdfFile, type SavePicker } from '@/lib/savePdfFile';
 import type {PdfPhase, PdfMetrics} from '@/lib/saas/activityTypes';
 import type {PdfScope} from '@/lib/exportReportPdf';
 import type { MarketingReport } from '@/lib/reportSchema';
-type Props={targetId?:string;report:MarketingReport;direct?:boolean;pending?:boolean};
-export default function DownloadReportButton({report,direct=false,pending=false}:Props) {
+type Props={targetId?:string;report:MarketingReport;direct?:boolean;pending?:boolean;recordActivity?:boolean};
+export default function DownloadReportButton({report,direct=false,pending=false,recordActivity=true}:Props) {
   const [scope,setScope]=useState<PdfScope>('full');
   const [open,setOpen]=useState(false);
   const [downloading,setDownloading]=useState(false);
@@ -31,7 +31,9 @@ export default function DownloadReportButton({report,direct=false,pending=false}
     }
     throw Error('이용 기록을 전송하지 못했습니다.');
   }
-  function pdfEvent(ticket:string,phase:PdfPhase,signal?:AbortSignal,metrics?:PdfMetrics,eventId=crypto.randomUUID()){return event({action:'pdf_event',ticket,phase,eventId,...(metrics?{metrics}:{})},signal);}
+  async function pdfEvent(ticket:string,phase:PdfPhase,signal?:AbortSignal,metrics?:PdfMetrics,eventId=crypto.randomUUID()){
+    if(recordActivity)await event({action:'pdf_event',ticket,phase,eventId,...(metrics?{metrics}:{})},signal);
+  }
   async function trackClick(ticket:string,phase:'open'){
     try{await pdfEvent(ticket,phase);}catch{setError('파일은 열리지만 이용 기록 전송에 실패했습니다.');}
   }
@@ -55,9 +57,13 @@ export default function DownloadReportButton({report,direct=false,pending=false}
     const controller=new AbortController();task.current=controller;
     let ticket='';
     try {
-      const permit=await event({action:'pdf_start',eventId:crypto.randomUUID(),scope,url:report.url,...(report.sharedRetention?.reportId?{reportId:report.sharedRetention.reportId}:{})},controller.signal);
-      ticket=permit.ticket;
-      if(typeof ticket!=='string')throw new Error('PDF 이용 권한을 확인하지 못했습니다.');
+      // Public recipients export the report already delivered to their browser.
+      // Account activity endpoints remain authenticated and are never a public gate.
+      if(recordActivity){
+        const permit=await event({action:'pdf_start',eventId:crypto.randomUUID(),scope,url:report.url,...(report.sharedRetention?.reportId?{reportId:report.sharedRetention.reportId}:{})},controller.signal);
+        ticket=permit.ticket;
+        if(typeof ticket!=='string')throw new Error('PDF 이용 권한을 확인하지 못했습니다.');
+      }
       const {exportReportPdf}=await import('@/lib/exportReportPdf');
       const result=await exportReportPdf(report,text=>{if(!controller.signal.aborted)setProgress(text);},controller.signal,scope);
       controller.signal.throwIfAborted();
@@ -78,7 +84,7 @@ export default function DownloadReportButton({report,direct=false,pending=false}
     if(busy.current||pending)return;
     busy.current=true;setDownloading(true);setError('');
     try{
-      await event({action:'document_export',eventId:crypto.randomUUID(),format,url:report.url,...(report.sharedRetention?.reportId?{reportId:report.sharedRetention.reportId}:{})});
+      if(recordActivity)await event({action:'document_export',eventId:crypto.randomUUID(),format,url:report.url,...(report.sharedRetention?.reportId?{reportId:report.sharedRetention.reportId}:{})});
       const {exportReportText}=await import('@/lib/exportReportText');
       const result=exportReportText(report,format),url=URL.createObjectURL(new Blob([result.text],{type:result.mime}));
       const a=document.createElement('a');a.href=url;a.download=result.filename;document.body.append(a);a.click();a.remove();
