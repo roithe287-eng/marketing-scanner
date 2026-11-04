@@ -6,6 +6,7 @@ import { getScannerContactUrl } from "./siteConfig";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 import {captureSiteEditing} from './captureSiteEditing';
+import {CONSENT_WIDGET_SELECTOR} from './contentBoilerplate';
 import type {SiteEditing} from './siteEditingSchema';
 import type {OwnProductContext} from './ownProductSchema';
 import {captureProductSeed,type OwnProductSeed} from './productDiscovery';
@@ -671,6 +672,7 @@ export async function extractWebsite(
   // Forms have a separate label-only inventory. Consent boilerplate and entered
   // textarea/select values must not become the site's service or answer copy.
   textBody.find("form,input,textarea,select").remove();
+  textBody.find(CONSENT_WIDGET_SELECTOR).remove();
   textBody.find("br").replaceWith("\n");
   textBody.find("p,div,section,article,header,footer,nav,aside,h1,h2,h3,h4,h5,h6,li,tr,td,th,dt,dd,blockquote").each((_,el)=>{ $(el).prepend("\n").append("\n"); });
   const fullBodyText = textBody.text().replace(/[^\S\n]+/g, " ").replace(/ *\n */g,"\n").replace(/\n{2,}/g,"\n").trim();

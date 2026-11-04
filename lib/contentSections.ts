@@ -1,6 +1,7 @@
 import type {CheerioAPI} from 'cheerio';
 import type {Element} from 'domhandler';
 import {pageRegion} from './pageRegions';
+import {CONSENT_WIDGET_SELECTOR,isConsentBoilerplate} from './contentBoilerplate';
 
 export type ContentSection={id:string;heading:string;text:string;truncated:boolean;url?:string};
 const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
@@ -12,14 +13,17 @@ export function captureContentSections($:CheerioAPI,baseUrl?:string):ContentSect
  $('body h1,body h2,body h3,body p,body li,body td,body blockquote,body dd,body dt,body a,body div,body section,body article').each((_,node)=>{
   const el=node as Element,item=$(el),tag=el.tagName;
   if(item.parents('script,style,noscript,template,nav,header,footer,form,aside,[role="navigation"],[hidden],[aria-hidden="true"]').length||item.is('[hidden],[aria-hidden="true"]'))return;
+  if(item.closest(CONSENT_WIDGET_SELECTOR).length)return;
   const lineage=[el,...item.parents().toArray()];
   if(['nav','header','footer'].includes(pageRegion($,el))||lineage.some(n=>/(?:display\s*:\s*none|visibility\s*:\s*hidden)/i.test($(n).attr('style')||'')))return;
   if(/^(?:div|section|article|li|td|dd|dt)$/.test(tag)&&item.find('p,div,section,article,li,table,dl,dd,dt,blockquote,h1,h2,h3').length)return;
   if(textContentIsControl(item))return;
   if(item.find('a,button,input,select,textarea').length&&clean(item.clone().find('a,button,input,select,textarea').remove().end().text()).length<24&&clean(item.text()).length<60)return;
-  const text=clean(item.clone().find('script,style,noscript,template').remove().end().text());if(!text)return;
+  const copy=item.clone();copy.find('script,style,noscript,template').remove();copy.find('br').replaceWith(' ');
+  const text=clean(copy.text());if(!text||isConsentBoilerplate(text))return;
   if(/^h[1-3]$/.test(tag)){heading=text.slice(0,180);return;}
-  if((text.length<24&&!(text.length>=8&&/\d/.test(text)&&/경력|전문|센터|네트워크|교육기관|연속|수상/.test(text)))||/^(?:개인정보|이용약관|copyright|사업자등록|통신판매업)/i.test(text))return;
+  const serviceLabel=text.length>=5&&/컨설팅|마케팅|교육|홈페이지\s*제작/.test(text);
+  if((text.length<24&&!serviceLabel&&!(text.length>=8&&/\d/.test(text)&&/경력|전문|센터|네트워크|교육기관|연속|수상/.test(text)))||/^(?:개인정보|이용약관|copyright|사업자등록|통신판매업)/i.test(text))return;
   const key=text.normalize('NFKC').toLowerCase();if(seen.has(key))return;seen.add(key);
   const section=item.closest('section,article,[data-section],.section_wrap');
   const label=clean(section.find('h1,h2,h3').first().text())||heading;
