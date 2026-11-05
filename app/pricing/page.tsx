@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import BrandHeader from '@/components/BrandHeader';
+import PricingReportPreview from '@/components/pricing/PricingReportPreview';
 import { agencyBenefit, agencyPlanId, formatWon, planInquiryHref, scannerPlans } from '@/lib/pricing';
 
 export const metadata: Metadata = {
@@ -17,6 +18,7 @@ const questions = [
 ];
 
 export default function PricingPage() {
+  const singlePlan = scannerPlans.find(plan => plan.id === 'single')!;
   return (
     <main className="scanner-pricing-page">
       <BrandHeader showInquiry />
@@ -24,9 +26,20 @@ export default function PricingPage() {
         <Link className="scanner-pricing-back" href="/">← 마케팅스캐너로 돌아가기</Link>
         <header className="scanner-pricing-intro">
           <p className="scanner-pricing-eyebrow">PRICING</p>
-          <h1>필요한 만큼 진단하고,<br /><em>다음 변화를 준비하세요.</em></h1>
-          <p>한 번의 점검부터 여러 사이트의 관리까지.<br className="scanner-pricing-mobile-break" /> 나에게 맞는 이용권을 선택하세요.</p>
-          <span>모든 금액은 부가세 포함입니다.</span>
+          <h1>우리 사이트의 문제부터,<br /><em>고칠 방법까지.</em></h1>
+          <p>어디가 아쉬운지, 무엇부터 바꾸면 좋을지.<br />결과를 먼저 살펴보고 필요한 만큼 시작하세요.</p>
+          <div className="scanner-pricing-entry"><span>한 번만 이용해도</span><strong>{formatWon(singlePlan.price)}<small>원</small></strong><span>1회 진단 · 부가세 포함 · PDF 미포함</span></div>
+          <div className="scanner-pricing-intro-links"><a href="#report-preview">결과 맛보기 <span aria-hidden="true">↓</span></a><a href="#pricing-plans">이용요금 바로 보기 <span aria-hidden="true">↓</span></a></div>
+          <span>문의만으로 결제되지 않습니다. 이용권과 절차를 확인한 뒤 시작하세요.</span>
+        </header>
+
+        <PricingReportPreview />
+
+        <header id="pricing-plans" className="scanner-pricing-plan-heading">
+          <p className="scanner-pricing-eyebrow">START WITH ONE</p>
+          <h2>처음이라면, 한 번부터 시작하세요.</h2>
+          <p>한 페이지 점검부터 여러 사이트 관리까지, 필요한 만큼 선택하세요.</p>
+          <span>모든 금액은 부가세 포함입니다. PDF 제공 여부는 이용권별로 확인해 주세요.</span>
         </header>
 
         <aside className="scanner-pricing-agency" aria-labelledby="agency-benefit-heading">

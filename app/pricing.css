@@ -19,6 +19,19 @@
 .scanner-pricing-intro>p:not(.scanner-pricing-eyebrow) { font-size:16px; line-height:1.8; color:var(--scanner-muted); word-break:keep-all; }
 .scanner-pricing-intro>span { display:block; margin-top:14px; font-size:12px; color:var(--scanner-muted); }
 .scanner-pricing-mobile-break { display:none; }
+.scanner-pricing-entry { display:flex; justify-content:center; align-items:baseline; flex-wrap:wrap; gap:8px 12px; margin:25px auto 0; color:var(--scanner-ink); }
+.scanner-pricing-entry>span:first-child { font-size:14px; font-weight:650; }
+.scanner-pricing-entry>strong { color:var(--scanner-cobalt); font-size:32px; font-weight:850; letter-spacing:-.04em; }
+.scanner-pricing-entry small { margin-left:3px; font-size:15px; font-weight:700; }
+.scanner-pricing-entry>span:last-child { font-size:12px; color:var(--scanner-muted); }
+.scanner-pricing-intro-links { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-top:22px; }
+.scanner-pricing-intro-links>a { display:inline-flex; align-items:center; justify-content:center; gap:24px; min-height:46px; padding:12px 20px; border:1px solid #c6d4ee; border-radius:10px; font-size:14px; font-weight:750; color:var(--scanner-cobalt); background:#fff; }
+.scanner-pricing-intro-links>a:first-child { background:var(--scanner-cobalt); border-color:var(--scanner-cobalt); color:#fff; }
+.scanner-pricing-intro-links>a:hover { box-shadow:0 0 0 2px #1745d118; }
+.scanner-pricing-plan-heading { margin:56px 0 24px; padding-top:32px; border-top:1px solid var(--scanner-line); scroll-margin-top:108px; text-align:center; }
+.scanner-pricing-plan-heading h2 { margin-top:10px; font-size:clamp(26px,3vw,34px); font-weight:820; line-height:1.45; letter-spacing:-.045em; word-break:keep-all; }
+.scanner-pricing-plan-heading>p:not(.scanner-pricing-eyebrow) { margin-top:12px; font-size:15px; color:var(--scanner-muted); line-height:1.8; word-break:keep-all; }
+.scanner-pricing-plan-heading>span { display:block; margin-top:10px; font-size:12px; line-height:1.8; color:var(--scanner-muted); word-break:keep-all; }
 .scanner-pricing-agency { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:23px 28px; margin-bottom:24px; border:1px solid #d9e2b9; border-radius:18px; background:#f0f4de; }
 .scanner-pricing-agency-label { font-size:12px; font-weight:750; color:#48602d; }
 .scanner-pricing-agency h2 { margin:5px 0; font-size:22px; font-weight:800; letter-spacing:-.035em; line-height:1.5; word-break:keep-all; }
@@ -71,6 +84,12 @@
   .scanner-pricing-intro { padding:24px 0; }
   .scanner-pricing-intro>p:not(.scanner-pricing-eyebrow) { font-size:14px; }
   .scanner-pricing-mobile-break { display:block; }
+  .scanner-pricing-entry { gap:6px 10px; margin-top:20px; }
+  .scanner-pricing-entry>span:last-child { flex-basis:100%; }
+  .scanner-pricing-intro-links { flex-wrap:nowrap; gap:8px; }
+  .scanner-pricing-intro-links>a { gap:12px; padding:12px 14px; font-size:12px; }
+  .scanner-pricing-intro>span { font-size:11px; line-height:1.8; word-break:keep-all; }
+  .scanner-pricing-plan-heading { margin-top:36px; padding-top:26px; scroll-margin-top:144px; }
   .scanner-pricing-agency { align-items:stretch; flex-direction:column; gap:16px; padding:22px; }
   .scanner-pricing-agency h2 { font-size:21px; }
   .scanner-pricing-agency p { font-size:13px; }
