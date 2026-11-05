@@ -4,7 +4,7 @@ import {growthPageEvidence} from './growthPlan';
 import {diagnosisAxes} from './diagnosisVisuals';
 
 export const DIAGNOSIS_METHOD='marketing-diagnosis-2026-11-v20-medical-specialty-evidence';
-export const DIAGNOSIS_COMPARISON_NOTE='같은 URL의 저장 결과를 비교합니다. 진단 점수는 AI 평가와 수집 범위에 따라 달라질 수 있으며 매출·노출 성과나 수정의 인과 효과가 아닙니다. 통과 전환도 실제 화면과 담당자 검토로 확인하세요.';
+export const DIAGNOSIS_COMPARISON_NOTE='같은 URL의 진단 변화를 비교합니다. 수정 반영은 실제 페이지에서, 노출·클릭·문의 변화는 같은 조건의 계정 실적으로 확인하세요.';
 const normal=(s:string)=>s.trim().replace(/\s+/g,' ').toLowerCase();
 export function diagnosisChecks(report:MarketingReport):DiagnosisCheck[] {
  const rows:DiagnosisCheck[]=(report.checklist||[]).map(c=>({key:`check:${c.category}:${normal(c.label)}`,label:c.label,status:c.status,evidence:c.currentValue,source:'기본 체크리스트'}));

@@ -100,7 +100,7 @@ export default function PricingReportPreview() {
         </ol>
       </Excerpt>
 
-      <div className={styles.previewEnd}><p><strong>문제 확인부터 수정안, 실행 순서까지.</strong><br />우리 사이트를 바꿀 다음 행동을 한 번의 진단에서 찾아보세요.</p><span>위 내용은 보고서 구성을 보여주는 일부 예시입니다.<br />실제 결과는 업종과 수집 가능한 정보에 따라 달라집니다.</span></div>
+      <div className={styles.previewEnd}><p><strong>어디를, 왜, 어떻게 고칠지까지.</strong><br />문제 확인 → 수정 예시 → 완료 기준을 한 번의 진단에서 확인하세요.</p><span>위 내용은 보고서 구성을 보여주는 일부 예시입니다.<br />실제 결과는 업종과 수집 가능한 정보에 따라 달라집니다.</span></div>
     </section>
   );
 }
