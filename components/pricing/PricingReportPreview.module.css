@@ -1,4 +1,4 @@
-.preview { margin:48px 0 0; scroll-margin-top:24px; }
+.preview { margin:48px 0 0; scroll-margin-top:108px; }
 .heading { display:flex; justify-content:space-between; align-items:flex-end; gap:24px; padding-bottom:30px; border-bottom:1px solid #ced8e6; }
 .eyebrow { color:var(--scanner-cobalt); font-size:12px; font-weight:800; letter-spacing:.12em; }
 .heading h2 { margin-top:10px; font-size:clamp(28px,3.4vw,36px); font-weight:820; letter-spacing:-.045em; line-height:1.35; }
@@ -113,7 +113,7 @@
   .before>p,.after>p { margin:7px 0; }
 }
 @media (max-width:639px) {
-  .preview { margin-top:38px; }
+  .preview { margin-top:38px; scroll-margin-top:144px; }
   .heading { align-items:flex-start; flex-direction:column; gap:16px; padding-bottom:24px; }
   .heading>p { font-size:13px; }
   .row { grid-template-columns:1fr; gap:20px; padding:28px 0; }
