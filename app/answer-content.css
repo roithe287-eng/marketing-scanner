@@ -11,7 +11,7 @@
 .briefing-panel :is(a,button,summary):focus-visible {outline:3px solid #5d59a2;outline-offset:3px}
 .briefing-heading {display:flex;gap:12px;align-items:center}
 .briefing-symbol {width:44px;height:44px;display:grid;place-items:center;flex:none;border:1px solid #d4d1e8;border-radius:12px;background:#f0eef8;color:var(--brief-accent)}
-.report-v2.report-focused .briefing-heading h3 {font-size:clamp(21px,2vw,26px);line-height:1.38;letter-spacing:-.035em;margin:0 0 3px;scroll-margin-top:180px}
+.report-v2.report-focused .briefing-heading h3 {font-size:clamp(21px,2vw,26px);line-height:1.38;font-weight:800;letter-spacing:-.035em;margin:0 0 3px;scroll-margin-top:180px}
 .report-v2.report-focused .briefing-heading p,.report-v2.report-focused .briefing-panel small {font-size:.8125rem;line-height:1.65;color:var(--brief-muted)}
 .briefing-topics {display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:16px 0 10px}
 .briefing-topics strong {margin-right:4px;font-size:.875rem;color:#47546b}
@@ -67,3 +67,5 @@
 .report-search-links .work-link:last-child {color:#534e83;border-color:#d9d7e6;background:#faf9fc}
 .report-search-links .work-link:focus-visible {outline:3px solid #315c8b;outline-offset:2px}
 .briefing-panel .answer-tags {font-weight:650;color:var(--brief-accent)}
+
+.briefing-panel:focus-visible,.briefing-reader .report-item-panel:focus-visible {outline:2px solid #aca7cb;outline-offset:2px}

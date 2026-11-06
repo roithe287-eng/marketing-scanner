@@ -40,7 +40,7 @@ export default function HospitalPlacePanel({review,webAllowed=true}:{review:Hosp
   const groups=review.groups.filter(g=>filter==='전체'||g.category===filter);
   return <>
     <section className="hospital-place hp-panel" aria-labelledby="hospital-place-title">
-      <header className="hp-place-head"><div><h4 id="hospital-place-title">{PLACE_TITLE}</h4>
+      <header className="hp-place-head"><div><h3 id="hospital-place-title">{PLACE_TITLE}</h3>
         <p>홈페이지의 진료 표현과 스마트플레이스 등록 목록을 대조하세요.</p></div></header>
       <div className="hp-profile"><PlaceMarker/><div className="hp-profile-name"><small>홈페이지에서 확인한 병의원</small>
         <strong>{review.profile.name}</strong>{review.profile.address&&<span>{review.profile.address}</span>}
@@ -48,7 +48,7 @@ export default function HospitalPlacePanel({review,webAllowed=true}:{review:Hosp
         {review.link?<a className="hp-place-link" href={review.link.url} target="_blank" rel="noopener noreferrer"><ClinicIcon kind="place"/>{review.link.kind==='place'?'플레이스 열기 ↗':'네이버 단축 링크 · 목적지 확인 ↗'}</a>:<span className="hp-profile-note">홈페이지의 플레이스 링크 미확인</span>}
       </div>
       {review.coverage==='sample'?<>
-        <div className="hp-list-title"><h5>홈페이지 키워드 후보</h5><span>{count}개</span></div>
+        <div className="hp-list-title"><h4>홈페이지 키워드 후보</h4><span>{count}개</span></div>
         <div className="hp-filters" role="group" aria-label="진료 키워드 분류 선택">
           <button type="button" aria-controls={resultsId} aria-pressed={filter==='전체'} onClick={()=>setFilter('전체')}>전체</button>
           {review.groups.map(g=><button type="button" key={g.category} ref={button=>{filterButtons.current[g.category]=button;}} aria-controls={resultsId} aria-pressed={filter===g.category} onClick={()=>setFilter(g.category)}>{g.category} <b>{g.terms.length}</b></button>)}

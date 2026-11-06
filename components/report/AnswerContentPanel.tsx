@@ -24,14 +24,14 @@ function BriefIcon({kind}:{kind:'answer'|'source'|'question'}){
   </svg>;
 }
 
-function BriefingEvidence({evidence,targetUrl}:{evidence:AnswerSource[];targetUrl:string}){
+function BriefingEvidence({evidence,targetUrl,hasDraft}:{evidence:AnswerSource[];targetUrl:string;hasDraft:boolean}){
   const [selected,setSelected]=useState('');
   const excerptId=useId();
   const item=evidence.find(e=>e.id===selected)||evidence[0];
   if(!item)return <p className="briefing-unavailable">이 질문을 뒷받침하는 페이지 원문을 수집 범위에서 확인하지 못했습니다.</p>;
   const href=safeHttpUrl(item.url??targetUrl);
   return <div className="briefing-evidence">
-    <div className="briefing-source-title"><BriefIcon kind="source"/><strong>답변 근거</strong><small>{evidence.length}개</small></div>
+    <div className="briefing-source-title"><BriefIcon kind="source"/><strong>{hasDraft?'답변 근거':'참고할 페이지 문구'}</strong><small>{evidence.length}개</small></div>
     {evidence.length>1&&<div className="briefing-source-picker" role="group" aria-label="답변 근거 선택">{evidence.map((e,i)=>
       <button type="button" key={e.id} aria-controls={excerptId} aria-pressed={item.id===e.id} onClick={()=>setSelected(e.id)}>근거 {i+1}</button>)}</div>}
     <div id={excerptId} className="briefing-excerpt" aria-live="polite"><strong>{item.location}</strong><blockquote>{item.text}</blockquote>
@@ -45,7 +45,7 @@ function BriefingQuestion({q,targetUrl}:{q:AnswerQuestion;targetUrl:string}){
     <div className="briefing-answer"><div className="briefing-answer-meta"><span><BriefIcon kind="answer"/>{q.draft?'원문 기반 답변 초안':'확인 후 채울 답변 예시'}</span><small data-state={q.status}>{ANSWER_STATUS[q.status]}</small></div>
       <p className="briefing-answer-text">{q.draft||q.template}</p>
       {!q.draft&&<small>대괄호는 실제 운영 정보로 채우세요.</small>}
-      <BriefingEvidence evidence={q.evidence} targetUrl={targetUrl}/>
+      <BriefingEvidence evidence={q.evidence} targetUrl={targetUrl} hasDraft={!!q.draft}/>
     </div>
   </article>;
 }

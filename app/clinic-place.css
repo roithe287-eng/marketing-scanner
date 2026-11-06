@@ -5,16 +5,17 @@
   color:var(--hp-ink); background:#fff; border:1px solid var(--hp-line); border-radius:16px;
 }
 .report-v2 .hp-panel *, .report-v2 .hp-panel *::before, .report-v2 .hp-panel *::after {box-sizing:border-box;min-width:0}
-.report-v2.report-focused .hp-panel :where(h4,h5,p,ol,ul,dl,dt,dd,fieldset,legend) {margin:0}
+.report-v2.report-focused .hp-panel :where(h3,h4,h5,p,ol,ul,dl,dt,dd,fieldset,legend) {margin:0}
 .report-v2.report-focused .hp-panel p {text-align:left;font-size:.9375rem;line-height:1.7;white-space:normal;margin:0;color:var(--hp-muted)}
 .hp-icon {display:block;flex:none}
 .hp-heading {display:flex;align-items:center;gap:12px;margin-bottom:18px}
 .hp-heading-icon,.hp-cat-icon {display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:12px;color:var(--hp-blue);background:var(--hp-wash);border:1px solid #cbe0d8}
-.report-v2.report-focused .hp-panel .hp-heading h4 {font-size:clamp(20px,2vw,25px);line-height:1.38;font-weight:800;letter-spacing:-.035em;margin:0 0 4px}
-.hp-heading h4 {scroll-margin-top:180px}
-.hp-heading h4:focus-visible {outline:2px solid #8ea9d7;outline-offset:4px;border-radius:3px}
+.report-v2.report-focused .hp-panel .hp-heading h3 {font-size:clamp(20px,2vw,25px);line-height:1.38;font-weight:800;letter-spacing:-.035em;margin:0 0 4px}
+.hp-heading h3 {scroll-margin-top:180px}
+.hp-heading h3,.hp-place-head h3 {width:fit-content;max-width:100%}
+.hp-heading h3:focus-visible,.hp-place-head h3:focus-visible {outline:2px solid #79a994;outline-offset:4px;border-radius:3px}
 .hp-place-head {margin-bottom:14px}
-.report-v2.report-focused .hp-place-head h4 {font-size:clamp(21px,2vw,26px);line-height:1.35;letter-spacing:-.035em;margin:0 0 4px;scroll-margin-top:185px}
+.report-v2.report-focused .hp-place-head h3 {font-size:clamp(21px,2vw,26px);line-height:1.35;font-weight:800;letter-spacing:-.035em;margin:0 0 4px;scroll-margin-top:185px}
 .hp-profile {display:flex;align-items:center;gap:16px;padding:14px 17px;border:1px solid #c9ddd4;border-radius:12px;background:linear-gradient(100deg,#e9f4ee,#f6faf8 65%,#fff)}
 .hp-place-mark {width:84px;height:auto;flex:none}
 .hp-profile-name {display:grid;gap:2px;flex:1}
@@ -25,7 +26,7 @@
 .hp-profile .hp-place-link {display:inline-flex;align-items:center;gap:7px;border:1px solid #a9c8bb;border-radius:8px;padding:8px 12px;background:#fff;color:var(--hp-blue);font-size:.875rem;font-weight:740;text-decoration:none}
 .hp-place-link .hp-icon,.hp-map-link .hp-icon {width:16px;height:16px}
 .hp-list-title {display:flex;align-items:center;gap:8px;margin:18px 0 7px}
-.report-v2.report-focused .hp-list-title h5 {font-size:1.0625rem;margin:0}
+.report-v2.report-focused .hp-list-title h4 {font-size:1.0625rem;margin:0}
 .hp-list-title>span {color:#496459;font-size:.875rem;font-weight:700}
 .hp-filters,.hp-edit-choices {display:flex;flex-wrap:wrap;gap:6px;margin:7px 0 11px}
 .hp-filters button,.hp-edit-choices button {min-height:34px;padding:4px 12px;border:1px solid var(--hp-line);border-radius:20px;color:#3b564c;background:white;font:inherit;font-weight:650}

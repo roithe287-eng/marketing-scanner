@@ -114,7 +114,7 @@ export default function ClinicComparisonPanel({review,entries,webAllowed}:{revie
   }
   const peer=rows.find(r=>r.position===selected)||rows[0];
   return <section className="hp-panel hp-peer" aria-labelledby="hospital-place-comparison">
-    <header className="hp-heading"><span className="hp-heading-icon"><ClinicIcon kind="search"/></span><div><h4 id="hospital-place-comparison">{comparisonTitle}</h4>
+    <header className="hp-heading"><span className="hp-heading-icon"><ClinicIcon kind="search"/></span><div><h3 id="hospital-place-comparison">{comparisonTitle}</h3>
       <p>지도에서 광고 표시가 없는 병원을 확인한 뒤, 같은 검색 조건으로 최대 3곳을 비교하세요.</p></div></header>
     <div className="hp-query" role="group" aria-label="플레이스 검색 조건"><label><span>검색 지역</span><input maxLength={60} disabled={lock} value={area} placeholder="예) 부산 해운대구" onChange={e=>setArea(e.target.value)}/></label>
       <label><span>검색어</span><input maxLength={60} list={queryList} disabled={lock} value={query} onChange={e=>setQuery(e.target.value)}/></label>
