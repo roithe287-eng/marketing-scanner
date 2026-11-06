@@ -5,6 +5,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {load} from 'cheerio';
 import {hospitalHtml,hospitalPlaceReport,hospitalUrl} from './fixtures/hospital-place-report';
 import {buildHospitalPlaceReview,comparePlaceEntries,placeChannel,PLACE_TITLE} from '../lib/hospitalPlace';
+import {findPlaceTerms} from '../lib/hospitalPlaceTerms';
 import {captureSiteDiagnosticSeed} from '../lib/siteDiagnostics';
 import {buildAnswerContentDocument} from '../lib/answerContentDocument';
 import {buildReportDocument} from '../lib/reportDocument';
@@ -78,4 +79,13 @@ test('old medical reports update obsolete guidance without inventing keyword evi
   const text=buildReportDocument(old).map(b=>b.text).join('\n');
   assert.doesNotMatch(text,/진료 질병명 최대 10개/);assert.match(text,/네 분류 합계 30개/);
   assert.match(diagnostics.medicalAudit!.checks.find(c=>c.id==='naver-source')!.detail,/최대 10개/);
+});
+
+
+test('ordinary words and shorter fragments of compound procedures do not create registration candidates',()=>{
+  const candidates=findPlaceTerms([{text:'증상이 명확하면 상담하세요. 국가건강검진과 약침치료를 안내합니다.'},{text:'현재 어지럼증을 진료합니다.'}]);
+  assert.deepEqual(candidates.map(c=>c.term),['국가건강검진','약침치료','어지럼증']);
+  const html=hospitalHtml.replace('</main>','<div style="display: none"><p>백내장</p></div><div id="patient-review"><p>임플란트</p></div></main>');
+  const terms=captureSiteDiagnosticSeed(html,hospitalUrl).page.medicalEvidence!.place!.terms;
+  assert.ok(!terms.some(item=>['백내장','임플란트'].includes(item.term)));
 });

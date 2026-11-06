@@ -9,6 +9,10 @@ const vocabulary:Record<PlaceCategory,string[]> = {
   검진:'청력검사 알레르기검사 수면다원검사 건강검진 국가건강검진 영유아검진 암검진 위내시경 대장내시경 복부초음파 유방초음파 갑상선초음파 심전도검사 골밀도검사 혈액검사 안저검사 시력검사 구강검진'.split(' ')
 };
 const knownTerms = PLACE_CATEGORIES.flatMap(category=>vocabulary[category].map(term=>({category,term,key:placeTermKey(term)})));
+const termLookup = new Map(knownTerms.map(t=>[t.key,t]));
+const alternatives = knownTerms.map(t=>t.key).sort((a,b)=>b.length-a.length).map(key=>[...key].join('\\s*')).join('|');
+// Match complete Korean terms with optional spacing and particles, taking the longest first.
+const termPattern = new RegExp('(?:^|[^가-힣a-z0-9])('+alternatives+')(?=$|[^가-힣a-z0-9]|에서|으로|관련|진료|검사|치료|센터|클리닉|[은는이가을를와과도의에])','giu');
 const categoryHeading = /^(?:주요\s*|진료\s*|대상\s*|관련\s*)?(증상|질병|질환|시술|검진|검사)(?:명| 목록| 항목)?$/u;
 const labelled = /^(?:주요\s*|진료\s*|대상\s*|관련\s*)?(증상|질병|질환|시술|검진|검사)(?:명| 목록| 항목)?\s*[:：]\s*(.+)$/u;
 const excluded = /하지\s*않|하지\s*못|하지\s*않는|시행\s*안\s*함|미취급|진료\s*제외|제외\s*항목|(?:진료|시행|제공|취급|치료|실시|검사)(?:를|는|을|하지|하지는|하지도)?\s*(?:않|못|안\s*(?:함|합|해|하)|불가|중단)|(?:미제공|미시행|타\s*병원|다른\s*(?:병원|의원)|전원\s*(?:안내|의뢰)|의뢰\s*(?:안내|기관)|후기|환자명|생년월일|개인정보|전화번호|사례|보장|비교\s*광고)/u;
@@ -30,9 +34,9 @@ export function findPlaceTerms(units:{text:string;context?:string}[]):PlaceTerm[
       }
       continue;
     }
-    const normalized = placeTermKey(text);
-    for (const word of knownTerms) {
-      if (normalized.includes(word.key)) add(word.category,word.term);
+    for (const match of text.normalize('NFKC').matchAll(termPattern)) {
+      const word=termLookup.get(placeTermKey(match[1]));
+      if (word) add(word.category,word.term);
     }
   }
   return terms;
