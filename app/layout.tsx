@@ -24,6 +24,7 @@ import "./landing-result-preview.css";
 import "./report-diagrams.css";
 import "./report-opening-radar.css";
 import "./report-typography.css";
+import "./report-medical.css";
 import "./clinic-place.css";
 import "./answer-content.css";
 

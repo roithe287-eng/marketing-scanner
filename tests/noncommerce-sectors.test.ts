@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {load} from 'cheerio';
+import LandingSectorPreview from '../components/LandingSectorPreview';
+import {sectorJourneys} from '../lib/nonCommerceJourneys';
 import {sectorCases,sectorHtml} from './fixtures/noncommerce-sectors';
 import {fixture} from './fixtures/report';
 import {extractWebsite} from '../lib/extractWebsite';
@@ -96,4 +98,17 @@ test('a ministry-designated hospital remains medical and can use an explicit nav
 test('insurance eligibility wording alone does not imply a public support program',async t=>{
   const data=await extract(t,'<html><head><title>보험 신청 자격·가입 조건</title><meta name="description" content="보험 가입 조건과 보장 범위, 보험료 상담"></head><body><main><p>보험료 산정 조건과 면책·감액·제외 사항을 약관에서 확인합니다.</p><a href="/consult">보험 상담 문의</a></main></body></html>');
   assert.equal(analyzeWebsitePurpose(data).sector?.id,'insurance');assert.equal(analyzeWebsitePurpose(data).kind,'service');
+});
+
+test('the pre-scan industry examples start with the actual medical journey and do not submit a diagnosis',()=>{
+  const $=load(renderToStaticMarkup(React.createElement(LandingSectorPreview)));
+  const choices=$('.scanner-sector-options button');
+  assert.equal(choices.length,6);
+  assert.equal(choices.filter('[aria-pressed=true]').text(),'병의원');
+  assert.deepEqual($('.scanner-sector-journey li').toArray().map(el=>$(el).text()),sectorJourneys.medical);
+  for(const choice of choices.toArray()){
+    assert.equal($(choice).attr('type'),'button');
+    assert.equal($(choice).attr('aria-controls'),$('.scanner-sector-example').attr('id'));
+  }
+  assert.match($('.scanner-sector-question').text(),/플레이스 키워드 후보/);
 });

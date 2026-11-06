@@ -2,6 +2,7 @@ import Image from 'next/image';
 import UrlForm from '@/components/UrlForm';
 import LivePreviewCard from '@/components/LivePreviewCard';
 import LandingReportFeatures from '@/components/LandingReportFeatures';
+import LandingSectorPreview from '@/components/LandingSectorPreview';
 import LandingPricing from '@/components/LandingPricing';
 
 type Props = { onSubmit: (url: string, questions?: string[], baselineId?: string) => void; loading: boolean; allowed?: boolean; checking?: boolean };
@@ -38,6 +39,7 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
               <ol className="scanner-access-steps" aria-label="이용 절차"><li>이용 문의</li><li>승인 후 URL 입력</li><li>진단 시작</li></ol>
             </div>
             }
+            <a className="scanner-sector-shortcut" href="#scanner-sector-preview">병의원·법률·분양 등 업종별 진단 예시 <span aria-hidden="true">↓</span></a>
           </div>
         </div>
         <ol className="scanner-gate-capabilities" aria-label="진단으로 확인할 내용">
@@ -45,6 +47,7 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
         </ol>
       </div>
       <div className="scanner-gate-details">
+        <LandingSectorPreview />
         <LandingReportFeatures />
         <div className="scanner-gate-preview"><LivePreviewCard /></div>
         <LandingPricing />
