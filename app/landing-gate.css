@@ -123,3 +123,47 @@
   .scanner-gate-capabilities>li { padding:0 5px; }
   .scanner-gate-capabilities p { font-size:11px; }
 }
+
+/* Pre-scan examples use the same journeys as the industry-specific reports. */
+.scanner-gate-entry .scanner-sector-shortcut {
+  display:flex;align-items:center;justify-content:center;gap:7px;width:fit-content;max-width:100%;
+  margin:9px auto 0;min-height:36px;padding:4px 9px;text-decoration:underline;text-underline-offset:4px;
+  color:#385584;font-size:.875rem;font-weight:650;line-height:1.5;text-align:center;word-break:keep-all;
+}
+.scanner-sector-shortcut span {color:#1745d1}
+.scanner-sector-preview {scroll-margin-top:95px;margin:0 0 clamp(36px,5vw,62px);min-width:0}
+.scanner-sector-preview * {box-sizing:border-box;min-width:0}
+.scanner-sector-preview h2 {margin:0;color:#17202d;font-size:clamp(24px,2.55vw,36px);line-height:1.4;font-weight:800;letter-spacing:-.045em;word-break:keep-all;overflow-wrap:anywhere}
+.scanner-sector-intro {margin:6px 0 15px;color:#515e70;font-size:1rem;line-height:1.65;word-break:keep-all;overflow-wrap:anywhere}
+.scanner-sector-options {display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
+.scanner-sector-options button {
+  min-height:40px;padding:7px 15px;border:1px solid #d1d9e4;border-radius:20px;background:white;color:#354356;
+  font:inherit;font-weight:650;font-size:.9375rem;line-height:1.4;cursor:pointer;
+}
+.scanner-sector-options button[aria-pressed=true] {color:#fff;border-color:#263b64;background:#263b64}
+.scanner-sector-options button:hover {border-color:#7388a7}
+.scanner-sector-options button:focus-visible,.scanner-sector-shortcut:focus-visible {outline:3px solid #2d5ccb;outline-offset:3px}
+.scanner-sector-example {
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(18px,3vw,40px);align-items:center;
+  border:1px solid #d8e1ea;border-radius:15px;padding:clamp(17px,2.4vw,28px);background:#f7f9fc;
+}
+.scanner-sector-question h3 {margin:0;color:#202d43;font-size:clamp(18px,1.65vw,22px);line-height:1.5;font-weight:760;letter-spacing:-.035em;word-break:keep-all;overflow-wrap:anywhere}
+.scanner-sector-question p {margin:8px 0 0;color:#4a586c;font-size:.9375rem;line-height:1.7;word-break:keep-all;overflow-wrap:anywhere}
+.scanner-sector-journey {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;list-style:none;margin:0;padding:0}
+.scanner-sector-journey li {
+  position:relative;display:grid;align-items:center;min-height:60px;padding:9px;border:1px solid #d7e1ed;border-radius:9px;background:#fff;
+  color:#334867;font-size:.9375rem;line-height:1.5;font-weight:650;text-align:center;word-break:keep-all;overflow-wrap:anywhere;
+}
+.scanner-sector-journey li:last-child {border-color:#c4d5ef;background:#edf3fc;color:#2b4b7b}
+.scanner-sector-journey li+li::before {content:'';position:absolute;top:50%;left:-12px;width:6px;height:6px;border:solid #7185a0;border-width:1.5px 1.5px 0 0;transform:translateY(-50%) rotate(45deg)}
+@media(max-width:800px){
+  .scanner-sector-example {grid-template-columns:minmax(0,1fr);gap:14px}
+}
+@media(max-width:550px){
+  .scanner-sector-preview {scroll-margin-top:74px}
+  .scanner-sector-options {gap:6px}
+  .scanner-sector-options button {padding:6px 11px}
+  .scanner-sector-journey {grid-template-columns:minmax(0,1fr);gap:13px}
+  .scanner-sector-journey li {min-height:38px;padding:6px 12px;text-align:left}
+  .scanner-sector-journey li+li::before {top:-11px;left:18px;transform:rotate(135deg)}
+}

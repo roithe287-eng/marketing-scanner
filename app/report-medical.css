@@ -1,0 +1,58 @@
+/* Isolate the medical disclosure layout from the other report workbenches. */
+.report-v2 .medical-checks {
+  display:grid; grid-template-columns:minmax(0,1fr); gap:16px; margin-top:22px;
+  container:medical-topics / inline-size;
+}
+#medical-audit-title,.medical-checks,.medical-topic {scroll-margin-top:185px}
+.medical-checks:focus-visible,.medical-topic:focus-visible {outline:2px solid #b0c3d6;outline-offset:3px}
+.report-v2 .medical-topic {
+  min-width:0; border:1px solid #d3deea; border-radius:12px; background:#fff;
+}
+.report-v2 .medical-topic[open] {border-color:#a4b7cc}
+.medical-topic-summary {
+  display:grid; grid-template-columns:minmax(0,1fr) auto auto; align-items:center; gap:8px 16px;
+  min-height:58px; padding:13px 18px; list-style:none; cursor:pointer; border-radius:inherit;
+}
+.medical-topic-summary::-webkit-details-marker {display:none}
+.medical-topic-summary:hover {background:#f5f8fb}
+.medical-topic-summary:focus-visible {outline:3px solid #315cad;outline-offset:3px}
+.medical-topic-summary>strong {font-size:1.0625rem;line-height:1.5;font-weight:750;color:#213951;overflow-wrap:anywhere}
+.medical-topic-status {
+  justify-self:start; padding:3px 8px; border-radius:6px; background:#eff3f7; color:#40536d;
+  font-size:.8125rem; line-height:1.55; font-weight:650;
+}
+.medical-topic[data-status=observed] .medical-topic-status {background:#edf5f1;color:#30614f}
+.medical-topic-toggle {display:inline-flex;align-items:center;gap:5px;color:#485b73;font-size:.8125rem;font-weight:650}
+.medical-topic-toggle svg {flex:none}
+.medical-topic .medical-hide,.medical-topic[open]>.medical-topic-summary .medical-show {display:none}
+.medical-topic[open]>.medical-topic-summary .medical-hide {display:inline}
+.medical-topic[open]>.medical-topic-summary .medical-topic-toggle svg {transform:rotate(180deg)}
+.medical-topic[open]>.medical-topic-summary {border-radius:12px 12px 0 0;background:#f5f8fb}
+.report-v2 .medical-topic-body {
+  display:grid; gap:18px; min-width:0; padding:18px 20px 21px; border-top:1px solid #dce5ee;
+  border-radius:0 0 12px 12px; background:#fafbfd;
+}
+.report-v2 .medical-topic-body>:is(p,dl,div) {min-width:0;margin:0}
+.report-v2.report-focused .medical-topic-body .medical-topic-detail {font-size:1rem;line-height:1.75}
+.report-v2.report-focused .medical-topic-body>.report-evidence-flow {
+  display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin:0;
+}
+.medical-topic-body>.report-evidence-flow>:only-child {grid-column:1/-1}
+.report-v2 .medical-topic-body .medical-topic-sources {padding-top:11px;border-top:1px solid #dce5ee;gap:7px 16px}
+.report-v2 .medical-topic-body .medical-topic-sources a {font-size:.875rem;line-height:1.65}
+.medical-topic-body .medical-profile-grid {align-items:start}
+.medical-profile-grid>:only-child {grid-column:1/-1}
+@container medical-topics (max-width:620px){
+  .report-v2.report-focused .medical-topic-body>.report-evidence-flow {grid-template-columns:minmax(0,1fr)}
+  .medical-topic-body .medical-profile-grid {grid-template-columns:minmax(0,1fr)}
+}
+@container medical-topics (max-width:460px){
+  .medical-topic-summary {grid-template-columns:minmax(0,1fr) auto;gap:5px 9px;padding:12px 14px}
+  .medical-topic-summary>strong {grid-column:1}
+  .medical-topic-summary>.medical-topic-status {grid-column:1;grid-row:2}
+  .medical-topic-summary>.medical-topic-toggle {grid-column:2;grid-row:1 / span 2}
+  .report-v2 .medical-topic-body {padding:15px 13px 17px;gap:15px}
+}
+@media(max-width:600px){
+  .report-v2 .medical-checks {gap:12px;margin-top:16px}
+}

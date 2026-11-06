@@ -1,4 +1,5 @@
 import {z} from 'zod';
+import {sectorJourneys} from './nonCommerceJourneys';
 
 const evidenceSchema=z.object({text:z.string().max(600),locator:z.string().max(1000)});
 export type SectorEvidence=z.infer<typeof evidenceSchema>;
@@ -22,7 +23,7 @@ const question=(intent:Question['intent'],text:string,fields:string[],placement:
 // Specific services outrank broader professions only when the submitted page supports them.
 export const SECTOR_PROFILES:Profile[]=[
   {id:'medical_consulting',label:'병원 컨설팅·마케팅',match:/(?:병원|의료기관)\s*(?:전문\s*)?(?:컨설팅|마케팅|브랜딩)|(?:메디컬|medical)\s*(?:컨설팅|consulting)|병원.{0,12}(?:경영\s*지원|MSO)/i,
-    journey:['병원 과제·서비스 범위 확인','담당자·사례·진행 조건 비교','상담·견적 문의 연결'],
+    journey:sectorJourneys.medical_consulting,
     checks:[
       check('scope','병원 대상 서비스·제공 범위',/개원\s*컨설팅|경영\s*(?:지원|분석|전략)|MSO|병원\s*(?:컨설팅|마케팅|브랜딩)|홈페이지\s*제작|의료\s*서비스\s*교육|CS\s*교육|해외\s*환자\s*유치/i,'개원·경영지원·마케팅·홈페이지 제작·교육 등 원문에서 확인한 업무를 서비스별로 구분하고 대상 병원·산출물·제외 범위를 연결하세요. 진료과나 환자 치료 범위로 바꾸지 않습니다.'),
       check('proof','담당 조직·병원 실무 경험',/병원\s*실무자|담당\s*(?:조직|전문가|컨설턴트)|조직도|구성원|경력|이력|실무\s*경험/,'병원 실무 경험과 담당 조직·역할을 소개 원문에서 확인하세요. 병원 근무 경험을 의료진 면허나 진료 자격으로 해석하지 않습니다.'),
@@ -36,7 +37,7 @@ export const SECTOR_PROFILES:Profile[]=[
       question('price','병원 컨설팅·마케팅 상담 전 어떤 자료와 견적·계약 조건을 확인해야 하나요?',['병원명·지역·필요 업무','견적 산정·포함·별도 항목','계약·보고 조건'],'견적 기준과 상담 폼 가까이','price'),
     ],caution:'병원이 고객인 사업자 대상 컨설팅·마케팅 서비스입니다. 업체 자체를 병의원으로 분류하거나 환자 초진·진료 예약·비급여·의료진 면허를 요구하지 않습니다. 매출·환자 수·광고 성과·법적 적합성을 추정하거나 보장하지 않습니다.'},
   {id:'rehabilitation',label:'회생·파산·채무조정',match:/개인\s*회생|개인\s*파산|채무\s*조정|도산\s*(?:전문|상담|사건)/i,
-    journey:['대상·조건 확인','서류·비용·절차 비교','개별 상담 연결'],
+    journey:sectorJourneys.rehabilitation,
     checks:[
       check('eligibility','이용 대상·제외 조건',/소득|채무|재산|신청\s*자격|이용\s*대상|제외\s*조건/,'신청 대상과 제외 조건을 실제 안내 자료에 연결하고, 개별 판단이 필요한 항목을 구분하세요.'),
       check('scope','회생·파산 업무 범위',/개인\s*회생|개인\s*파산|채무\s*조정|도산/,'실제 취급하는 절차별 업무와 제공·제외 범위를 나누어 설명하세요.'),
@@ -50,7 +51,7 @@ export const SECTOR_PROFILES:Profile[]=[
       question('price','상담·수임 비용의 포함 범위와 추가 조건은 무엇인가요?',['비용 산정 기준','포함·별도 비용'],'비용 안내와 상담 경로 옆','price'),
     ],caution:'면책·인가·채무 감면율·처리 기간을 추측하거나 보장하지 않습니다. 페이지 문구와 개별 사건 판단은 구분합니다.'},
   {id:'franchise',label:'프랜차이즈·가맹 모집',match:/프랜차이즈|가맹\s*(?:모집|문의|상담|개설|계약|본부)|franchis/i,
-    journey:['브랜드·운영 방식 확인','개설 비용·지원 비교','가맹 상담 연결'],
+    journey:sectorJourneys.franchise,
     checks:[
       check('scope','브랜드·가맹 운영 방식',/프랜차이즈|가맹|브랜드|운영\s*방식/,'소비자 메뉴 소개와 가맹 모집 정보를 나누고, 실제 가맹 사업의 운영 방식을 설명하세요.'),
       check('price','개설 비용·별도 항목',/가맹비|교육비|보증금|로열티|창업\s*비용|개설\s*비용|인테리어\s*비용/,'개설 비용의 기준 면적·포함 항목·별도 비용과 적용 시점을 대조하세요.'),
@@ -64,7 +65,7 @@ export const SECTOR_PROFILES:Profile[]=[
       question('process','점포 검토부터 가맹 상담·개점까지 어떤 순서로 진행되나요?',['입지 검토','계약 검토 자료','개점 단계'],'개설 절차와 가맹 상담 사이','process'),
     ],caution:'예상 매출·수익·회수 기간·가맹점 성과를 만들어내지 않습니다. 공개된 수치도 기준 점포·기간·출처를 별도로 확인합니다.'},
   {id:'property_sales',label:'아파트·주택 분양',match:/입주자\s*모집|견본\s*주택|모델\s*하우스|주택\s*청약|(?:아파트|주택|오피스텔|단지|청약).{0,30}분양|분양.{0,30}(?:아파트|주택|오피스텔|단지|청약)/i,
-    journey:['단지·입지 확인','공급 조건·일정 비교','방문·분양 문의 연결'],
+    journey:sectorJourneys.property_sales,
     checks:[
       check('scope','단지·공급 개요',/단지|세대|주택형|평면|타입|공급\s*규모/,'해당 URL의 단지명·공급 규모·주택형을 확인하고 다른 단지 정보를 섞지 마세요.'),
       check('location','입지·현장 위치',/소재지|사업지|주소|입지|교통|위치/,'사업지·견본주택 위치를 구분하고 실제 지도·주소와 대조하세요.'),
@@ -78,7 +79,7 @@ export const SECTOR_PROFILES:Profile[]=[
       question('price','주택형별 분양가와 계약금·중도금·추가 비용은 어떻게 확인하나요?',['공급 금액','납부 일정','별도 비용'],'분양가·납부 조건 안내 아래','price'),
     ],caution:'청약 자격·대출 가능 여부·시세 차익·미래 가치·잔여 세대를 추측하지 않습니다. 관심고객 등록을 청약 완료로 표시하지 않습니다.'},
   {id:'legal',label:'법무법인·법률 서비스',match:/법무\s*법인|법률\s*사무소|변호사|법률\s*상담|\blaw firm\b|legal services/i,
-    journey:['업무 분야 확인','담당자·절차·비용 검토','법률 상담 연결'],
+    journey:sectorJourneys.legal,
     checks:[
       check('scope','취급 업무·사건 분야',/업무\s*분야|취급\s*(?:사건|업무)|형사|민사|이혼|상속|노동|기업\s*법무/,'실제 취급하는 사건·업무를 고객 상황별로 설명하고 제외 범위를 확인하세요.'),
       check('proof','담당 변호사·이력',/변호사\s*소개|(?:대표|담당|소속|파트너)\s*변호사|담당\s*전문가|구성원|경력|이력|약력/,'담당 변호사와 역할·이력을 실제 소개 원문에 연결하세요. 전문 자격을 추측하지 않습니다.'),
@@ -92,7 +93,7 @@ export const SECTOR_PROFILES:Profile[]=[
       question('price','상담료·수임료는 어떤 기준과 조건으로 안내되나요?',['비용 산정 기준','포함·별도 항목'],'비용 안내와 상담 버튼 옆','price'),
     ],caution:'승소·성공률·결과·처리 기간을 추측하거나 보장하지 않습니다. 사례 문구 관측은 해당 사례의 진위 검증과 구분합니다.'},
   {id:'medical',label:'병의원·진료',match:/병원|의원|치과|한의원|의료진|진료\s*(?:과목|안내|예약)|클리닉|\bclinic\b|\bhospital\b/i,
-    journey:['진료 범위 확인','의료진·방문 정보 검토','진료 예약 연결'],
+    journey:sectorJourneys.medical,
     checks:[
       check('scope','진료 과목·대상',/진료\s*과목|진료\s*분야|진료\s*대상|치료|검사|시술/,'해당 병의원의 실제 진료 범위와 대상·제외 조건을 확인하세요.'),
       check('proof','의료진·운영 주체',/의료진|원장|전문의|의사|약력|경력/,'의료진의 실제 역할·이력을 확인하고 관측 문구를 검증된 자격으로 단정하지 마세요.'),
@@ -106,7 +107,7 @@ export const SECTOR_PROFILES:Profile[]=[
       question('location','진료 시간·위치·휴진 정보는 어디에서 확인하나요?',['현재 진료 시간','위치','휴진 안내'],'진료 시간·오시는 길 영역','location'),
     ],caution:'치료 효과·안전성·적합한 시술·의료진 자격을 추측하지 않습니다. 환자 후기·전후 사진을 필수 신뢰 요소로 요구하지 않습니다.'},
   {id:'insurance',label:'보험·보장 상담',match:/보험|보장\s*분석|\binsurance\b/i,
-    journey:['보장·상담 범위 확인','조건·보험료·제외 비교','개별 상담 연결'],
+    journey:sectorJourneys.insurance,
     checks:[
       check('scope','보험·보장 범위',/보험|보장\s*(?:범위|내용|항목)|특약/,'실제 안내하는 보험 종류·보장 범위를 확인하고 상품명만으로 보장 사실을 추측하지 마세요.'),
       check('eligibility','가입 조건·면책·제외',/가입\s*조건|가입\s*대상|면책|감액|제외|고지\s*의무/,'가입 조건과 면책·감액·제외 항목을 해당 상품 설명·약관과 연결하세요.'),
@@ -120,7 +121,7 @@ export const SECTOR_PROFILES:Profile[]=[
       question('price','보험료는 어떤 산정 조건과 갱신 기준에 따라 달라지나요?',['산정 조건','갱신·납입 기준'],'보험료 예시와 상담 경로 사이','price'),
     ],caution:'가입 승인·보험금 지급·절감액·보장 범위를 추측하거나 보장하지 않습니다. 상담 신청을 보험 계약 완료로 표시하지 않습니다.'},
   {id:'startup',label:'창업·사업 개설 지원',match:/창업|사업\s*개설|예비\s*창업|\bstartup\b/i,
-    journey:['지원 대상·방식 확인','범위·비용·조건 비교','창업 상담·신청 연결'],
+    journey:sectorJourneys.startup,
     checks:[
       check('scope','창업 지원·제공 범위',/창업|컨설팅|멘토링|사업\s*개설|제공|지원\s*범위/,'실제 창업 지원·컨설팅·개설 서비스의 제공·제외 범위를 구분하세요.'),
       check('eligibility','대상·참여 조건',/예비\s*창업|대상|자격|참여\s*조건|제외|모집\s*요건/,'업력·업종 등 실제 적용 대상과 참여·제외 조건을 원문에 연결하세요.'),

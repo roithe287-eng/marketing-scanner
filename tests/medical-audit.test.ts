@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
+import {load} from 'cheerio';
 import {captureMedicalEvidence,medicalSensitiveUrl} from '../lib/medicalEvidence';
 import {buildMedicalAudit,medicalPrompt,withMedicalCitation} from '../lib/medicalAudit';
 import {captureSiteDiagnosticSeed} from '../lib/siteDiagnostics';
@@ -91,7 +92,17 @@ test('old reports remain valid and new evidence persists into report snapshots, 
   assert.deepEqual(MedicalAuditSchema.parse(JSON.parse(JSON.stringify(audit))),audit);
   assert.match(JSON.stringify(buildMedicalAuditDocument(audit)),/TraditionalChinese/);
   const markup=renderToStaticMarkup(React.createElement(MedicalAuditPanel,{audit}));
-  assert.match(markup,/병의원 맞춤 진단/);assert.equal((markup.match(/<details /g)||[]).length,16);
+  assert.match(markup,/병의원 맞춤 진단/);
+  const $=load(markup);
+  assert.equal($('.medical-topic-check').length,audit.checks.length);
+  assert.equal($('.medical-topic[open]').length,0);
+  for(const check of audit.checks){
+    const topic=$('#medical-check-'+check.id);
+    assert.equal(topic.find('>summary>strong').text(),check.label);
+    assert.equal(topic.find('>.medical-topic-body .medical-topic-detail').text(),check.detail);
+    assert.ok(topic.find('>.medical-topic-body').text().includes(check.action));
+    assert.equal(topic.find('>summary a, >summary button').length,0);
+  }
   assert.match(markup,/공식|Google|네이버/);
 });
 
