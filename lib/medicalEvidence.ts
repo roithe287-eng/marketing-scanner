@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
 import type {MedicalPageEvidence,MedicalEvidence} from './medicalAuditSchema';
 import {MEDICAL_PROFILES} from './medicalProfiles';
-import {clinicPlaceIdentity,excludedPlaceIdentity} from './hospitalPlace';
+import {clinicPlaceIdentity,excludedPlaceIdentity,placeChannel} from './hospitalPlace';
 import {findPlaceTerms} from './hospitalPlaceTerms';
 
 const clean=(v:unknown,max=600)=>typeof v==='string'?v.replace(/\s+/g,' ').trim().slice(0,max):'';
@@ -112,18 +112,30 @@ export function captureMedicalEvidence(html:string,url:string,providerOnly=false
   }
   // Clinical medicineSystem can be declared on a MedicalEntity rather than the institution itself.
   if(entities.length&&/한의원|한방병원|한의사/.test(identity)&&nodes.some(n=>values(n.medicineSystem).map(term).includes('TraditionalChinese'))&&!entities.some(e=>e.issues.some(x=>x.includes('TraditionalChinese'))))entities[0].issues.push('MedicalEntity의 TraditionalChinese 표기를 한국 한의과와 자동 동일시하지 않습니다. 원문과 실제 의료체계의 대응을 확인하세요.');
-  const channels:MedicalPageEvidence['channels']=[];
-  body.find('a[href]').slice(0,400).each((_,e)=>{try{const u=new URL($(e).attr('href')||'',url);if(!/^https?:$/.test(u.protocol)||u.username||u.password||!/(?:^|\.)(?:naver\.com|naver\.me|google\.com|hira\.or\.kr)$/.test(u.hostname))return;if(channels.length<10&&!channels.some(c=>c.url===u.href))channels.push({label:clean($(e).text(),100)||'연결된 외부 정보',url:u.href});}catch{/* Not a public source URL. */}});
+  const ownTitle = clean([$ ('head > title').first().text(),$('h1').first().text()].join(' '),800);
+  const clinical = observed.some(s=>['scope','doctors','hours'].includes(s.key)) || /진료\s*예약|외래\s*진료|초진\s*접수|본원에서\s*진료/.test(visible);
+  const namedEntity = entities.some(e=>['Hospital','MedicalClinic','Dentist','PhysiciansOffice'].includes(e.type) && e.name && ownTitle.includes(e.name));
+  const facility = !sensitive && !providerOnly && clinicPlaceIdentity(ownTitle,identity,url,clinical,namedEntity);
+  const channelMap = new Map<string,{label:string;url:string;priority:number}>();
+  body.find('a[href]').slice(0,400).each((_,el)=>{
+    const anchor=$(el);
+    try {
+      const link=new URL(anchor.attr('href')||'',url);
+      if (!/^https?:$/.test(link.protocol) || link.username || link.password || link.href.length>2048 ||
+        !/(?:^|\.)(?:naver\.com|naver\.me|google\.com|hira\.or\.kr)$/.test(link.hostname)) return;
+      const label=clean(anchor.attr('aria-label') || anchor.text().trim() || anchor.find('img[alt]').first().attr('alt') || anchor.attr('title'),100) || '연결된 외부 정보';
+      const placeLink=facility || hospitalContext ? placeChannel(link.href,label) : undefined;
+      const href=placeLink?.url || link.href,priority=placeLink?.kind==='place'?2:placeLink?1:0;
+      if ((channelMap.get(href)?.priority ?? -1)<priority) channelMap.set(href,{label,url:href,priority});
+    } catch { /* Ignore invalid channel URLs. */ }
+  });
+  const channels=[...channelMap.values()].sort((a,b)=>b.priority-a.priority).slice(0,10).map(({label,url})=>({label,url}));
   const roles:MedicalPageEvidence['roles']=[];
   if(/의료진|원장\s*(?:소개|약력)|doctor|staff/i.test(identity+' '+url))roles.push('doctors');
   if(/진료\s*(?:안내|과목)|시술\s*안내|검사\s*안내|treatment|service/i.test(identity+' '+url))roles.push('services');
   if(/진료\s*시간|오시는\s*길|주차|contact|location/i.test(identity+' '+url))roles.push('visit');
   if(/비급여|진료비|비용|price/i.test(identity+' '+url))roles.push('cost');
   if(/칼럼|건강\s*정보|의학\s*정보|article|column/i.test(identity+' '+url))roles.push('article');
-  const ownTitle = clean([$ ('head > title').first().text(),$('h1').first().text()].join(' '),800);
-  const clinical = observed.some(s=>['scope','doctors','hours'].includes(s.key)) || /진료\s*예약|외래\s*진료|초진\s*접수|본원에서\s*진료/.test(visible);
-  const namedEntity = entities.some(e=>['Hospital','MedicalClinic','Dentist','PhysiciansOffice'].includes(e.type) && e.name && ownTitle.includes(e.name));
-  const facility = !sensitive && !providerOnly && clinicPlaceIdentity(ownTitle,identity,url,clinical,namedEntity);
   let place:MedicalPageEvidence['place'];
   if ((facility || hospitalContext) && !providerOnly && !sensitive && !excludedPlaceIdentity(identity,url)) {
     const excerpts:{text:string;context?:string}[] = [];

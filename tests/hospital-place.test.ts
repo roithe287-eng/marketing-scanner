@@ -89,3 +89,13 @@ test('ordinary words and shorter fragments of compound procedures do not create 
   const terms=captureSiteDiagnosticSeed(html,hospitalUrl).page.medicalEvidence!.place!.terms;
   assert.ok(!terms.some(item=>['백내장','임플란트'].includes(item.term)));
 });
+
+
+test('a clinic map icon stays discoverable after other channels and short links retain their uncertain destination',()=>{
+  const blogs=Array.from({length:12},(_,i)=>'<a href="https://blog.naver.com/post'+i+'">블로그</a>').join('');
+  const html=hospitalHtml.replace(/<a href="https:\/\/m\.place\.naver\.com[^<]+<\/a>/,blogs+'<a href="https://naver.me/ClinicDemo?tracking=test"><img alt="네이버 지도"></a>');
+  const page=captureSiteDiagnosticSeed(html,hospitalUrl).page;
+  assert.ok(page.medicalEvidence!.channels.length<=10);
+  const review=buildHospitalPlaceReview({...hospitalPlaceReport().siteDiagnostics!,pages:[page]})!;
+  assert.deepEqual(review.link,{kind:'short',url:'https://naver.me/ClinicDemo'});
+});
