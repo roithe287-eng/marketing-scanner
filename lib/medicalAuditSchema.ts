@@ -1,9 +1,11 @@
 import {z} from 'zod';
+import {PLACE_CATEGORIES} from './hospitalPlace';
 
 const url=z.string().url().max(2048).refine(v=>{try{const u=new URL(v);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;}catch{return false;}});
 export const MedicalEvidenceSchema=z.object({text:z.string().max(600),locator:z.string().max(150),url});
 export const MedicalProfileIdSchema=z.enum(['plastic','dermatology','korean','primary','musculoskeletal','dental','ophthalmology','pediatric','gynecology','ent','psychiatry','urology','hospital','cross_specialty']);
 export const MedicalPageEvidenceSchema=z.object({
+  place:z.object({facility:z.boolean(),terms:z.array(z.object({category:z.enum(PLACE_CATEGORIES),term:z.string().min(1).max(40)})).max(48)}).optional(),
   facilityCandidate:z.boolean(),providerOnly:z.boolean(),sensitive:z.boolean(),
   identity:z.string().max(1500),textLength:z.number().int().nonnegative(),
   signals:z.array(z.object({key:z.string().max(80),evidence:MedicalEvidenceSchema})).max(30),
@@ -16,7 +18,7 @@ export const MedicalPageEvidenceSchema=z.object({
   roles:z.array(z.enum(['doctors','services','visit','cost','article'])).max(5),
 });
 export const MedicalAuditSchema=z.object({
-  version:z.literal(1),reviewedOn:z.literal('2026-11-04'),scopeNote:z.string().max(1500),
+  version:z.literal(1),reviewedOn:z.enum(['2026-11-04','2026-11-06']),scopeNote:z.string().max(1500),
   systems:z.array(z.string().max(80)).max(3),institutions:z.array(z.string().max(80)).max(6),
   profiles:z.array(z.object({id:MedicalProfileIdSchema,label:z.string().max(100),evidence:z.array(MedicalEvidenceSchema).max(3),focus:z.string().max(1000),questions:z.array(z.string().max(300)).max(3),schemaHint:z.string().max(500)})).max(14),
   checks:z.array(z.object({id:z.string().max(80),label:z.string().max(160),status:z.enum(['observed','needs_review','unverified','not_applicable','clinical_review']),

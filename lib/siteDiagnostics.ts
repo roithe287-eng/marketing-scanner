@@ -10,7 +10,7 @@ const MEDICAL=new Set(['MedicalClinic','Hospital','Dentist','Physician','Physici
 export type SiteDiagnosticSeed={page:DiagnosticPage;links:string[];medicalLinks?:string[]};
 
 /** Parse declarations only. No script execution, external CSS/JS requests, or inferred tracking delivery. */
-export function captureSiteDiagnosticSeed(html:string,url:string):SiteDiagnosticSeed{
+export function captureSiteDiagnosticSeed(html:string,url:string,hospitalContext=false):SiteDiagnosticSeed{
   const $=cheerio.load(html);
   const headTitle=$('head > title').first().text().replace(/\s+/g,' ').trim();
   const headDescription=($('head meta[name="description" i]').first().attr('content')||'').replace(/\s+/g,' ').trim();
@@ -59,8 +59,8 @@ export function captureSiteDiagnosticSeed(html:string,url:string):SiteDiagnostic
   page.titleTruncated=rawTitle.length>500;page.descriptionTruncated=rawDescription.length>1500;
   page.metadataOutsideHead=!!(!headTitle&&rawTitle||!headDescription&&rawDescription);
   page.metadataDeferred=(!rawTitle||!rawDescription)&&($('script[src*="/_next/"]').length>0||$('script').toArray().some(el=>/\b__next_f\b/.test($(el).text())));
-  const medicalEvidence=captureMedicalEvidence(html,url,provider);
-  if(page.medicalRelevant||medicalEvidence.facilityCandidate){page.medicalEvidence=medicalEvidence;page.medicalRelevant=true;}
+  const medicalEvidence=captureMedicalEvidence(html,url,provider,hospitalContext);
+  if(page.medicalRelevant||medicalEvidence.facilityCandidate||medicalEvidence.place){page.medicalEvidence=medicalEvidence;page.medicalRelevant=true;}
   const links=$('a[href]').slice(0,400).map((_,e)=>$(e).attr('href')||'').get();
   const groups=new Map<string,string[]>();
   if(medicalEvidence.facilityCandidate)$('a[href]').slice(0,400).each((_,e)=>{

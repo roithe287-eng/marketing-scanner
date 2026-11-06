@@ -82,7 +82,7 @@ export async function collectSiteDiagnostics(url:string,options:{seed?:SiteDiagn
   const collectPages=async(candidates:string[],limit:number)=>{
     const selected=candidates.map(v=>diagnosticPageUrl(v,url)).filter((v):v is string=>!!v&&!visited.has(v)).filter((v,i,a)=>a.indexOf(v)===i).slice(0,limit);
     selected.forEach(v=>visited.add(v));
-    await Promise.allSettled(selected.map(async v=>{const result=await read(v,'html');attempts.push(result.resource);if(result.text!==undefined){const page=captureSiteDiagnosticSeed(result.text,result.resource.url).page;if(/(?:^|[\s,:])(?:noindex|none)(?:$|[\s,])/i.test(result.headers?.get('x-robots-tag')||''))page.noindex=true;if(!pages.some(p=>p.url===page.url))pages.push(page);}}));
+    await Promise.allSettled(selected.map(async v=>{const result=await read(v,'html');attempts.push(result.resource);if(result.text!==undefined){const page=captureSiteDiagnosticSeed(result.text,result.resource.url,!!options.seed?.page.medicalEvidence?.place?.facility).page;if(/(?:^|[\s,:])(?:noindex|none)(?:$|[\s,])/i.test(result.headers?.get('x-robots-tag')||''))page.noindex=true;if(!pages.some(p=>p.url===page.url))pages.push(page);}}));
   };
   if(!options.limited)try{await withBudget(options.budgetMs??6000,async()=>{
     await Promise.allSettled([
@@ -104,7 +104,7 @@ export async function collectSiteDiagnostics(url:string,options:{seed?:SiteDiagn
   if(limited){sitemap={...sitemap,status:'blocked',note:'원문 수집 제한으로 추가 요청을 하지 않았습니다.'};llms={...llms,status:'blocked',note:'원문 수집 제한으로 추가 요청을 하지 않았습니다.'};}
   const snapshot=pages.slice(0,pageLimit+1).sort((a,b)=>a.url===url?-1:b.url===url?1:a.url.localeCompare(b.url));
   const findings=buildSiteDiagnosticFindings(snapshot);
-  const medicalAudit=buildMedicalAudit(snapshot,limited);
+  const medicalAudit=buildMedicalAudit(snapshot,limited,url);
   if(sitemap.invalidDates||sitemap.futureDates)findings.push({id:'sitemap-dates',title:'사이트맵 변경일 확인',status:'review',evidence:`검사 표본 ${sitemap.entries}개 · lastmod ${sitemap.lastmod}개 · 형식·날짜 이상 ${sitemap.invalidDates}개 · 미래 날짜 ${sitemap.futureDates}개`,action:'실제 주요 콘텐츠가 변경된 날짜만 반영합니다. 모든 페이지를 오늘 날짜로 바꾸거나 오래되었다는 이유만으로 갱신하지 않습니다.',urls:[sitemap.url]});
   return {version:1,observedAt,targetUrl:url,limited,scopeNote:limited?'원문 수집이 제한되어 추가 페이지 검사를 수행하지 않았습니다. 미측정을 결함·0점으로 표시하지 않습니다.':`입력 페이지와 내부 링크·사이트맵에서 선택한 최대 ${pageLimit}개 HTML을 비교합니다. 현재 ${snapshot.length}개 수집. 전체 사이트, 브라우저 렌더링, 외부 CSS, 실제 태그 전송·보안 취약점·면허는 검사하지 않습니다. 사이트맵은 최대 2개 문서·URL 1,500개 표본입니다.`,pages:snapshot,attempts:attempts.slice(0,medical?14:8),sitemap:{...sitemap},llms:{...llms},crawlers:inspectCrawlerPolicies(robots,url),findings:findings.slice(0,50),...(medicalAudit?{medicalAudit}:{})};
 }

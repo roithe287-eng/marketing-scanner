@@ -11,6 +11,7 @@ import WebsitePurposePanel from './WebsitePurposePanel';
 import NonCommerceSectorPanel from './NonCommerceSectorPanel';
 import {showProductCollection} from '@/lib/websitePurpose';
 import AnswerContentPanel from './AnswerContentPanel';
+import {buildHospitalPlaceReview} from '@/lib/hospitalPlace';
 import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
 import DiagnosisComparisonPanel from './DiagnosisComparisonPanel';
 import {buildExecutionPlan} from '@/lib/reportExecution';
@@ -77,7 +78,7 @@ export default function ReportLayout({report:storedReport,actions,competitorLoad
     <Chapter id="overview" number="01" title="우리 홈페이지, 무엇부터 바꾸면 될까요?" note="홈페이지 내용 → 고객 질문과 답변 → 우선 할 일 순서로 확인하세요.">
       <ReportSections chapter="overview" diagrams={diagrams} items={[
         {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
-        {id:'overview-questions',label:'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst/>},
+        {id:'overview-questions',label:'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst placeReview={buildHospitalPlaceReview(report.siteDiagnostics)}/>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
         ...(report.sitePurpose?.sector||report.siteDiagnostics?.medicalAudit?[{id:'overview-sector',label:'업종별 확인',children:<>{report.sitePurpose&&<NonCommerceSectorPanel purpose={report.sitePurpose}/>}<MedicalAuditPanel audit={report.siteDiagnostics?.medicalAudit}/></>}]:[]),
         {id:'overview-observations',label:'영역별 근거',children:<>{report.evidenceReview&&<EvidenceReviewPanel review={report.evidenceReview}/>}<ConversionPath data={data}/></>},
