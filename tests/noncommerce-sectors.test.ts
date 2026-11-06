@@ -103,7 +103,7 @@ test('insurance eligibility wording alone does not imply a public support progra
 test('the pre-scan industry examples start with the actual medical journey and do not submit a diagnosis',()=>{
   const $=load(renderToStaticMarkup(React.createElement(LandingSectorPreview)));
   const choices=$('.scanner-sector-options button');
-  assert.equal(choices.length,6);
+  assert.deepEqual(choices.toArray().map(el=>$(el).attr('value')).sort(),Object.keys(sectorJourneys).sort());
   assert.equal(choices.filter('[aria-pressed=true]').text(),'병의원');
   assert.deepEqual($('.scanner-sector-journey li').toArray().map(el=>$(el).text()),sectorJourneys.medical);
   for(const choice of choices.toArray()){
