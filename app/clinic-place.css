@@ -65,6 +65,14 @@
 .hp-reference>div:first-child {margin-right:auto}
 .hp-reference>div:not(:first-child){display:flex;align-items:center;gap:6px;font-size:.875rem}
 .hp-reference small,.hp-controls small,.hp-observation small,.hp-sites small,.hp-facts small {font-size:.8125rem!important;color:var(--hp-muted)}
+.hp-baseline {border:0}
+.hp-own-facts {display:grid;gap:7px}
+.hp-own-facts>div {display:grid;grid-template-columns:6em minmax(0,1fr);gap:8px}
+.hp-own-facts dt,.hp-mode>span {font-size:.875rem;font-weight:700}
+.hp-own-facts dd {font-size:.9375rem;line-height:1.65}
+.hp-baseline a {justify-self:start;font-size:.875rem}
+.hp-mode {display:grid;align-content:start;gap:5px}
+.hp-mode b {align-self:start;font-size:.9375rem;padding:8px 0;color:var(--hp-muted)}
 .hp-reference .hp-icon {width:18px;height:18px;color:#52637b}
 .hp-panel button {cursor:pointer;font:inherit;font-size:.875rem;font-weight:700}
 .hp-panel button:disabled {cursor:default;opacity:.55}

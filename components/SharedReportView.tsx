@@ -6,7 +6,7 @@ import BrandHeader from '@/components/BrandHeader';
 import DownloadReportButton from '@/components/DownloadReportButton';
 import ContentProtection from '@/components/ContentProtection';
 import ReportLayout from '@/components/report/ReportLayout';
-export default function SharedReportView({report,canSave=false}:{report:MarketingReport;shareId:string;canSave?:boolean}) {
+export default function SharedReportView({report,canSave=false,clinicWebAllowed=false}:{report:MarketingReport;shareId:string;canSave?:boolean;clinicWebAllowed?:boolean}) {
   const [viewReport,setViewReport]=useState(report);
-  return <main className="report-page"><ContentProtection/><BrandHeader lockHome/><div className="jm-container report-page-content"><ReportLayout report={viewReport} onComparisonChange={canSave?baseline=>setViewReport(prev=>({...prev,diagnosisBaseline:baseline})):undefined} actions={<><DownloadReportButton targetId="report-area" report={viewReport} direct recordActivity={canSave}/>{canSave&&viewReport!==report&&<ShareButton report={viewReport} onShareCreated={setViewReport}/>}</>}/></div><footer className="report-footer">© {new Date().getFullYear()} 진짜마케팅 · 마케팅스캐너</footer></main>;
+  return <main className="report-page"><ContentProtection/><BrandHeader lockHome/><div className="jm-container report-page-content"><ReportLayout report={viewReport} clinicWebAllowed={clinicWebAllowed} onComparisonChange={canSave?baseline=>setViewReport(prev=>({...prev,diagnosisBaseline:baseline})):undefined} actions={<><DownloadReportButton targetId="report-area" report={viewReport} direct recordActivity={canSave}/>{canSave&&viewReport!==report&&<ShareButton report={viewReport} onShareCreated={setViewReport}/>}</>}/></div><footer className="report-footer">© {new Date().getFullYear()} 진짜마케팅 · 마케팅스캐너</footer></main>;
 }
