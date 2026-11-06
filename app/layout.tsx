@@ -11,7 +11,6 @@ import "./report-workflow.css";
 import "./report-guidebook.css";
 import "./report-reading.css";
 import "./report-usability.css";
-import "./answer-content.css";
 import "./report-visual-summary.css";
 import "./report-semantic-cards.css";
 import "./report-compact-grid.css";
@@ -26,6 +25,7 @@ import "./report-diagrams.css";
 import "./report-opening-radar.css";
 import "./report-typography.css";
 import "./clinic-place.css";
+import "./answer-content.css";
 
 export const metadata: Metadata = {
   title: "마케팅스캐너 | URL 하나로 확인하는 우리 사이트의 마케팅 약점",

@@ -80,9 +80,13 @@ export function buildHospitalPlaceReview(diagnostics?:SiteDiagnostics|null) {
       else if(priority[basis]>priority[previous.basis]) Object.assign(previous,{url:page.url,basis});
     }
   }
+  const entity=medical.entities.find(e=>['Hospital','MedicalClinic','Dentist','PhysiciansOffice'].includes(e.type)&&e.name&&root.title.includes(e.name));
+  const titleParts=root.title.split(/[|｜]/u).map(part=>part.trim());
+  const name=entity?.name||titleParts.find(part=>/병원|의원|한의원|치과|의학과|이비인후과|피부과|클리닉|clinic|hospital/i.test(part))||root.title||new URL(root.url).hostname;
+  const profile={name,address:entity?.address||'',host:new URL(root.url).hostname};
   const page={url:root.url,title:root.title,description:root.description.slice(0,200),
     terms:diagnostics.limited?null:medical.place?.terms??null,media:diagnostics.limited?null:medical.place?.media??null};
-  return {groups,page,link:links.find(l=>l.kind==='place') || links[0],coverage:diagnostics.limited?'limited':medical.place?'sample':'legacy'} as const;
+  return {groups,page,profile,link:links.find(l=>l.kind==='place') || links[0],coverage:diagnostics.limited?'limited':medical.place?'sample':'legacy'} as const;
 }
 export type HospitalPlaceReview = NonNullable<ReturnType<typeof buildHospitalPlaceReview>>;
 export type PlaceInputs = Record<PlaceCategory,string>;

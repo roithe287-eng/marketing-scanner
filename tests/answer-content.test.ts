@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {renderToStaticMarkup} from 'react-dom/server';
 import React from 'react';
+import {load} from 'cheerio';
 import {answerPage,answerSuggestion,answerPlan} from './fixtures/answer-content';
 import {answerSources,buildAnswerContentPlan,answerQuestionText,answerPlanText} from '../lib/answerContent';
 import {answerContentPrompt,analyzeAnswerContent} from '../lib/analyzeAnswerContent';
@@ -69,4 +70,20 @@ test('UI renders three consistent cards and honest legacy, limited and empty sta
   assert.match(renderToStaticMarkup(React.createElement(AnswerContentPanel,{})),/다시 진단/);
   const empty=buildAnswerContentPlan({...answerPage,title:'',description:'',h1:[],h2:[],bodyText:''});
   assert.match(renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan:empty})),/내용이 부족/);
+});
+
+test('briefing questions have real link targets and only display attributable page evidence',()=>{
+  const plan=answerPlan(),q=plan.questions[0];
+  q.evidence[0].url='https://example.org/guide';
+  const render=()=>load(renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan})));
+  const $=render(),active=$('.briefing-reader [data-report-item]:not([hidden])');
+  assert.equal(active.find('.briefing-query h4').text(),q.question);
+  assert.equal(active.find('.briefing-answer-text').text(),q.draft);
+  assert.equal(active.find('.briefing-excerpt a').attr('href'),'https://example.org/guide');
+  assert.equal($('.briefing-related a').length,2);
+  for(const link of $('.briefing-related a').toArray())assert.equal($($(link).attr('href')!).length,1);
+  q.evidence[0].url='javascript:alert(1)';
+  assert.equal(render()('.briefing-reader [data-report-item]:not([hidden]) .briefing-excerpt a').length,0);
+  q.evidence=[];q.draft='';
+  assert.equal(render()('.briefing-reader [data-report-item]:not([hidden]) .briefing-evidence').length,0);
 });

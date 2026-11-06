@@ -28,21 +28,23 @@ function mediaText(page:ClinicPageFacts|null) {
 
 function CompareResults({ours,peer,tags,ownNotes}:{ours:ClinicPageFacts;peer:ClinicObservation;tags:string[];ownNotes:PlaceFieldNotes}) {
   const [copyStatus,setCopyStatus]=useState('');
+  const [source,setSource]=useState('전체');
+  const factsId=useId();
   const notes=peer.notes,other=peer.page,insights=observationInsights(ours,peer,tags,ownNotes);
   const keywords=(page:ClinicPageFacts|null)=>page?.terms?.length?compactText(page.terms.map(t=>t.term).join(', '),125):page?.terms?'표본에서 미확인':'미측정';
   const observedMedia=(n:PlaceFieldNotes)=>'사진 '+n.photo+' · '+(n.video==='영상 표시'?'영상 표시':n.video==='미확인'?'영상 미확인':'화면에서 영상 미확인');
   const facts=[
-    ['홈페이지 진료 표현',keywords(ours),keywords(other)],
-    ['홈페이지 메타 설명',ours.description||'표본에서 미확인',other?other.description||'표본에서 미확인':'미측정'],
-    ['홈페이지 미디어',mediaText(ours),mediaText(other)],
-    ['제공된 등록 키워드',tags.length?compactText(tags.join(', '),125):'우리 목록 미입력',registeredTerms(notes.registered).join(', ')||'미제공'],
-    ['제공된 플레이스 소개',ownNotes.description||'미입력',notes.description||'미제공'],
-    ['직접 본 플레이스 미디어',observedMedia(ownNotes),observedMedia(notes)]
+    ['홈페이지','홈페이지 진료 표현',keywords(ours),keywords(other)],
+    ['홈페이지','홈페이지 메타 설명',ours.description||'표본에서 미확인',other?other.description||'표본에서 미확인':'미측정'],
+    ['홈페이지','홈페이지 미디어',mediaText(ours),mediaText(other)],
+    ['병원 제공','제공된 등록 키워드',tags.length?compactText(tags.join(', '),125):'우리 목록 미입력',registeredTerms(notes.registered).join(', ')||'미제공'],
+    ['병원 제공','제공된 플레이스 소개',ownNotes.description||'미입력',notes.description||'미제공'],
+    ['직접 관찰','직접 본 플레이스 미디어',observedMedia(ownNotes),observedMedia(notes)]
   ];
   const location=peer.area+' · '+peer.query+' · 일반 결과 '+peer.position+'번째';
   const time=new Date(peer.seenAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
   async function copy(){
-    try {await navigator.clipboard.writeText([location,'직접 관찰 입력 '+time+' KST','비교 병원 '+peer.name,...facts.map(([label,a,b])=>label+' | 우리 '+a+' | 비교 '+b),...insights.map(i=>i.label+' · '+i.text),comparisonScope].join('\n'));setCopyStatus('복사했습니다.');}
+    try {await navigator.clipboard.writeText([location,'직접 관찰 입력 '+time+' KST','비교 병원 '+peer.name,...facts.map(([kind,label,a,b])=>kind+' · '+label+' | 우리 '+a+' | 비교 '+b),...insights.map(i=>i.label+' · '+i.text),comparisonScope].join('\n'));setCopyStatus('복사했습니다.');}
     catch{setCopyStatus('화면의 비교 내용을 선택해 복사하세요.');}
   }
   return <div className="hp-comparison-result">
@@ -53,7 +55,9 @@ function CompareResults({ours,peer,tags,ownNotes}:{ours:ClinicPageFacts;peer:Cli
       <ul>{insights.slice(0,3).map(i=><li key={i.label}><strong>{i.label}</strong><span>{i.text}</span></li>)}</ul>
       {insights.length>3&&<details className="hp-more"><summary>제안 {insights.length-3}개 더 보기</summary><ul>{insights.slice(3).map(i=><li key={i.label}><strong>{i.label}</strong><span>{i.text}</span></li>)}</ul></details>}</div>
     <details className="hp-disclosure"><summary><span>항목별 대조</span><small>홈페이지 · 플레이스</small></summary>
-      <dl className="hp-facts">{facts.map(([label,a,b])=><div key={label}><dt>{label}</dt><dd><small>우리 병원</small>{a}</dd><dd><small>비교 병원</small>{b}</dd></div>)}</dl>
+      <div className="hp-filters hp-sources" role="group" aria-label="대조 자료 출처">{['전체','홈페이지','병원 제공','직접 관찰'].map(kind=>
+        <button type="button" aria-pressed={source===kind} aria-controls={factsId} key={kind} onClick={()=>setSource(kind)}>{kind}</button>)}</div>
+      <dl className="hp-facts" id={factsId}>{facts.filter(([kind])=>source==='전체'||source===kind).map(([,label,a,b])=><div key={label}><dt>{label}</dt><dd><small>우리 병원</small>{a}</dd><dd><small>비교 병원</small>{b}</dd></div>)}</dl>
     </details>
     <div className="hp-copy"><button type="button" onClick={copy}>비교 요약 복사</button><span role="status">{copyStatus}</span></div>
   </div>;
@@ -110,25 +114,15 @@ export default function ClinicComparisonPanel({review,entries,webAllowed}:{revie
   }
   const peer=rows.find(r=>r.position===selected)||rows[0];
   return <section className="hp-panel hp-peer" aria-labelledby="hospital-place-comparison">
-    <header className="hp-heading"><span className="hp-heading-icon"><ClinicIcon kind="compare"/></span><div><h4 id="hospital-place-comparison">{comparisonTitle}</h4>
-      <p>같은 지역·검색어에서 직접 확인한 병원을 골라 소개문, 진료 표현, 사진·영상을 비교하세요.</p></div></header>
-    <div className="hp-reference"><div><strong>우리 홈페이지</strong><small>{review.page.media?'진단 시 확인한 페이지':ours.media?'이번에 다시 확인한 페이지':'기존 보고서 · 미디어 미측정'}</small></div>
-      <div><ClinicIcon kind="image"/><span>이미지</span><b>{ours.media?ours.media.images+'개':'미측정'}</b></div>
-      <div><ClinicIcon kind="video"/><span>영상 요소</span><b>{ours.media?ours.media.videos+'개':'미측정'}</b></div>
-      {webAllowed&&!ours.media&&<button type="button" onClick={refreshOwn} disabled={busy}>홈페이지 확인</button>}</div>
-    <details className="hp-disclosure hp-baseline"><summary><span>우리 홈페이지에서 확인한 내용</span></summary>
-      <div className="hp-disclosure-body"><dl className="hp-own-facts">
-        <div><dt>메타 설명</dt><dd>{ours.description||'표본에서 미확인'}</dd></div>
-        <div><dt>진료 표현</dt><dd>{ours.terms?.length?ours.terms.map(t=>t.term).join(', '):ours.terms?'표본에서 미확인':'미측정'}</dd></div>
-        {ours.media&&<div><dt>이미지 설명</dt><dd>{ours.media.images}개 중 {ours.media.described}개{ours.media.subjects.length?' · '+ours.media.subjects.join(', '):''}</dd></div>}
-      </dl><a href={ours.url} target="_blank" rel="noopener noreferrer">홈페이지 원문 ↗</a></div></details>
-    <div className="hp-query"><label><span>검색 지역</span><input maxLength={60} disabled={lock} value={area} placeholder="예) 부산 해운대구" onChange={e=>setArea(e.target.value)}/></label>
+    <header className="hp-heading"><span className="hp-heading-icon"><ClinicIcon kind="search"/></span><div><h4 id="hospital-place-comparison">{comparisonTitle}</h4>
+      <p>지도에서 광고 표시가 없는 병원을 확인한 뒤, 같은 검색 조건으로 최대 3곳을 비교하세요.</p></div></header>
+    <div className="hp-query" role="group" aria-label="플레이스 검색 조건"><label><span>검색 지역</span><input maxLength={60} disabled={lock} value={area} placeholder="예) 부산 해운대구" onChange={e=>setArea(e.target.value)}/></label>
       <label><span>검색어</span><input maxLength={60} list={queryList} disabled={lock} value={query} onChange={e=>setQuery(e.target.value)}/></label>
       <datalist id={queryList}>{options.map(t=><option key={t} value={t}/>)}</datalist>
-      {mapSearch?<a className="hp-map-link" href={mapSearch} target="_blank" rel="noopener noreferrer">지도에서 결과 확인 ↗</a>:<span className="hp-map-prompt">지역·검색어를 입력하세요.</span>}</div>
-    <div className="hp-controls"><button type="button" className="hp-add" disabled={busy||rows.length>=3} aria-expanded={showForm} onClick={()=>{setShowForm(!showForm);setError('');}}>{showForm?'입력 닫기':'+ 비교 병원 추가'}</button>
+      {mapSearch?<a className="hp-map-link" href={mapSearch} target="_blank" rel="noopener noreferrer"><ClinicIcon kind="search"/> 지도에서 결과 확인 ↗</a>:<span className="hp-map-prompt">검색 지역·검색어 입력 후 지도 열기</span>}</div>
+    <div className="hp-controls"><strong>직접 확인한 일반 결과</strong><button type="button" className="hp-add" disabled={busy||rows.length>=3} aria-expanded={showForm} onClick={()=>{setShowForm(!showForm);setError('');}}>{showForm?'입력 닫기':'+ 비교 병원 추가'}</button>
       {!!rows.length&&<button type="button" disabled={busy} onClick={()=>{setRows([]);setShowForm(false);setError('');setOrganic(false);setPosition('');setUrl('');setName('');setNotes(emptyFieldNotes);}}>검색 조건 변경</button>}
-      <small>비교 {rows.length} / 3곳</small></div>
+      <small aria-live="polite">{rows.length} / 3곳</small></div>
     {showForm&&<form className="hp-peer-form" onSubmit={add}><fieldset disabled={busy}><legend>비교할 일반 결과</legend>
       <div className="hp-input-grid">{webAllowed?<label><span>비교 자료</span><select value={mode} onChange={e=>setMode(e.target.value as 'web'|'notes')}><option value="web">공식 홈페이지 분석</option><option value="notes">관찰·제공 자료만</option></select></label>:<div className="hp-mode"><span>비교 자료</span><b>직접 본 플레이스 정보</b></div>}
         <label><span>광고 제외 순서</span><input required type="number" min={1} max={100} value={position} placeholder="목록에서 본 순서" onChange={e=>setPosition(e.target.value)}/></label></div>
@@ -142,6 +136,16 @@ export default function ClinicComparisonPanel({review,entries,webAllowed}:{revie
     {peer&&<><div className="hp-peer-tabs" role="group" aria-label="비교 병원 선택">{rows.map(r=><button key={r.position} type="button" aria-pressed={r.position===peer.position} onClick={()=>setSelected(r.position)}>{r.position}번째 · {compactText(r.name,22)}</button>)}</div>
       <CompareResults key={peer.seenAt} ours={ours} peer={peer} tags={tags} ownNotes={ownNotes}/>
       <button className="hp-remove" type="button" onClick={()=>setRows(prev=>prev.filter(r=>r.position!==peer.position))}>선택한 병원 빼기</button></>}
+    <div className="hp-reference"><div><strong>우리 홈페이지</strong><small>{review.page.media?'진단 시 확인한 페이지':ours.media?'이번에 다시 확인한 페이지':'기존 보고서 · 미디어 미측정'}</small></div>
+      <div><ClinicIcon kind="image"/><span>이미지</span><b>{ours.media?ours.media.images+'개':'미측정'}</b></div>
+      <div><ClinicIcon kind="video"/><span>영상 요소</span><b>{ours.media?ours.media.videos+'개':'미측정'}</b></div>
+      {webAllowed&&!ours.media&&<button type="button" onClick={refreshOwn} disabled={busy}>홈페이지 확인</button>}</div>
+    <details className="hp-disclosure hp-baseline"><summary><span>우리 홈페이지에서 확인한 내용</span></summary>
+      <div className="hp-disclosure-body"><dl className="hp-own-facts">
+        <div><dt>메타 설명</dt><dd>{ours.description||'표본에서 미확인'}</dd></div>
+        <div><dt>진료 표현</dt><dd>{ours.terms?.length?ours.terms.map(t=>t.term).join(', '):ours.terms?'표본에서 미확인':'미측정'}</dd></div>
+        {ours.media&&<div><dt>이미지 설명</dt><dd>{ours.media.images}개 중 {ours.media.described}개{ours.media.subjects.length?' · '+ours.media.subjects.join(', '):''}</dd></div>}
+      </dl><a href={ours.url} target="_blank" rel="noopener noreferrer">홈페이지 원문 ↗</a></div></details>
     <details className="hp-disclosure hp-own"><summary><span>우리 플레이스 관찰값 추가</span><small>선택</small></summary><PlaceNotes notes={ownNotes} onChange={setOwnNotes} owner/></details>
     <p className="hp-scope">{comparisonScope} 비교 입력값과 결과는 현재 화면에서만 사용합니다.</p>
   </section>;
