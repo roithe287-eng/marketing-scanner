@@ -111,7 +111,7 @@ export default function ClinicComparisonPanel({review,entries}:{review:HospitalP
   return <section className="hp-panel hp-peer" aria-labelledby="hospital-place-comparison">
     <header className="hp-heading"><span className="hp-heading-icon"><ClinicIcon kind="compare"/></span><div><h4 id="hospital-place-comparison">{comparisonTitle}</h4>
       <p>같은 지역·검색어에서 직접 확인한 병원을 골라 소개문, 진료 표현, 사진·영상을 비교하세요.</p></div></header>
-    <div className="hp-reference"><div><strong>우리 홈페이지</strong><small>저장된 HTML 표본</small></div>
+    <div className="hp-reference"><div><strong>우리 홈페이지</strong><small>{review.page.media?'진단 시 확인한 페이지':ours.media?'이번에 다시 확인한 페이지':'기존 보고서 · 미디어 미측정'}</small></div>
       <div><ClinicIcon kind="image"/><span>이미지</span><b>{ours.media?ours.media.images+'개':'미측정'}</b></div>
       <div><ClinicIcon kind="video"/><span>영상 요소</span><b>{ours.media?ours.media.videos+'개':'미측정'}</b></div>
       {!ours.media&&<button type="button" onClick={refreshOwn} disabled={busy}>홈페이지 확인</button>}</div>
