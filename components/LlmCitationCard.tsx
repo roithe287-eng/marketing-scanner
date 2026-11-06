@@ -8,6 +8,7 @@ import {ObservationOverview,QuestionMatrix} from './visuals/ObservationVisuals';
 import type { LlmCitationTest } from '@/lib/reportSchema';
 import { safeHttpUrl } from '@/lib/citationMeasurement';
 import CitationFailureSummary from './CitationFailureSummary';
+import {citationNextAction} from '@/lib/reportNextAction';
 
 const percent = (value:number|null|undefined) => value == null ? '측정 불가' : `${value}%`;
 const actionLabels = {review_cited:'인용 페이지 검토',improve_candidate:'입력 페이지 개선 검토',research_page:'관련 페이지 탐색·신규 검토',retry:'재측정 필요'};
@@ -22,7 +23,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
   return <section className="report-geo-observations jm-card p-5 md:p-8" aria-label="GEO 질문·출처·실행 과제">
     <p className="text-xs font-bold text-jm-red">GEO · 브랜드 언급과 출처 인용</p>
     <h3 className="text-2xl font-black mt-2">AI 답변에서 확인한 GEO 결과</h3>
-    <p className="mt-3 text-sm text-jm-charcoal leading-7">{modern?'브랜드 언급과 자사 URL 인용을 따로 확인합니다. API 관측이며 일반 ChatGPT 화면·시장 전체 노출률과 다릅니다.':'아래 AI 결과는 고객 질문에 대한 브랜드 언급을 확인한 구버전 GEO 자료입니다. 자사 URL의 실제 출처 인용은 이 결과에서 측정하지 않았습니다.'}</p>
+    <p className="mt-3 text-sm text-jm-charcoal leading-7">{modern?'브랜드 언급과 자사 URL 인용을 나누어 보고, 보완할 내용을 확인하세요.':'아래 AI 결과는 고객 질문에 대한 브랜드 언급을 확인한 구버전 GEO 자료입니다. 자사 URL의 실제 출처 인용은 이 결과에서 측정하지 않았습니다.'}</p>
     <CompactText className="mt-3 text-sm text-jm-gray leading-6" text={modern ? citation.summary : '구버전 브랜드 언급 측정입니다. URL 출처 인용률과 비교할 수 없습니다.'}/>
     {modern ? <ObservationOverview citation={citation}/> : <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-5">
       {[
@@ -39,7 +40,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
     </div></details>}
     {modern && <CitationFailureSummary citation={citation}/>}
     {modern && <QuestionMatrix citation={citation} selected={selected} onSelect={setSelectedQuestion}/>}
-    {modern && <div className="mb-3 mt-6 border-t pt-5" aria-live="polite"><h4 className="text-sm font-black">선택한 질문의 답변·출처</h4><p className="mt-2 text-sm leading-6 text-jm-gray">{selected || '위 관측 지도에서 질문을 선택해 주세요.'}</p></div>}
+    {modern && <div className="mb-3 mt-6 border-t pt-5" aria-live="polite"><h4 className="text-sm font-black">선택한 질문의 답변·출처</h4><p className="mt-2 text-sm leading-6 text-jm-gray">{selected || '위 관측 지도에서 질문을 선택해 주세요.'}</p><p className="report-action-line"><strong>다음 행동</strong><span>{citationNextAction(visibleResults)}</span></p></div>}
     <div className="space-y-3">
       {visibleResults.map((r,i) => <details open key={`${r.engine}-${i}`} className="geo-detail rounded-xl border p-4">
         <summary className="cursor-pointer font-bold text-sm leading-6">

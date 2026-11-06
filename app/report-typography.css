@@ -83,6 +83,15 @@
 .report-v2.report-focused :is(.report-role-content strong,.report-role-content b) { font-weight:700; }
 
 /* Intrinsic sizing lets complete sentences wrap instead of widening their cards. */
+.report-v2.report-focused .report-action-line {
+  display:flex; align-items:baseline; gap:6px 10px; margin:12px 0 0;
+  padding-top:10px; border-top:1px solid #e0e5ec;
+  font-size:var(--report-type-small); line-height:1.7; color:#4b6079;
+}
+.report-v2.report-focused .report-action-line>strong { flex-shrink:0; font-weight:750; color:#30445e; }
+.report-v2.report-focused .report-action-line>span { min-width:0; overflow-wrap:anywhere; }
+.report-v2.report-focused .work-today-grid .report-action-line { margin:0; }
+
 .report-v2.report-focused :is(.report-role-box,.report-card,.report-diagram-node-copy,
  .report-role-label,.report-role-caption,.report-diagram-node-top,.page-pattern-card,
  .sector-check,.apply-field,.apply-setup-card,.source-browser-list button,
