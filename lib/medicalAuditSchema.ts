@@ -1,11 +1,12 @@
 import {z} from 'zod';
+import {clinicMediaSchema} from './clinicPlaceInsights';
 import {PLACE_CATEGORIES} from './hospitalPlace';
 
 const url=z.string().url().max(2048).refine(v=>{try{const u=new URL(v);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;}catch{return false;}});
 export const MedicalEvidenceSchema=z.object({text:z.string().max(600),locator:z.string().max(150),url});
 export const MedicalProfileIdSchema=z.enum(['plastic','dermatology','korean','primary','musculoskeletal','dental','ophthalmology','pediatric','gynecology','ent','psychiatry','urology','hospital','cross_specialty']);
 export const MedicalPageEvidenceSchema=z.object({
-  place:z.object({facility:z.boolean(),terms:z.array(z.object({category:z.enum(PLACE_CATEGORIES),term:z.string().min(1).max(40)})).max(48)}).optional(),
+  place:z.object({facility:z.boolean(),media:clinicMediaSchema.optional(),terms:z.array(z.object({category:z.enum(PLACE_CATEGORIES),term:z.string().min(1).max(40)})).max(48)}).optional(),
   facilityCandidate:z.boolean(),providerOnly:z.boolean(),sensitive:z.boolean(),
   identity:z.string().max(1500),textLength:z.number().int().nonnegative(),
   signals:z.array(z.object({key:z.string().max(80),evidence:MedicalEvidenceSchema})).max(30),

@@ -46,6 +46,12 @@ export function placeChannel(url:string,label:string) {
   return undefined;
 }
 
+export type PlaceCandidate = {term:string;url:string;basis:'title'|'context'|'body'};
+function candidateBasis(term:string,title:string,url:string):PlaceCandidate['basis'] {
+  if (/\/(?:columns?|articles?|news|blog|visit|doctors?|staff)(?:[/.\-_]|$)/i.test(new URL(url).pathname) || /칼럼|약력|활동\s*이력/.test(title)) return 'context';
+  return placeTermKey(title).includes(placeTermKey(term))?'title':'body';
+}
+
 export function buildHospitalPlaceReview(diagnostics?:SiteDiagnostics|null) {
   if (!diagnostics?.medicalAudit) return undefined;
   const root = diagnostics.pages.find(p=>p.url === diagnostics.targetUrl);
@@ -55,7 +61,7 @@ export function buildHospitalPlaceReview(diagnostics?:SiteDiagnostics|null) {
   const oldClinic = !medical.place && medical.facilityCandidate && clinicPlaceIdentity(root.title,medical.identity,root.url,
     medical.signals.some(s=>['doctors','hours','scope'].includes(s.key)),false);
   if (!medical.place?.facility && !oldClinic) return undefined;
-  const groups = PLACE_CATEGORIES.map(category=>({category,terms:[] as {term:string;url:string}[]}));
+  const groups = PLACE_CATEGORIES.map(category=>({category,terms:[] as PlaceCandidate[]}));
   const links:NonNullable<ReturnType<typeof placeChannel>>[] = [];
   if (!diagnostics.limited) for (const page of diagnostics.pages) {
     const evidence = page.medicalEvidence;
@@ -67,10 +73,16 @@ export function buildHospitalPlaceReview(diagnostics?:SiteDiagnostics|null) {
     if (!medical.place || !evidence.place) continue;
     for (const item of evidence.place.terms) {
       const group = groups.find(g=>g.category === item.category)!;
-      if (!group.terms.some(t=>placeTermKey(t.term) === placeTermKey(item.term))) group.terms.push({term:item.term,url:page.url});
+      const basis=candidateBasis(item.term,page.title,page.url);
+      const previous=group.terms.find(t=>placeTermKey(t.term)===placeTermKey(item.term));
+      const priority={title:2,body:1,context:0};
+      if(!previous) group.terms.push({term:item.term,url:page.url,basis});
+      else if(priority[basis]>priority[previous.basis]) Object.assign(previous,{url:page.url,basis});
     }
   }
-  return {groups,link:links.find(l=>l.kind==='place') || links[0],coverage:diagnostics.limited?'limited':medical.place?'sample':'legacy'} as const;
+  const page={url:root.url,title:root.title,description:root.description.slice(0,200),
+    terms:diagnostics.limited?null:medical.place?.terms??null,media:diagnostics.limited?null:medical.place?.media??null};
+  return {groups,page,link:links.find(l=>l.kind==='place') || links[0],coverage:diagnostics.limited?'limited':medical.place?'sample':'legacy'} as const;
 }
 export type HospitalPlaceReview = NonNullable<ReturnType<typeof buildHospitalPlaceReview>>;
 export type PlaceInputs = Record<PlaceCategory,string>;
