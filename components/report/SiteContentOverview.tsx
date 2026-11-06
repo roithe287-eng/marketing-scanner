@@ -2,6 +2,7 @@
 import React,{useMemo,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {buildSourceLibrary,buildContentFacets,type ContentFacetId} from '@/lib/reportContent';
+import ReadingDisclosure from '../ReadingDisclosure';
 import DiagnosisIcon from './DiagnosisIcon';
 import {RoleBox,RoleLabel} from './ReportRole';
 import ReportJumpLink from './ReportJumpLink';
@@ -28,9 +29,12 @@ export default function SiteContentOverview({report}:{report:MarketingReport}){
  return <section className="report-card site-content-overview" id="report-content-evidence" aria-label="홈페이지 내용과 진단 이유">
   <header className="report-card-heading"><p className="report-eyebrow">01 · 홈페이지 내용 확인</p><h3>홈페이지의 {label}, 이렇게 읽었습니다</h3><p className="report-note">항목을 누르면 현재 문구와 보완할 내용을 나란히 볼 수 있습니다.</p></header>
   <div className="content-facet-tabs" role="group" aria-label="홈페이지 내용 관점">{facets.map(f=><button type="button" key={f.id} aria-pressed={selected===f.id} onClick={()=>{setSelected(f.id);setMessage('');}}><DiagnosisIcon axis={f.icon}/><strong>{f.id==='offer'&&report.sitePurpose?.kind==='commerce'?'상품·주제':f.label}</strong><small>{f.count?`관련 문구 ${f.count}개`:'추가 확인'}</small></button>)}</div>
-  <div className="content-evidence-heading"><h4>{active.question}</h4><span>현재 문구 → 보완할 내용</span></div>
+  <div className="content-evidence-heading"><h4>{active.question}</h4></div>
+  <p className="content-action-lead">{active.action}</p>
+  <ReadingDisclosure key={active.id} title="현재 홈페이지 문구와 진단 근거" className="content-reading">
   <div className="content-evidence-layout"><div className="content-evidence-quotes"><RoleLabel role="current" label="현재 홈페이지 문구" kicker="원문"/>{active.evidence.length?active.evidence.slice(0,1).map(e=><blockquote key={e.id}><span>{e.kinds.includes('description')?'검색 설명':e.kinds.includes('title')?'검색 제목':e.heading||'홈페이지 본문'}</span><p>{e.excerpt}</p>{(e.truncated||e.excerpted)&&<small>일부 발췌 · 전체 내용은 원문 모음에서 확인</small>}</blockquote>):<p className="report-empty">이 내용을 설명하는 원문을 수집하지 못했습니다. 실제 페이지를 먼저 확인하세요.</p>}</div>
-   <div className="content-evidence-reason"><RoleBox role="review" label="이 문구를 고른 이유"><p>{active.why}</p></RoleBox><RoleBox role="proposal" label="이렇게 보완하세요" kicker="수정 제안"><p>{active.action}</p></RoleBox></div></div>
+   <div className="content-evidence-reason"><RoleBox role="review" label="이 문구를 고른 이유"><p>{active.why}</p></RoleBox></div></div>
+  </ReadingDisclosure>
   <PagePatternGrid patterns={example.patterns} label={`이렇게 배치하세요 · ${example.where}`}/>
   <footer className="content-evidence-footer"><ReportJumpLink id="report-site-guide">전체 원문·링크 확인</ReportJumpLink><button type="button" className="report-secondary-button" onClick={async()=>{try{await navigator.clipboard.writeText([active.label,...active.evidence.map(e=>`원문: ${e.text}`),`해석: ${active.why}`,`수정: ${active.action}`].join('\n\n'));setMessage('근거와 수정 방향을 복사했습니다.');}catch{setMessage('복사할 문구를 직접 선택해 주세요.');}}}>근거·수정안 복사</button>{message&&<span role="status">{message}</span>}</footer>
   <p className="report-note content-evidence-scope">홈페이지 문구 기준입니다. 후기·경력·수상 등을 외부에서 검증한 결과는 아닙니다.</p>

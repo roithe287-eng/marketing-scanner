@@ -64,14 +64,26 @@ test('PDF field roles preserve historical comparisons and exact long original te
  for(const page of pages)for(const line of page.lines){assert.ok(line.x+line.width<=742.01);assert.ok(line.y+line.lineHeight<=PDF_PAGE.contentBottom+.01);}
 });
 
-test('all report explanations start open while source lists and exact copy instructions remain available',async t=>{
+test('sections show a brief before opening their evidence and copy instructions',async t=>{
  const {default:ReportLayout}=await import('../components/report/ReportLayout');
  const prior=(globalThis as typeof globalThis&{React?:typeof React}).React;
  Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:prior}));
  const report=visualReviewReport(),before=JSON.stringify(report);
  const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
  assert.ok($('details').length>25,'fixture exercises all report chapters');
- assert.equal($('details:not([open])').not('.platform-application details, .medical-topic').length,0,'platform guides and medical topics have their own disclosure defaults');
+ for(const chapter of ['overview','geo','search','competition','actions']){
+   const folds=$(`#report-${chapter} .section-reading`);
+   assert.ok(folds.length>0,chapter);
+   for(const el of folds.toArray()){
+     const fold=$(el);
+     assert.equal(fold.attr('open'),undefined);
+     assert.ok(fold.children('summary').find('.reading-preview').text().trim());
+     assert.ok(fold.children('.reading-body').text().trim());
+     assert.equal(fold.find('>summary button,>summary a').length,0);
+   }
+ }
+ assert.equal($('#report-view-search-sources>.section-reading .source-library').length,1);
+ assert.equal($('#report-view-geo-observations>.section-reading .reading-preview').text().includes('브랜드 언급'),true);
  assert.equal($('.source-library').length,1);assert.ok($('.source-browser-list button').length<=8);assert.ok($('.source-pagination').length);
  assert.equal($('.guide-source-context,.guide-selector,.guide-source-grid').length,0);
  assert.equal($('.naver-copy-preview,.report-copy-fallback').length,0,'duplicate fallback instructions appear only after a failed copy');

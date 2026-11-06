@@ -42,10 +42,9 @@ const guides:Record<string,ReportDiagram>={
  'actions-geo':diagram('관측에서 답변 보강으로, 다시 관측까지',[node('답변 관측','언급·인용·출처 기록','conversionFlow'),node('내용 보강','질문에 맞는 사실과 조건','copywriting','proposal'),node('다시 확인','같은 질문과 기준으로 대조','trust','verify')],'콘텐츠를 바꿨다고 AI 인용이 보장되는 것은 아닙니다.','cycle'),
 };
 
-export function buildReportDiagrams(report:MarketingReport,data:ReportInsights):Record<string,ReportDiagram>{
+export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,sources=buildSourceLibrary(report)):Record<string,ReportDiagram>{
  const result=Object.fromEntries(Object.entries(guides).map(([id,g])=>[id,{...g,nodes:g.nodes.map(n=>({...n}))}]));
  const set=(id:string,index:number,value:string)=>{result[id].nodes[index].value=value;result[id].scope='저장된 보고서 기준';};
- const sources=buildSourceLibrary(report);
  if(report.siteDiagnostics){set('search-technical',0,`${report.siteDiagnostics.pages.length}개 HTML`);set('search-technical',1,`${report.siteDiagnostics.findings.length}개 점검`);set('search-technical',2,`${report.siteDiagnostics.crawlers.length}개 봇 정책`);}
  if(!data.tasks.length)result['overview-priority']=diagram('과제가 생기면 이 순서로 실행합니다',[node('근거 확인','먼저 현재 페이지 기록을 확인','firstView'),node('할 일과 담당','실제 권한에 맞게 작업을 정리','copywriting','proposal'),node('완료 확인','적용 결과와 같은 항목을 대조','trust','verify')],'현재 저장된 보완 항목은 없습니다. 실행 방법을 설명하는 개념도입니다.');
  set('search-sources',0,`${sources.groups.length}개`);set('search-sources',2,`${sources.links.length}개`);

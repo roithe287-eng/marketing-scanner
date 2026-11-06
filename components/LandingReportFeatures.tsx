@@ -1,4 +1,5 @@
 import {diagnosisAxes} from '@/lib/diagnosisVisuals';
+import {ReadingToggle} from './ReadingDisclosure';
 import DiagnosisIcon from '@/components/report/DiagnosisIcon';
 
 const features = [
@@ -24,7 +25,10 @@ export default function LandingReportFeatures() {
     <div className="scanner-features-heading"><div><p>FROM SIGNALS TO ACTION</p><h2 id="scanner-features-heading">우리 사이트를 읽는 <em>더 넓은 시선.</em></h2></div><p>한 번의 진단에서 만나는 여러 관점.<br/>각 결과를 실제로 바꿀 일에 연결합니다.</p></div>
     <div className="scanner-feature-grid">{features.map(feature=><article key={feature.kind} className="scanner-feature-card" data-kind={feature.kind}>
       <FeatureGraphic kind={feature.kind}/>
-      <p className="scanner-feature-eyebrow">{feature.eyebrow}</p><h3>{feature.title}</h3><p className="scanner-feature-description">{feature.description}</p><p className="scanner-feature-detail">{feature.detail}</p>
+      <p className="scanner-feature-eyebrow">{feature.eyebrow}</p><h3>{feature.title}</h3>
+      <details className="reading-fold feature-reading"><summary className="reading-summary"><span>{feature.detail}</span><ReadingToggle/></summary>
+        <p className="scanner-feature-description">{feature.description}</p>
+      </details>
     </article>)}</div>
   </section>;
 }

@@ -13,7 +13,7 @@ const names={naver:'네이버',google:'Google'};
 export default function OfficialSeoPanel({audit,targetUrl}:{audit?:OfficialSeoAudit|null;targetUrl:string}) {
  const report=useMemo(()=>audit||analyzeOfficialSeo(null,targetUrl),[audit,targetUrl]);
  const [engine,setEngine]=useState<'all'|OfficialSeoEngine>('all'),[status,setStatus]=useState('action');
- const [catalogOpen,setCatalogOpen]=useState(true),[topic,setTopic]=useState('all'),[query,setQuery]=useState(''),[page,setPage]=useState(0);
+ const [catalogOpen,setCatalogOpen]=useState(false),[topic,setTopic]=useState('all'),[query,setQuery]=useState(''),[page,setPage]=useState(0);
  const counts=report.checks.reduce((s,c)=>({...s,[c.status]:s[c.status]+1}),{observed:0,action:0,manual:0,not_applicable:0});
  const rows=report.checks.filter(c=>(engine==='all'||c.engines.includes(engine))&&(status==='all'||c.status===status));
  const filtered=useMemo(()=>{
