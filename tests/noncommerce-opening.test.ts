@@ -41,7 +41,8 @@ for(const site of noncommerceCases.filter(c=>!['mixed','unknown'].includes(c.kin
   assert.equal(purpose.length,1);assert.equal(evidence.length,1);
   assert.equal(purpose.closest('details').attr('open'),'open');
   assert.equal(evidence.closest('[data-report-panel]').attr('data-report-panel'),'overview-observations');
-  assert.equal(evidence.find('details:not([open])').length,0);
+  assert.equal(evidence.closest('details.section-reading').length,1);
+  assert.equal(evidence.closest('details.section-reading').attr('open'),undefined);
   assert.ok(evidence.text().includes('미측정'),'measurement limits remain available');
   assert.equal($('.report-chapter').length,5);
   const ids=$('[id]').toArray().map(n=>$(n).attr('id'));assert.equal(ids.length,new Set(ids).size);
@@ -57,11 +58,11 @@ for(const site of noncommerceCases.filter(c=>!['mixed','unknown'].includes(c.kin
   assert.equal(JSON.stringify(report),before,'presentation does not rewrite stored observations');
 });
 
-test('basic and limited guidance retain their exact scope inside a default-open disclosure',()=>{
+test('basic and limited guidance retain their exact scope inside a collapsed disclosure',()=>{
   for(const mode of ['basic','limited'] as const){
     const plan={...answerPlan(),mode};
     const $=load(renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan,opportunityFirst:true})));
-    const details=$('.answer-scope-detail');assert.equal(details.length,1);assert.equal(details.attr('open'),'open');
+    const details=$('.answer-scope-detail');assert.equal(details.length,1);assert.equal(details.attr('open'),undefined);
     assert.ok(details.text().includes(plan.notice));assert.match(details.text(),/미측정|실제 네이버 노출/);
     assert.doesNotMatch($('.answer-header').text(),/미측정|부족|완료하지 못/);
     assert.ok($('.answer-tags').text().includes(mode==='basic'?'기본 질문 가이드':'페이지 주제 기반 가이드'));

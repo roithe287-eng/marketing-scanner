@@ -1,0 +1,100 @@
+/* Shared reading controls for the landing page, new diagnoses and saved reports. */
+.reading-fold, .reading-summary, .reading-toggle {
+  box-sizing:border-box;
+  min-width:0;
+  font-family:var(--font-sans);
+}
+.reading-fold {
+  color:#27384b;
+  background:#fff;
+  border:1px solid #d3deea;
+  border-radius:12px;
+}
+.reading-fold[open] {border-color:#a4b7cc}
+.reading-summary {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  min-height:48px;
+  padding:12px 16px;
+  border-radius:inherit;
+  list-style:none;
+  cursor:pointer;
+  text-align:left;
+}
+.reading-summary::-webkit-details-marker {display:none}
+.reading-summary:hover, .reading-fold[open]>.reading-summary {background:#f5f8fb}
+.reading-fold[open]>.reading-summary {border-radius:11px 11px 0 0}
+.reading-summary:focus-visible {outline:3px solid #315cad;outline-offset:2px}
+.reading-caption {display:grid;gap:4px;min-width:0}
+.reading-caption>strong {
+  color:#213951;
+  font-size:1.0625rem;
+  font-weight:750;
+  line-height:1.5;
+  letter-spacing:-.02em;
+}
+.reading-preview,.reading-caption,.reading-summary>span {
+  word-break:keep-all;
+  overflow-wrap:anywhere;
+}
+.reading-preview {color:#4b6075;font-weight:450;font-size:.9375rem;line-height:1.6}
+.reading-fold:not([open])>.reading-summary .reading-preview {
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+}
+.reading-toggle {
+  display:inline-flex;flex:none;align-items:center;gap:5px;
+  color:#485b73;font-size:.8125rem;font-weight:650;line-height:1.55;white-space:nowrap;
+}
+.reading-toggle svg {flex:none}
+.reading-toggle .reading-hide, details[open]>summary .reading-toggle .reading-show {display:none}
+details[open]>summary .reading-toggle .reading-hide {display:inline}
+details[open]>summary .reading-toggle svg {transform:rotate(180deg)}
+.reading-body {min-width:0;padding:16px;border-top:1px solid #dce5ee}
+.report-v2 .report-section-panel:has(>.section-reading)+.report-section-panel:has(>.section-reading) {
+  margin-top:12px;padding-top:0;border-top:0;
+}
+.section-reading>.reading-summary {min-height:66px;padding:13px 18px}
+.section-reading>.reading-body {padding:clamp(10px,1.5vw,20px);background:#fafbfd;border-radius:0 0 11px 11px}
+.report-v2 .content-action-lead {margin:4px 0 14px;color:#273d53;font-size:1rem;line-height:1.7}
+.content-reading {margin-bottom:16px}
+.report-v2 .content-reading .content-evidence-layout {margin:0}
+.report-v2 .sector-check-grid {align-items:start}
+.report-v2 .sector-check.reading-fold {display:block;overflow:visible}
+.report-v2 .sector-check .reading-caption {gap:5px}
+.report-v2 .sector-check .sector-status {font-size:.8125rem}
+.report-v2 .sector-check .reading-body {display:grid;gap:12px;padding:12px}
+.report-v2 .sector-check :is(.sector-current,.sector-next) {text-align:left;padding:10px;border-radius:8px}
+.report-v2 .sector-current blockquote+blockquote {margin-top:.65rem}
+.report-v2 .prose-reading>.reading-summary {padding:9px 12px}
+.report-v2 .prose-reading .reading-caption>strong {font-size:.9375rem}
+.report-v2 .prose-reading .reading-body {white-space:pre-line}
+.reading-body>.report-compact-text {margin:0}
+:is(.position-method,.briefing-details)>summary:has(>.reading-toggle) {display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none}
+:is(.position-method,.briefing-details)>summary:has(>.reading-toggle)::-webkit-details-marker {display:none}
+:is(.position-method,.briefing-details)>summary:has(>.reading-toggle)::after {content:none}
+.scanner-feature-card .feature-reading {
+  margin-top:auto;border:0;border-top:1px solid #dce5ee;border-radius:0;
+}
+.feature-reading>.reading-summary {padding:8px 0;gap:8px;color:#425975;font-size:.875rem;font-weight:650;line-height:1.6}
+.feature-reading .scanner-feature-description {margin:4px 0 0;font-size:.9375rem}
+@media(max-width:600px){
+  .section-reading>.reading-summary {gap:8px;padding:12px 13px}
+  .reading-summary {padding:10px 12px}
+  .reading-body {padding:12px}
+}
+.task-reading>.reading-summary {padding:9px 12px}
+.task-reading .reading-caption>strong {font-size:.9375rem}
+.task-reading .reading-body {display:grid;gap:10px;padding:12px}
+.report-v2 .sector-check-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:680px){
+  .report-v2 .sector-check-grid {grid-template-columns:minmax(0,1fr)}
+}
+.report-v2 .geo-detail:has(>summary>.reading-toggle)>summary {list-style:none}
+.report-v2 .geo-detail>summary>.reading-toggle {display:flex;justify-content:flex-end;margin-top:4px}
+.report-v2 .report-text-detail>summary:has(>.reading-toggle) {display:flex;justify-content:space-between;gap:12px}
+.report-v2 .report-text-detail>summary:has(>.reading-toggle)::after {content:none}

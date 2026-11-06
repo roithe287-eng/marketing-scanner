@@ -9,6 +9,9 @@ export function revealReportTarget(id:string,updateHistory=true) {
   if(updateHistory&&window.location.hash!==`#${id}`)window.history.pushState(null,'',`#${id}`);
   let parent:HTMLElement|null=target;
   while(parent){if(parent instanceof HTMLDetailsElement)parent.open=true;parent=parent.parentElement;}
+  // Section links open that section; links to the topic list keep its individual rows closed.
+  const section=target.matches('[data-report-panel]')?target.querySelector(':scope > .section-reading'):null;
+  if(section instanceof HTMLDetailsElement)section.open=true;
   if(target instanceof HTMLButtonElement&&target.dataset.reportTab==='true')target.click();
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     target.scrollIntoView({behavior:'instant',block:'start'});

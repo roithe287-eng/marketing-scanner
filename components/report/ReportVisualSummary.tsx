@@ -1,18 +1,24 @@
 import React from 'react';
+import ReadingDisclosure from '../ReadingDisclosure';
 import DiagnosisIcon from './DiagnosisIcon';
 import {reportReadingPoints} from '@/lib/conciseReport';
 import SourceSketch from './PageModelGraphic';
 export {SourceSketch};
 
-/** Keep source values exact; turn long explanations into complete, distinct reading points. */
-export function CompactText({text,summary,verbatim=false,className=''}:{text:string;summary?:string;verbatim?:boolean;className?:string;label?:string}){
+/** Source quotations stay verbatim. A short sentence or authored summary can lead longer commentary. */
+export function CompactText({text,summary,verbatim=false,className='',label}:{text:string;summary?:string;verbatim?:boolean;className?:string;label?:string}){
   if(!text)return null;
-  if(!verbatim&&!summary&&text.length>220){
-    const points=reportReadingPoints(text);
-    if(points.length>1)return <ul className={`report-compact-text report-reading-points ${className}`}>{points.map((point,i)=><li key={i}>{point}</li>)}</ul>;
-    if(points.length===1)return <p className={`report-compact-text ${className}`}>{points[0]}</p>;
-  }
-  return <p className={`report-compact-text ${className}`}>{summary||text}</p>;
+  const long=text.trim().length>220 || text.trim().split(/\n+/).length>4;
+  if(verbatim || !long)return <p className={`report-compact-text ${className}`}>{verbatim?text:summary||text}</p>;
+
+  const points=reportReadingPoints(text);
+  const first=points[0]||text.trim();
+  const preview=summary || (first.length<=110?first:Array.from(first).slice(0,100).join('').trimEnd()+'…');
+  return <ReadingDisclosure title={label||'상세 설명'} preview={preview} className={`prose-reading ${className}`}>
+    {points.length>1
+      ? <ul className="report-compact-text report-reading-points">{points.map((point,i)=><li key={i}>{point}</li>)}</ul>
+      : <p className="report-compact-text">{text}</p>}
+  </ReadingDisclosure>;
 }
 
 type Axis=React.ComponentProps<typeof DiagnosisIcon>['axis'];

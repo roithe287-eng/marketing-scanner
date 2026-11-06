@@ -1,4 +1,5 @@
 'use client';
+import ReadingDisclosure from '../ReadingDisclosure';
 import {CompactText,VisualSteps,SourceSketch} from './ReportVisualSummary';
 import WorkLink from './ReportJumpLink';
 import ReportItemPanels from './ReportItemPanels';
@@ -21,7 +22,7 @@ export function CopyWork({text,label='작업 지시서 복사'}:{text:string;lab
 export function TodayWork({plan}:{plan:ExecutionPlan}) {
  return <section className="report-card report-workflow work-today" id="report-today" aria-label="오늘 먼저 할 일">
   <Heading eyebrow="03 · 우선 할 일" title="먼저 확인할 작업, 한눈에 보세요" note="수정할 작업과 먼저 확인할 항목을 나눴습니다. 위치·할 일·완료 기준을 확인하세요."/>
-  {plan.first.length?<ol className="work-today-grid">{plan.first.map((t,i)=>{const g=plainGuide(t.title,t.guideScope==='account'?'account':undefined),verify=needsVerification(t);return <li key={t.id}><div className="work-card-top"><span className="work-number">0{i+1}</span><span>{workOwners.find(o=>o.id===t.owner)!.label}</span></div><SourceSketch type={g.patterns[0].kind}/><h4>{g.title}</h4><div className="report-role-stack"><RoleBox role="location" label="확인할 곳"><p>{g.location}</p></RoleBox><RoleBox role={verify?'review':'proposal'} label={verify?'먼저 확인':'수정 진행'}><p>{verify?'실제 화면·설정을 먼저 대조하세요. ':''}{g.action}</p></RoleBox></div><p className="report-action-line"><strong>완료 기준</strong><span>{t.guideScope==='account'?'담당 계정의 실제 상태와 작업별 완료 조건을 대조하세요.':t.completion}</span></p><WorkLink id={t.anchor}>자세한 수정 방법 보기</WorkLink></li>;})}</ol>:<p className="work-empty">현재 저장된 진단에 보완 항목이 없습니다.</p>}
+  {plan.first.length?<ol className="work-today-grid">{plan.first.map((t,i)=>{const g=plainGuide(t.title,t.guideScope==='account'?'account':undefined),verify=needsVerification(t);return <li key={t.id}><div className="work-card-top"><span className="work-number">0{i+1}</span><span>{workOwners.find(o=>o.id===t.owner)!.label}</span></div><SourceSketch type={g.patterns[0].kind}/><h4>{g.title}</h4><RoleBox role={verify?'review':'proposal'} label={verify?'먼저 확인':'수정 진행'}><p>{verify?'실제 화면·설정을 먼저 대조하세요. ':''}{g.action}</p></RoleBox><ReadingDisclosure title="수정 위치·완료 기준" className="task-reading"><RoleBox role="location" label="확인할 곳"><p>{g.location}</p></RoleBox><p className="report-action-line"><strong>완료 기준</strong><span>{t.guideScope==='account'?'담당 계정의 실제 상태와 작업별 완료 조건을 대조하세요.':t.completion}</span></p></ReadingDisclosure><WorkLink id={t.anchor}>자세한 수정 방법 보기</WorkLink></li>;})}</ol>:<p className="work-empty">현재 저장된 진단에 보완 항목이 없습니다.</p>}
  </section>;
 }
 export function PageEditPreview({report}:{report:MarketingReport}) {

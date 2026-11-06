@@ -22,7 +22,9 @@ test('every result section has a diagram or an integrated page model without cha
   for(const section of $('[data-report-panel]').toArray()){
    const el=$(section),id=el.attr('data-report-panel');
    assert.ok(el.find('[data-report-diagram], [data-page-model]').length>0,`missing section diagram: ${id}`);
-   assert.equal(el.find('>.report-section-divider').length,1);
+   assert.equal(el.children('.report-section-divider,.section-reading').length,1);
+   const fold=el.children('.section-reading');
+   if(fold.length){assert.ok(fold.find('>summary .reading-preview').text().trim());assert.equal(fold.attr('open'),undefined);}
   }
   assert.equal($('.report-reading-key [data-reading-role]').length,5);
   assert.deepEqual($('.report-nav a[data-chapter-link]').toArray().map(el=>$(el).attr('data-chapter-link')),['overview','geo','search','competition','actions']);

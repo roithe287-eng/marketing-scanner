@@ -2,6 +2,7 @@
 import React from 'react';
 import type {MedicalAudit} from '@/lib/medicalAuditSchema';
 import {MEDICAL_STATUS_LABELS} from '@/lib/medicalAudit';
+import {ReadingToggle} from '../ReadingDisclosure';
 import EvidenceFlow from './EvidenceFlow';
 import {RoleBox} from './ReportRole';
 
@@ -9,10 +10,7 @@ function TopicSummary({title,status}:{title:string;status:string}){
   return <summary className="medical-topic-summary">
     <strong>{title}</strong>
     <span className="medical-topic-status">{status}</span>
-    <span className="medical-topic-toggle" aria-hidden="true">
-      <span className="medical-show">펼치기</span><span className="medical-hide">접기</span>
-      <svg viewBox="0 0 16 16" width="16" height="16" fill="none" focusable="false"><path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round"/></svg>
-    </span>
+    <ReadingToggle/>
   </summary>;
 }
 

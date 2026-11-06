@@ -22,11 +22,6 @@
   font-size:.8125rem; line-height:1.55; font-weight:650;
 }
 .medical-topic[data-status=observed] .medical-topic-status {background:#edf5f1;color:#30614f}
-.medical-topic-toggle {display:inline-flex;align-items:center;gap:5px;color:#485b73;font-size:.8125rem;font-weight:650}
-.medical-topic-toggle svg {flex:none}
-.medical-topic .medical-hide,.medical-topic[open]>.medical-topic-summary .medical-show {display:none}
-.medical-topic[open]>.medical-topic-summary .medical-hide {display:inline}
-.medical-topic[open]>.medical-topic-summary .medical-topic-toggle svg {transform:rotate(180deg)}
 .medical-topic[open]>.medical-topic-summary {border-radius:12px 12px 0 0;background:#f5f8fb}
 .report-v2 .medical-topic-body {
   display:grid; gap:18px; min-width:0; padding:18px 20px 21px; border-top:1px solid #dce5ee;
@@ -50,7 +45,7 @@
   .medical-topic-summary {grid-template-columns:minmax(0,1fr) auto;gap:5px 9px;padding:12px 14px}
   .medical-topic-summary>strong {grid-column:1}
   .medical-topic-summary>.medical-topic-status {grid-column:1;grid-row:2}
-  .medical-topic-summary>.medical-topic-toggle {grid-column:2;grid-row:1 / span 2}
+  .medical-topic-summary>.reading-toggle {grid-column:2;grid-row:1 / span 2}
   .report-v2 .medical-topic-body {padding:15px 13px 17px;gap:15px}
 }
 @media(max-width:600px){

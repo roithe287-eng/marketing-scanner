@@ -12,18 +12,21 @@ import {buildReportDocument} from '../lib/reportDocument';
 import {visualReviewReport} from './fixtures/visual-review-report';
 import {PDF_PAGE,type PdfTextStyle} from '../lib/pdfLayout';
 
-test('long explanations remove adjacent repetition while preserving facts and limits without disclosure',()=>{
- const text='https://example.org/a.b 페이지에서 2.5%를 관측했다는 설명입니다. '+ '확인할 위치와 작업 내용이 이어지는 문장입니다. '.repeat(6)+'실제 전환율을 측정한 결과는 아닙니다.';
+test('long explanations remove adjacent repetition while preserving facts and limits inside a disclosure',()=>{
+ const text='https://example.org/a.b 페이지에서 2.5%를 관측했다는 설명입니다. '+ '확인할 위치와 작업 내용이 이어지는 문장입니다. '.repeat(12)+'실제 전환율을 측정한 결과는 아닙니다.';
  const excerpt=reportExcerpt(text);
  assert.ok(excerpt.startsWith('https://example.org/a.b'));assert.ok(excerpt.includes('2.5%'));
  assert.ok(excerpt.includes('실제 전환율을 측정한 결과는 아닙니다.'));assert.ok(excerpt.length<text.length);
  const $=load(renderToStaticMarkup(React.createElement(CompactText,{text})));
- assert.equal($('.report-reading-points li').length,3);assert.equal($('details').length,0);
+ assert.equal($('.report-reading-points li').length,3);assert.equal($('details:not([open])').length,1);
  assert.match($('.report-compact-text').text(),/https:\/\/example.org\/a.b/);assert.match($('.report-compact-text').text(),/2.5%/);assert.match($('.report-compact-text').text(),/실제 전환율을 측정한 결과는 아닙니다/);
  const original=load(renderToStaticMarkup(React.createElement(CompactText,{text,verbatim:true})));
  assert.equal(original('.report-compact-text').text(),text);
  const summary=load(renderToStaticMarkup(React.createElement(CompactText,{text,summary:excerpt})));
- assert.equal(summary('.report-compact-text').text(),excerpt);assert.equal(summary('details').length,0);
+ assert.equal(summary('.reading-preview').text(),excerpt);assert.equal(summary('details:not([open])').length,1);
+ assert.match(summary('.reading-body').text(),/실제 전환율을 측정한 결과는 아닙니다/);
+ const short=load(renderToStaticMarkup(React.createElement(CompactText,{text:'짧은 원문입니다.'})));
+ assert.equal(short('details').length,0);
  const steps='원문 확인\n담당자 확인\n사이트 수정\n다시 진단';assert.equal(reportExcerpt(steps),steps);
  const noBoundary='한 문장으로 연결된 긴 설명 '.repeat(30);assert.equal(reportExcerpt(noBoundary),noBoundary.trim());
 });
