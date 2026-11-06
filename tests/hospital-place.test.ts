@@ -22,7 +22,7 @@ test('a real clinic homepage supplies four source-bound categories and Place lin
   const $=load(renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan:report.answerContentPlan,placeReview:review})));
   assert.equal($('.hospital-place').length,1);
   assert.equal($('.hospital-place textarea').length,4);
-  assert.match($('.hospital-place').text(),/등록 상태 · 관리자 확인/);
+  assert.match($('.hospital-place').text(),/등록 목록/);assert.match($('.hospital-place').text(),/관리자 확인/);
   const text=buildAnswerContentDocument(report).map(b=>b.text).join('\n');
   assert.ok(buildAnswerContentDocument({...report,answerContentPlan:undefined}).some(b=>b.text.includes(PLACE_TITLE)));
   assert.match(text,/합계 30개/);assert.match(text,/질병 분류로 자동 이전/);

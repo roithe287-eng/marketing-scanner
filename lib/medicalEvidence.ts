@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import type {MedicalPageEvidence,MedicalEvidence} from './medicalAuditSchema';
 import {MEDICAL_PROFILES} from './medicalProfiles';
 import {clinicPlaceIdentity,excludedPlaceIdentity,placeChannel} from './hospitalPlace';
+import {captureClinicMedia} from './clinicMedia';
 import {findPlaceTerms} from './hospitalPlaceTerms';
 
 const clean=(v:unknown,max=600)=>typeof v==='string'?v.replace(/\s+/g,' ').trim().slice(0,max):'';
@@ -154,7 +155,7 @@ export function captureMedicalEvidence(html:string,url:string,providerOnly=false
         if (text) excerpts.push({text,context});
       });
     }
-    place={facility,terms:findPlaceTerms(excerpts)};
+    place={facility,terms:findPlaceTerms(excerpts),...(publicTreatment?{media:captureClinicMedia($)}:{})};
   }
   return {facilityCandidate:facilityCandidate || facility,providerOnly,sensitive,identity,...(place?{place}:{}),textLength:sensitive?0:clean(content.text(),60000).length,signals:observed.slice(0,30),formats:[...formats],entities:sensitive?[]:entities,channels:sensitive?[]:channels,roles:sensitive?[]:roles};
 }

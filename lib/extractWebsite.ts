@@ -234,7 +234,7 @@ async function tryFetch(startUrl: string): Promise<FetchAttempt> {
  * Content-Type 헤더 + HTML 안의 meta charset을 보고 인코딩 자동 감지 후
  * iconv-lite로 올바르게 디코딩
  */
-function decodeHtml(
+export function decodeHtml(
   buffer: ArrayBuffer,
   contentTypeHeader: string | null
 ): { html: string; encoding: string } {
