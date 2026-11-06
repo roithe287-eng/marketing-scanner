@@ -1,5 +1,7 @@
 'use client';
 import {CompactText,VisualSteps} from './ReportVisualSummary';
+import HospitalPlacePanel from './HospitalPlacePanel';
+import type {HospitalPlaceReview} from '@/lib/hospitalPlace';
 import {RoleLabel} from './ReportRole';
 import React,{useState} from 'react';
 import type {AnswerContentPlan} from '@/lib/answerContentSchema';
@@ -16,12 +18,14 @@ function CopyText({text,label}:{text:string;label:string}){
   }
   return <div className="answer-copy"><button type="button" onClick={copy}>{label}</button><span role="status" aria-live="polite">{message}</span></div>;
 }
-export default function AnswerContentPanel({plan,opportunityFirst=false}:{plan?:AnswerContentPlan|null;opportunityFirst?:boolean}){
-  if(!plan)return <section className="report-card answer-content" aria-labelledby="answer-content-title"><p className="report-eyebrow">02 · 고객 질문과 답변</p><h3 id="answer-content-title">{ANSWER_CONTENT_TITLE}</h3><PagePatternGrid label="고객 질문을 답변으로 연결하는 구성" patterns={[{kind:'faq',title:'고객 질문',detail:'대상·범위·이용 방법부터'},{kind:'proof',title:'확인한 사실',detail:'홈페이지 원문과 운영 조건 대조'},{kind:'action',title:'답변과 다음 행동',detail:'질문 아래에 답변·문의 방법'}]}/>{opportunityFirst?<><p className="answer-scope">고객이 먼저 궁금해할 대상·제공 범위·이용 방법을 질문으로 정리하고, 홈페이지에서 답할 내용을 구체화해 보세요.</p><details open className="answer-detail"><summary>콘텐츠 분석 기록과 활용 안내</summary><p>이 저장 보고서에는 별도의 키워드·추천 질문 분석 기록이 없습니다. 새 진단에서 페이지에 맞는 작성 방향을 확인할 수 있습니다.</p></details></>:<p className="answer-scope">이 보고서에는 새 콘텐츠 개선안이 없습니다. URL을 다시 진단하면 대표 키워드·추천 질문·FAQ 작성 예시가 추가됩니다.</p>}</section>;
+export default function AnswerContentPanel({plan,opportunityFirst=false,placeReview}:{plan?:AnswerContentPlan|null;opportunityFirst?:boolean;placeReview?:HospitalPlaceReview}){
+  const placePanel = placeReview ? <HospitalPlacePanel review={placeReview}/> : null;
+  if(!plan)return <section className="report-card answer-content" aria-labelledby="answer-content-title"><p className="report-eyebrow">02 · 고객 질문과 답변</p><h3 id="answer-content-title">{ANSWER_CONTENT_TITLE}</h3>{placePanel}<PagePatternGrid label="고객 질문을 답변으로 연결하는 구성" patterns={[{kind:'faq',title:'고객 질문',detail:'대상·범위·이용 방법부터'},{kind:'proof',title:'확인한 사실',detail:'홈페이지 원문과 운영 조건 대조'},{kind:'action',title:'답변과 다음 행동',detail:'질문 아래에 답변·문의 방법'}]}/>{opportunityFirst?<><p className="answer-scope">고객이 먼저 궁금해할 대상·제공 범위·이용 방법을 질문으로 정리하고, 홈페이지에서 답할 내용을 구체화해 보세요.</p><details open className="answer-detail"><summary>콘텐츠 분석 기록과 활용 안내</summary><p>이 저장 보고서에는 별도의 키워드·추천 질문 분석 기록이 없습니다. 새 진단에서 페이지에 맞는 작성 방향을 확인할 수 있습니다.</p></details></>:<p className="answer-scope">이 보고서에는 새 콘텐츠 개선안이 없습니다. URL을 다시 진단하면 대표 키워드·추천 질문·FAQ 작성 예시가 추가됩니다.</p>}</section>;
   const keyword=plan.primaryKeyword;
   const scopeNotes=<><CompactText className="answer-scope" text={plan.notice}/>{plan.mode!=='ai-assisted'&&<p className="answer-notice" role="status">{plan.mode==='limited'?'읽을 수 있는 본문이 부족하거나 동적 페이지입니다. 아래 질문은 작성 방향이며, 기존 답변의 유무는 실제 페이지에서 대조해야 합니다.':'맞춤 질문 분석을 완료하지 못해 페이지 주제 기반의 기본 가이드를 표시합니다. 기존 답변의 유무는 실제 페이지에서 대조해 주세요.'}</p>}</>;
   return <section className="report-card answer-content" id="answer-content" aria-labelledby="answer-content-title" data-opening={opportunityFirst||undefined}>
     <header className="answer-header"><p className="report-eyebrow">02 · 고객 질문과 답변</p><h3 id="answer-content-title">{ANSWER_CONTENT_TITLE}</h3><p>고객이 궁금해할 질문과, 홈페이지에 넣을 답변을 함께 확인하세요.</p><div className="answer-tags"><span>{plan.scope==='submitted-page-and-business'?'페이지·상세·이용안내 기반':plan.scope==='submitted-page-and-products'?'페이지·상품 표본 기반':'입력 페이지 기반'}</span>{!opportunityFirst&&<span>실제 네이버 노출 · 미측정</span>}<span>{plan.mode==='ai-assisted'?'페이지 맞춤 질문':plan.mode==='limited'?(opportunityFirst?'페이지 주제 기반 가이드':'수집 내용 제한'):'기본 질문 가이드'}</span></div></header>
+    {placePanel}
     <p className="answer-quick-note">페이지 원문을 활용한 작성 제안입니다. 실제 네이버 노출·AI 인용은 별도 확인이 필요합니다.</p>
     {plan.mode!=='ai-assisted'&&<p className="answer-quick-note">{plan.mode==='limited'?'읽을 수 있는 본문이 적어 기본 작성 방향을 보여드립니다.':'맞춤 분석 대신 페이지 주제에 맞춘 기본 질문을 보여드립니다.'} 기존 답변이 있는지는 실제 페이지와 대조하세요.</p>}
     {keyword?<>

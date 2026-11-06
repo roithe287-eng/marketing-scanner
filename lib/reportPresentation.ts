@@ -4,10 +4,13 @@ import {ownHost,safeHttpUrl} from './citationMeasurement';
 import {competitorDisplay} from './competitorDisplay';
 import {reconcileKeywordMetadata} from './analyzeKeywordFreq';
 import {canonicalPage} from './geoComparison';
+import {currentPlacePolicy,buildHospitalPlaceReview} from './hospitalPlace';
 import {PAGE_EVIDENCE_METADATA_LIMITS} from './pageEvidence';
 
 /** Reapply candidate policy to saved reports without mutating their observations. */
 export function reportForPresentation(report:MarketingReport):MarketingReport {
+  const diagnostics=report.siteDiagnostics;
+  if (diagnostics?.medicalAudit?.reviewedOn==='2026-11-04') report={...report,siteDiagnostics:{...diagnostics,medicalAudit:currentPlacePolicy(diagnostics.medicalAudit,!!buildHospitalPlaceReview(diagnostics))}};
   const page=report.pageEvidence;
   if(report.keywordFrequency&&page&&canonicalPage(page.requestedUrl)===canonicalPage(report.url)){
     const titleClipped=page.metadataTruncated?.title??page.title.length>=PAGE_EVIDENCE_METADATA_LIMITS.title;

@@ -1,10 +1,20 @@
 import type {MarketingReport} from './reportSchema';
 import type {ReportBlock} from './reportDocument';
+import {buildHospitalPlaceReview,PLACE_TITLE,PLACE_RULE,PLACE_ROLLOUT,PLACE_EXCLUSIONS} from './hospitalPlace';
 import {ANSWER_CONTENT_TITLE,ANSWER_STATUS,answerQuestionText} from './answerContent';
 export function buildAnswerContentDocument(report:MarketingReport,opportunityFirst=false):ReportBlock[]{
-  const plan=report.answerContentPlan;if(!plan)return [];
+  const place=buildHospitalPlaceReview(report.siteDiagnostics);
+  const placeBlocks:ReportBlock[]=place?[
+    {kind:'subheading',text:PLACE_TITLE+' · 등록 상태는 관리 화면에서 확인'},
+    {kind:'body',text:PLACE_RULE+' '+PLACE_ROLLOUT},
+    ...(place.coverage==='sample'?place.groups.map(g=>({kind:'body' as const,text:'홈페이지 후보 · '+g.category+' · '+(g.terms.map(t=>t.term).join(', ')||'표본에서 미확인')})):
+      [{kind:'body' as const,text:'공개 키워드 표본을 확인하려면 같은 URL로 다시 진단하세요.'}]),
+    {kind:'body',text:place.link?(place.link.kind==='place'?'홈페이지의 플레이스 링크':'네이버 단축 링크 · 목적지 확인'):'홈페이지의 플레이스 링크 미확인',href:place.link?.url},
+    {kind:'body',text:PLACE_EXCLUSIONS}
+  ]:[];
+  const plan=report.answerContentPlan;if(!plan)return placeBlocks;
   const scope:ReportBlock[]=[{kind:'body',text:plan.notice},{kind:'body',text:`분석 범위: ${plan.scope==='submitted-page-and-business'?'입력 페이지·자사 상세·이용안내':plan.scope==='submitted-page-and-products'?'입력 페이지·자사 상품 표본':'입력 페이지'} · 실제 네이버 노출: 미측정 · ${plan.mode==='ai-assisted'?'페이지 맞춤 질문':plan.mode==='limited'?'제한된 내용으로 작성':'기본 질문 가이드'}`},{kind:'body',text:`분석 URL: ${plan.targetUrl}`,href:plan.targetUrl}];
-  const blocks:ReportBlock[]=[{kind:'heading',text:ANSWER_CONTENT_TITLE},...(opportunityFirst?[{kind:'body' as const,text:'대표 주제에서 고객의 질문을 고르고, 홈페이지에서 답할 내용을 구체화하세요.'}]:scope)];
+  const blocks:ReportBlock[]=[{kind:'heading',text:ANSWER_CONTENT_TITLE},...(opportunityFirst?[{kind:'body' as const,text:'대표 주제에서 고객의 질문을 고르고, 홈페이지에서 답할 내용을 구체화하세요.'}]:scope),...placeBlocks];
   if(!plan.primaryKeyword){blocks.push({kind:'body',text:'대표 키워드를 판단할 페이지 내용이 부족합니다. 대표 상품·서비스가 있는 상세 페이지로 재진단해 주세요.'});if(opportunityFirst)blocks.push(...scope);return blocks;}
   for(const [index,k] of [plan.primaryKeyword,...plan.secondaryKeywords].entries()){
     blocks.push({kind:'subheading',text:`${index===0?'대표':'보조'} 키워드: ${k.term}`},{kind:'body',text:k.reason});
