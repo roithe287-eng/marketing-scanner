@@ -100,3 +100,43 @@
  .report-v2 .report-reading-key,.report-v2 .report-section-diagram,.report-v2 .report-section-divider {break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
  .report-v2 .report-source-sketch {filter:none!important}
 }
+
+/* Match the graphic to the task while retaining the report's existing role colors. */
+.report-v2 .report-section-diagram[data-diagram-kind=compare] .report-diagram-nodes {
+  gap:0; overflow:hidden; border:1px solid var(--chapter-line); border-radius:12px; background:#fff;
+}
+.report-v2 .report-section-diagram[data-diagram-kind=compare] .report-diagram-nodes>li {
+  border:0;border-radius:0;box-shadow:none;border-top:3px solid var(--role-accent);background:linear-gradient(180deg,var(--role-bg),#fff 84%);
+}
+.report-v2 .report-section-diagram[data-diagram-kind=compare] .report-diagram-nodes>li+li {border-left:1px solid var(--chapter-line)}
+.report-v2 .report-section-diagram[data-diagram-kind=branch] .report-diagram-nodes>li {
+  box-shadow:none;border-radius:8px;border-top-width:1px;background:var(--role-bg)
+}
+.report-v2 .report-section-diagram[data-diagram-kind=equation] .report-diagram-nodes>li {
+  border-top:1px solid var(--role-border);text-align:center;background:#fff;box-shadow:none
+}
+.report-v2 .report-section-diagram[data-diagram-kind=equation] .report-diagram-node-top {justify-content:center}
+.report-v2 .report-section-diagram[data-diagram-kind=equation] .report-diagram-node-role {margin-left:0}
+.report-v2 .report-section-diagram[data-diagram-kind=equation] .report-diagram-nodes>li:last-child {background:var(--role-bg);border-width:2px}
+.report-v2 .report-section-diagram[data-diagram-kind=equation] .report-diagram-connector {border-radius:50%;background:var(--chapter-surface)}
+.report-v2 .report-section-diagram[data-diagram-kind=cycle] .report-diagram-nodes {padding-bottom:14px;position:relative}
+.report-v2 .report-section-diagram[data-diagram-kind=cycle] .report-diagram-nodes::after {
+  content:'';position:absolute;bottom:0;left:14%;right:14%;height:11px;border:1.5px dashed var(--chapter-color);border-top:0;border-radius:0 0 7px 7px;pointer-events:none
+}
+.report-v2 .report-section-diagram[data-diagram-kind=cycle] .report-diagram-nodes::before {
+  content:'';position:absolute;bottom:6px;left:calc(14% - 3px);width:7px;height:7px;border-left:2px solid var(--chapter-color);border-top:2px solid var(--chapter-color);transform:rotate(45deg);pointer-events:none
+}
+.report-v2 .report-section-diagram[data-report-diagram=actions-schedule] .report-diagram-nodes {gap:0;padding-top:9px}
+.report-v2 .report-section-diagram[data-report-diagram=actions-schedule] .report-diagram-nodes>li {padding:14px 13px 6px 0;border:0;border-top:2px solid var(--chapter-line);background:transparent;border-radius:0;box-shadow:none}
+.report-v2 .report-section-diagram[data-report-diagram=actions-schedule] .report-diagram-nodes>li::before {content:'';position:absolute;top:-6px;left:12px;width:10px;height:10px;background:var(--role-accent);border-radius:50%}
+.report-v2 .report-section-diagram[data-report-diagram=actions-schedule] .report-diagram-connector {display:none}
+@media(max-width:700px){
+ .report-v2 .report-section-diagram[data-diagram-kind=compare] .report-diagram-nodes>li+li {border-left:0}
+ .report-v2 .report-section-diagram[data-diagram-kind=equation] .report-diagram-nodes>li {text-align:left}
+ .report-v2 .report-section-diagram[data-diagram-kind=cycle] .report-diagram-nodes {padding:0 0 0 15px}
+ .report-v2 .report-section-diagram[data-diagram-kind=cycle] .report-diagram-nodes::after {left:0;right:auto;top:10%;bottom:10%;width:11px;height:auto;border:1.5px dashed var(--chapter-color);border-right:0;border-radius:6px 0 0 6px}
+ .report-v2 .report-section-diagram[data-diagram-kind=cycle] .report-diagram-nodes::before {left:5px;top:calc(10% - 2px);bottom:auto;transform:rotate(135deg)}
+ .report-v2 .report-section-diagram[data-report-diagram=actions-schedule] .report-diagram-nodes {padding:0 0 0 6px}
+ .report-v2 .report-section-diagram[data-report-diagram=actions-schedule] .report-diagram-nodes>li {border-top:0;border-left:2px solid var(--chapter-line);padding:8px 0 10px 14px}
+ .report-v2 .report-section-diagram[data-report-diagram=actions-schedule] .report-diagram-nodes>li::before {left:-6px;top:18px}
+}

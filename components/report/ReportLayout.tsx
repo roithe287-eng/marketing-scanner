@@ -62,6 +62,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     return()=>{clearTimeout(timer);window.removeEventListener('pageshow',check);document.removeEventListener('visibilitychange',check);};
   },[expiry]);
   const data=useMemo(()=>buildReportInsights(report),[report]);
+  const placeReview=useMemo(()=>buildHospitalPlaceReview(report.siteDiagnostics),[report.siteDiagnostics]);
   const diagrams=useMemo(()=>buildReportDiagrams(report,data),[report,data]);
   const execution=useMemo(()=>buildExecutionPlan(report,data),[report,data]);
   if(expired)return <section className="report-card" role="status"><h2 className="text-xl font-bold">보고서 보관 기간이 만료되었습니다</h2><p className="mt-3">이 결과에 포함된 보관·비교 자료는 더 이상 열람할 수 없습니다. 새 진단으로 현재 상태를 확인해 주세요.</p><a className="jm-button mt-4" href="/">새로 진단하기</a></section>;
@@ -78,7 +79,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     <Chapter id="overview" number="01" title="우리 홈페이지, 무엇부터 바꾸면 될까요?" note="홈페이지 내용 → 고객 질문과 답변 → 우선 할 일 순서로 확인하세요.">
       <ReportSections chapter="overview" diagrams={diagrams} items={[
         {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
-        {id:'overview-questions',label:'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst placeReview={buildHospitalPlaceReview(report.siteDiagnostics)} clinicWebAllowed={clinicWebAllowed}/>},
+        {id:'overview-questions',label:placeReview?'플레이스·AI 브리핑':'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst placeReview={placeReview} clinicWebAllowed={clinicWebAllowed}/>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
         ...(report.sitePurpose?.sector||report.siteDiagnostics?.medicalAudit?[{id:'overview-sector',label:'업종별 확인',children:<>{report.sitePurpose&&<NonCommerceSectorPanel purpose={report.sitePurpose}/>}<MedicalAuditPanel audit={report.siteDiagnostics?.medicalAudit}/></>}]:[]),
         {id:'overview-observations',label:'영역별 근거',children:<>{report.evidenceReview&&<EvidenceReviewPanel review={report.evidenceReview}/>}<ConversionPath data={data}/></>},

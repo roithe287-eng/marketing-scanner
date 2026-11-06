@@ -1,11 +1,10 @@
 'use client';
-import {CompactText,VisualSteps} from './ReportVisualSummary';
-import HospitalPlacePanel from './HospitalPlacePanel';
-import type {HospitalPlaceReview} from '@/lib/hospitalPlace';
-import {RoleLabel} from './ReportRole';
-import React,{useState} from 'react';
-import type {AnswerContentPlan} from '@/lib/answerContentSchema';
+import React,{useId,useState} from 'react';
+import type {AnswerContentPlan,AnswerQuestion,AnswerSource} from '@/lib/answerContentSchema';
 import {ANSWER_CONTENT_TITLE,ANSWER_STATUS,answerPlanText,answerQuestionText} from '@/lib/answerContent';
+import {safeHttpUrl} from '@/lib/citationMeasurement';
+import type {HospitalPlaceReview} from '@/lib/hospitalPlace';
+import HospitalPlacePanel from './HospitalPlacePanel';
 import ReportJumpLink from './ReportJumpLink';
 import ReportItemPanels from './ReportItemPanels';
 import {PagePatternGrid} from './PagePatternGuide';
@@ -18,32 +17,77 @@ function CopyText({text,label}:{text:string;label:string}){
   }
   return <div className="answer-copy"><button type="button" onClick={copy}>{label}</button><span role="status" aria-live="polite">{message}</span></div>;
 }
-export default function AnswerContentPanel({plan,opportunityFirst=false,placeReview,clinicWebAllowed=true}:{plan?:AnswerContentPlan|null;opportunityFirst?:boolean;placeReview?:HospitalPlaceReview;clinicWebAllowed?:boolean}){
-  const placePanel = placeReview ? <HospitalPlacePanel review={placeReview} webAllowed={clinicWebAllowed}/> : null;
-  if(!plan)return <section className="report-card answer-content" aria-labelledby="answer-content-title"><p className="report-eyebrow">02 · 고객 질문과 답변</p><h3 id="answer-content-title">{ANSWER_CONTENT_TITLE}</h3>{placePanel}<PagePatternGrid label="고객 질문을 답변으로 연결하는 구성" patterns={[{kind:'faq',title:'고객 질문',detail:'대상·범위·이용 방법부터'},{kind:'proof',title:'확인한 사실',detail:'홈페이지 원문과 운영 조건 대조'},{kind:'action',title:'답변과 다음 행동',detail:'질문 아래에 답변·문의 방법'}]}/>{opportunityFirst?<><p className="answer-scope">고객이 먼저 궁금해할 대상·제공 범위·이용 방법을 질문으로 정리하고, 홈페이지에서 답할 내용을 구체화해 보세요.</p><details open className="answer-detail"><summary>콘텐츠 분석 기록과 활용 안내</summary><p>이 저장 보고서에는 별도의 키워드·추천 질문 분석 기록이 없습니다. 새 진단에서 페이지에 맞는 작성 방향을 확인할 수 있습니다.</p></details></>:<p className="answer-scope">이 보고서에는 새 콘텐츠 개선안이 없습니다. URL을 다시 진단하면 대표 키워드·추천 질문·FAQ 작성 예시가 추가됩니다.</p>}</section>;
-  const keyword=plan.primaryKeyword;
-  const scopeNotes=<><CompactText className="answer-scope" text={plan.notice}/>{plan.mode!=='ai-assisted'&&<p className="answer-notice" role="status">{plan.mode==='limited'?'읽을 수 있는 본문이 부족하거나 동적 페이지입니다. 아래 질문은 작성 방향이며, 기존 답변의 유무는 실제 페이지에서 대조해야 합니다.':'맞춤 질문 분석을 완료하지 못해 페이지 주제 기반의 기본 가이드를 표시합니다. 기존 답변의 유무는 실제 페이지에서 대조해 주세요.'}</p>}</>;
-  return <section className="report-card answer-content" id="answer-content" aria-labelledby="answer-content-title" data-opening={opportunityFirst||undefined}>
-    <header className="answer-header"><p className="report-eyebrow">02 · 고객 질문과 답변</p><h3 id="answer-content-title">{ANSWER_CONTENT_TITLE}</h3><p>고객이 궁금해할 질문과, 홈페이지에 넣을 답변을 함께 확인하세요.</p><div className="answer-tags"><span>{plan.scope==='submitted-page-and-business'?'페이지·상세·이용안내 기반':plan.scope==='submitted-page-and-products'?'페이지·상품 표본 기반':'입력 페이지 기반'}</span>{!opportunityFirst&&<span>실제 네이버 노출 · 미측정</span>}<span>{plan.mode==='ai-assisted'?'페이지 맞춤 질문':plan.mode==='limited'?(opportunityFirst?'페이지 주제 기반 가이드':'수집 내용 제한'):'기본 질문 가이드'}</span></div></header>
-    {placePanel}
-    <p className="answer-quick-note">페이지 원문을 활용한 작성 제안입니다. 실제 네이버 노출·AI 인용은 별도 확인이 필요합니다.</p>
-    {plan.mode!=='ai-assisted'&&<p className="answer-quick-note">{plan.mode==='limited'?'읽을 수 있는 본문이 적어 기본 작성 방향을 보여드립니다.':'맞춤 분석 대신 페이지 주제에 맞춘 기본 질문을 보여드립니다.'} 기존 답변이 있는지는 실제 페이지와 대조하세요.</p>}
-    {keyword?<>
-      <div className="answer-keywords"><div className="answer-primary"><span>대표 키워드 후보</span><strong>{keyword.term}</strong><small>선정 근거 {keyword.confidence==='high'?'충분':keyword.confidence==='medium'?'일부 확인':'추가 검토'}</small></div><div className="answer-secondary"><span>보조 키워드 후보</span><div>{plan.secondaryKeywords.length?plan.secondaryKeywords.map(k=><b key={k.term}>{k.term}</b>):<p>{opportunityFirst?'대표 주제에 집중해 고객의 문답을 구성해 보세요.':'추가 후보를 단정할 근거가 부족합니다.'}</p>}</div><p>검색량·자동완성 순위가 아닌 페이지 주제와의 적합성 기준입니다.</p></div></div>
 
-      {plan.topicScope==='mixed'&&<p className="answer-notice">여러 주제가 섞인 페이지입니다. 대표 키워드를 검토하고, 상품·서비스별 상세 URL도 각각 진단해 주세요.</p>}
-      <VisualSteps kind="questions" label="콘텐츠 구성 순서"/><div className="answer-list"><ReportItemPanels id="answer-questions" label="고객 질문 선택" items={plan.questions.map((q,i)=>({id:q.id,label:q.question,children:<article className="answer-question" key={q.id}>
-        <div className="answer-question-head"><span className="answer-number">추천 질문 0{i+1}</span><span className="answer-status" data-state={q.status}>{ANSWER_STATUS[q.status]}</span></div><h4>{q.question}</h4>
-        <div className="answer-draft"><RoleLabel role="proposal" kicker="TO-BE · 작성 제안" label={q.draft?'원문을 재배치한 답변 초안':'확인 후 채울 답변 예시'}/><p>{q.draft||q.template}</p><small>{q.draft?'원문 기반 초안 · 문맥·최신 조건 확인 후 사용':'작성 예시 · 대괄호를 실제 정보로 채우세요'}</small></div>
-        {q.missingFacts.length>0&&<div className="answer-missing"><RoleLabel role="review" label="게시 전 확인할 정보"/><ul>{q.missingFacts.map(f=><li key={f}>{f}</li>)}</ul></div>}
-        <div className="answer-placement"><RoleLabel role="location" label="수정 위치 제안"/><CompactText text={q.placement}/><small>해당 영역이 없다면 상품·서비스 설명 다음에 문답 영역을 추가하세요.</small></div>
-        <PagePatternGrid label="이 질문을 홈페이지에 넣는 위치" patterns={[{kind:'hero',title:'상품·서비스 설명',detail:'고객이 제공 내용을 읽고'},{kind:'faq',title:'질문 바로 아래 답변',detail:q.question},{kind:'action',title:'다음 행동',detail:'남은 궁금증은 문의·신청으로'}]}/>
-        <CopyText text={answerQuestionText(q)} label={`질문 ${i+1} · 답변 초안 복사`}/>
-        <details open className="answer-detail"><summary>답변의 근거와 작성 순서</summary>{q.evidence.length?q.evidence.map(e=><blockquote key={e.id}><span>{e.location}</span>{e.text}</blockquote>):<p>{q.status==='review'?'기본 가이드이므로 기존 답변과 직접 대조해 주세요.':'수집된 내용에서 이 질문에 직접 답하는 문장을 확인하지 못했습니다. 다른 페이지에 있는지는 확인하지 않았습니다.'}</p>}{q.draft&&q.missingFacts.length>0&&<div className="answer-template"><strong>추가 작성 형식</strong><p>{q.template}</p><small>대괄호를 실제 정보로 채우고 위 원문과 연결해 주세요.</small></div>}<ol>{q.steps.map(step=><li key={step}>{step}</li>)}</ol></details>
-      </article>}))}/></div>
-      <details open className="answer-evidence answer-keyword-sources"><summary>키워드를 선정한 페이지 근거 보기</summary>{[keyword,...plan.secondaryKeywords].map(k=><div key={k.term}><h4>{k.term}</h4><p>{k.reason}</p>{k.evidence.map(e=><blockquote key={e.id}><span>{e.location}</span>{e.text}</blockquote>)}</div>)}</details>
-      <footer className="answer-footer"><ReportJumpLink id="report-site-guide">원문·링크 모음</ReportJumpLink><CopyText text={answerPlanText(plan)} label="추천 질문·개선안 전체 복사"/><p>제목·답변·조건을 실제 본문 텍스트로 제공하세요. FAQ 개수나 특정 코드만으로 AI 인용이 보장되지는 않습니다.</p></footer>
-    </>:<p className="answer-notice">{opportunityFirst?'고객에게 소개할 대표 주제를 정하고, 대상·제공 범위·이용 방법부터 문답으로 구성해 보세요.':'대표 키워드를 판단할 페이지 내용이 부족합니다. 대표 상품·서비스 설명이 있는 상세 URL을 진단해 주세요.'}</p>}
-    <details open className="answer-detail answer-scope-detail"><summary>질문 구성 방식과 확인 범위</summary><p>페이지에 맞춘 콘텐츠 기획 가이드이며 실제 네이버 노출이나 AI 인용을 측정한 결과와 구분합니다.</p>{scopeNotes}</details>
-  </section>;
+function BriefIcon({kind}:{kind:'answer'|'source'|'question'}){
+  return <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.65" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">
+    {kind==='answer'?<><path d="M3.5 5.5h17v11h-9l-5.5 4v-4H3.5z"/><path d="M7.5 9h9m-9 3h6"/></>:kind==='question'?<><circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5 5"/></>:<><path d="M5.5 3.5h8l5 5v12h-13Z"/><path d="M13.5 4.5v5h4M9 13h6m-6 3.5h4"/></>}
+  </svg>;
+}
+
+function BriefingEvidence({evidence,targetUrl,hasDraft}:{evidence:AnswerSource[];targetUrl:string;hasDraft:boolean}){
+  const [selected,setSelected]=useState('');
+  const excerptId=useId();
+  const item=evidence.find(e=>e.id===selected)||evidence[0];
+  if(!item)return <p className="briefing-unavailable">이 질문을 뒷받침하는 페이지 원문을 수집 범위에서 확인하지 못했습니다.</p>;
+  const href=safeHttpUrl(item.url??targetUrl);
+  return <div className="briefing-evidence">
+    <div className="briefing-source-title"><BriefIcon kind="source"/><strong>{hasDraft?'답변 근거':'참고할 페이지 문구'}</strong><small>{evidence.length}개</small></div>
+    {evidence.length>1&&<div className="briefing-source-picker" role="group" aria-label="답변 근거 선택">{evidence.map((e,i)=>
+      <button type="button" key={e.id} aria-controls={excerptId} aria-pressed={item.id===e.id} onClick={()=>setSelected(e.id)}>근거 {i+1}</button>)}</div>}
+    <div id={excerptId} className="briefing-excerpt" aria-live="polite"><strong>{item.location}</strong><blockquote>{item.text}</blockquote>
+      {href&&<a href={href} target="_blank" rel="noopener noreferrer">{new URL(href).hostname} · 원문 열기 ↗</a>}</div>
+  </div>;
+}
+
+function BriefingQuestion({q,targetUrl}:{q:AnswerQuestion;targetUrl:string}){
+  return <article className="answer-question">
+    <div className="briefing-query"><BriefIcon kind="question"/><h4>{q.question}</h4></div>
+    <div className="briefing-answer"><div className="briefing-answer-meta"><span><BriefIcon kind="answer"/>{q.draft?'원문 기반 답변 초안':'확인 후 채울 답변 예시'}</span><small data-state={q.status}>{ANSWER_STATUS[q.status]}</small></div>
+      <p className="briefing-answer-text">{q.draft||q.template}</p>
+      {!q.draft&&<small>대괄호는 실제 운영 정보로 채우세요.</small>}
+      <BriefingEvidence evidence={q.evidence} targetUrl={targetUrl} hasDraft={!!q.draft}/>
+    </div>
+  </article>;
+}
+
+function BriefingFollowup({q,index}:{q:AnswerQuestion;index:number}){
+  return <><details open className="briefing-details"><summary>홈페이지 적용 위치·게시 전 확인</summary><div>
+      <strong>적용 위치</strong><p>{q.placement}</p>
+      {q.missingFacts.length>0&&<><strong>게시 전 확인</strong><ul>{q.missingFacts.map(f=><li key={f}>{f}</li>)}</ul></>}
+      {!!q.steps.length&&<><strong>작성 순서</strong><ol>{q.steps.map(step=><li key={step}>{step}</li>)}</ol></>}
+      {q.draft&&q.missingFacts.length>0&&<><strong>추가 작성 형식</strong><p>{q.template}</p></>}
+    </div></details>
+    <CopyText text={answerQuestionText(q)} label={'질문 '+(index+1)+' · 답변 초안 복사'}/>
+  </>;
+}
+
+export default function AnswerContentPanel({plan,opportunityFirst=false,placeReview,clinicWebAllowed=true}:{plan?:AnswerContentPlan|null;opportunityFirst?:boolean;placeReview?:HospitalPlaceReview;clinicWebAllowed?:boolean}){
+  const keyword=plan?.primaryKeyword;
+  return <>
+    {placeReview&&<><nav className="report-search-links" aria-label="병의원 검색 분석 바로가기">
+      <ReportJumpLink id="hospital-place-title">장소·키워드</ReportJumpLink><ReportJumpLink id="hospital-place-comparison">일반검색 비교</ReportJumpLink><ReportJumpLink id="answer-content">AI 브리핑 초안</ReportJumpLink>
+    </nav><HospitalPlacePanel key={placeReview.page.url} review={placeReview} webAllowed={clinicWebAllowed}/></>}
+    <section className="report-card answer-content briefing-panel" id="answer-content" aria-labelledby="answer-content-title">
+      <header className="briefing-heading"><span className="briefing-symbol"><BriefIcon kind="answer"/></span><div>
+        <h3 className="answer-header" id="answer-content-title">{ANSWER_CONTENT_TITLE}</h3><p>마케팅스캐너 작성 제안 · 실제 네이버 노출 미측정</p>
+      </div></header>
+      {!plan?<><p className="briefing-unavailable">고객이 먼저 궁금해할 대상과 이용 조건을 질문으로 정리하세요.</p>
+        <details open className="briefing-details"><summary>콘텐츠 분석 기록</summary><div><p>이 보고서에는 질문·답변 분석 기록이 없습니다. 같은 URL로 다시 진단하면 페이지에 맞는 초안을 확인할 수 있습니다.</p></div></details>
+        <PagePatternGrid label="질문과 답변의 구성 예시" patterns={[{kind:'faq',title:'고객 질문',detail:'대상·범위·이용 방법'},{kind:'proof',title:'답변 근거',detail:'현재 홈페이지의 원문'},{kind:'action',title:'다음 행동',detail:'방문·문의·신청 방법'}]}/></>:<>
+        {keyword?<>
+          <div className="briefing-topics"><strong>질문 주제</strong><span>{keyword.term}</span>{plan.secondaryKeywords.map(k=><span key={k.term}>{k.term}</span>)}</div>
+          {plan.topicScope==='mixed'&&<p className="briefing-unavailable">여러 주제가 포함된 페이지입니다. 실제 상품·서비스를 설명하는 대표 주제를 확인하세요.</p>}
+          {plan.questions.length?<ReportItemPanels briefing id="answer-questions" label="고객 질문 선택" items={plan.questions.map((q,i)=>({
+            id:q.id,label:q.question,children:<BriefingQuestion key={q.id} q={q} targetUrl={plan.targetUrl}/>,followup:<BriefingFollowup key={q.id} q={q} index={i}/>
+          }))}/>:<p className="briefing-unavailable">이 페이지에는 저장된 고객 질문이 없습니다.</p>}
+          <details open className="briefing-details briefing-keywords"><summary>질문 주제를 선정한 페이지 근거</summary><div>{[keyword,...plan.secondaryKeywords].map(k=>
+            <section key={k.term}><h4>{k.term}</h4><p>{k.reason}</p>{k.evidence.map(e=><blockquote key={e.id}><strong>{e.location}</strong>{e.text}</blockquote>)}</section>)}</div></details>
+        </>:<p className="briefing-unavailable">대표 주제를 정할 페이지 내용이 부족합니다. {opportunityFirst?'대상과 제공 범위를 설명한 페이지의 URL을 확인하세요.':'상품·서비스를 설명한 상세 URL로 다시 진단하세요.'}</p>}
+        <details open className="briefing-details answer-scope-detail"><summary>작성 방식·분석 범위</summary><div><p className="answer-tags">{plan.mode==='ai-assisted'?'페이지 맞춤 질문':plan.mode==='limited'&&opportunityFirst?'페이지 주제 기반 가이드':'기본 질문 가이드'} · {plan.scope==='submitted-page-and-business'?'페이지·서비스 상세 기반':plan.scope==='submitted-page-and-products'?'페이지·상품 표본 기반':'입력 페이지 기반'} · 실제 네이버 노출 미측정</p><p>{plan.notice}</p>
+          {plan.mode!=='ai-assisted'&&<p>{plan.mode==='limited'?'본문 표본이 적어 기본 질문 가이드를 표시합니다.':'페이지 주제에 맞춘 기본 질문입니다.'} 운영 조건은 게시 전에 대조하세요.</p>}
+        </div></details>
+        {keyword&&<footer className="briefing-footer"><ReportJumpLink id="report-site-guide">원문·링크 모음</ReportJumpLink><CopyText text={answerPlanText(plan)} label="추천 질문·개선안 전체 복사"/></footer>}
+      </>}
+    </section>
+  </>;
 }

@@ -67,6 +67,11 @@ test('keyword cards precede the comparison on a clinic report, including older s
   const render=(r:typeof review|undefined)=>load(renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan:report.answerContentPlan,placeReview:r})));
   const $=render(review);assert.equal($('.hospital-place .hp-category').length,4);
   assert.equal($('.hospital-place').next().attr('aria-labelledby'),'hospital-place-comparison');
+  assert.equal($('.hp-profile-name strong').text(),'예시 이비인후과의원');
+  assert.equal($('.hp-profile .hp-place-link').attr('href'),review.link?.url);
+  assert.equal($('.hospital-place .hp-filters button').length,5);
+  assert.equal($('.hp-entry [hidden] textarea').length,3);
+  assert.equal($('.hp-peer').next().attr('id'),'answer-content');
   assert.ok(buildAnswerContentDocument(report).some(x=>x.text==='플레이스 일반검색 비교'));
   const old=structuredClone(report);delete old.siteDiagnostics!.pages[0].medicalEvidence!.place!.media;
   assert.equal(buildHospitalPlaceReview(old.siteDiagnostics)?.page.media,null);
