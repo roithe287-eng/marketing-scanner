@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 import {getPrincipal} from '@/lib/saas/auth';
 import {getPublicSharedReport,getSharedReport} from '@/lib/shareStore';
+import {canReadClinicWebsite} from '@/lib/clinicPlaceInsights';
 import SharedReportView from '@/components/SharedReportView';
 import {headers} from 'next/headers';
 import {captureActivity,targetHost} from '@/lib/saas/activity';
@@ -17,5 +18,5 @@ export default async function SharedReportPage({params}:{params:Promise<{id:stri
   const h=await headers();
   if(principal?.kind==='account'&&!h.get('next-router-prefetch')&&!/prefetch/i.test(h.get('purpose')||h.get('sec-purpose')||''))
     await captureActivity(principal.account.id,'report_view',h,{reportId:id,target:targetHost(report.url)});
-  return <SharedReportView report={report} shareId={id} canSave={canSave}/>;
+  return <SharedReportView report={report} shareId={id} canSave={canSave} clinicWebAllowed={canReadClinicWebsite(principal)}/>;
 }

@@ -8,7 +8,7 @@ import {clinicWebsite,collectClinicPage} from '../lib/collectClinicComparison';
 import {websiteHttp} from '../lib/security/safeFetch';
 import {captureClinicMedia} from '../lib/clinicMedia';
 import {buildHospitalPlaceReview} from '../lib/hospitalPlace';
-import {emptyFieldNotes,observationInsights,type ClinicObservation} from '../lib/clinicPlaceInsights';
+import {canReadClinicWebsite,emptyFieldNotes,observationInsights,type ClinicObservation} from '../lib/clinicPlaceInsights';
 import {hospitalPlaceReport,hospitalHtml} from './fixtures/hospital-place-report';
 import {buildAnswerContentDocument} from '../lib/answerContentDocument';
 
@@ -71,4 +71,21 @@ test('keyword cards precede the comparison on a clinic report, including older s
   const old=structuredClone(report);delete old.siteDiagnostics!.pages[0].medicalEvidence!.place!.media;
   assert.equal(buildHospitalPlaceReview(old.siteDiagnostics)?.page.media,null);
   assert.equal(render(undefined)('.hp-peer,.hospital-place').length,0);
+});
+
+test('read-only viewers can compare observations and see stored evidence without an account-only fetch button',()=>{
+  const report=hospitalPlaceReport(),page=report.siteDiagnostics!.pages[0];
+  delete page.medicalEvidence!.place!.media;
+  page.description='진료시간과 방문 안내';
+  const review=buildHospitalPlaceReview(report.siteDiagnostics)!;
+  const render=(webAllowed:boolean)=>load(renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan:report.answerContentPlan,placeReview:review,clinicWebAllowed:webAllowed})));
+  assert.match(render(false)('.hp-baseline').text(),/진료시간과 방문 안내/);
+  assert.equal(render(false)('.hp-reference button').length,0);
+  assert.equal(render(true)('.hp-reference button').length,1);
+  const features={competitor:false,reports:true,deepdive:false};
+  assert.equal(canReadClinicWebsite(null),false);
+  assert.equal(canReadClinicWebsite({kind:'guest'}),false);
+  assert.equal(canReadClinicWebsite({kind:'account',account:{role:'customer',features}}),false);
+  assert.equal(canReadClinicWebsite({kind:'account',account:{role:'customer',features:{...features,competitor:true}}}),true);
+  assert.equal(canReadClinicWebsite({kind:'internal'}),true);
 });

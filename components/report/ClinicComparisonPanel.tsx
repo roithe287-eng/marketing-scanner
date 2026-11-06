@@ -59,12 +59,13 @@ function CompareResults({ours,peer,tags,ownNotes}:{ours:ClinicPageFacts;peer:Cli
   </div>;
 }
 
-export default function ClinicComparisonPanel({review,entries}:{review:HospitalPlaceReview;entries:PlaceInputs}) {
+export default function ClinicComparisonPanel({review,entries,webAllowed}:{review:HospitalPlaceReview;entries:PlaceInputs;webAllowed:boolean}) {
   const queryList=useId();
   const options=[...new Set(review.groups.flatMap(g=>g.terms.map(t=>t.term)))];
   const [query,setQuery]=useState(review.groups.find(g=>g.category==='질병')?.terms[0]?.term||options[0]||'');
   const [area,setArea]=useState(''),[url,setUrl]=useState(''),[name,setName]=useState(''),[position,setPosition]=useState('');
-  const [mode,setMode]=useState<'web'|'notes'>('web'),[organic,setOrganic]=useState(false);
+  const [selectedMode,setMode]=useState<'web'|'notes'>('web'),[organic,setOrganic]=useState(false);
+  const mode=webAllowed?selectedMode:'notes';
   const [notes,setNotes]=useState<PlaceFieldNotes>(emptyFieldNotes),[ownNotes,setOwnNotes]=useState<PlaceFieldNotes>(emptyFieldNotes);
   const [rows,setRows]=useState<ClinicObservation[]>([]),[selected,setSelected]=useState(0),[ours,setOurs]=useState<ClinicPageFacts>(review.page);
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[showForm,setShowForm]=useState(false);
@@ -101,7 +102,7 @@ export default function ClinicComparisonPanel({review,entries}:{review:HospitalP
     finally{if(active.current===controller){active.current=null;setBusy(false);}}
   }
   async function refreshOwn() {
-    if(active.current)return;
+    if(active.current||!webAllowed)return;
     const controller=new AbortController();active.current=controller;setBusy(true);setError('');
     try{const page=await readPage(ours.url,controller.signal);if(!controller.signal.aborted)setOurs(page);}
     catch(e){if(!controller.signal.aborted)setError(e instanceof Error?e.message:'홈페이지를 확인하지 못했습니다.');}
@@ -114,7 +115,13 @@ export default function ClinicComparisonPanel({review,entries}:{review:HospitalP
     <div className="hp-reference"><div><strong>우리 홈페이지</strong><small>{review.page.media?'진단 시 확인한 페이지':ours.media?'이번에 다시 확인한 페이지':'기존 보고서 · 미디어 미측정'}</small></div>
       <div><ClinicIcon kind="image"/><span>이미지</span><b>{ours.media?ours.media.images+'개':'미측정'}</b></div>
       <div><ClinicIcon kind="video"/><span>영상 요소</span><b>{ours.media?ours.media.videos+'개':'미측정'}</b></div>
-      {!ours.media&&<button type="button" onClick={refreshOwn} disabled={busy}>홈페이지 확인</button>}</div>
+      {webAllowed&&!ours.media&&<button type="button" onClick={refreshOwn} disabled={busy}>홈페이지 확인</button>}</div>
+    <details className="hp-disclosure hp-baseline"><summary><span>우리 홈페이지에서 확인한 내용</span></summary>
+      <div className="hp-disclosure-body"><dl className="hp-own-facts">
+        <div><dt>메타 설명</dt><dd>{ours.description||'표본에서 미확인'}</dd></div>
+        <div><dt>진료 표현</dt><dd>{ours.terms?.length?ours.terms.map(t=>t.term).join(', '):ours.terms?'표본에서 미확인':'미측정'}</dd></div>
+        {ours.media&&<div><dt>이미지 설명</dt><dd>{ours.media.images}개 중 {ours.media.described}개{ours.media.subjects.length?' · '+ours.media.subjects.join(', '):''}</dd></div>}
+      </dl><a href={ours.url} target="_blank" rel="noopener noreferrer">홈페이지 원문 ↗</a></div></details>
     <div className="hp-query"><label><span>검색 지역</span><input maxLength={60} disabled={lock} value={area} placeholder="예) 부산 해운대구" onChange={e=>setArea(e.target.value)}/></label>
       <label><span>검색어</span><input maxLength={60} list={queryList} disabled={lock} value={query} onChange={e=>setQuery(e.target.value)}/></label>
       <datalist id={queryList}>{options.map(t=><option key={t} value={t}/>)}</datalist>
@@ -123,7 +130,7 @@ export default function ClinicComparisonPanel({review,entries}:{review:HospitalP
       {!!rows.length&&<button type="button" disabled={busy} onClick={()=>{setRows([]);setShowForm(false);setError('');setOrganic(false);setPosition('');setUrl('');setName('');setNotes(emptyFieldNotes);}}>검색 조건 변경</button>}
       <small>비교 {rows.length} / 3곳</small></div>
     {showForm&&<form className="hp-peer-form" onSubmit={add}><fieldset disabled={busy}><legend>비교할 일반 결과</legend>
-      <div className="hp-input-grid"><label><span>비교 자료</span><select value={mode} onChange={e=>setMode(e.target.value as 'web'|'notes')}><option value="web">공식 홈페이지 분석</option><option value="notes">관찰·제공 자료만</option></select></label>
+      <div className="hp-input-grid">{webAllowed?<label><span>비교 자료</span><select value={mode} onChange={e=>setMode(e.target.value as 'web'|'notes')}><option value="web">공식 홈페이지 분석</option><option value="notes">관찰·제공 자료만</option></select></label>:<div className="hp-mode"><span>비교 자료</span><b>직접 본 플레이스 정보</b></div>}
         <label><span>광고 제외 순서</span><input required type="number" min={1} max={100} value={position} placeholder="목록에서 본 순서" onChange={e=>setPosition(e.target.value)}/></label></div>
       {mode==='web'?<label><span>비교 병원 공식 홈페이지</span><input required inputMode="url" maxLength={2048} value={url} placeholder="병원 홈페이지 주소" onChange={e=>setUrl(e.target.value)}/></label>:
         <label><span>비교 병원명</span><input required maxLength={100} value={name} onChange={e=>setName(e.target.value)}/></label>}

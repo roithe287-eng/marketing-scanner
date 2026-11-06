@@ -16,7 +16,7 @@ function TermLink({candidate}:{candidate:PlaceCandidate}){
     {candidate.term}{candidate.basis==='context'&&<small>문맥 확인</small>}<span aria-hidden="true">↗</span>
   </a>;
 }
-export default function HospitalPlacePanel({review}:{review:HospitalPlaceReview}) {
+export default function HospitalPlacePanel({review,webAllowed=true}:{review:HospitalPlaceReview;webAllowed?:boolean}) {
   const [entries,setEntries]=useState<PlaceInputs>(emptyEntries);
   const comparison=comparePlaceEntries(review,entries);
   const count=review.groups.reduce((n,g)=>n+g.terms.length,0);
@@ -52,6 +52,6 @@ export default function HospitalPlacePanel({review}:{review:HospitalPlaceReview}
       <details className="hp-disclosure hp-policy"><summary><span>등록 기준·제외 설정</span></summary><div className="hp-disclosure-body"><p>{PLACE_RULE}</p><p>{PLACE_ROLLOUT}</p><p>{PLACE_EXCLUSIONS}</p>
         <div className="hp-links"><a href="https://new.smartplace.naver.com/" target="_blank" rel="noopener noreferrer">관리 화면 ↗</a><a href={PLACE_NOTICE} target="_blank" rel="noopener noreferrer">등록 안내 ↗</a></div></div></details>
     </section>
-    <ClinicComparisonPanel key={review.page.url} review={review} entries={entries}/>
+    <ClinicComparisonPanel key={review.page.url} review={review} entries={entries} webAllowed={webAllowed}/>
   </>;
 }

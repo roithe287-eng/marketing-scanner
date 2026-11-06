@@ -5,6 +5,7 @@ import {useAccess} from '@/components/access/useAccess';
 import AccessBar from '@/components/access/AccessBar';
 import SmartstoreReportView from '@/components/report/SmartstoreReport';
 import {SmartstoreReportSchema,type SmartstoreReport} from '@/lib/smartstore';
+import {canReadClinicWebsite} from '@/lib/clinicPlaceInsights';
 import ReportLayout from '@/components/report/ReportLayout';
 import BrandHeader from "@/components/BrandHeader";
 import LandingHero from "@/components/LandingHero";
@@ -154,7 +155,7 @@ export default function HomePage() {
           <div
             className="report-page-content"
           >
-            <ReportLayout report={report} onComparisonChange={baseline=>setReport(prev=>prev?{...prev,diagnosisBaseline:baseline}:prev)} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
+            <ReportLayout report={report} clinicWebAllowed={canReadClinicWebsite(access)} onComparisonChange={baseline=>setReport(prev=>prev?{...prev,diagnosisBaseline:baseline}:prev)} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
               const request=competitorRequest.current;
               if(request && !competitorLoading) void fetchCompetitor(request.url,request.hints,request.run);
             }:undefined} actions={<><DownloadReportButton targetId="report-area" report={report} pending={competitorLoading} direct/>{(access.kind==='internal'||access.account?.features.reports)&&<ShareButton report={report} competitorLoading={competitorLoading} onShareCreated={setReport}/>}</>}/>
