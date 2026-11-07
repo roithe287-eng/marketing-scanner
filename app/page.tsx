@@ -115,7 +115,7 @@ export default function HomePage() {
 
       {hasReport && !loading ? <details className="scanner-retry">
         <summary className="jm-container"><span>진단 결과가 준비됐습니다</span><strong>다른 URL 진단하기 <b aria-hidden="true">＋</b></strong></summary>
-        <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'}/>
+        <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'} compact/>
       </details> : <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'}/>}
       {access.kind==='error'&&<p role="alert" className="jm-container access-error">{access.message}</p>}
 

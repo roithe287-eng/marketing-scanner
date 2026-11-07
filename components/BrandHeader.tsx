@@ -14,6 +14,7 @@ export default function BrandHeader({ lockHome = false, showInquiry = false, lan
     process.env.NEXT_PUBLIC_BRAND_URL || "https://prorealmkt.com";
 
   if (landing) return <header className="scanner-home-header">
+    <a className="scanner-skip-link" href="#scanner-start">진단 시작으로 건너뛰기</a>
     <div className="jm-container scanner-home-header-bar">
       <a href="/" className="scanner-home-wordmark">마케팅스캐너<small>by 진짜마케팅</small></a>
       <div className="scanner-home-header-actions"><a href="/pricing">이용요금</a>{accountMenu}</div>
