@@ -6,6 +6,7 @@ import {baselineQuestions, comparisonTime, parseReportReference} from '@/lib/geo
 import {retentionTime} from '@/lib/reportRetention';
 import {isSmartstoreUrl,parseSmartstoreUrl,storePlatformLabel,SMARTSTORE_NOTICE} from '@/lib/smartstore';
 import {requestJson} from '@/lib/client/request';
+import {ReadingToggle} from './ReadingDisclosure';
 
 type Props = {onSubmit:(url:string, geoQuestions?:string[], baselineId?:string)=>void;loading:boolean};
 export default function UrlForm({onSubmit,loading}:Props) {
@@ -46,13 +47,13 @@ export default function UrlForm({onSubmit,loading}:Props) {
   return <form onSubmit={handleSubmit} className="scanner-url-form">
     <label htmlFor="scanner-url" className="scanner-url-label">진단할 웹사이트 URL</label>
     <div className="scanner-url-row">
-      <input id="scanner-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="웹사이트 URL 입력" aria-label="분석할 웹사이트 URL" className="scanner-url-input" disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" autoComplete="off" autoCapitalize="none" spellCheck={false} aria-describedby={smartstore?'scanner-url-help smartstore-url-notice':'scanner-url-help'}/>
+      <input id="scanner-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="예: https://example.com" aria-label="분석할 웹사이트 URL" className="scanner-url-input" required disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" enterKeyHint="go" autoComplete="url" autoCapitalize="none" spellCheck={false} aria-describedby={smartstore?'scanner-url-help smartstore-url-notice':'scanner-url-help'}/>
       <button type="submit" disabled={loading||baselineLoading} className={`jm-button scanner-submit${smartstore?' scanner-submit-store':''}`}>{loading?'분석 중...':smartstore?'스토어 제한 분석 시작':baseline?'같은 URL로 재진단·비교':'진단 시작'}<span aria-hidden="true">→</span></button>
     </div>
     <p id="scanner-url-help" className="scanner-url-help">홈페이지·서비스 소개·광고 랜딩·스마트스토어·브랜드스토어 URL을 입력해 주세요.</p>
     {smartstore&&<aside id="smartstore-url-notice" className="smartstore-notice" role="status"><strong><span aria-hidden="true">⚠️ </span>{storePlatformLabel(url)} · 콘텐츠 분석 대부분 제한</strong><p>{SMARTSTORE_NOTICE}</p><p>주소 입력 예: {storePlatformLabel(url)==='브랜드스토어'?'brand.naver.com/dongwon':'smartstore.naver.com/wodkq'} · 상품 주소도 분석 범위는 동일하게 제한됩니다.</p></aside>}
     {!smartstore&&<details className="scanner-advanced">
-      <summary>GEO 질문·이전 보고서 비교 <span>(선택)</span></summary>
+      <summary><span>질문 설정·이전 보고서 비교 <small>(선택)</small></span><ReadingToggle/></summary>
     <details className="px-4 py-3 text-left text-sm">
       <summary className="cursor-pointer font-bold">이전 보고서와 재진단 비교하기</summary>
       <p className="mt-3 text-xs leading-6 text-jm-gray">보관한 보고서의 URL로 다시 진단해 레이더·보완 항목을 비교합니다. 재사용 가능한 GEO 질문이 있으면 동일 질문의 관측도 함께 비교합니다.</p><p className="mt-2 text-xs leading-6 text-jm-gray">공유 보고서는 최대 7일간 보관됩니다. 만료 전에 비교하세요. 비교를 저장해도 기준 보고서의 만료일은 연장되지 않습니다.</p>
