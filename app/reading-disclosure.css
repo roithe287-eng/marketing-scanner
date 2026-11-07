@@ -82,6 +82,9 @@ details[open]>summary .reading-toggle svg {transform:rotate(180deg)}
 }
 .feature-reading>.reading-summary {padding:8px 0;gap:8px;color:#425975;font-size:.875rem;font-weight:650;line-height:1.6}
 .feature-reading .scanner-feature-description {margin:4px 0 0;font-size:.9375rem}
+.scanner-landing--gate .feature-reading>.reading-summary {flex-direction:column;justify-content:center;text-align:center;gap:8px;padding:14px 4px 10px;font-weight:500}
+.scanner-landing--gate .feature-reading .reading-toggle {justify-content:center;color:var(--feature-accent);font-size:.8125rem;font-weight:650}
+.scanner-landing--gate .feature-reading[open]>.reading-summary {background:transparent}
 @media(max-width:600px){
   .section-reading>.reading-summary {gap:8px;padding:12px 13px}
   .reading-summary {padding:10px 12px}

@@ -131,8 +131,8 @@
 .scanner-sector-preview {scroll-margin-top:95px;margin:0 0 clamp(36px,5vw,62px);min-width:0}
 .scanner-sector-preview * {box-sizing:border-box;min-width:0}
 .scanner-sector-preview h2 {margin:0;color:#17202d;font-size:clamp(24px,2.55vw,36px);line-height:1.4;font-weight:800;letter-spacing:-.045em;word-break:keep-all;overflow-wrap:anywhere}
-.scanner-sector-intro {margin:6px 0 15px;color:#515e70;font-size:1rem;line-height:1.65;word-break:keep-all;overflow-wrap:anywhere}
-.scanner-sector-options {display:flex;flex-wrap:wrap;gap:7px;margin-bottom:13px}
+.scanner-sector-intro {max-width:42rem;margin:12px auto 24px;color:#515e70;font-size:1rem;line-height:1.75;word-break:keep-all;overflow-wrap:anywhere}
+.scanner-sector-options {display:flex;justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:20px}
 .scanner-sector-options button {
   min-height:44px;padding:7px 15px;border:1px solid #d1d9e4;border-radius:20px;background:white;color:#354356;
   font:inherit;font-weight:650;font-size:.9375rem;line-height:1.4;cursor:pointer;
@@ -141,12 +141,13 @@
 .scanner-sector-options button:hover {border-color:#7388a7}
 .scanner-sector-options button:focus-visible {outline:3px solid #2d5ccb;outline-offset:3px}
 .scanner-sector-example {
-  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(18px,3vw,40px);align-items:center;
+  display:grid;grid-template-columns:minmax(0,1fr);gap:24px;align-items:center;justify-items:center;
   border:1px solid #d8e1ea;border-radius:15px;padding:clamp(17px,2.4vw,28px);background:#f7f9fc;
 }
-.scanner-sector-question h3 {margin:0;color:#202d43;font-size:clamp(18px,1.65vw,22px);line-height:1.5;font-weight:760;letter-spacing:-.035em;word-break:keep-all;overflow-wrap:anywhere}
+.scanner-sector-question {max-width:42rem}
+.scanner-sector-question h3 {margin:0;color:#202d43;font-size:clamp(18px,1.65vw,22px);line-height:1.5;font-weight:760;letter-spacing:-.035em;word-break:keep-all;overflow-wrap:anywhere;text-wrap:balance}
 .scanner-sector-question p {margin:8px 0 0;color:#4a586c;font-size:.9375rem;line-height:1.7;word-break:keep-all;overflow-wrap:anywhere}
-.scanner-sector-journey {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:17px;list-style:none;margin:0;padding:0}
+.scanner-sector-journey {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px;list-style:none;width:100%;max-width:48rem;margin:0;padding:0}
 .scanner-sector-journey li {
   position:relative;display:grid;align-items:center;min-height:60px;padding:9px;border:1px solid #d7e1ed;border-radius:9px;background:#fff;
   color:#334867;font-size:.9375rem;line-height:1.5;font-weight:650;text-align:center;word-break:keep-all;overflow-wrap:anywhere;
@@ -161,8 +162,44 @@
   .scanner-sector-options {gap:6px}
   .scanner-sector-options button {padding:6px 11px}
   .scanner-sector-journey {grid-template-columns:minmax(0,1fr);gap:13px}
-  .scanner-sector-journey li {min-height:38px;padding:6px 12px;text-align:left}
-  .scanner-sector-journey li+li::before {top:-11px;left:18px;transform:rotate(135deg)}
+  .scanner-sector-journey li {min-height:44px;padding:9px 12px;text-align:center}
+  .scanner-sector-journey li+li::before {top:-11px;left:calc(50% - 3px);transform:rotate(135deg)}
+}
+
+/* Carry the hero's central axis through every introductory section. */
+.scanner-gate-details {text-align:center}
+.scanner-landing--gate .scanner-features-heading {display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:28px}
+.scanner-landing--gate .scanner-features-heading>p {margin:0;max-width:40rem}
+.scanner-landing--gate :is(.scanner-sector-preview h2,.scanner-features-heading h2) {font-size:clamp(25px,2.6vw,34px);font-weight:800;line-height:1.4;text-wrap:balance}
+.scanner-landing--gate .scanner-feature-card {--feature-accent:#4266a1;text-align:center;border-top:3px solid color-mix(in srgb,var(--feature-accent) 42%,white)}
+.scanner-landing--gate .scanner-feature-card[data-kind=search] {--feature-accent:#387787}
+.scanner-landing--gate .scanner-feature-card[data-kind=citation] {--feature-accent:#79629b}
+.scanner-landing--gate .scanner-feature-card[data-kind=competition] {--feature-accent:#6d7a49}
+.scanner-landing--gate .scanner-feature-card[data-kind=rewrite] {--feature-accent:#99714e}
+.scanner-landing--gate .scanner-feature-card[data-kind=roadmap] {--feature-accent:#91667c}
+.scanner-landing--gate .scanner-feature-card>div:first-child {background-color:color-mix(in srgb,var(--feature-accent) 6%,white)}
+.scanner-landing--gate .scanner-feature-eyebrow {color:var(--feature-accent);font-weight:650;letter-spacing:.045em}
+.scanner-landing--gate .scanner-feature-card h3 {font-weight:750;text-wrap:balance}
+.scanner-landing--gate .scanner-feature-description {max-width:32rem;margin-inline:auto;line-height:1.8;font-weight:400}
+.scanner-landing--gate .scanner-pricing-summary {flex-direction:column;justify-content:center;gap:18px;padding:32px 24px;text-align:center}
+.scanner-landing--gate .scanner-pricing-summary-copy h2 {font-size:20px;color:#202d43;margin-bottom:12px}
+.scanner-landing--gate .scanner-pricing-summary-copy strong {font-size:25px;font-weight:800;font-variant-numeric:tabular-nums}
+.scanner-landing--gate .scanner-pricing-summary-copy small {margin-top:8px}
+.scanner-landing--gate .scanner-pricing-benefit {justify-content:center;order:initial;flex-basis:auto;font-weight:600;padding-top:16px;border-top:1px solid #e0e6ef;width:100%;max-width:34rem}
+.scanner-landing--gate .scanner-pricing-summary-link {width:auto;min-width:180px}
+.scanner-home-page>footer>.jm-container {flex-direction:column;justify-content:center;text-align:center}
+.scanner-home-page>footer>.jm-container>div:last-child {justify-content:center}
+@media(max-width:599px){
+  .scanner-sector-preview {margin-bottom:48px}
+  .scanner-sector-intro {font-size:15px;max-width:22rem}
+  .scanner-sector-example {padding:22px 18px;gap:22px}
+  .scanner-sector-question p {margin-top:12px;line-height:1.8}
+  .scanner-landing--gate .scanner-features-heading {gap:12px;margin-bottom:24px}
+  .scanner-landing--gate .scanner-features-heading h2 {overflow-wrap:normal}
+  .scanner-landing--gate .scanner-features-heading h2 em {display:block}
+  .scanner-landing--gate .scanner-feature-card h3 {font-size:21px}
+  .scanner-landing--gate .scanner-pricing-summary {padding:26px 18px}
+  .scanner-landing--gate .scanner-pricing-summary-copy strong {font-size:23px}
 }
 
 /* Quiet usability refinements within the original scanner composition. */
