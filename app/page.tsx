@@ -116,13 +116,13 @@ export default function HomePage() {
       {hasReport && !loading ? <details className="scanner-retry">
         <summary className="jm-container"><span>진단 결과가 준비됐습니다</span><strong>다른 URL 진단하기 <b aria-hidden="true">＋</b></strong></summary>
         <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'} compact/>
-      </details> : <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'}/>}
+      </details> : <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'} compact={loading}/>}
       {access.kind==='error'&&<p role="alert" className="jm-container access-error">{access.message}</p>}
 
       {/* Loading */}
       {loading && (
         <section className="jm-container pb-20">
-          <div className="jm-card p-10 text-center">
+          <div className="jm-card p-10 text-center" role="status" aria-live="polite">
             <div className="inline-flex h-12 w-12 items-center justify-center">
               <div className="h-10 w-10 animate-spin rounded-full border-4 border-jm-light-gray border-t-jm-red" />
             </div>
