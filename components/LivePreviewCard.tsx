@@ -123,7 +123,7 @@ export default function LivePreviewCard() {
   const [view,setView] = useState<PreviewView>('overview');
   const panelId = useId();
   return <aside id="scanner-result-preview" className="scanner-preview scanner-preview--expanded" aria-label="진단 결과 미리보기 · 예시 데이터">
-    <div className="scanner-preview-heading"><div><p>결과 미리보기</p><h2>진단 결과를 먼저 살펴보세요.</h2></div><span>예시 데이터</span></div>
+    <div className="scanner-preview-heading"><div><p>YOUR MARKETING MAP</p><h2>우리 사이트를 읽는 입체적인 시선</h2></div><span>결과 예시</span></div>
     <div className="scanner-preview-tabs" role="group" aria-label="결과 미리보기 선택">
       {views.map(item => <button key={item.key} type="button" aria-pressed={view===item.key} aria-controls={panelId} onClick={() => setView(item.key)}><DiagnosisIcon axis={item.icon}/><span>{item.label}</span></button>)}
     </div>
