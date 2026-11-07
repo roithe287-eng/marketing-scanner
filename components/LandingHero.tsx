@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import UrlForm from '@/components/UrlForm';
-import LivePreviewCard from '@/components/LivePreviewCard';
 import LandingReportFeatures from '@/components/LandingReportFeatures';
 import LandingSectorPreview from '@/components/LandingSectorPreview';
 import LandingPricing from '@/components/LandingPricing';
@@ -37,10 +36,7 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
               </div>
               <div className="scanner-entry-help"><span>이용 승인 후 URL 입력 · 진단</span><a href="/login">기존 계정 로그인 <span aria-hidden="true">→</span></a></div>
             </div>}
-            {!compact && <nav className="scanner-entry-links" aria-label="진단 예시 살펴보기">
-              <a href="#scanner-result-preview">결과 미리보기 <span aria-hidden="true">↓</span></a>
-              <a href="#scanner-sector-preview">병의원·법률·분양 등 업종별 진단 <span aria-hidden="true">↓</span></a>
-            </nav>}
+
           </div>
         </div>
         {!compact && <ol className="scanner-gate-capabilities" aria-label="진단으로 확인할 내용">
@@ -49,8 +45,8 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
       </div>
       {!compact && <div className="scanner-gate-details">
         <LandingSectorPreview />
+        <LandingSectorPreview group="commerce" />
         <LandingReportFeatures />
-        <div className="scanner-gate-preview"><LivePreviewCard /></div>
         <LandingPricing />
       </div>}
     </div>

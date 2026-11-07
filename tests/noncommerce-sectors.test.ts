@@ -100,15 +100,23 @@ test('insurance eligibility wording alone does not imply a public support progra
   assert.equal(analyzeWebsitePurpose(data).sector?.id,'insurance');assert.equal(analyzeWebsitePurpose(data).kind,'service');
 });
 
-test('the pre-scan industry examples start with the actual medical journey and do not submit a diagnosis',()=>{
-  const $=load(renderToStaticMarkup(React.createElement(LandingSectorPreview)));
-  const choices=$('.scanner-sector-options button');
-  assert.deepEqual(choices.toArray().map(el=>$(el).attr('value')).sort(),Object.keys(sectorJourneys).sort());
-  assert.equal(choices.filter('[aria-pressed=true]').text(),'병의원');
-  assert.deepEqual($('.scanner-sector-journey li').toArray().map(el=>$(el).text()),sectorJourneys.medical);
-  for(const choice of choices.toArray()){
-    assert.equal($(choice).attr('type'),'button');
-    assert.equal($(choice).attr('aria-controls'),$('.scanner-sector-example').attr('id'));
+test('industry examples preserve supported journeys and keep extra choices folded',()=>{
+  for(const group of ['noncommerce','commerce'] as const){
+    const $=load(renderToStaticMarkup(React.createElement(LandingSectorPreview,{group})));
+    const choices=$('.scanner-industry-options button');
+    assert.equal(choices.length,24);
+    assert.equal($('.scanner-industry-preview>.scanner-industry-options button').length,8);
+    assert.equal($('.scanner-industry-more button').length,16);
+    assert.equal($('.scanner-industry-more[open]').length,0);
+    assert.equal(choices.filter('[aria-pressed=true]').length,1);
+    assert.equal($('.scanner-industry-flow li').length,3);
+    if(group==='noncommerce'){
+      for(const key of Object.keys(sectorJourneys))assert.equal(choices.filter(`[value="${key}"]`).length,1);
+      assert.deepEqual($('.scanner-industry-flow strong').toArray().map(el=>$(el).text()),sectorJourneys.medical);
+    }
+    for(const choice of choices.toArray()){
+      assert.equal($(choice).attr('type'),'button');
+      assert.equal($(choice).attr('aria-controls'),$('.scanner-industry-example').attr('id'));
+    }
   }
-  assert.match($('.scanner-sector-question').text(),/플레이스 키워드 후보/);
 });

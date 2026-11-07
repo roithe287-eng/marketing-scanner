@@ -27,17 +27,22 @@ test('entry respects access state without presenting a fake URL input to guests'
   assert.equal(render({allowed:true,loading:true})('#scanner-start button[type="submit"][disabled]').length,1);
 });
 
-test('landing shortcuts resolve to unique sections and feature source content remains expandable',()=>{
+test('landing examples follow noncommerce, commerce and common order without small shortcuts',()=>{
   const $=render();
-  for(const link of $('.scanner-entry-links a').toArray()){
-    assert.equal($($(link).attr('href')!).length,1);
-  }
+  assert.equal($('.scanner-entry-links, .scanner-feature-eyebrow').length,0);
+  assert.deepEqual($('.scanner-gate-details>section').toArray().slice(0,3).map(el=>$(el).attr('id')),['scanner-sector-preview','scanner-commerce-preview','scanner-report-features']);
+  assert.equal($('.scanner-common-result[open]').length,0);
+  assert.equal($('#scanner-report-features #scanner-result-preview').length,1);
+  assert.equal($('.scanner-example-title>span').text(),'비커머스커머스공통 적용');
+  assert.doesNotMatch($.text(),/FROM SIGNALS TO ACTION|YOUR MARKETING MAP/);
   assert.equal($('.feature-reading').length,6);
   assert.equal($('.feature-reading[open]').length,0);
   assert.equal($('.feature-reading .scanner-feature-description').length,6);
   assert.equal($('.scanner-gate-art img').length,1);
   assert.equal($('.scanner-home-shortcuts, .scanner-entry-intro').length,0);
-  assert.equal($('.scanner-sector-options button').length,8);
+  assert.equal($('.scanner-industry-options button').length,48);
+  const ids=$('[id]').toArray().map(el=>$(el).attr('id'));
+  assert.equal(new Set(ids).size,ids.length);
 });
 
 test('retry entry retains the real form without duplicating the marketing page',()=>{
