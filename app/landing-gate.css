@@ -175,7 +175,7 @@
 .scanner-landing--gate .scanner-feature-card[data-kind=search] {--feature-accent:#387787}
 .scanner-landing--gate .scanner-feature-card[data-kind=citation] {--feature-accent:#79629b}
 .scanner-landing--gate .scanner-feature-card[data-kind=competition] {--feature-accent:#6d7a49}
-.scanner-landing--gate .scanner-feature-card[data-kind=rewrite] {--feature-accent:#99714e}
+.scanner-landing--gate .scanner-feature-card[data-kind=rewrite] {--feature-accent:#906947}
 .scanner-landing--gate .scanner-feature-card[data-kind=roadmap] {--feature-accent:#91667c}
 .scanner-landing--gate .scanner-feature-card>div:first-child {background-color:color-mix(in srgb,var(--feature-accent) 6%,white)}
 .scanner-landing--gate .scanner-feature-eyebrow {color:var(--feature-accent);font-weight:650;letter-spacing:.045em}
