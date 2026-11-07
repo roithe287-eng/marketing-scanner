@@ -22,11 +22,11 @@ function FeatureGraphic({kind}:{kind:typeof features[number]['kind']}) {
 
 export default function LandingReportFeatures() {
   return <section id="scanner-report-features" className="scanner-report-features" aria-labelledby="scanner-features-heading">
-    <div className="scanner-features-heading"><div><p className="scanner-home-eyebrow">진단 항목</p><h2 id="scanner-features-heading">무엇을 확인하고, 어떻게 바꿀까요?</h2></div><p>필요한 항목을 펼쳐 자세히 확인하세요.</p></div>
+    <div className="scanner-features-heading"><div><p>FROM SIGNALS TO ACTION</p><h2 id="scanner-features-heading">우리 사이트를 읽는 <em>더 넓은 시선.</em></h2></div><p>한 번의 진단에서 만나는 여러 관점.<br/>각 결과를 실제로 바꿀 일에 연결합니다.</p></div>
     <div className="scanner-feature-grid">{features.map(feature=><article key={feature.kind} className="scanner-feature-card" data-kind={feature.kind}>
+      <FeatureGraphic kind={feature.kind}/>
       <p className="scanner-feature-eyebrow">{feature.eyebrow}</p><h3>{feature.title}</h3>
       <details className="reading-fold feature-reading"><summary className="reading-summary"><span>{feature.detail}</span><ReadingToggle/></summary>
-        <div className="scanner-feature-expanded"><FeatureGraphic kind={feature.kind}/></div>
         <p className="scanner-feature-description">{feature.description}</p>
       </details>
     </article>)}</div>

@@ -17,7 +17,7 @@ test('entry respects access state without presenting a fake URL input to guests'
   assert.equal(guest('#scanner-start a[href="/login"]').length,1);
   const checking=render({checking:true});
   assert.equal(checking('#scanner-start [role="status"]').length,1);
-  assert.equal(checking('#scanner-start a, #scanner-start input, #scanner-start button').length,0);
+  assert.equal(checking('#scanner-start .scanner-gated-form a, #scanner-start input, #scanner-start button').length,0);
   const allowed=render({allowed:true});
   assert.equal(allowed('#scanner-url').length,1);
   assert.equal(allowed('#scanner-url[required]').length,1);
@@ -29,19 +29,20 @@ test('entry respects access state without presenting a fake URL input to guests'
 
 test('landing shortcuts resolve to unique sections and feature source content remains expandable',()=>{
   const $=render();
-  for(const link of $('.scanner-home-shortcuts a, .scanner-back-to-start').toArray()){
+  for(const link of $('.scanner-entry-links a').toArray()){
     assert.equal($($(link).attr('href')!).length,1);
   }
   assert.equal($('.feature-reading').length,6);
   assert.equal($('.feature-reading[open]').length,0);
   assert.equal($('.feature-reading .scanner-feature-description').length,6);
-  assert.equal($('.feature-reading .scanner-feature-expanded').length,6);
+  assert.equal($('.scanner-gate-art img').length,1);
+  assert.equal($('.scanner-home-shortcuts, .scanner-entry-intro').length,0);
   assert.equal($('.scanner-sector-options button').length,8);
 });
 
 test('retry entry retains the real form without duplicating the marketing page',()=>{
   const $=render({allowed:true,compact:true});
   assert.equal($('#scanner-url').length,1);
-  assert.equal($('.scanner-gate-details, .scanner-home-shortcuts, h1').length,0);
+  assert.equal($('.scanner-gate-details, .scanner-entry-links, .scanner-gate-art, h1').length,0);
   assert.equal($('#scanner-heading').text(),'다른 웹사이트 진단하기');
 });

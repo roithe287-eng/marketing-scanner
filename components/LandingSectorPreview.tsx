@@ -67,10 +67,9 @@ export default function LandingSectorPreview() {
 
   return (
     <section id="scanner-sector-preview" className="scanner-sector-preview" aria-labelledby="scanner-sector-heading">
-      <span className="scanner-home-eyebrow">업종별 진단</span>
-      <h2 id="scanner-sector-heading">예약·상담으로 이어지는 정보를 확인합니다.</h2>
+      <h2 id="scanner-sector-heading">예약·상담형 사이트 진단 예시</h2>
       <p className="scanner-sector-intro">
-        우리 업종을 선택하면, 고객이 결정하기 전에 찾는 정보를 볼 수 있습니다.
+        업종을 선택해 고객이 예약·상담·신청을 결정하기까지 홈페이지에서 찾는 정보를 확인해 보세요.
       </p>
       <div className="scanner-sector-options" role="group" aria-label="진단 예시 업종 선택">
         {examples.map(example => (
