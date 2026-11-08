@@ -37,6 +37,6 @@ export default function ScoreRadar({diagnosis,plan,review,featured=false,siteNam
       {!unmeasured&&<span className="report-meter" aria-hidden="true"><i style={{width:`${s.score}%`,background:s.color}}/></span>}
     </button>)}</div>
     {!featured&&!unmeasured&&<><div className="report-priority-heading"><h4>먼저 검토할 3개 영역</h4><span>점수가 낮은 순서 · 동점은 표시 순서 기준</span></div>
-    <ol className="report-priority-trio">{ordered.slice(0,3).map((s,i)=><li key={s.key}><span>0{i+1}</span><div><strong>{s.label} · {s.score}점</strong><p>{s.action}</p></div><button type="button" onClick={()=>selectAndShow(s.key)} aria-controls={detailId} aria-label={`${s.label} 개선 방법 열기`}>개선 방법 열기 →</button></li>)}</ol></>}
+    <ol className="report-priority-trio">{ordered.slice(0,3).map((s,i)=><li key={s.key}><span>{String(i+1).padStart(2,'0')}</span><div><strong>{s.label} · {s.score}점</strong><p>{s.action}</p></div><button type="button" onClick={()=>selectAndShow(s.key)} aria-controls={detailId} aria-label={`${s.label} 개선 방법 열기`}>개선 방법 열기 →</button></li>)}</ol></>}
   </section>;
 }

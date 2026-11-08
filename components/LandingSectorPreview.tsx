@@ -26,7 +26,7 @@ export default function LandingSectorPreview({group='noncommerce'}:{group?:Indus
     <div className="scanner-industry-example" id={panelId} aria-live="polite" aria-atomic="true">
       <h3>{selected.label}<span>고객의 선택 흐름</span></h3>
       <ol className="scanner-industry-flow" aria-label={`${selected.label} 적용 예시 흐름`}>
-        {selected.steps.map((step,index)=><li key={index}><span className="scanner-industry-step-icon"><DiagnosisIcon axis={icons[index]}/></span><small aria-hidden="true">0{index+1}</small><strong>{step}</strong></li>)}
+        {selected.steps.map((step,index)=><li key={index}><span className="scanner-industry-step-icon"><DiagnosisIcon axis={icons[index]}/></span><small aria-hidden="true">{String(index+1).padStart(2,'0')}</small><strong>{step}</strong></li>)}
       </ol>
     </div>
   </section>;

@@ -82,5 +82,5 @@ export function ReportSections({chapter,items,diagrams={},briefs={}}:{chapter:st
 }
 export function ReportNavigation({chapters}:{chapters:readonly (readonly [string,string])[]}){
  const selection=useReportSelection();
- return <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} data-chapter-link={id} aria-current={selection?.chapter===id?'location':undefined} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(`report-${id}`))event.preventDefault();}}><span>0{i+1}</span>{label}</a>)}</nav>;
+ return <nav className="report-nav" aria-label="보고서 목차">{chapters.map(([id,label],i)=><a key={id} href={`#report-${id}`} data-chapter-link={id} aria-current={selection?.chapter===id?'location':undefined} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(`report-${id}`))event.preventDefault();}}><span>{String(i+1).padStart(2,'0')}</span>{label}</a>)}</nav>;
 }

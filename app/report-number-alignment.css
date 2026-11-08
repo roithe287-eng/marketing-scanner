@@ -1,0 +1,63 @@
+/* Keep sequence labels on one line and centered independently of nearby copy. */
+.report-v2.report-focused :is(.work-number,.report-phase-number,.report-numbered-list>li>span,
+  .report-execution-steps>li>span,.growth-action-index,.position-step,.report-section-divider>span,
+  .report-priority-trio>li>span,.report-step-top>span,.report-brief-grid>div>span,
+  .report-wirezone>b,.naver-priorities button>b,.sector-journey>div>span,
+  .store-demo-journey b,.report-outcome-number,.reading-index,.report-chapter-symbol small,
+  .guide-field-list h6>span,.simple-kpi-fields b,.guide-route b,.guide-steps>li>span,
+  .naver-execution li>span,.report-evidence-flow dt>span,.growth-steps li>span) {
+  display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-sizing:border-box;white-space:nowrap;text-align:center;line-height:1;
+  letter-spacing:0;font-variant-numeric:tabular-nums;
+}
+.report-v2.report-focused :is(.report-index,.page-pattern-number,.report-diagram-node-index,
+  .report-visual-step-number,.report-nav a>span) {
+  min-width:2ch;white-space:nowrap;text-align:center;line-height:1;
+  letter-spacing:0;font-variant-numeric:tabular-nums;
+}
+.report-v2.report-focused :is(.reading-index,.report-chapter-symbol small,
+  .report-outcome-number,.work-today-grid .work-number) {min-width:2ch;min-height:1em}
+.report-v2.report-focused .section-reading>.reading-summary .reading-caption>strong {align-items:center}
+.report-v2.report-focused .report-priority-trio>li>span {width:32px;height:32px;border-radius:8px}
+.report-v2.report-focused .growth-action-index {height:32px;margin-top:0}
+.report-v2.report-focused .report-issue-heading .report-index {padding-top:0;margin-top:0;align-self:center}
+.report-v2.report-focused .sector-journey>div {align-items:center}
+
+/* A value and its unit form one centered group, with a shared text baseline. */
+.report-v2.report-focused :is(.report-selected-score,.report-axis-scoreline>strong,
+  .naver-counts strong,.report-checklist-stats strong,.sector-count strong,
+  .report-review-stats dd,.keyword-stats dd,.work-wireframe button>b,.report-rewrite-kinds button>b,
+  .work-owner-group>summary>b) {
+  display:inline-flex;align-items:baseline;justify-content:center;gap:4px;
+  white-space:nowrap;line-height:1.2;letter-spacing:0;font-variant-numeric:tabular-nums;
+}
+.report-v2.report-focused :is(.report-selected-score,.report-axis-scoreline>strong,
+  .naver-counts strong,.report-checklist-stats strong,.sector-count strong,
+  .report-review-stats dd,.keyword-stats dd,.work-wireframe button>b,.report-rewrite-kinds button>b,
+  .work-owner-group>summary>b)>small {
+  margin:0;line-height:1;letter-spacing:0;
+}
+.report-v2.report-focused :is(.naver-counts>div,.report-review-stats>div) {
+  display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:8px;
+}
+.report-v2.report-focused .report-review-stats dd {margin:0}
+.report-v2.report-focused .report-axis-scoreline {justify-content:center;align-items:center;gap:8px}
+.report-v2.report-focused .report-stat>strong {text-align:center;font-variant-numeric:tabular-nums}
+.report-v2.report-focused .report-score {justify-content:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+.report-v2.report-focused .work-score-changes b {display:inline-flex;align-items:center;justify-content:center;min-height:32px;white-space:nowrap;font-variant-numeric:tabular-nums}
+/* The same numeral treatment applies to the examples before a search. */
+:is(.scanner-focus-steps li>span,.scanner-map-guide dt>span) {
+  display:inline-flex;align-items:center;justify-content:center;line-height:1;
+  white-space:nowrap;text-align:center;letter-spacing:0;font-variant-numeric:tabular-nums;
+}
+:is(.scanner-gate-number,.scanner-industry-flow li>small) {text-align:center;white-space:nowrap;letter-spacing:0;font-variant-numeric:tabular-nums}
+@media(min-width:768px) {
+  .report-v2.report-focused :is(.keyword-stats>div,.report-checklist-stats>div) {text-align:center}
+  .report-v2.report-focused .report-checklist-stats strong {display:flex}
+}
+@media(max-width:767px) {
+  .report-v2.report-focused .report-outcome-number {align-self:center;justify-self:center}
+}
+@media(max-width:359px) {
+  .report-v2.report-focused .work-wireframe button>.work-number {display:none}
+}
