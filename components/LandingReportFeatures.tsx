@@ -13,7 +13,7 @@ const features = [
 /** Scalable diagrams stay legible in the compact two-column mobile grid. */
 function FeatureGraphic({kind}:{kind:typeof features[number]['kind']}) {
   return <div className="scanner-common-graphic" aria-hidden="true"><svg viewBox="0 0 200 96" fill="none">
-    <g stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+    <g stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       {kind==='search'?<><rect x="18" y="17" width="48" height="62" rx="7" fill="white"/><path d="M29 32h26M29 44h26M29 56h17M76 48h20m-6-5 6 5-6 5"/><rect x="108" y="14" width="74" height="30" rx="7" fill="white"/><rect x="108" y="52" width="74" height="30" rx="7" fill="white"/></>:
       kind==='citation'?<><path d="M20 18h115a7 7 0 0 1 7 7v34a7 7 0 0 1-7 7H52L34 78V66H20a7 7 0 0 1-7-7V25a7 7 0 0 1 7-7Z" fill="white"/><path d="M29 32h44M29 43h26"/><rect x="80" y="31" width="48" height="23" rx="5" fill="currentColor" fillOpacity=".1" stroke="none"/><rect x="126" y="58" width="62" height="28" rx="7" fill="white"/></>:
       kind==='competition'?<><path d="M24 16v65h151M25 47h150M100 16v65" opacity=".3"/><circle cx="55" cy="34" r="12" fill="currentColor" fillOpacity=".15"/><circle cx="107" cy="58" r="19" fill="currentColor"/><circle cx="157" cy="28" r="14" fill="currentColor" fillOpacity=".3"/></>:
@@ -21,7 +21,7 @@ function FeatureGraphic({kind}:{kind:typeof features[number]['kind']}) {
       kind==='action'?<><path d="M49 37h32M119 37h32" opacity=".4"/>{[30,100,170].map((x,i)=><circle key={x} cx={x} cy="37" r="19" fill={i===2?'currentColor':'white'}/>)}</>:
       <><path d="m100 12 27 10 12 26-12 25-27 11-27-11-12-25 12-26Z" opacity=".3"/><path d="m100 12 14 23 25 13-22 14-17 22-17-22-22-14 25-13Z" fill="currentColor" fillOpacity=".12"/>{[[100,12],[127,22],[139,48],[127,73],[100,84],[73,73],[61,48],[73,22]].map(([x,y])=><circle key={`${x}-${y}`} cx={x} cy={y} r="3" fill="currentColor"/>)}<circle cx="100" cy="48" r="16" fill="white"/></>}
     </g>
-    <g fill="currentColor" fontSize="19" fontWeight="650" textAnchor="middle" dominantBaseline="central">
+    <g fill="currentColor" fontSize="19" fontWeight="700" textAnchor="middle" dominantBaseline="central">
       {kind==='search'?<><text x="145" y="30">SEO</text><text x="145" y="68">AI</text></>:
       kind==='citation'?<><text x="104" y="43" fontSize="16">언급</text><text x="157" y="73" fontSize="16">출처</text></>:
       kind==='competition'?<text x="107" y="58" fill="white" fontSize="15">우리</text>:
