@@ -12,16 +12,17 @@ export function ReadingToggle() {
 type Props = {
   title: string;
   preview?: string;
+  index?: string;
   className?: string;
   children: React.ReactNode;
 };
 
-export default function ReadingDisclosure({title, preview, className = '', children}: Props) {
+export default function ReadingDisclosure({title, preview, index, className = '', children}: Props) {
   return (
     <details className={`reading-fold ${className}`}>
       <summary className="reading-summary">
         <span className="reading-caption">
-          <strong>{title}</strong>
+          <strong>{index?<><span className="reading-index" aria-hidden="true">{index}</span><span className="reading-title">{title}</span></>:title}</strong>
           {preview && <span className="reading-preview">{preview}</span>}
         </span>
         <ReadingToggle/>
