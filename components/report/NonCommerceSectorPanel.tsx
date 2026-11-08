@@ -7,7 +7,7 @@ export default function NonCommerceSectorPanel({purpose}:{purpose:WebsitePurpose
   const observed=sector.checks.filter(c=>c.status==='observed').length;
   return <section className="report-card sector-overview" aria-label={`${sector.label} 맞춤 진단`}>
     <header className="sector-heading"><div><p className="report-eyebrow">YOUR PAGE · YOUR INDUSTRY</p><h3>{sector.label}<span>고객이 판단하는 6가지 정보</span></h3><p>이 URL에서 읽은 내용을 업종별 선택 기준과 연결했습니다.</p></div><div className="sector-count"><strong>{observed}<small> / 6</small></strong><span>관련 문구를 읽은 항목</span></div></header>
-    <div className="sector-journey" aria-label="업종별 정보 탐색 흐름">{sector.journey.map((stage,i)=><div key={stage}><span>0{i+1}</span><strong>{stage}</strong>{i<2&&<b aria-hidden="true">→</b>}</div>)}</div>
+    <div className="sector-journey" aria-label="업종별 정보 탐색 흐름">{sector.journey.map((stage,i)=><div key={stage}><span>{String(i+1).padStart(2,'0')}</span><strong>{stage}</strong>{i<2&&<b aria-hidden="true">→</b>}</div>)}</div>
     <div className="sector-check-grid">{sector.checks.map(c=><details key={c.id} className={`sector-check reading-fold sector-check-${c.status}`}>
       <summary className="reading-summary"><span className="reading-caption"><strong>{c.label}</strong>
         <span className="sector-status">{c.status==='observed'?'문구 확인':'보강 검토'}</span></span><ReadingToggle/></summary>

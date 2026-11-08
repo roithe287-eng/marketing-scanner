@@ -54,7 +54,7 @@ function Example({preview}:{preview:Preview}) {
   const {kind,rows}=preview;
   if(kind==='radar')return <div className="store-demo-radar"><svg viewBox="0 0 240 200" aria-hidden="true"><g fill="none" stroke="#ccd6e1">{[1,.7,.4].map(scale=><polygon key={scale} points="120,16 180,41 205,100 180,159 120,184 60,159 35,100 60,41" transform={`translate(${120*(1-scale)} ${100*(1-scale)}) scale(${scale})`}/>)}</g><polygon points="120,40 163,57 187,100 156,136 120,161 76,144 60,100 83,63" fill="#b9ddce" stroke="#277a62" strokeWidth="2"/></svg><div>{rows.map(row=><span key={row}>{row}<b>예시</b></span>)}</div></div>;
   if(kind==='bars')return <div className="store-demo-bars">{rows.map((row,i)=><div key={row}><span>{row}</span><div><i style={{width:`${[72,48,85][i%3]}%`}}/></div><b>{[72,48,85][i%3]}</b></div>)}</div>;
-  if(kind==='journey')return <div className="store-demo-journey">{rows.map((row,i)=><div key={row}><b>0{i+1}</b><strong>{row}</strong><span>예시 확인 항목</span></div>)}</div>;
+  if(kind==='journey')return <div className="store-demo-journey">{rows.map((row,i)=><div key={row}><b>{String(i+1).padStart(2,'0')}</b><strong>{row}</strong><span>예시 확인 항목</span></div>)}</div>;
   return <div className={`store-demo-${kind}`}>{rows.map((row,i)=><div key={row}><span>{kind==='table'?`0${i+1}`:i===0?'BEFORE':i===1?'AFTER':'CHECK'}</span><strong>{row}</strong><i/></div>)}</div>;
 }
 

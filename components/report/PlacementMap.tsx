@@ -14,7 +14,7 @@ export default function PlacementMap() {
     <div className="report-placement-layout">
       <div className="report-wirepage" role="group" aria-label="문구 적용 위치 선택">
         <div className="report-wirepage-bar" aria-hidden="true"><i/><i/><i/><span/></div>
-        {zones.map((item,i)=><button key={item.shape} type="button" className={`report-wirezone report-wirezone-${item.shape}`} aria-pressed={selected===i} onClick={()=>setSelected(i)}><span><b>0{i+1}</b>{item.label}</span><span className="report-wire-lines" aria-hidden="true"><i/><i/><i/></span></button>)}
+        {zones.map((item,i)=><button key={item.shape} type="button" className={`report-wirezone report-wirezone-${item.shape}`} aria-pressed={selected===i} onClick={()=>setSelected(i)}><span><b>{String(i+1).padStart(2,'0')}</b>{item.label}</span><span className="report-wire-lines" aria-hidden="true"><i/><i/><i/></span></button>)}
       </div>
       <div className="report-placement-copy" aria-live="polite"><div key={selected} className="report-guide-enter"><span className="report-pill">0{selected+1} · {zone.label}</span><h5>{zone.title}</h5><p>{zone.note}</p><div className="report-placement-example"><span>구성 예시</span><strong>{zone.template}</strong></div></div></div>
     </div>

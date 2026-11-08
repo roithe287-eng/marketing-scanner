@@ -22,7 +22,7 @@ export default function SmartstoreReport({report}:{report:Report}) {
       <p className="smartstore-time">확인 시각 · {new Date(report.observedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} (한국시간)</p>
     </header>
     <aside className="store-report-legend" aria-label="결과 읽는 방법"><span><i className="store-live-dot"/>실제 관측 · 확인한 정보</span><span><i className="store-manual-dot"/>직접 입력 · 계산 도구</span><span><i className="store-locked-dot"/>미적용 · 블러 처리된 예시</span><p>확인 불가능한 항목을 0점이나 개선 필요로 표시하지 않습니다.</p></aside>
-    <nav className="report-nav" aria-label="보고서 목차">{REPORT_CHAPTERS.map(([id,label],i)=><a key={id} href={`#report-${id}`}><span>0{i+1}</span>{label}</a>)}</nav>
+    <nav className="report-nav" aria-label="보고서 목차">{REPORT_CHAPTERS.map(([id,label],i)=><a key={id} href={`#report-${id}`}><span>{String(i+1).padStart(2,'0')}</span>{label}</a>)}</nav>
     <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="입력한 스토어와 실제 확인 범위를 먼저 살펴보세요.">
       <article className="report-card" data-store-section="coverage" data-applicability="observed">
         <span className="store-live-label">수집 범위 확인</span>
