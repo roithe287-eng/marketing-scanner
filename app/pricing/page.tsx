@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import BrandHeader from '@/components/BrandHeader';
 import PricingReportPreview from '@/components/pricing/PricingReportPreview';
+import PricingJourney from '@/components/pricing/PricingJourney';
 import { agencyBenefit, agencyPlanId, formatWon, planInquiryHref, scannerPlans } from '@/lib/pricing';
 
 export const metadata: Metadata = {
@@ -24,22 +25,31 @@ export default function PricingPage() {
       <BrandHeader showInquiry />
       <div className="jm-container scanner-pricing-content">
         <Link className="scanner-pricing-back" href="/">← 마케팅스캐너로 돌아가기</Link>
+        <div className="scanner-pricing-hero">
         <header className="scanner-pricing-intro">
-          <p className="scanner-pricing-eyebrow">PRICING</p>
-          <h1>우리 사이트의 문제부터,<br /><em>고칠 방법까지.</em></h1>
-          <p>어디가 아쉬운지, 무엇부터 바꾸면 좋을지.<br />결과를 먼저 살펴보고 필요한 만큼 시작하세요.</p>
+          <p className="scanner-pricing-eyebrow">FROM URL TO ACTION</p>
+          <h1>URL 하나로,<br /><em>고칠 순서까지.</em></h1>
+          <p>우리 사이트의 문제부터 수정 방법까지.<br />분석이 끝나면, 다음 행동이 보입니다.</p>
           <div className="scanner-pricing-entry"><span>한 번만 이용해도</span><strong>{formatWon(singlePlan.price)}<small>원</small></strong><span>1회 진단 · 부가세 포함 · PDF 미포함</span></div>
           <div className="scanner-pricing-intro-links"><a href="#report-preview">결과 맛보기 <span aria-hidden="true">↓</span></a><a href="#pricing-plans">이용요금 바로 보기 <span aria-hidden="true">↓</span></a></div>
-          <span>문의만으로 결제되지 않습니다. 이용권과 절차를 확인한 뒤 시작하세요.</span>
+          <span>문의만으로 결제되지 않습니다.</span>
         </header>
+        <PricingJourney />
+        </div>
 
         <PricingReportPreview />
 
         <header id="pricing-plans" className="scanner-pricing-plan-heading">
-          <p className="scanner-pricing-eyebrow">START WITH ONE</p>
-          <h2>처음이라면, 한 번부터 시작하세요.</h2>
-          <p>한 페이지 점검부터 여러 사이트 관리까지, 필요한 만큼 선택하세요.</p>
-          <span>모든 금액은 부가세 포함입니다. PDF 제공 여부는 이용권별로 확인해 주세요.</span>
+          <div className="scanner-pricing-plan-bridge">
+            <div><p className="scanner-pricing-eyebrow">ONE SCAN. NEXT ACTION.</p><h2>한 번의 진단,<br /><em>실행할 순서까지.</em></h2></div>
+            <ol className="scanner-pricing-value-flow" aria-label="한 번의 진단으로 확인하는 세 가지">
+              <li><span aria-hidden="true">01</span><strong>문제 확인</strong><p>어디를 고칠지</p></li>
+              <li><span aria-hidden="true">02</span><strong>수정 방법</strong><p>어떻게 바꿀지</p></li>
+              <li><span aria-hidden="true">03</span><strong>완료 기준</strong><p>무엇을 확인할지</p></li>
+            </ol>
+          </div>
+          <div className="scanner-pricing-plan-meta"><p><strong>1회부터, 필요한 만큼.</strong> 이용권을 선택하세요.</p><span>모든 금액 부가세 포함 · PDF는 이용권별 확인</span></div>
+          <p className="scanner-pricing-example-note">위 보고서는 구성 예시이며, 실제 결과는 업종과 수집 가능한 정보에 따라 달라집니다.</p>
         </header>
 
         <aside className="scanner-pricing-agency" aria-labelledby="agency-benefit-heading">

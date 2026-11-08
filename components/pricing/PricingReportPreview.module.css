@@ -95,10 +95,6 @@
 .step { flex:0 0 31px; height:31px; display:grid; place-items:center; background:#edf2ff; border:1px solid #cbd9fc; color:var(--scanner-cobalt); border-radius:50%; font-size:13px; font-weight:800; }
 .timeline h4 { margin:4px 0; font-size:16px; font-weight:750; line-height:1.6; }
 .timeline h4+p { color:#61718a; font-size:12px; line-height:1.7; word-break:keep-all; }
-.previewEnd { padding:32px 0 0; text-align:center; }
-.previewEnd>p { font-size:16px; line-height:1.9; word-break:keep-all; }
-.previewEnd strong { font-size:22px; font-weight:800; letter-spacing:-.035em; }
-.previewEnd>span { display:block; margin-top:14px; font-size:12px; line-height:1.8; color:#61718a; word-break:keep-all; }
 @media (max-width:900px) {
   .row { grid-template-columns:minmax(0,.7fr) minmax(0,1.5fr); gap:24px; }
   .copy h3 { font-size:24px; }
@@ -140,9 +136,6 @@
   .comparison th,.comparison td { padding:11px 4px; }
   .comparison thead th { font-size:10px; }
   .comparison th:first-child { width:27%; }
-  .previewEnd { padding-top:26px; }
-  .previewEnd>p { font-size:14px; }
-  .previewEnd strong { font-size:21px; }
 }
 @media (max-width:359px) {
   .scoreFocus { grid-template-columns:1fr; }
