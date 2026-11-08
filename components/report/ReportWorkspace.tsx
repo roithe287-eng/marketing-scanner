@@ -74,7 +74,7 @@ export function ReportSections({chapter,items,diagrams={},briefs={}}:{chapter:st
     return <section key={item.id} id={`report-view-${item.id}`} data-report-panel={item.id}
       data-visual-treatment={diagram?'guide':'embedded'} aria-label={item.label} className="report-section-panel">
       {brief
-        ? <ReadingDisclosure title={item.label} preview={brief} className="section-reading">{content}</ReadingDisclosure>
+        ? <ReadingDisclosure title={item.label} index={String(i+1).padStart(2,'0')} preview={brief} className="section-reading">{content}</ReadingDisclosure>
         : <><div className="report-section-divider"><span>{String(i+1).padStart(2,'0')}</span><strong>{item.label}</strong><i aria-hidden="true"/></div>{content}</>}
     </section>;
   })}
