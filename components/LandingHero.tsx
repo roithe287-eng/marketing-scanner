@@ -21,7 +21,7 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
     <div className="jm-container">
       <div className="scanner-gate-hero">
         <div className="scanner-gate-copy">
-          {compact ? <h2 id="scanner-heading">{loading ? '사이트 진단 중' : '다른 웹사이트 진단하기'}</h2> : <><h1 id="scanner-heading"><span>한 번의 진단,</span><strong>다음 행동은 선명하게<span className="scanner-gate-period">.</span></strong></h1>
+          {compact ? <h2 id="scanner-heading">{loading ? '사이트 진단 중' : '다른 웹사이트 진단하기'}</h2> : <><h1 id="scanner-heading"><span>한 번의 진단,</span><strong>다음 행동은 <em className="scanner-gate-emphasis">선명하게</em><span className="scanner-gate-period">.</span></strong></h1>
           <p>검색·AI 노출부터 경쟁사 비교, 바꿀 문장까지.</p></>}
         </div>
         <div className="scanner-gate-stage">
