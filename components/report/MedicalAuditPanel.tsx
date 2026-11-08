@@ -10,7 +10,7 @@ function TopicSummary({title,status}:{title:string;status:string}){
   return <summary className="medical-topic-summary">
     <strong>{title}</strong>
     <span className="medical-topic-status">{status}</span>
-    <ReadingToggle/>
+    <ReadingToggle variant="report"/>
   </summary>;
 }
 
@@ -20,7 +20,7 @@ export default function MedicalAuditPanel({audit}:{audit?:MedicalAudit}){
   const review=audit.checks.filter(c=>['needs_review','clinical_review'].includes(c.status)).length;
 
   return <section className="report-card official-seo medical-audit" aria-labelledby="medical-audit-title">
-    <div className="report-card-heading"><div><p className="report-eyebrow">병의원 맞춤 진단</p><h3 id="medical-audit-title">진료분야·의료진·검색 정보</h3></div><span className="report-note">기준 확인 {audit.reviewedOn}</span></div>
+    <div className="report-card-heading"><div><p className="report-eyebrow">병의원 맞춤 진단</p><h3 id="medical-audit-title"><span className="report-type-highlight">진료분야·의료진</span>·검색 정보</h3></div><span className="report-note">기준 확인 {audit.reviewedOn}</span></div>
     <p className="report-note">{audit.scopeNote}</p>
     <div className="medical-classification"><strong>{audit.systems.join(' · ')||'의료체계 확인 필요'}</strong><span>{audit.institutions.join(' · ')||'기관 종별 확인 필요'}</span><p>진료분야·시술 제공·전문의 자격은 각각 다른 정보입니다.</p></div>
     <div className="naver-counts"><div data-state="observed"><span>원문 신호 확인</span><strong>{observed}<small>항목</small></strong></div><div data-state="manual"><span>보강·전문 검토</span><strong>{review}<small>항목</small></strong></div><div><span>추가 자료 필요</span><strong>{audit.checks.filter(c=>c.status==='unverified').length}<small>항목</small></strong></div></div>
