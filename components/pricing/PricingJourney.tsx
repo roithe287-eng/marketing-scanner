@@ -64,7 +64,7 @@ export default function PricingJourney() {
           <section key={item.label} className={`${styles.scene} ${step === index ? styles.active : ''}`} aria-hidden={step !== index} aria-label={`${index + 1}단계 ${item.label}`}>
             <div className={styles.sceneHeading}><span>0{index + 1} <i>/ 04</i></span><h2>{item.title}</h2></div>
 
-            {index < 2 && <div className={`${styles.website} ${index === 1 ? styles.scanning : ''}`}>
+            {index < 2 && <div className={styles.website}>
               <div className={styles.address}><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="M3 10h14M10 3c4 4 4 10 0 14-4-4-4-10 0-14Z" /></svg><span className={index === 0 ? styles.typedUrl : undefined}>my-site.example</span><span className={styles.addressArrow} aria-hidden="true">↵</span></div>
               <div className={styles.websitePage} aria-hidden="true">
                 <div className={styles.siteNav}><b>YOUR BRAND</b><span>ABOUT&nbsp;&nbsp; SERVICE</span></div>

@@ -26,7 +26,7 @@
 .siteContent strong { display:block; font-size:clamp(23px,2.7vw,34px); line-height:.98; letter-spacing:-.065em; font-weight:850; color:#233c69; }
 .siteContent i { display:block; width:86%; height:4px; background:#dbe4f0; margin-top:10px; border-radius:2px; }
 .siteContent i+i { width:63%; margin-top:5px; }
-.siteContent>div>span { display:inline-flex; justify-content:space-between; gap:18px; margin-top:13px; padding:6px 10px; background:#1745d1; border-radius:3px; font-size:8px; color:#fff; font-weight:700; }
+.siteContent>div:first-child>span { display:inline-flex; justify-content:space-between; gap:18px; margin-top:13px; padding:6px 10px; background:#1745d1; border-radius:3px; font-size:8px; color:#fff; font-weight:700; }
 .siteArt { position:relative; display:flex; justify-content:center; align-items:center; height:125px; background:#eef2fb; border-radius:7px; overflow:hidden; }
 .siteArt>span { position:absolute; width:62px; height:62px; border-radius:50%; background:#1745d1; left:17%; top:15%; }
 .siteArt>span:nth-child(2) { background:#c3d4fa; left:40%; top:38%; }
@@ -42,7 +42,7 @@
 .diagnosis { display:grid; grid-template-columns:1.45fr .8fr; align-items:center; gap:15px; min-height:226px; margin:auto 0; }
 .radar { min-width:0; }
 .radar svg { display:block; width:100%; height:auto; }
-.scoreList { display:grid; gap:13px; text-align:left; }
+.scoreList { display:grid; gap:13px; text-align:center; }
 .scoreList>div { min-width:0; }
 .scoreList span { display:block; color:#526078; font-size:10px; font-weight:700; }
 .scoreList strong { display:block; margin:2px 0 5px; color:#273f68; font-size:27px; line-height:1.1; font-weight:820; font-variant-numeric:tabular-nums; }
