@@ -12,10 +12,11 @@
 .scanner-pricing-page { min-height:100vh; background:var(--scanner-ivory); }
 .scanner-pricing-content { padding-top:30px; padding-bottom:64px; }
 .scanner-pricing-back { display:inline-block; font-size:13px; font-weight:650; color:var(--scanner-muted); padding:8px 0; }
-.scanner-pricing-intro { text-align:center; padding:34px 0 32px; }
+.scanner-pricing-hero { display:grid; grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr); align-items:center; gap:34px; padding:30px 0 40px; }
+.scanner-pricing-intro { min-width:0; text-align:center; padding:24px 0; }
 .scanner-pricing-eyebrow { color:var(--scanner-cobalt); font-size:12px; font-weight:800; letter-spacing:.12em; }
-.scanner-pricing-intro h1 { margin:13px 0 17px; font-size:clamp(30px,4vw,46px); line-height:1.3; letter-spacing:-.05em; font-weight:850; word-break:keep-all; }
-.scanner-pricing-intro h1 em { font-style:normal; color:var(--scanner-cobalt); }
+.scanner-pricing-intro h1 { margin:18px 0 22px; font-size:clamp(40px,4.5vw,56px); line-height:1.18; letter-spacing:-.055em; font-weight:850; word-break:keep-all; }
+.scanner-pricing-intro h1 em { font-style:normal; color:var(--scanner-cobalt); background:linear-gradient(transparent 82%,#e4ebfc 82%,#e4ebfc 96%,transparent 96%); }
 .scanner-pricing-intro>p:not(.scanner-pricing-eyebrow) { font-size:16px; line-height:1.8; color:var(--scanner-muted); word-break:keep-all; }
 .scanner-pricing-intro>span { display:block; margin-top:14px; font-size:12px; color:var(--scanner-muted); }
 .scanner-pricing-mobile-break { display:none; }
@@ -23,15 +24,27 @@
 .scanner-pricing-entry>span:first-child { font-size:14px; font-weight:650; }
 .scanner-pricing-entry>strong { color:var(--scanner-cobalt); font-size:32px; font-weight:850; letter-spacing:-.04em; }
 .scanner-pricing-entry small { margin-left:3px; font-size:15px; font-weight:700; }
-.scanner-pricing-entry>span:last-child { font-size:12px; color:var(--scanner-muted); }
+.scanner-pricing-entry>span:last-child { flex-basis:100%; font-size:11px; color:var(--scanner-muted); }
 .scanner-pricing-intro-links { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin-top:22px; }
 .scanner-pricing-intro-links>a { display:inline-flex; align-items:center; justify-content:center; gap:24px; min-height:46px; padding:12px 20px; border:1px solid #c6d4ee; border-radius:10px; font-size:14px; font-weight:750; color:var(--scanner-cobalt); background:#fff; }
 .scanner-pricing-intro-links>a:first-child { background:var(--scanner-cobalt); border-color:var(--scanner-cobalt); color:#fff; }
 .scanner-pricing-intro-links>a:hover { box-shadow:0 0 0 2px #1745d118; }
-.scanner-pricing-plan-heading { margin:56px 0 24px; padding-top:32px; border-top:1px solid var(--scanner-line); scroll-margin-top:108px; text-align:center; }
-.scanner-pricing-plan-heading h2 { margin-top:10px; font-size:clamp(26px,3vw,34px); font-weight:820; line-height:1.45; letter-spacing:-.045em; word-break:keep-all; }
-.scanner-pricing-plan-heading>p:not(.scanner-pricing-eyebrow) { margin-top:12px; font-size:15px; color:var(--scanner-muted); line-height:1.8; word-break:keep-all; }
-.scanner-pricing-plan-heading>span { display:block; margin-top:10px; font-size:12px; line-height:1.8; color:var(--scanner-muted); word-break:keep-all; }
+.scanner-pricing-plan-heading { margin:40px 0 24px; padding:30px 32px 18px; border:1px solid #cbd7ec; border-radius:18px; background:#edf2fb; scroll-margin-top:108px; text-align:center; }
+.scanner-pricing-plan-bridge { display:grid; grid-template-columns:.85fr 1.3fr; align-items:center; gap:30px; }
+.scanner-pricing-plan-heading h2 { margin-top:10px; font-size:clamp(26px,3vw,32px); font-weight:820; line-height:1.32; letter-spacing:-.045em; word-break:keep-all; }
+.scanner-pricing-plan-heading h2 em { font-style:normal; color:var(--scanner-cobalt); }
+.scanner-pricing-value-flow { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; padding:0; margin:0; list-style:none; }
+.scanner-pricing-value-flow li { position:relative; min-width:0; }
+.scanner-pricing-value-flow li+li::before { content:'→'; position:absolute; left:-19px; top:19px; font-size:17px; color:#8fa6cb; }
+.scanner-pricing-value-flow li>span { display:grid; place-items:center; width:46px; height:46px; margin:0 auto 10px; border:1px solid #bdcdee; border-radius:12px; background:#fff; color:var(--scanner-cobalt); font-size:17px; font-weight:800; font-variant-numeric:tabular-nums; }
+.scanner-pricing-value-flow li:last-child>span { color:#fff; border-color:var(--scanner-cobalt); background:var(--scanner-cobalt); }
+.scanner-pricing-value-flow strong { display:block; font-size:16px; font-weight:800; line-height:1.5; }
+.scanner-pricing-value-flow p { margin-top:4px; font-size:12px; color:#526078; line-height:1.6; word-break:keep-all; }
+.scanner-pricing-plan-meta { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px 20px; border-top:1px solid #cfdaec; margin-top:24px; padding-top:17px; }
+.scanner-pricing-plan-meta p { font-size:14px; color:#526078; line-height:1.7; }
+.scanner-pricing-plan-meta strong { color:#192744; font-weight:800; }
+.scanner-pricing-plan-meta>span { font-size:11px; color:#526078; line-height:1.7; }
+.scanner-pricing-example-note { margin-top:12px; color:#61718a; font-size:11px; line-height:1.7; word-break:keep-all; }
 .scanner-pricing-agency { display:flex; align-items:center; justify-content:space-between; gap:20px; padding:23px 28px; margin-bottom:24px; border:1px solid #d9e2b9; border-radius:18px; background:#f0f4de; }
 .scanner-pricing-agency-label { font-size:12px; font-weight:750; color:#48602d; }
 .scanner-pricing-agency h2 { margin:5px 0; font-size:22px; font-weight:800; letter-spacing:-.035em; line-height:1.5; word-break:keep-all; }
@@ -74,6 +87,13 @@
   .scanner-pricing-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .scanner-pricing-faq { grid-template-columns:1fr; gap:18px; }
 }
+@media (max-width:959px) {
+  .scanner-pricing-hero { grid-template-columns:1fr; gap:28px; padding:12px 0 24px; }
+  .scanner-pricing-intro { padding:18px 0 0; }
+  .scanner-pricing-intro h1 { font-size:48px; }
+  .scanner-pricing-plan-bridge { grid-template-columns:1fr; gap:24px; }
+  .scanner-pricing-value-flow { width:100%; max-width:500px; margin:auto; }
+}
 @media (max-width:639px) {
   .scanner-pricing-summary { padding:20px; gap:16px; }
   .scanner-pricing-summary-copy { width:100%; }
@@ -81,7 +101,8 @@
   .scanner-pricing-benefit { order:initial; flex-basis:100%; padding-top:14px; font-size:13px; }
   .scanner-pricing-summary-link { width:100%; }
   .scanner-pricing-content { padding-top:16px; padding-bottom:40px; }
-  .scanner-pricing-intro { padding:24px 0; }
+  .scanner-pricing-intro { padding:16px 0 0; }
+  .scanner-pricing-intro h1 { margin:13px 0 17px; font-size:42px; }
   .scanner-pricing-intro>p:not(.scanner-pricing-eyebrow) { font-size:14px; }
   .scanner-pricing-mobile-break { display:block; }
   .scanner-pricing-entry { gap:6px 10px; margin-top:20px; }
@@ -89,7 +110,17 @@
   .scanner-pricing-intro-links { flex-wrap:nowrap; gap:8px; }
   .scanner-pricing-intro-links>a { gap:12px; padding:12px 14px; font-size:12px; }
   .scanner-pricing-intro>span { font-size:11px; line-height:1.8; word-break:keep-all; }
-  .scanner-pricing-plan-heading { margin-top:36px; padding-top:26px; scroll-margin-top:144px; }
+  .scanner-pricing-plan-heading { margin-top:28px; padding:24px 18px 18px; scroll-margin-top:144px; }
+  .scanner-pricing-plan-heading .scanner-pricing-eyebrow { font-size:10px; }
+  .scanner-pricing-plan-heading h2 { font-size:28px; }
+  .scanner-pricing-value-flow { gap:20px; }
+  .scanner-pricing-value-flow strong { font-size:14px; }
+  .scanner-pricing-value-flow p { font-size:10px; }
+  .scanner-pricing-value-flow li+li::before { left:-16px; }
+  .scanner-pricing-plan-meta { justify-content:center; margin-top:21px; gap:5px; }
+  .scanner-pricing-plan-meta p { font-size:13px; }
+  .scanner-pricing-plan-meta>span { font-size:10px; }
+  .scanner-pricing-example-note { font-size:10px; }
   .scanner-pricing-agency { align-items:stretch; flex-direction:column; gap:16px; padding:22px; }
   .scanner-pricing-agency h2 { font-size:21px; }
   .scanner-pricing-agency p { font-size:13px; }
