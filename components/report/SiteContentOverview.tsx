@@ -27,7 +27,7 @@ export default function SiteContentOverview({report}:{report:MarketingReport}){
  const example=examples[active.id];
  const label=report.sitePurpose?.kind==='commerce'?'상품':report.sitePurpose?.kind==='content'?'콘텐츠':report.sitePurpose?.kind==='organization'?'사업':'서비스';
  return <section className="report-card site-content-overview" id="report-content-evidence" aria-label="홈페이지 내용과 진단 이유">
-  <header className="report-card-heading"><p className="report-eyebrow">01 · 홈페이지 내용 확인</p><h3>홈페이지의 {label}, 이렇게 읽었습니다</h3><p className="report-note">항목을 누르면 현재 문구와 보완할 내용을 나란히 볼 수 있습니다.</p></header>
+  <header className="report-card-heading"><p className="report-eyebrow">01 · 홈페이지 내용 확인</p><h3>홈페이지의 <span className="report-type-highlight">{label}</span>, 이렇게 읽었습니다</h3><p className="report-note">항목을 누르면 현재 문구와 보완할 내용을 나란히 볼 수 있습니다.</p></header>
   <div className="content-facet-tabs" role="group" aria-label="홈페이지 내용 관점">{facets.map(f=><button type="button" key={f.id} aria-pressed={selected===f.id} onClick={()=>{setSelected(f.id);setMessage('');}}><DiagnosisIcon axis={f.icon}/><strong>{f.id==='offer'&&report.sitePurpose?.kind==='commerce'?'상품·주제':f.label}</strong><small>{f.count?`관련 문구 ${f.count}개`:'추가 확인'}</small></button>)}</div>
   <div className="content-evidence-heading"><h4>{active.question}</h4></div>
   <p className="content-action-lead">{active.action}</p>

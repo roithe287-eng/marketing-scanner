@@ -52,7 +52,7 @@ function BriefingQuestion({q,targetUrl}:{q:AnswerQuestion;targetUrl:string}){
 }
 
 function BriefingFollowup({q,index}:{q:AnswerQuestion;index:number}){
-  return <><details className="briefing-details"><summary>홈페이지 적용 위치·게시 전 확인<ReadingToggle/></summary><div>
+  return <><details className="briefing-details"><summary>홈페이지 적용 위치·게시 전 확인<ReadingToggle variant="report"/></summary><div>
       <strong>적용 위치</strong><p>{q.placement}</p>
       {q.missingFacts.length>0&&<><strong>게시 전 확인</strong><ul>{q.missingFacts.map(f=><li key={f}>{f}</li>)}</ul></>}
       {!!q.steps.length&&<><strong>작성 순서</strong><ol>{q.steps.map(step=><li key={step}>{step}</li>)}</ol></>}
@@ -73,7 +73,7 @@ export default function AnswerContentPanel({plan,opportunityFirst=false,placeRev
         <h3 className="answer-header" id="answer-content-title">{ANSWER_CONTENT_TITLE}</h3><p>마케팅스캐너 작성 제안 · 실제 네이버 노출 미측정</p>
       </div></header>
       {!plan?<><p className="briefing-unavailable">고객이 먼저 궁금해할 대상과 이용 조건을 질문으로 정리하세요.</p>
-        <details className="briefing-details"><summary>콘텐츠 분석 기록<ReadingToggle/></summary><div><p>이 보고서에는 질문·답변 분석 기록이 없습니다. 같은 URL로 다시 진단하면 페이지에 맞는 초안을 확인할 수 있습니다.</p></div></details>
+        <details className="briefing-details"><summary>콘텐츠 분석 기록<ReadingToggle variant="report"/></summary><div><p>이 보고서에는 질문·답변 분석 기록이 없습니다. 같은 URL로 다시 진단하면 페이지에 맞는 초안을 확인할 수 있습니다.</p></div></details>
         <PagePatternGrid label="질문과 답변의 구성 예시" patterns={[{kind:'faq',title:'고객 질문',detail:'대상·범위·이용 방법'},{kind:'proof',title:'답변 근거',detail:'현재 홈페이지의 원문'},{kind:'action',title:'다음 행동',detail:'방문·문의·신청 방법'}]}/></>:<>
         {keyword?<>
           <div className="briefing-topics"><strong>질문 주제</strong><span>{keyword.term}</span>{plan.secondaryKeywords.map(k=><span key={k.term}>{k.term}</span>)}</div>
@@ -81,10 +81,10 @@ export default function AnswerContentPanel({plan,opportunityFirst=false,placeRev
           {plan.questions.length?<ReportItemPanels briefing id="answer-questions" label="고객 질문 선택" items={plan.questions.map((q,i)=>({
             id:q.id,label:q.question,children:<BriefingQuestion key={q.id} q={q} targetUrl={plan.targetUrl}/>,followup:<BriefingFollowup key={q.id} q={q} index={i}/>
           }))}/>:<p className="briefing-unavailable">이 페이지에는 저장된 고객 질문이 없습니다.</p>}
-          <details className="briefing-details briefing-keywords"><summary>질문 주제를 선정한 페이지 근거<ReadingToggle/></summary><div>{[keyword,...plan.secondaryKeywords].map(k=>
+          <details className="briefing-details briefing-keywords"><summary>질문 주제를 선정한 페이지 근거<ReadingToggle variant="report"/></summary><div>{[keyword,...plan.secondaryKeywords].map(k=>
             <section key={k.term}><h4>{k.term}</h4><p>{k.reason}</p>{k.evidence.map(e=><blockquote key={e.id}><strong>{e.location}</strong>{e.text}</blockquote>)}</section>)}</div></details>
         </>:<p className="briefing-unavailable">대표 주제를 정할 페이지 내용이 부족합니다. {opportunityFirst?'대상과 제공 범위를 설명한 페이지의 URL을 확인하세요.':'상품·서비스를 설명한 상세 URL로 다시 진단하세요.'}</p>}
-        <details className="briefing-details answer-scope-detail"><summary>작성 방식·분석 범위<ReadingToggle/></summary><div><p className="answer-tags">{plan.mode==='ai-assisted'?'페이지 맞춤 질문':plan.mode==='limited'&&opportunityFirst?'페이지 주제 기반 가이드':'기본 질문 가이드'} · {plan.scope==='submitted-page-and-business'?'페이지·서비스 상세 기반':plan.scope==='submitted-page-and-products'?'페이지·상품 표본 기반':'입력 페이지 기반'} · 실제 네이버 노출 미측정</p><p>{plan.notice}</p>
+        <details className="briefing-details answer-scope-detail"><summary>작성 방식·분석 범위<ReadingToggle variant="report"/></summary><div><p className="answer-tags">{plan.mode==='ai-assisted'?'페이지 맞춤 질문':plan.mode==='limited'&&opportunityFirst?'페이지 주제 기반 가이드':'기본 질문 가이드'} · {plan.scope==='submitted-page-and-business'?'페이지·서비스 상세 기반':plan.scope==='submitted-page-and-products'?'페이지·상품 표본 기반':'입력 페이지 기반'} · 실제 네이버 노출 미측정</p><p>{plan.notice}</p>
           {plan.mode!=='ai-assisted'&&<p>{plan.mode==='limited'?'본문 표본이 적어 기본 질문 가이드를 표시합니다.':'페이지 주제에 맞춘 기본 질문입니다.'} 운영 조건은 게시 전에 대조하세요.</p>}
         </div></details>
         {keyword&&<footer className="briefing-footer"><ReportJumpLink id="report-site-guide">원문·링크 모음</ReportJumpLink><CopyText text={answerPlanText(plan)} label="추천 질문·개선안 전체 복사"/></footer>}

@@ -33,7 +33,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
         ['측정 실패·미설정',modern ? `${citation.failedTests || 0}건 / ${citation.totalTests}건` : '구분되지 않음'],
       ].map(([label,value]) => <div key={label} className="rounded-2xl bg-neutral-50 border p-4"><p className="text-sm text-jm-gray">{label}</p><p className="text-2xl font-black mt-2">{value}</p></div>)}
     </div>}
-    {modern && <details className="report-text-detail mb-5"><summary>질문 유형별 인용률·측정 조건<ReadingToggle/></summary><div className="text-xs text-jm-gray leading-6">
+    {modern && <details className="report-text-detail mb-5"><summary>질문 유형별 인용률·측정 조건<ReadingToggle variant="report"/></summary><div className="text-xs text-jm-gray leading-6">
       <p>브랜드 포함 질문 인용률 {percent(citation.brandedCitationRate)} · 미포함 질문 {percent(citation.unbrandedCitationRate)}</p>
       <p>정상 답변 {citation.validTests}건 · 검색 출처 판정 {citation.citationValidTests}건. 실패·검색 미확인 응답은 인용률 분모에서 제외합니다.</p>
       <p>측정: {citation.measuredAt?.replace('T',' ').replace('Z',' UTC')} · 질문 세트 {citation.questionSetId}{citation.cacheHit ? ' · 저장된 관측 결과' : ''}</p>
@@ -48,7 +48,7 @@ function LlmCitationCard({citation}:{citation?:LlmCitationTest|null}) {
           <span className="text-jm-red">OpenAI · GEO {modern?'답변 관측':'구버전 측정'} · {r.journey || r.questionType}</span>
           <span className="block mt-1 break-words">{r.question}</span>
           <span className="block font-normal text-jm-gray">{!modern ? (r.cited ? '브랜드 언급 있음' : '브랜드 언급 없음') : r.status === 'ok' ? `브랜드 언급 ${typeof r.brandMentioned!=='boolean'?'미확인':r.brandMentioned ? '있음' : '없음'} · 자사 출처 ${r.cited ? '확인' : '없음'}` : r.status === 'unverified' ? '답변 수신 · 검색 또는 출처 확인 불가' : r.errorMessage || '측정 실패'}</span>
-          <ReadingToggle/>
+          <ReadingToggle variant="report"/>
         </summary>
         <div className="pt-4 space-y-3 text-sm leading-7">
           <p className="text-xs text-jm-gray">{r.model} {r.measuredAt && `· ${r.measuredAt}`} {r.durationMs != null && `· ${(r.durationMs/1000).toFixed(1)}초`}</p>
