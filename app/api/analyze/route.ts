@@ -31,6 +31,9 @@ import {finalizeReportEvidence} from '@/lib/evidenceReview';
 import {MarketingReportSchema} from '@/lib/reportSchema';
 import {analyzeWebsitePurpose,isNonCommerce} from '@/lib/websitePurpose';
 import {collectBusinessDocuments} from '@/lib/businessResearch';
+import {collectCommunityContext} from '@/lib/collectCommunityContext';
+import {WebsiteCollectionError} from '@/lib/restrictedWebsite';
+import {collectRestrictedWebsite} from '@/lib/collectRestrictedWebsite';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -56,6 +59,7 @@ function isValidUrl(url: string) {
 export async function POST(req: NextRequest) {
   const startedAt=Date.now();
   let finish:((refund?:boolean,limited?:boolean)=>Promise<void>)|undefined;
+  let collectionUrl:string|undefined;
   try {
     const principal=await requirePrincipal(req,true);
     const body = await readJson(req);
@@ -114,18 +118,21 @@ export async function POST(req: NextRequest) {
 
     publicUrl(url);
     finish=await reserve(principal,'analyze',{headers:req.headers,url});
+    collectionUrl=url;
     // Leave time for both quota finalization and a failed-finalization refund.
     const payload=await withBudget(Math.max(1,48_000-(Date.now()-startedAt)),async()=>{
     const t0 = Date.now();
 
     // 1. 사이트 추출
     const websiteData = await withBudget(14_000,()=>extractWebsite(url),undefined,"페이지 수집 시간이 초과되었습니다. 최종 페이지 URL을 확인한 뒤 다시 시도해 주세요.");
-    const [products,businessDocuments,siteDiagnostics]=await Promise.all([
-      !isNonCommerce(analyzeWebsitePurpose(websiteData))||websiteData.productDiscovery?.sources.length?collectOwnProductContext(websiteData.finalUrl,{seed:websiteData.productDiscovery,robots:websiteData.seoEvidence?.robots,budgetMs:7000}):Promise.resolve(undefined),
+    const [products,businessDocuments,siteDiagnostics,communityContext]=await Promise.all([
+      !websiteData.communityContext&&(!isNonCommerce(analyzeWebsitePurpose(websiteData))||websiteData.productDiscovery?.sources.length)?collectOwnProductContext(websiteData.finalUrl,{seed:websiteData.productDiscovery,robots:websiteData.seoEvidence?.robots,budgetMs:7000}):Promise.resolve(undefined),
       websiteData.collectionNotice?Promise.resolve(websiteData.businessDocuments||[]):collectBusinessDocuments(websiteData.finalUrl,{seed:websiteData.businessDocuments?.[0],robots:websiteData.seoEvidence?.robots,productLinks:websiteData.productDiscovery?.productLinks,budgetMs:6000}),
       collectSiteDiagnostics(websiteData.finalUrl,{seed:websiteData.diagnosticSeed,robots:websiteData.seoEvidence?.robots,limited:!!websiteData.collectionNotice,budgetMs:6000}),
+      collectCommunityContext(websiteData.finalUrl,websiteData.communityContext,websiteData.seoEvidence?.robots),
     ]);
     if(products)websiteData.productContext=products;
+    if(communityContext)websiteData.communityContext=communityContext;
     if(businessDocuments.length)websiteData.businessDocuments=businessDocuments;
     if(siteDiagnostics.medicalAudit)websiteData.medicalAudit=siteDiagnostics.medicalAudit;
     const pageEvidence=capturePageEvidence(websiteData);
@@ -188,6 +195,7 @@ export async function POST(req: NextRequest) {
         process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET && (principal.kind==='internal'||principal.account.features.competitor)
       ),
       _websiteHints: {
+        communityContext: websiteData.communityContext,
         title: websiteData.title,
         ogTitle: websiteData.ogTitle,
         ogDescription: websiteData.ogDescription,
@@ -202,6 +210,13 @@ export async function POST(req: NextRequest) {
     await finish();
     return NextResponse.json(payload,{headers:{'Cache-Control':'private, no-store'}});
   } catch (error: unknown) {
+    if(error instanceof WebsiteCollectionError&&collectionUrl&&finish){
+      try{
+        await finish(true,true);
+        const limited=await collectRestrictedWebsite(collectionUrl,error);
+        return NextResponse.json(limited,{headers:{'Cache-Control':'private, no-store'}});
+      }catch(fallbackError){return failure(fallbackError);}
+    }
     if(finish)await finish(true).catch(()=>{});
     return failure(error);
   }

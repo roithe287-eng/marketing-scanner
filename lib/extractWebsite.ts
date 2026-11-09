@@ -15,8 +15,11 @@ import type {BusinessDocument} from './businessContext';
 import {restrictedBusinessWebsite} from './restrictedBusiness';
 import {captureSiteDiagnosticSeed,type SiteDiagnosticSeed} from './siteDiagnostics';
 import type {MedicalAudit} from './medicalAuditSchema';
+import {captureCommunityContext,type CommunityContext} from './communityContext';
+import {WebsiteCollectionError} from './restrictedWebsite';
 
 export type ExtractedWebsiteData = {
+  communityContext?:CommunityContext;
   medicalAudit?:MedicalAudit;
   diagnosticSeed?:SiteDiagnosticSeed;
   collectionNotice?:string;
@@ -290,9 +293,7 @@ export async function extractWebsite(
   if (blocked) {
     const limited=await restrictedBusinessWebsite(url);
     if(limited)return limited;
-    throw new Error(
-      "해당 사이트는 robots.txt에서 크롤링을 전면 차단하고 있어 진단할 수 없습니다."
-    );
+    throw new WebsiteCollectionError('robots');
   }
 
   let res: Response | null = null;
@@ -325,6 +326,12 @@ export async function extractWebsite(
     }
   }
 
+  // An explicit denial is not a transport error: do not retry through another host/protocol.
+  if(res&&(res.status===403||res.status===429)){
+    await res.body?.cancel();
+    throw new WebsiteCollectionError(res.status===429?'rate_limited':'forbidden',res.status);
+  }
+
   // 2차: www. 추가해서 재시도
   if (!res || !res.ok) {
     try {
@@ -345,6 +352,11 @@ export async function extractWebsite(
     } catch (err: any) {
       lastError = err;
     }
+  }
+
+  if(res&&(res.status===403||res.status===429)){
+    await res.body?.cancel();
+    throw new WebsiteCollectionError(res.status===429?'rate_limited':'forbidden',res.status);
   }
 
   // 3차: http로 다운그레이드 시도
@@ -377,6 +389,7 @@ export async function extractWebsite(
   }
 
   if (!res.ok) {
+    if(res.status===403||res.status===429){await res.body?.cancel();throw new WebsiteCollectionError(res.status===429?'rate_limited':'forbidden',res.status);}
     throw new Error(
       `웹사이트 응답 오류: HTTP ${res.status}. 사이트가 외부 접근을 차단하고 있을 수 있습니다.`
     );
@@ -410,6 +423,7 @@ export async function extractWebsite(
   const businessDocuments=hasBusinessResearch(finalUrl)?[captureBusinessDocument(html,finalUrl)]:undefined;
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
+  const communityContext=captureCommunityContext($,finalUrl);
   const officialSeoEvidence=collectOfficialSeoEvidence($,finalUrl,res.headers);
   const titleCount = $("head > title").length;
   const descriptionCount = $('meta[name="description" i]').length;
@@ -752,6 +766,7 @@ export async function extractWebsite(
     ctaButtons,
     links,
     bodyText,
+    ...(communityContext?{communityContext}:{}),
     imageAlts,
     imageCount,
     imageWithoutAlt,

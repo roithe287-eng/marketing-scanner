@@ -65,6 +65,7 @@ const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
  */
 function quickClassify(data: ExtractedWebsiteData): IndustryCategory | null {
   const purpose=analyzeWebsitePurpose(data);
+  if(purpose.community)return 'media';
   if(purpose.business)return purpose.business.industry;
   if(isNonCommerce(purpose)&&purpose.sector){
     const categories:Record<NonNullable<typeof purpose.sector>['id'],IndustryCategory>={legal:'legal',medical:'medical',medical_consulting:'consulting',property_sales:'realestate',insurance:'finance',rehabilitation:'legal',startup:'consulting',franchise:'consulting'};

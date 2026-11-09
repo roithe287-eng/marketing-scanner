@@ -5,6 +5,8 @@ import {useAccess} from '@/components/access/useAccess';
 import AccessBar from '@/components/access/AccessBar';
 import SmartstoreReportView from '@/components/report/SmartstoreReport';
 import {SmartstoreReportSchema,type SmartstoreReport} from '@/lib/smartstore';
+import RestrictedWebsiteReportView from '@/components/report/RestrictedWebsiteReport';
+import {RestrictedWebsiteReportSchema,type RestrictedWebsiteReport} from '@/lib/restrictedWebsite';
 import {canReadClinicWebsite} from '@/lib/clinicPlaceInsights';
 import ReportLayout from '@/components/report/ReportLayout';
 import BrandHeader from "@/components/BrandHeader";
@@ -19,7 +21,8 @@ export default function HomePage() {
   const allowed=access.kind==='internal'||access.kind==='account';
   const [report, setReport] = useState<MarketingReport | null>(null);
   const [storeReport,setStoreReport]=useState<SmartstoreReport|null>(null);
-  const hasReport=Boolean(report||storeReport);
+  const [restrictedReport,setRestrictedReport]=useState<RestrictedWebsiteReport|null>(null);
+  const hasReport=Boolean(report||storeReport||restrictedReport);
   const [loading, setLoading] = useState(false);
   const [competitorLoading, setCompetitorLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +89,14 @@ export default function HomePage() {
       if(data.kind==='smartstore'){
         const result=SmartstoreReportSchema.parse(data);
         if(!current())return;
-        setStoreReport(result);setReport(null);
+        setStoreReport(result);setReport(null);setRestrictedReport(null);
+        scrollTimer.current=setTimeout(()=>{if(current())document.getElementById('report-area')?.scrollIntoView({behavior:'smooth',block:'start'});},150);
+        return;
+      }
+      if(data.kind==='restricted_website'){
+        const result=RestrictedWebsiteReportSchema.parse(data);
+        if(!current())return;
+        setRestrictedReport(result);setStoreReport(null);setReport(null);
         scrollTimer.current=setTimeout(()=>{if(current())document.getElementById('report-area')?.scrollIntoView({behavior:'smooth',block:'start'});},150);
         return;
       }
@@ -94,6 +104,7 @@ export default function HomePage() {
       if(!parsed.success)throw new Error('진단 결과의 필수 항목을 확인하지 못했습니다. 다시 시도해 주세요.');
       if(!current())return;
       setStoreReport(null);
+      setRestrictedReport(null);
       const canAnalyzeCompetitors=Boolean(data._hasCompetitor&&data._websiteHints);
       setReport({...parsed.data,competitorStatus:{status:canAnalyzeCompetitors?'pending':'unavailable',message:canAnalyzeCompetitors?'경쟁사 비교를 분석하고 있습니다.':'현재 경쟁사 비교 결과를 제공할 수 없습니다.'}});
       scrollTimer.current=setTimeout(()=>{
@@ -148,6 +159,7 @@ export default function HomePage() {
       )}
 
       {storeReport&&!loading&&<section className="jm-container pb-24"><SmartstoreReportView report={storeReport}/></section>}
+      {restrictedReport&&!loading&&<section className="jm-container pb-24"><RestrictedWebsiteReportView report={restrictedReport}/></section>}
 
       {/* Report */}
       {report && !loading && (

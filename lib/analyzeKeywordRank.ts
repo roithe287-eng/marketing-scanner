@@ -2,6 +2,7 @@ import {siteIdentity} from './siteIdentity';
 import {budgetFetch} from './runtime/budget';
 import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
+import {marketKeywordCandidates} from './competitorResearch';
 import {
   KeywordRankTracking,
   KeywordRankItem,
@@ -19,6 +20,10 @@ const MAX_KEYWORDS = 5;
 async function generateKeywords(
   data: ExtractedWebsiteData
 ): Promise<string[]> {
+  if(data.communityContext){
+    const brand=data.ogSiteName||data.title.split(/[|–·]/)[0].split(' - ')[0].trim();
+    return [...new Set([brand,...marketKeywordCandidates(data).map(k=>k.keyword)].filter((k):k is string=>typeof k==='string'&&k.length>=2&&k.length<=30))].slice(0,MAX_KEYWORDS);
+  }
   const bodyPreview = (data.bodyText || "").slice(0, 2000);
 
   const prompt = `이 사이트가 네이버 검색에서 노출되기를 원할 만한 핵심 키워드 5개를 추출하라.

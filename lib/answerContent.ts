@@ -12,7 +12,7 @@ export const ANSWER_CONTENT_NOTICE='입력한 페이지의 수집된 내용으�
 export const ANSWER_STATUS={supported:'답변 근거 확인',partial:'추가 정보 필요',not_observed:'수집 범위에서 미확인',review:'페이지 답변 대조 필요'};
 const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
 const compact=(text:string)=>clean(text).replace(/\s/g,'').toLocaleLowerCase();
-export type AnswerPageData=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'ogDescription'|'h1'|'h2'|'bodyText'|'isJsHeavy'|'siteEditing'|'seoEvidence'|'productContext'> & Pick<ExtractedWebsiteData,'businessDocuments'>;
+export type AnswerPageData=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'ogDescription'|'h1'|'h2'|'bodyText'|'isJsHeavy'|'siteEditing'|'seoEvidence'|'productContext'> & Pick<ExtractedWebsiteData,'businessDocuments'|'communityContext'>;
 
 /** Korean topic particle for generated guide copy; source quotes are never rewritten. */
 export function answerTopicSubject(keyword:string){
@@ -46,6 +46,11 @@ export function answerSources(data:AnswerPageData):AnswerSource[]{
   add(data.title||'','title','페이지 제목','title');
   add(data.description||data.ogDescription||'','description','페이지 설명');
   for(const [i,h] of (data.h1||[]).entries())add(h,'heading',`대표 제목 ${i+1}`);
+  // Member posts, ads and directory cards describe other entities, not the portal.
+  if(data.communityContext){
+    for(const item of data.communityContext.navigation.filter(l=>l.role!=='discussion'))add(item.label,'heading','커뮤니티 탐색·이용 링크',undefined,item.url);
+    return sources;
+  }
   for(const doc of data.businessDocuments||[]){
     add(doc.title,'heading',doc.source==='search_excerpt'?'검색 요약 제목 · 원문 미검증':'보완 원문 제목',undefined,doc.url);
     if(doc.source==='search_excerpt')continue;
@@ -96,6 +101,7 @@ const RawQuestionSchema=z.object({question:z.string().min(5).max(160),intent:Ans
 export const AnswerSuggestionSchema=z.object({primaryKeyword:z.string().min(2).max(40),secondaryKeywords:z.array(z.string().min(2).max(40)).max(2),topicScope:z.enum(['focused','mixed','unknown']),questions:z.array(RawQuestionSchema).length(3)});
 
 function defaultIntents(k:string,pool:AnswerSource[],purpose:WebsitePurpose):AnswerIntent[]{
+  if(purpose.community)return ['scope','process','proof'];
   if(purpose.business)return businessProfile(purpose.business.id).questions.map(q=>q.intent);
   if(purpose.sector)return purpose.sector.questions.map(q=>q.intent);
   if(purpose.kind==='content')return ['definition','choice','proof'];
@@ -114,6 +120,14 @@ function defaultIntents(k:string,pool:AnswerSource[],purpose:WebsitePurpose):Ans
 
 function purposeGuide(intent:AnswerIntent,p:WebsitePurpose):IntentGuide{
   const base=ANSWER_GUIDES[intent];
+  if(p.community){
+    const guide={
+      scope:{question:(k:string)=>`${k}에서 어떤 게시판과 실무 정보를 찾아볼 수 있나요?`,fields:['게시판별 주제와 이용 대상','공개 열람 범위'],placement:'커뮤니티 소개와 게시판 탐색 영역',match:/게시판|커뮤니티|질문|정보|포럼/},
+      process:{question:(k:string)=>`${k}의 회원가입·질문 작성·댓글 참여는 어떻게 진행하나요?`,fields:['비회원 열람과 가입 조건','질문·댓글 참여 절차'],placement:'가입 안내·글쓰기·댓글 입력 전',match:/회원|가입|질문|댓글|글쓰기/},
+      proof:{question:(k:string)=>`${k} 게시글의 작성자·원출처·최신성은 어떻게 확인하나요?`,fields:['작성자 표시와 작성·수정일','원출처와 답변 근거'],placement:'글 상세의 작성 정보·본문 출처·답변 영역',match:/작성|출처|날짜|답변|수정/},
+    }[intent as 'scope'|'process'|'proof'];
+    if(guide)return {...base,...guide,template:()=>guide.fields.map(field=>`${field}: [실제 이용 안내와 공개 글 상세에서 확인 후 작성]`).join('\n')};
+  }
   if(p.business){const q=businessProfile(p.business.id).questions.find(q=>q.intent===intent);if(q)return {...base,question:()=>q.question,fields:q.fields,placement:q.placement,match:q.match,template:()=>q.fields.map(field=>`${field}: [상품별 최신 원문과 운영 자료로 확인한 내용]`).join('\n')};}
   if(p.sector){
     const q=p.sector.questions.find(q=>q.intent===intent);
@@ -144,7 +158,7 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
   const businessKeywords=(purpose.business?.keywords||[]).map(k=>keyword(k,pool)).filter((k):k is AnswerKeyword=>!!k);
   const fallback=businessKeywords.length?businessKeywords:productKeywords.length?productKeywords:sectorKeywords.length?sectorKeywords:fallbackKeywords(pool);
   const parsed=AnswerSuggestionSchema.safeParse(suggestion);
-  const ai=parsed.success?parsed.data:null;
+  const ai=parsed.success&&!purpose.community?parsed.data:null;
   const proposed=ai&&keyword(ai.primaryKeyword,pool);
   const primary=purpose.business?fallback[0]||null:(proposed&&(!products.length||proposed.evidence.some(e=>e.kind==='product'))?proposed:null)||fallback[0]||null;
   const assisted=!!(ai&&primary&&compact(primary.term)===compact(ai.primaryKeyword));

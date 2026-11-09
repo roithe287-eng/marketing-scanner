@@ -6,6 +6,7 @@ import { ExtractedWebsiteData } from "./extractWebsite";
 import { MarketingReport, MarketingReportSchema } from "./reportSchema";
 import {purposePrompt} from './websitePurpose';
 import {MARKETING_RESPONSE_FORMAT} from './marketingModelSchema';
+import {communityAnalysisText} from './communityContext';
 
 // v16: 기본값을 gpt-4.1-mini로 변경 (gpt-4o-mini 대비 속도 2배, 비용 비슷)
 const MODEL = process.env.OPENAI_MODEL || "gpt-4.1-mini";
@@ -42,12 +43,15 @@ export const buildPrompt = (
   };
   const l = limits[mode];
 
-  const body = compressText(data.bodyText, l.body);
+  const body = compressText(data.communityContext?communityAnalysisText(data.communityContext):data.bodyText, l.body);
   const title = compressText(data.title || "(없음)", 80);
   const desc = compressText(data.description || "(없음)", 130);
   const ogTitle = compressText(data.ogTitle || "", 80);
   const ogDesc = compressText(data.ogDescription || "", 130);
   const kw = compressText(data.keywords || "(없음)", 100);
+  const communityLinks=data.communityContext?.navigation.filter(link=>link.role!=='discussion');
+  const buttonTexts=communityLinks?.map(link=>link.label)||data.buttons;
+  const ctaTexts=communityLinks?.filter(link=>['join','participate','subscribe'].includes(link.role)).map(link=>link.label)||data.ctaButtons;
 
   const elements=(data.siteEditing?.elements||[]).filter(e=>!['header','nav','footer'].includes(e.region||'')&&['heading','text','cta'].includes(e.kind)).slice(0,mode==='lean'?20:10).map(e=>({tag:e.tag,section:e.section?.label||'',text:e.text.slice(0,400),truncated:e.truncated||e.text.length>400}));
   return `[페이지 목적과 적용 기준 · 원문 기반 후보]
@@ -69,8 +73,8 @@ H1(${data.h1.length}): ${JSON.stringify(data.h1.slice(0, 2).map((s) => s.slice(0
 H2(${data.h2.length}): ${JSON.stringify(data.h2.slice(0, l.h2).map((s) => s.slice(0, 50)))}
 
 [CTA]
-버튼: ${JSON.stringify(data.buttons.slice(0, l.btn).map((s) => s.slice(0, 30)))}
-CTA감지: ${JSON.stringify(data.ctaButtons.slice(0, 4).map((s) => s.slice(0, 30)))}
+버튼: ${JSON.stringify(buttonTexts.slice(0, l.btn).map((s) => s.slice(0, 30)))}
+CTA감지: ${JSON.stringify(ctaTexts.slice(0, 4).map((s) => s.slice(0, 30)))}
 폼:${data.hasForm ? "Y" : "N"} 연락처:${data.hasContactInfo ? "Y" : "N"}
 
 [이미지] 총${data.imageCount}개/alt속성누락${data.imageWithoutAlt}개/빈alt${data.seoEvidence?.imagesEmptyAlt ?? "미확인"}개
