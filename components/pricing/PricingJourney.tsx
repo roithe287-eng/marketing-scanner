@@ -45,7 +45,7 @@ export default function PricingJourney() {
 
   useEffect(() => {
     if (!ready || !playing || !visible || !pageVisible || reducedMotion || step === 3) return;
-    const timer = window.setTimeout(() => setStep(current => Math.min(current + 1, 3)), step === 2 ? 4400 : 3600);
+    const timer = window.setTimeout(() => setStep(current => Math.min(current + 1, 3)), step === 2 ? 3000 : 2400);
     return () => window.clearTimeout(timer);
   }, [ready, playing, visible, pageVisible, reducedMotion, step]);
 
