@@ -9,12 +9,18 @@ export async function collectRestrictedWebsite(url:string,error:WebsiteCollectio
   const result:RestrictedWebsiteReport={kind:'restricted_website',version:1,url,observedAt:new Date().toISOString(),reason:error.reason,...(error.httpStatus?{httpStatus:error.httpStatus}:{}),searchStatus:'unavailable',sources:[],communityCandidate:false};
   const clean=(s:string,max:number)=>cheerio.load(s,null,false).text().replace(/\s+/g,' ').trim().slice(0,max);
   try{
-    const response=await withBudget(5000,()=>searchNaverWeb(`site:${new URL(url).hostname.replace(/^www\./,'')}`,30));
+    // The web-search API matches site: literally; a domain query also finds the site's home entry.
+    const response=await withBudget(5000,()=>searchNaverWeb(new URL(url).hostname.replace(/^www\./,''),30));
     const seen=new Set<string>();
     result.sources=response.items.flatMap(item=>{
-      const target=communityPageUrl(item.link,url);if(!target||seen.has(target))return [];seen.add(target);
+      // Older search entries can use HTTP. Display those public links without fetching them.
+      let base=url;try{base=new URL(url).href.replace(/^https?:/,new URL(item.link).protocol);}catch{return [];}
+      const target=communityPageUrl(item.link,base);if(!target||seen.has(target))return [];seen.add(target);
       return [{url:target,title:clean(item.title,300),description:clean(item.description,600)}];
-    }).sort((a,b)=>Number(new URL(b.url).pathname==='/')-Number(new URL(a.url).pathname==='/')).slice(0,5);
+    }).sort((a,b)=>{
+      const priority=(link:string)=>{const path=new URL(link).pathname;return path==='/'?3:/\/(?:ab-\d+|forum|community|boards?|questions|about)\/?$/i.test(path)?2:1;};
+      return priority(b.url)-priority(a.url);
+    }).slice(0,5);
     result.searchStatus=result.sources.length?'observed':'empty';
     // An incidental post about communities cannot classify the whole site.
     result.communityCandidate=result.sources.some(s=>new URL(s.url).pathname==='/'&&/커뮤니티|포럼|포털|community|\bforum\b|\bportal\b/i.test(s.title+' '+s.description));

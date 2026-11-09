@@ -36,7 +36,7 @@ export function communityPageUrl(value:string,base:string):string|null{
   if(!value.trim()||value.startsWith('#'))return null;
   let u:URL;try{const root=new URL(base);u=new URL(value,base);if(!/^https?:$/.test(u.protocol)||u.username||u.password||u.protocol!==root.protocol||u.port!==root.port||u.hostname.replace(/^www\./,'')!==root.hostname.replace(/^www\./,''))return null;u.hash='';}catch{return null;}
   if(/(?:^|[\/_.-])(?:auth|api|exec|protected|account|cart|basket|mypage|myshop|order|checkout|login|logout|signout|signup|sign[-_]?in|register|member|write|edit|delete|remove|report|vote|like|download|attachment|unsubscribe|payment|admin)(?:[\/_.-]|$)/i.test(u.pathname))return null;
-  if(/\.(?:xml|txt|json|pdf|zip|png|jpe?g|gif|svg|webp|mp4|css|js)$/i.test(u.pathname))return null;
+  if(/\/upload_file\/|\.(?:xml|txt|json|csv|pdf|zip|rar|7z|tar|gz|xlsx?|docx?|pptx?|hwp|hwpx|png|jpe?g|gif|svg|webp|mp[34]|wav|css|js)$/i.test(u.pathname))return null;
   for(const [key,value] of [...u.searchParams]){
     if(/^(?:utm_.+|fbclid|gclid)$/i.test(key)){u.searchParams.delete(key);continue;}
     if(!/^(?:id|idx|page|bo_table|wr_id|board_no|article_no|post_id|topic_id|document_srl|mid)$/i.test(key)||!/^[\w-]{1,80}$/.test(value))return null;
