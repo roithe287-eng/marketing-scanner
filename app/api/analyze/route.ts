@@ -32,6 +32,8 @@ import {MarketingReportSchema} from '@/lib/reportSchema';
 import {analyzeWebsitePurpose,isNonCommerce} from '@/lib/websitePurpose';
 import {collectBusinessDocuments} from '@/lib/businessResearch';
 import {collectCommunityContext} from '@/lib/collectCommunityContext';
+import {WebsiteCollectionError} from '@/lib/restrictedWebsite';
+import {collectRestrictedWebsite} from '@/lib/collectRestrictedWebsite';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -57,6 +59,7 @@ function isValidUrl(url: string) {
 export async function POST(req: NextRequest) {
   const startedAt=Date.now();
   let finish:((refund?:boolean,limited?:boolean)=>Promise<void>)|undefined;
+  let collectionUrl:string|undefined;
   try {
     const principal=await requirePrincipal(req,true);
     const body = await readJson(req);
@@ -115,6 +118,7 @@ export async function POST(req: NextRequest) {
 
     publicUrl(url);
     finish=await reserve(principal,'analyze',{headers:req.headers,url});
+    collectionUrl=url;
     // Leave time for both quota finalization and a failed-finalization refund.
     const payload=await withBudget(Math.max(1,48_000-(Date.now()-startedAt)),async()=>{
     const t0 = Date.now();
@@ -206,6 +210,13 @@ export async function POST(req: NextRequest) {
     await finish();
     return NextResponse.json(payload,{headers:{'Cache-Control':'private, no-store'}});
   } catch (error: unknown) {
+    if(error instanceof WebsiteCollectionError&&collectionUrl&&finish){
+      try{
+        await finish(true,true);
+        const limited=await collectRestrictedWebsite(collectionUrl,error);
+        return NextResponse.json(limited,{headers:{'Cache-Control':'private, no-store'}});
+      }catch(fallbackError){return failure(fallbackError);}
+    }
     if(finish)await finish(true).catch(()=>{});
     return failure(error);
   }
