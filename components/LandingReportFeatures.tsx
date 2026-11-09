@@ -1,13 +1,14 @@
+import React from 'react';
 import {ReadingToggle} from './ReadingDisclosure';
 import LivePreviewCard from './LivePreviewCard';
 
 const features = [
-  {kind:'search',title:'검색·AI 노출',description:'네이버·구글 검색과 AI 답변에 필요한 페이지 구조, 키워드 연결과 콘텐츠 준비도를 살펴봅니다.',detail:'SEO · GEO · AEO · 네이버 최적화'},
-  {kind:'citation',title:'브랜드 언급·출처',description:'브랜드 언급과 출처 인용을 구분하고, 고객 질문별 답변과 연결된 페이지를 대조합니다.',detail:'질문별 관측 · 답변 검토 · 출처 목록'},
-  {kind:'competition',title:'경쟁사 비교',description:'같은 검색어에서 찾은 후보의 위치와 메시지를 비교하고, 자사에 보완할 정보를 찾습니다.',detail:'포지셔닝 · 원문 비교 · 선택 정보'},
-  {kind:'rewrite',title:'문구 개선',description:'반복 표현과 추상적인 주장을 실제 URL의 근거에 맞춰 다듬습니다. 수정 위치와 실행 방법도 함께 확인합니다.',detail:'반복어 조정 · TO-BE · 수정 가이드'},
-  {kind:'action',title:'실행 우선순위',description:'우선순위·실행 일정을 정하고, 적용 후 확인할 KPI와 재진단 결과를 연결합니다.',detail:'실행 목록 · 목표 설정 · 이전 관측 비교'},
-  {kind:'diagnosis',title:'전환 흐름·UX',description:'첫인상·CTA·카피·신뢰·전환·광고·모바일·SEO의 8개 기본 영역을 함께 점검합니다.',detail:'8개 기본 진단 · 전환 흐름 · 체크리스트'},
+  {kind:'search',title:'검색·AI 노출',description:<>네이버·구글 검색과 AI 답변에 필요한 <strong>페이지 구조</strong>, 키워드 연결과 <strong>콘텐츠 준비도</strong>를 살펴봅니다.</>,detail:'SEO · GEO · AEO · 네이버 최적화'},
+  {kind:'citation',title:'브랜드 언급·출처',description:<><strong>브랜드 언급과 출처 인용</strong>을 구분하고, 고객 질문별 답변과 <strong>연결된 페이지</strong>를 대조합니다.</>,detail:'질문별 관측 · 답변 검토 · 출처 목록'},
+  {kind:'competition',title:'경쟁사 비교',description:<>같은 검색어에서 찾은 후보의 <strong>위치와 메시지</strong>를 비교하고, 자사에 <strong>보완할 정보</strong>를 찾습니다.</>,detail:'포지셔닝 · 원문 비교 · 선택 정보'},
+  {kind:'rewrite',title:'문구 개선',description:<>반복 표현과 추상적인 주장을 <strong>실제 URL의 근거</strong>에 맞춰 다듬습니다. <strong>수정 위치와 실행 방법</strong>도 함께 확인합니다.</>,detail:'반복어 조정 · TO-BE · 수정 가이드'},
+  {kind:'action',title:'실행 우선순위',description:<><strong>우선순위·실행 일정</strong>을 정하고, 적용 후 확인할 <strong>KPI와 재진단 결과</strong>를 연결합니다.</>,detail:'실행 목록 · 목표 설정 · 이전 관측 비교'},
+  {kind:'diagnosis',title:'전환 흐름·UX',description:<>첫인상·CTA·카피·신뢰·전환·광고·모바일·SEO의 <strong>8개 기본 영역</strong>을 함께 점검합니다.</>,detail:'8개 기본 진단 · 전환 흐름 · 체크리스트'},
 ] as const;
 
 /** Scalable diagrams stay legible in the compact two-column mobile grid. */
@@ -36,8 +37,8 @@ export default function LandingReportFeatures() {
   return <section id="scanner-report-features" className="scanner-report-features scanner-common-examples" aria-labelledby="scanner-features-heading">
     <div className="scanner-features-heading"><h2 id="scanner-features-heading" className="scanner-example-title"><span>공통 적용</span> 예시</h2></div>
     <div className="scanner-feature-grid">{features.map(feature=><article key={feature.kind} className="scanner-feature-card" data-kind={feature.kind}>
-      <FeatureGraphic kind={feature.kind}/><h3>{feature.title}</h3>
-      <details className="reading-fold feature-reading"><summary className="reading-summary"><span className="sr-only">{feature.title} 설명</span><ReadingToggle/></summary>
+      <FeatureGraphic kind={feature.kind}/><h3><span>{feature.title}</span></h3>
+      <details open className="reading-fold feature-reading"><summary className="reading-summary"><span className="sr-only">{feature.title} 설명</span><ReadingToggle/></summary>
         <p className="scanner-feature-description">{feature.description}</p><p className="scanner-feature-detail">{feature.detail}</p>
       </details>
     </article>)}</div>

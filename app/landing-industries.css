@@ -28,14 +28,17 @@
 .scanner-industry-flow strong {font-size:16px;font-weight:700;color:#273c54;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}
 .scanner-industry-flow li:last-child {border-color:color-mix(in srgb,var(--industry-accent) 55%,white);box-shadow:inset 0 -3px color-mix(in srgb,var(--industry-accent) 27%,white)}
 .scanner-landing--gate .scanner-common-examples .scanner-features-heading {margin-bottom:26px}
-.scanner-common-examples .scanner-feature-grid {align-items:start}
+.scanner-common-examples .scanner-feature-grid {align-items:stretch}
 .scanner-landing--gate .scanner-common-examples .scanner-feature-card {padding:20px;}
 .scanner-landing--gate .scanner-feature-card[data-kind=action] {--feature-accent:#7f536d}
 .scanner-landing--gate .scanner-common-examples .scanner-common-graphic {display:grid;place-items:center;height:auto;aspect-ratio:200/96;margin-bottom:14px;color:var(--feature-accent)}
 .scanner-common-graphic>svg {display:block;width:100%;height:100%;max-height:112px;font-family:var(--font-sans)}
-.scanner-landing--gate .scanner-common-examples .scanner-feature-card h3 {font-size:22px;line-height:1.5;margin:0 0 12px;font-weight:800;color:#1e2e45}
+.scanner-landing--gate .scanner-common-examples .scanner-feature-card h3 {font-size:26px;line-height:1.5;margin:0 0 16px;font-weight:850;color:#1e2e45;letter-spacing:-.045em}
+.scanner-common-examples .scanner-feature-card h3>span {padding-inline:2px;background:linear-gradient(transparent 72%,color-mix(in srgb,var(--feature-accent) 18%,white) 72%,color-mix(in srgb,var(--feature-accent) 18%,white) 94%,transparent 94%);box-decoration-break:clone;-webkit-box-decoration-break:clone}
+.scanner-common-examples .feature-reading {margin-top:0}
 .scanner-landing--gate .scanner-common-examples .feature-reading>.reading-summary {padding:10px 2px;min-height:44px}
-.scanner-common-examples .scanner-feature-detail {margin:12px 0 0;padding-top:10px;font-size:13px;font-weight:500;line-height:1.7}
+.scanner-common-examples .scanner-feature-description strong {color:var(--feature-accent);font-weight:750}
+.scanner-common-examples .scanner-feature-detail {margin:16px 0 0;padding-top:12px;font-size:13px;font-weight:600;line-height:1.7}
 .scanner-common-result {margin-top:22px;border-top:1px solid #dce3eb}
 .scanner-common-result>summary {padding:18px 12px;color:#344c6e;font-size:16px;font-weight:650}
 .scanner-common-result .scanner-gate-preview {margin-top:10px;text-align:left}
@@ -58,9 +61,17 @@
  .scanner-industry-flow strong {font-size:13px;line-height:1.6}
  .scanner-common-examples .scanner-feature-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
  .scanner-landing--gate .scanner-common-examples .scanner-feature-card {padding:12px 10px;border-radius:13px}
- .scanner-landing--gate .scanner-common-examples .scanner-feature-card h3 {display:grid;place-items:center;min-height:48px;font-size:16px;margin-bottom:10px;letter-spacing:-.04em}
+ .scanner-landing--gate .scanner-common-examples .scanner-feature-card h3 {display:grid;place-items:center;min-height:54px;font-size:19px;margin-bottom:12px;letter-spacing:-.04em}
  .scanner-landing--gate .scanner-common-examples .scanner-common-graphic {margin-bottom:12px;border-radius:8px}
- .scanner-common-examples .scanner-feature-description {font-size:14px}
+ .scanner-common-examples .feature-reading .scanner-feature-description {font-size:14px}
  .scanner-common-examples .scanner-feature-detail {font-size:12px}
  .scanner-common-result>summary {font-size:15px}
+}
+@media(max-width:479px){
+ .scanner-common-examples .scanner-feature-grid {grid-template-columns:minmax(0,1fr);gap:16px}
+ .scanner-landing--gate .scanner-common-examples .scanner-feature-card {padding:18px}
+ .scanner-landing--gate .scanner-common-examples .scanner-feature-card h3 {min-height:0;font-size:23px}
+ .scanner-landing--gate .scanner-common-examples .scanner-common-graphic {aspect-ratio:240/96;max-height:144px}
+ .scanner-common-examples .feature-reading .scanner-feature-description {font-size:15px}
+ .scanner-common-examples .scanner-feature-detail {font-size:13px}
 }
