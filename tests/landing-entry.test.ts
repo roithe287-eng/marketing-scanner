@@ -36,7 +36,7 @@ test('landing examples follow noncommerce, commerce and common order without sma
   assert.equal($('.scanner-example-title>span').text(),'비커머스커머스공통 적용');
   assert.doesNotMatch($.text(),/FROM SIGNALS TO ACTION|YOUR MARKETING MAP/);
   assert.equal($('.feature-reading').length,6);
-  assert.equal($('.feature-reading[open]').length,0);
+  assert.equal($('.feature-reading[open]').length,6);
   assert.equal($('.feature-reading .scanner-feature-description').length,6);
   assert.equal($('.scanner-gate-art img').length,1);
   assert.equal($('.scanner-home-shortcuts, .scanner-entry-intro').length,0);
