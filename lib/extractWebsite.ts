@@ -15,8 +15,10 @@ import type {BusinessDocument} from './businessContext';
 import {restrictedBusinessWebsite} from './restrictedBusiness';
 import {captureSiteDiagnosticSeed,type SiteDiagnosticSeed} from './siteDiagnostics';
 import type {MedicalAudit} from './medicalAuditSchema';
+import {captureCommunityContext,type CommunityContext} from './communityContext';
 
 export type ExtractedWebsiteData = {
+  communityContext?:CommunityContext;
   medicalAudit?:MedicalAudit;
   diagnosticSeed?:SiteDiagnosticSeed;
   collectionNotice?:string;
@@ -410,6 +412,7 @@ export async function extractWebsite(
   const businessDocuments=hasBusinessResearch(finalUrl)?[captureBusinessDocument(html,finalUrl)]:undefined;
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
+  const communityContext=captureCommunityContext($,finalUrl);
   const officialSeoEvidence=collectOfficialSeoEvidence($,finalUrl,res.headers);
   const titleCount = $("head > title").length;
   const descriptionCount = $('meta[name="description" i]').length;
@@ -752,6 +755,7 @@ export async function extractWebsite(
     ctaButtons,
     links,
     bodyText,
+    ...(communityContext?{communityContext}:{}),
     imageAlts,
     imageCount,
     imageWithoutAlt,

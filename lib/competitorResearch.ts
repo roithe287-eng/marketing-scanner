@@ -2,10 +2,12 @@
 import type {ExtractedWebsiteData} from './extractWebsite';
 import type {OwnProductSource} from './ownProductSchema';
 import {isEmploymentQuery} from './competitorRoles';
+import type {CommunityContext} from './communityContext';
 import type {BusinessDocument} from './businessContext';
-export type QuerySite = {title?:string;ogTitle?:string;description?:string;ogDescription?:string;keywords?:string;h1?:string[];h2?:string[];bodyText?:string;productSources?:OwnProductSource[];businessDocuments?:BusinessDocument[];businessKeywords?:string[]};
+export type QuerySite = {communityContext?:CommunityContext;title?:string;ogTitle?:string;description?:string;ogDescription?:string;keywords?:string;h1?:string[];h2?:string[];bodyText?:string;productSources?:OwnProductSource[];businessDocuments?:BusinessDocument[];businessKeywords?:string[]};
 /** Reuse the already collected page; omit known navigation, footer and licence-only text. */
-export function competitorOwnText(data:Pick<ExtractedWebsiteData,'bodyText'|'siteEditing'|'businessDocuments'>):string {
+export function competitorOwnText(data:Pick<ExtractedWebsiteData,'bodyText'|'siteEditing'|'businessDocuments'|'communityContext'>):string {
+  if(data.communityContext)return [...data.communityContext.evidence.map(e=>e.text),...data.communityContext.navigation.filter(l=>l.role==='board').map(l=>l.label)].join('\n');
   const elements=data.siteEditing?.elements||[];
   const chrome=elements.filter(e=>['header','footer','nav'].includes(e.region||'')).map(e=>e.text.replace(/\s+/g,' ').trim());
   const lines=[...(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt').flatMap(d=>[d.title,...d.sections.map(s=>s.text)]),...elements.filter(e=>!e.truncated&&['text','heading'].includes(e.kind)&&!['header','footer','nav'].includes(e.region||'')).map(e=>e.text),...(data.bodyText||'').split(/\n+/)];
@@ -20,6 +22,7 @@ export function queryMatches(query:string,text:string) {
   return {terms,matched:terms.filter(t=>normalized.includes(normalizeSearchText(t)))};
 }
 export function queryFields(site:QuerySite) {
+  if(site.communityContext)site={title:site.title,ogTitle:site.ogTitle,description:site.description,ogDescription:site.ogDescription,h1:site.h1,bodyText:site.communityContext.navigation.filter(l=>l.role==='board').map(l=>l.label).join(' ')};
   return [{label:'페이지 제목',text:site.title||site.ogTitle||'',weight:4},
     {label:'메타 설명',text:site.description||site.ogDescription||'',weight:3},
     ...(site.h1||[]).slice(0,3).map(text=>({label:'H1',text,weight:4})),
@@ -89,6 +92,12 @@ export function usableMarketKeyword(query:string,site:QuerySite):boolean {
   return exactCategoryHeading||evidence.evidence.some(e=>['메타 설명','메타 키워드','수집된 본문'].includes(e.field)||/^(?:상품(?:명| 분류| 설명)|보완 원문(?: 제목)?) · /.test(e.field));
 }
 export function marketKeywordCandidates(site:QuerySite){
+  if(site.communityContext){
+    const identity=site.communityContext.evidence.map(e=>e.text).join(' ');
+    const topics=[...new Set((identity.match(/(?:[가-힣]{2,12})(?=\s*(?:커뮤니티|포럼|정보|포털))/g)||[]))].filter(t=>!/온라인|디지털|실무|전문|제공/.test(t));
+    const seeds=[...topics.flatMap(t=>[`${t} 커뮤니티`,`${t} 정보`,`${t} 질문답변`]),'커뮤니티','질문답변'];
+    return seeds.filter(k=>keywordEvidence(k,site).grounded).map(k=>keywordEvidence(k,site)).slice(0,5);
+  }
   const business=(site.businessKeywords||[]).filter(k=>usableMarketKeyword(k,site)).map(k=>keywordEvidence(k,site));
   const existing=keywordCandidates(site,20),extra=[...marketTerms,...productKeywordSeeds(site)].filter(t=>keywordEvidence(t,site).grounded).map(t=>keywordEvidence(t,site));
   const seen=new Set<string>();

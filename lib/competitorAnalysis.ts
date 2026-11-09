@@ -1,3 +1,4 @@
+import type {CommunityContext} from './communityContext';
 import {analyzeBusinessContext} from './businessContext';
 import {collectBusinessDocuments} from './businessResearch';
 import {searchNaverWeb} from './naverWebSearch';
@@ -242,6 +243,7 @@ function extractKeywordFallback(siteData:QuerySite):string {
 }
 
 export async function analyzeCompetitors(siteData: {
+  communityContext?:CommunityContext;
   url: string;
   title: string;
   ogTitle: string;
@@ -257,13 +259,13 @@ export async function analyzeCompetitors(siteData: {
     const base={...siteData,finalUrl:siteData.url,h2:siteData.h2||[],bodyText:siteData.bodyText||''};
     const initialBusiness=analyzeBusinessContext({...base,description:base.description||base.bodyText.slice(0,500)});
     const [productContext,businessDocuments]:[OwnProductContext,Awaited<ReturnType<typeof collectBusinessDocuments>>]=await Promise.all([
-      initialBusiness?.id==='travel_booking'?Promise.resolve({status:'not_observed' as const,discovery:'input_page' as const,attemptedPages:0,sources:[],commerce:false,note:'여행 상품은 물품 배송 대신 예약 조건을 확인합니다.'}):collectOwnProductContext(siteData.url),
+      siteData.communityContext||initialBusiness?.id==='travel_booking'?Promise.resolve({status:'not_observed' as const,discovery:'input_page' as const,attemptedPages:0,sources:[],commerce:false,note:siteData.communityContext?'커뮤니티는 게시글 탐색·회원 참여를 확인합니다.':'여행 상품은 물품 배송 대신 예약 조건을 확인합니다.'}):collectOwnProductContext(siteData.url),
       collectBusinessDocuments(siteData.url,{budgetMs:6000}),
     ]);
     const business=analyzeBusinessContext({...base,businessDocuments,productContext});
     const querySite:QuerySite={...siteData,productSources:productContext.sources,businessDocuments,businessKeywords:business?.keywords};
     // 1. AI 키워드 추출 우선
-    let keyword = business?.keywords.find(k=>usableMarketKeyword(k,querySite))||await extractKeywordWithAI({
+    let keyword = (siteData.communityContext?marketKeywordCandidates(querySite)[0]?.keyword:undefined)||business?.keywords.find(k=>usableMarketKeyword(k,querySite))||await extractKeywordWithAI({
       title: siteData.title,
       ogTitle: siteData.ogTitle,
       ogDescription: siteData.ogDescription,

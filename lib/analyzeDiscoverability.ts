@@ -1,5 +1,6 @@
 import {normalizeDiscoverability} from './reportIntegrity';
 import {purposePrompt} from './websitePurpose';
+import {communityAnalysisText} from './communityContext';
 import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { Discoverability, DiscoverabilitySchema } from "./reportSchema";
@@ -38,7 +39,7 @@ function compressText(text: string, maxLen: number): string {
 }
 
 function buildUserPrompt(data: ExtractedWebsiteData): string {
-  const bodyPreview = compressText(data.bodyText || "", 3500);
+  const bodyPreview = compressText(data.communityContext?communityAnalysisText(data.communityContext):data.bodyText || "", 3500);
   const jsonLdSummary =
     data.schemaTypes && data.schemaTypes.length > 0
       ? data.schemaTypes.join(", ")

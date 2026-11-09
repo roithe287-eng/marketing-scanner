@@ -53,6 +53,7 @@ export function buildSourceLibrary(report:MarketingReport):SourceLibrary{
    add(value,'text','본문 발췌');
   }
  }
+ for(const page of report.sitePurpose?.community?.pages||[])link(page.url,'커뮤니티 공개 표본 · '+page.title);
  for(const doc of report.sitePurpose?.business?.documents||[]){const prefix=doc.source==='search_excerpt'?'검색 요약 · 원문 미검증':'보완 원문';link(doc.url,prefix+' · '+doc.title);for(const section of doc.sections)add(section.text,'text',prefix+' · '+section.heading,false,false,doc.url);}
  if(report.productContext?.status==='observed')for(const product of report.productContext.sources)link(product.url,product.name);
  for(const observed of report.siteDiagnostics?.pages||[])link(observed.url,'기술 점검 원문 · '+(observed.title||'제목 미감지'));
