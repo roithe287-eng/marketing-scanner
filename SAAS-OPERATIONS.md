@@ -24,6 +24,8 @@ No payment, automatic email, or external CRM delivery is connected in this relea
 
 ## Security
 
+- AI content collection: middleware returns an uncached 403 for declared training crawlers and user-request fetchers listed in `lib/security/aiCollection.ts`. Search crawlers (including Yeti, Googlebot, Bingbot, OAI-SearchBot, Claude-SearchBot and PerplexityBot), ad review, previews and normal browsers retain existing behavior. `/robots.txt` remains readable and publishes matching opt-outs, plus Google-Extended/Applebot-Extended. Private report/account/API crawling remains disallowed. No platform firewall settings are replaced. User-Agent checks can be evaded and do not protect public source/assets or prevent manual copying; existing route authorization, quotas and rate limits remain the security boundary. Roll back this policy by reverting the AI collection commit.
+
 - Opaque 256-bit session identifiers; only SHA-256 digests in Redis. Production cookies are Secure, HttpOnly, SameSite=Strict and `__Host-` scoped.
 - Scrypt password hashes: N=131072, r=8, p=1, random per-account salts, constant-time comparison. Generic login failures with per-IP and per-identifier limits.
 - Same-origin + JSON requirements for mutations, streaming request body caps, shared rate limits, fail-closed access when storage is unavailable.
