@@ -277,7 +277,7 @@ export async function analyzeCompetitors(siteData: {
       productSources:productContext?.sources,
     });
 
-    let keywordSource: "ai" | "fallback" = "ai";
+    let keywordSource: "ai" | "fallback" = siteData.communityContext?"fallback":"ai";
     if(keyword&&!usableMarketKeyword(keyword,querySite))keyword=null;
     if(productContext?.sources.length&&!business){
       const nameSupport=(q:string)=>productContext!.sources.filter(p=>{const m=queryMatches(q,p.name);return m.terms.length>0&&m.matched.length===m.terms.length;}).length;
