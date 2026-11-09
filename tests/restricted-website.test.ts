@@ -26,11 +26,14 @@ test('restricted report uses same-site display-only excerpts without fabricated 
     {link:url+'ab-100-123',title:'회원 질문',description:'상품 광고 내용'},
     {link:'https://other.example.com/',title:'다른 사이트',description:'외부 자료'},
     {link:url+'ab-login',title:'로그인',description:'비공개'},
-    {link:url,title:'<b>실무마당</b> - 마케팅 정보 포털',description:'마케터를 위한 커뮤니티 &amp; 질문답변'},
+    {link:url.replace('https:','http:'),title:'<b>실무마당</b> - 마케팅 정보 포털',description:'마케터를 위한 커뮤니티 &amp; 질문답변'},
+    {link:url+'design/upload_file/directory.xls',title:'연락처 첨부파일',description:'분석 대상이 아닌 첨부파일'},
   ]}),{headers:{'content-type':'application/json'}});});
   const result=RestrictedWebsiteReportSchema.parse(await collectRestrictedWebsite(url,new WebsiteCollectionError('forbidden',403)));
   assert.equal(result.sources.length,2);assert.equal(result.sources[0].title,'실무마당 - 마케팅 정보 포털');assert.equal(result.communityCandidate,true);
   assert.equal(result.searchStatus,'observed');assert.ok(requests.every(r=>r.startsWith('https://openapi.naver.com/')));
+  assert.equal(new URL(requests[0]).searchParams.get('query'),'forum.example.com');
+  assert.ok(!result.sources.some(s=>/\.xls|upload_file/.test(s.url)));
   assert.equal('totalScore' in result,false);assert.equal('communityContext' in result,false);
   const rendered=renderToStaticMarkup(React.createElement(RestrictedWebsiteReportView,{report:result}));
   assert.match(rendered,/HTTP 403/);assert.match(rendered,/미확인 기능 감점 안 함/);assert.match(rendered,/원문 미검증/);
