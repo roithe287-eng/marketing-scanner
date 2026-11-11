@@ -1,6 +1,8 @@
 import type {SiteDiagnostics} from './siteDiagnosticsSchema';
 import type {LocalPlaceLookup} from './localPlaceSchema';
 import {placeSector,placePolicies,PLACE_POLICY_REVIEWED,PLACE_API_DOC} from './localPlaceCatalog';
+import {buildSeasonalPlaceReview} from './seasonalPlaceReview';
+import {SEASONAL_PLACE_POLICIES} from './seasonalPlaceCatalog';
 import {sameSite} from './siteIdentity';
 export const LOCAL_PLACE_TITLE='네이버 플레이스 · 업체 정보와 실행 제안';
 export const LOOKUP_LABELS:Record<LocalPlaceLookup['status'],string>={observed:'API 조회 완료',empty:'검색 표본에서 미확인',unavailable:'API 연결 확인 필요',error:'일시적 조회 실패',limited:'수집 제한',not_queried:'새 진단 필요'};
@@ -21,7 +23,8 @@ export function buildLocalPlaceReview(diagnostics?:SiteDiagnostics|null){
   };
   const checks=Object.entries(info).map(([key,[label,action]])=>{const page=pages.find(p=>p.localPlaceEvidence!.signals.some(s=>s.key===key));const signal=page?.localPlaceEvidence!.signals.find(s=>s.key===key);return {key,label,status:signal?'홈페이지 문구 관측':'표본에서 미확인',excerpt:signal?.excerpt||'수집 표본에서 관련 표현을 확인하지 못했습니다. 실제 누락 여부는 원문에서 확인하세요.',url:page?.url||root.url,action};});
   const lookup:LocalPlaceLookup=diagnostics.localPlaceLookup||{status:'not_queried',observedAt:diagnostics.observedAt,queries:[],items:[],note:'저장된 보고서에는 API 조회가 없습니다. 같은 URL로 새로 진단하면 업체 검색을 수행합니다.'};
-  return {evidence,sector,terms,checks,lookup,page:{url:root.url,title:root.title,description:root.description},policies:placePolicies(sector.id),reviewedOn:PLACE_POLICY_REVIEWED,apiDoc:PLACE_API_DOC,
+  const seasonal=buildSeasonalPlaceReview(evidence,root.url,lookup.observedAt);
+  return {evidence,sector,terms,checks,lookup,seasonal,page:{url:root.url,title:root.title,description:root.description},policies:[...placePolicies(sector.id),...(seasonal?SEASONAL_PLACE_POLICIES:[])],reviewedOn:PLACE_POLICY_REVIEWED,apiDoc:PLACE_API_DOC,
     steps:[
       {title:'업체·지점 식별',text:evidence.franchise?'본사와 가맹점을 구분하고 각 지점의 고유 이름·주소·전화·공식 매장 페이지를 대조하세요. 본사의 주소를 모든 지점에 복사하지 마세요.':'API 후보의 이름·주소·업종·홈페이지를 함께 대조하고 우리 업체의 스마트플레이스 관리 화면을 여세요.'},
       {title:'업종별 정보 정리',text:sector.fields.join(' / ')+' 항목을 관리 화면과 홈페이지에 일관되게 반영하세요.'},

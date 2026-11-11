@@ -1,6 +1,14 @@
 import {z} from 'zod';
 const url=z.string().url().max(2048).refine(v=>{const u=new URL(v);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;});
+export const SeasonalPlaceEvidenceSchema=z.object({
+  version:z.literal(1),
+  profiles:z.array(z.object({id:z.string().max(40),excerpt:z.string().max(220),terms:z.array(z.object({label:z.string().max(80),matchedAs:z.string().max(80)})).max(8)})).max(4),
+  destinations:z.array(z.object({id:z.string().max(40),label:z.string().max(80),matchedAs:z.string().max(80),excerpt:z.string().max(220)})).max(6),
+  seasonLabels:z.array(z.string().max(30)).max(6),
+  signals:z.array(z.object({key:z.string().max(40),label:z.string().max(80),excerpt:z.string().max(220)})).max(7),
+});
 export const LocalPlaceEvidenceSchema=z.object({
+  seasonal:SeasonalPlaceEvidenceSchema.optional(),
   sector:z.string().max(40),name:z.string().max(120),identity:z.string().max(500),address:z.string().max(300),
   branch:z.string().max(80),franchise:z.boolean(),
   links:z.array(z.object({url,kind:z.enum(['place','short'])})).max(8),
