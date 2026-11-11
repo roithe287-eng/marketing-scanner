@@ -64,6 +64,12 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
     if(e.kind==='cta'&&['nav','header','footer'].includes(e.region||'')&&sectorActionPattern(actionSector.id).test(e.text)&&!actions.some(a=>a.text===short(e.text)))actions.push({text:short(e.text),locator:e.selector});
   }
   const matched=Object.fromEntries(Object.entries(patterns).map(([key,re])=>[key,units.filter(u=>re.test(u.text))]));
+  // A clear inquiry/booking page can identify a service without the literal word "서비스".
+  // Never reinterpret a purchase path or a secondary body mention as a provider.
+  if(!actions.some(a=>actionPatterns.purchase.test(a.text))&&actions.some(a=>actionPatterns.contact.test(a.text)||actionPatterns.booking.test(a.text))){
+    const additional=units.filter(u=>['head > title','h1','meta[name="description"]'].includes(u.locator)&&/인테리어|리모델링|청소|이사\s*(?:견적|전문)|수리|복원|수선|숙박|호텔|펜션|캠핑|대관|촬영|웨딩|공인중개|부동산\s*중개|필라테스|피트니스|요가|헬스장|렌탈|렌털|세무|회계|SaaS/i.test(u.text));
+    for(const unit of additional)if(!matched.service.some(u=>u.text===unit.text))matched.service.push(unit);
+  }
   const articleTypes=(data.schemaTypes||[]).filter(t=>/^(?:Article|BlogPosting|NewsArticle|TechArticle|ScholarlyArticle)$/i.test(t));
   const courseTypes=(data.schemaTypes||[]).filter(t=>/^(?:Course|EducationalOccupationalProgram)$/i.test(t));
   const structuredKind=articleTypes.length?'content':courseTypes.length?'education':undefined;

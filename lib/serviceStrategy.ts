@@ -3,6 +3,8 @@ import type {ExtractedWebsiteData} from './extractWebsite';
 import {analyzeBusinessContext} from './businessContext';
 import {isConsentBoilerplate} from './contentBoilerplate';
 import {buildLogisticsBriefing,LogisticsBriefingSchema} from './logisticsBriefing';
+import {NonCommerceBriefingSchema} from './nonCommerceBriefing';
+import {buildNonCommerceStrategy} from './nonCommerceStrategy';
 
 const text=z.string().min(1).max(1200);
 const source=z.object({url:z.string().url().max(2048),title:z.string().max(300),text:z.string().max(600)});
@@ -11,15 +13,16 @@ const segment=z.object({id:z.string(),label:text,audience:text,evidence:z.array(
   landingBlocks:z.array(text).max(6),headline:text,message:text,cta:text,metric:text});
 const channel=z.object({id:z.string(),label:text,role:text,setup:text,creative:text,conversion:text,review:text});
 export const ServiceStrategySchema=z.object({
-  version:z.literal(1),industry:z.literal('logistics'),targetUrl:z.string().url(),capturedAt:z.string().datetime(),
+  version:z.literal(1),industry:z.enum(['logistics','noncommerce']),targetUrl:z.string().url(),capturedAt:z.string().datetime(),
   basis:z.literal('source-backed-playbook'),summary:text,notice:text,sources:z.array(source).max(24),
   findings:z.array(z.object({title:text,observed:text,interpretation:text,action:text,evidence:z.array(source).max(3)})).max(5),
   segments:z.array(segment).min(1).max(5),channels:z.array(channel).max(4),
   funnel:z.array(z.object({stage:text,event:text,definition:text,check:text})).max(6),
   metrics:z.array(z.object({name:text,formula:text,required:text,interpretation:text})).max(6),
   experiments:z.array(z.object({title:text,hypothesis:text,change:text,metric:text,decision:text})).max(4),
-  content:z.array(z.object({title:text,angle:text,outline:z.array(text).max(4),cta:text,sourceUrls:z.array(z.string().url()).max(3)})).max(5),
+  content:z.array(z.object({title:text,angle:text,outline:z.array(text).max(4),cta:text,sourceUrls:z.array(z.string().url()).max(3)})).max(6),
   briefing:LogisticsBriefingSchema.optional(),
+  briefingPlan:NonCommerceBriefingSchema.optional(),
 });
 export type ServiceStrategy=z.infer<typeof ServiceStrategySchema>;
 type SegmentSpec=Omit<z.infer<typeof segment>,'evidence'|'landingUrl'|'diagnosis'> & {match:RegExp};
@@ -60,7 +63,8 @@ const segments:SegmentSpec[]=[
 /** Facts are bounded merchant quotes. All marketing decisions remain explicit proposals. */
 export function buildServiceStrategy(data:ExtractedWebsiteData):ServiceStrategy|undefined{
   const business=analyzeBusinessContext(data);
-  if(business?.id!=='international_logistics'||data.collectionNotice)return;
+  if(data.collectionNotice)return;
+  if(business?.id!=='international_logistics'){const plan=buildNonCommerceStrategy(data);return plan?ServiceStrategySchema.parse(plan):undefined;}
   const inputPage=new URL(data.finalUrl||data.url).href;
   const own=new URL(data.finalUrl||data.url).hostname.replace(/^www\./,'');
   const sources=(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&new URL(d.url).hostname.replace(/^www\./,'')===own)

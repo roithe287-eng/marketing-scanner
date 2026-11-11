@@ -36,10 +36,10 @@ for(const item of sectorCases)test(`URL-backed sector classification, report, qu
   const corpus=[data.title,data.description,...data.h1,...data.h2,data.bodyText,...data.siteEditing!.elements.map(e=>e.text)].join('\n');
   for(const c of sector.checks)for(const e of c.evidence)assert.ok(corpus.includes(e.text),'only literal page evidence');
   assert.equal(JSON.parse(purposePrompt(data)).sector.id,item.id);
-  const plan=buildAnswerContentPlan(data);assert.deepEqual(plan.questions.map(q=>q.intent),sector.questions.map(q=>q.intent));
+  const plan=buildAnswerContentPlan(data);assert.deepEqual(plan.questions.slice(0,3).map(q=>q.intent),sector.questions.map(q=>q.intent));
   assert.ok(plan.primaryKeyword);assert.notEqual(plan.primaryKeyword.term,'상담');assert.ok(corpus.includes(plan.primaryKeyword.term));
-  assert.deepEqual(plan.questions.map(q=>q.question),sector.questions.map(q=>q.question));
-  for(const q of plan.questions)assert.equal(q.draft,'','fallback never writes invented answers');
+  assert.deepEqual(plan.questions.slice(0,3).map(q=>q.question),sector.questions.map(q=>q.question));
+  assert.ok(plan.questions.length>=6);for(const q of plan.questions){assert.equal(q.draft,q.evidence.map(e=>e.text).join('\n'),'answers remain literal source units');assert.ok(q.explanation);}
   const questions=citationFallbackQuestions(data,'해봄');assert.equal(questions.length,5);assert.ok(questions[0].question.includes(new URL(data.url).hostname));
   for(const q of sector.questions)assert.ok(questions.some(v=>v.question===q.question));
   assert.doesNotMatch(JSON.stringify(questions),/장바구니|배송|재고|반품|구매 전/);

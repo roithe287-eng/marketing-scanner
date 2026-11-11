@@ -1,7 +1,7 @@
 import {answerSources,buildAnswerContentPlan,AnswerSuggestionSchema,type AnswerPageData} from './answerContent';
 import {getOpenAI} from './openaiClient';
 import {zodResponseFormat} from 'openai/helpers/zod';
-import {purposePrompt} from './websitePurpose';
+import {purposePrompt,analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
 
 /** Own-page and verified merchant products only. No search snippets, ranks or autocomplete. */
 export function answerContentPrompt(data:AnswerPageData):string{
@@ -9,7 +9,7 @@ export function answerContentPrompt(data:AnswerPageData):string{
 }
 export async function analyzeAnswerContent(data:AnswerPageData){
   const fallback=buildAnswerContentPlan(data);
-  if(fallback.scope==='submitted-page-and-business')return fallback;
+  if(fallback.scope==='submitted-page-and-business'||isNonCommerce(analyzeWebsitePurpose(data)))return fallback;
   if(!process.env.OPENAI_API_KEY||(fallback.mode==='limited'&&!data.productContext?.sources.length)||!fallback.primaryKeyword)return fallback;
   try{
     const result=await getOpenAI().chat.completions.create({

@@ -38,7 +38,8 @@ for(const site of noncommerceCases)test(`purpose-aware report, questions and PDF
   if(isNonCommerce(purpose)){
     assert.equal(report.criticalIssues.length,0);assert.ok(Object.values(report.priorityRoadmap).every(rows=>rows.length===0));assert.doesNotMatch(report.exampleCopy.ctaText,/구매/);
     assert.doesNotMatch(JSON.stringify(questions),/배송|반품|장바구니|최소 주문|상품을 판매/);
-    assert.ok(answer.questions.every(q=>!['delivery','minimum','care'].includes(q.intent)));
+    assert.ok(answer.questions.every(q=>!['delivery','minimum'].includes(q.intent)));
+    assert.ok(answer.questions.length>=6);assert.doesNotMatch(answer.questions.map(q=>q.question+' '+q.template).join(' '),/세탁|최소 주문|배송에는|제품 관리/);
   }
   if(site.kind==='content'||site.kind==='public_service'){
     for(const id of ['price_info','trust_review','trust_certification'])assert.equal(report.checklist!.find(c=>c.id===id)?.status,'not_applicable');
