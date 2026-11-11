@@ -9,6 +9,7 @@ import {evaluateRobots,type RobotsObservation} from './robotsRules';
 import {withBudget,budgetSignal} from './runtime/budget';
 import {getScannerContactUrl} from './siteConfig';
 import {searchNaverWeb} from './naverWebSearch';
+import {pageRegion} from './pageRegions';
 
 // Researched public URLs are discovery hints, never pre-written findings or score overrides.
 const researchPaths:Record<string,string[]>={
@@ -16,6 +17,7 @@ const researchPaths:Record<string,string[]>={
   'sdfkorea.com':['/shopinfo/guide.html'],
   'pure-australia.com':['/collections/oznex','/pages/ldv20-official-information','/products/ldv20'],
   'tripozzy.com':['/fit/38567','/fit/42511','/fit/40674'],
+  'pumyang.com':['/oversea/01/','/international/01/','/customer/07/'],
 };
 const UA=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
 const host=(u:URL)=>u.hostname.toLowerCase().replace(/^www\./,'');
@@ -26,6 +28,14 @@ export const hasBusinessResearch=(url:string)=>{try{return !!researchPaths[host(
 export function captureBusinessDocument(html:string,url:string,capturedAt=new Date().toISOString()):BusinessDocument{
   const $=cheerio.load(html),title=clean($('head > title').first().text(),300);
   const catalog:{heading:string;text:string}[]=[];
+  // Public form labels describe the inquiry journey; never capture entered values.
+  const formSections:{heading:string;text:string}[]=[];
+  $('form').each((_,form)=>{
+    if(['nav','header','footer'].includes(pageRegion($,form))||$(form).closest('[hidden],[aria-hidden="true"]').length)return;
+    const labels=$(form).find('label,dt').toArray().map(el=>clean($(el).text(),80))
+      .filter(text=>text&&text.length<=50&&!/개인정보|동의|약관/.test(text));
+    if(labels.length)formSections.push({heading:'공개 상담 양식 · 입력 항목',text:'입력 항목: '+[...new Set(labels)].slice(0,12).join(' · ')});
+  });
   const raw=$('script[type="application/json"]#__NEXT_DATA__').text();
   if(raw&&raw.length<1_000_000){try{
     const data=JSON.parse(raw)?.props?.pageProps?.mainData;
@@ -46,10 +56,10 @@ export function captureBusinessDocument(html:string,url:string,capturedAt=new Da
   // Keep multiple decision conditions, rather than the first ten generic introduction lines.
   const useful=(s:{text:string;heading:string})=>{
     const text=s.heading+' '+s.text;
-    return (/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label/i.test(text)?5:0);
+    return (/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label|해외이사|귀국이사|견적|포장|보험|보상|freight|cargo|customs/i.test(text)?5:0);
   };
   const seen=new Set<string>();
-  return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(seen.has(s.text))return false;seen.add(s.text);return true;}).slice(0,10)});
+  return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...formSections.slice(0,2),...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(seen.has(s.text))return false;seen.add(s.text);return true;}).slice(0,10)});
 }
 
 /** Search snippets are topic hints only. No request is made to a robots-blocked merchant page. */

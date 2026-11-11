@@ -10,7 +10,7 @@ import RestrictedWebsiteReportView from '../components/report/RestrictedWebsiteR
 
 const url='https://www.forum.example.com/';
 test('HTTP denial stops public extraction without host or protocol retries',async t=>{
-  for(const status of [403,429]){
+  for(const status of [403,406,429]){
     const requests:string[]=[];
     const mock=t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>{requests.push(String(input));return String(input).endsWith('/robots.txt')?new Response('User-agent: *\nAllow: /',{headers:{'content-type':'text/plain'}}):new Response('Access denied',{status});});
     await assert.rejects(extractWebsite(url),(error:unknown)=>error instanceof WebsiteCollectionError&&error.httpStatus===status);

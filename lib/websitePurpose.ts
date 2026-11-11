@@ -55,7 +55,11 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const ctaElements=elements.filter(e=>e.kind==='cta');
   if(data.siteEditing)ctaElements.forEach(e=>actions.push({text:short(e.text),locator:e.selector}));
   else for(const text of new Set([...(data.buttons||[]),...(data.ctaButtons||[])]))actions.push({text:short(text),locator:'button · a · input[type="submit"] 표본'});
+  if(business?.id==='international_logistics')actions.splice(0,actions.length,...actions.filter(a=>a.text.length<=80));
   const actionSector=analyzeNonCommerceSector(units,[]);
+  if(business?.id==='international_logistics')for(const e of data.siteEditing?.elements||[]){
+    if(e.kind==='cta'&&e.text.length<=80&&actionPatterns.contact.test(e.text)&&!actions.some(a=>a.text===short(e.text)))actions.push({text:short(e.text),locator:e.selector});
+  }
   if(actionSector)for(const e of data.siteEditing?.elements||[]){
     if(e.kind==='cta'&&['nav','header','footer'].includes(e.region||'')&&sectorActionPattern(actionSector.id).test(e.text)&&!actions.some(a=>a.text===short(e.text)))actions.push({text:short(e.text),locator:e.selector});
   }

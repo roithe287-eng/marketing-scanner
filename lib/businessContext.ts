@@ -9,8 +9,8 @@ export const BusinessDocumentSchema=z.object({
 });
 export type BusinessDocument=z.infer<typeof BusinessDocumentSchema>;
 export const BusinessContextSchema=z.object({
-  version:z.literal(1),id:z.enum(['duty_free','cross_border','supplements','travel_booking']),label:z.string().max(100),
-  industry:z.enum(['commerce','ecommerce','travel']),kind:z.enum(['commerce','mixed','service']),
+  version:z.literal(1),id:z.enum(['duty_free','cross_border','supplements','travel_booking','international_logistics']),label:z.string().max(100),
+  industry:z.enum(['commerce','ecommerce','travel','logistics']),kind:z.enum(['commerce','mixed','service']),
   goalKey:z.enum(['purchase','contact','booking']),goalLabel:z.string().max(100),
   evidence:z.array(unit).max(8),documents:z.array(BusinessDocumentSchema).max(4),
   keywords:z.array(z.string().max(60)).max(5),
@@ -22,6 +22,20 @@ type CheckSpec={id:string;label:string;match:RegExp;guide:string};
 export type BusinessQuestion={intent:'location'|'eligibility'|'process'|'delivery'|'price'|'choice'|'care'|'proof'|'scope';question:string;fields:string[];match:RegExp;placement:string};
 type Profile={label:string;industry:BusinessContext['industry'];kind:BusinessContext['kind'];goalKey:BusinessContext['goalKey'];goalLabel:string;checks:CheckSpec[];questions:BusinessQuestion[];keywords:string[];caution:string};
 const profiles:Record<BusinessContext['id'],Profile>={
+  international_logistics:{label:'해외이사·국제운송 견적 상담형',industry:'logistics',kind:'service',goalKey:'contact',goalLabel:'운송 조건 확인·견적 상담',
+    keywords:['해외이사','귀국이사','국제운송','해상운송','항공운송','국제특송','freight forwarding','international moving'],
+    caution:'개인 해외이사·귀국이사와 기업 수출입 화물·해상·항공·특송은 고객, 견적 항목, 도착 페이지와 문의 경로를 구분한다. 쇼핑몰 구매·장바구니·재고 기준을 적용하지 않는다. 가격표 부재를 감점하지 말고 출발지·도착지·화물 종류·부피·중량·희망 일정과 포함·별도 비용의 견적 기준을 확인한다. 상담 클릭→문의 접수→유효 견적→계약을 별도 단계로 제안하며 클릭을 계약 성과로 단정하지 않는다. 운송기간·통관·금지품·세금·보험·보상은 국가와 계약별 조건을 대조할 과제로 제안하고 법적 적합성이나 무조건 보상을 보장하지 않는다. 고객 후기 속 가격·기간·무파손 경험을 전체 서비스 조건으로 일반화하지 않는다. 동명 해운사·벌크선사와 혼동하지 말고 입력 도메인과 현재 안내를 기준으로 판단한다. 누적 고객·업력·만족도는 업체 주장으로 구분하고 숫자 애니메이션의 나열된 자릿수는 실적으로 해석하지 않는다.',
+    checks:[
+      {id:'routes',label:'개인 이사·기업 화물별 서비스와 운송 구간',match:/해외\s*이사|귀국\s*이사|국제\s*운송|해상|항공|특송|freight|relocation/i,guide:'해외·귀국이사 고객과 기업 수출입 화물 고객의 진입 경로를 나누세요. 국가·도시·운송 방식별 실제 제공 범위와 담당 거점을 각 서비스 상세에서 확인하고 해당 광고를 같은 목적의 페이지로 연결하세요.'},
+      {id:'quote',label:'출발·도착지·물량·일정과 견적 상담',match:/견적|상담|출발지|도착지|부피|중량|CBM|quotation|quote/i,guide:'상담 폼의 출발·도착 국가와 도시, 서비스 유형, 물량·희망 일정 및 연락 수단을 확인하세요. 초기 문의에는 최소 항목을 받고 상세 서류는 후속 상담으로 분리하세요. 상담 버튼 클릭, 접수 완료, 유효 견적과 계약을 각각 측정할 과제로 제안하세요.'},
+      {id:'process',label:'포장→운송→통관→현지 인도 절차',match:/포장|컨테이너|통관|출항|배송|인도|운송\s*기간|해상|항공/i,guide:'포장·출고·해상/항공 운송·통관·현지 인도의 담당 주체와 준비 자료를 단계별로 연결하세요. 운송기간은 출발·도착지와 통관 등 변동 조건을 함께 검토하고 고객 후기의 기간을 약속으로 바꾸지 마세요.'},
+      {id:'terms',label:'포함·추가 비용·보험·파손 보상 조건',match:/보험|보상|파손|약관|추가\s*비용|보관|포함|제외/i,guide:'견적의 포함·별도 비용, 보관료·현지 비용, 보험 가입 범위·면책·보상 신청 절차를 실제 약관과 대조하세요. 국가별 통관·반입 조건은 최신 공식 안내를 확인할 과제로 남기고 모든 화물의 통관·무파손·전액 보상을 보장하지 마세요.'},
+      {id:'network',label:'담당 거점·연혁·운송 사례의 확인 근거',match:/네트워크|거점|지사|법인|연혁|사업장|담당|파트너|network/i,guide:'자사 지사와 제휴사를 구분하고 담당 지역·연락처·갱신 시점을 확인하세요. 실제 사례는 운송 구간·화물·수행 범위를 제시하되 고객 정보는 제외하고, 누적 실적·만족도 수치는 집계 기준과 출처를 대조하세요.'},
+    ],questions:[
+      {intent:'price',question:'해외이사·국제운송 견적은 어떤 정보로 산정하며 포함·추가 비용은 무엇인가요?',fields:['출발·도착 국가와 도시, 물량·희망 일정','서비스별 견적 포함·별도 비용'],match:/견적|출발지|도착지|부피|중량|CBM|추가\s*비용/i,placement:'서비스별 견적 안내와 상담신청 폼'},
+      {intent:'process',question:'해외·귀국이사와 기업 화물은 포장·운송·통관·인도 절차가 어떻게 다른가요?',fields:['서비스별 담당 주체와 운송 단계','필요 서류와 일정이 달라지는 조건'],match:/포장|컨테이너|운송|통관|서류|인도/i,placement:'개인 이사·기업 화물별 절차 안내'},
+      {intent:'care',question:'국가별 반입 제한과 운송보험·파손 보상 조건은 어디에서 확인하나요?',fields:['목적지별 반입 조건과 최신 공식 출처','보험 범위·면책·보상 신청 절차'],match:/반입|금지|제한|보험|보상|파손|약관/i,placement:'국가별 안내·운송약관과 상담 연결'},
+    ]},
   duty_free:{label:'현지 면세 쇼핑·여행객 방문형',industry:'commerce',kind:'mixed',goalKey:'contact',goalLabel:'매장 방문·면세 문의',
     keywords:['시드니 면세점','시드니면세점','면세 쇼핑','무료 수하물 보관','호주 기념품'],
     caution:'시내 매장·여행객 서비스와 한국 배송 직구몰의 목적을 구분한다. 면세 자격·출국·여권·봉인 조건은 업체 안내의 관측이며 현행 법규를 검증한 판정이 아니다. 한국 배송이나 온라인 결제를 확인 없이 가정하지 않는다.',
@@ -84,18 +98,25 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const documents=data.businessDocuments||[];
   const primary=[data.title,data.description,data.ogDescription,...(data.h1||[]),...(data.h2||[]),...documents.map(d=>d.title)].join(' ');
   const testimonial=(text:string)=>/[★☆]|testimonial|고객.{0,5}후기|highly recommend|I.ve been using|I love that/i.test(text);
-  const inputUnits=[{text:data.title,locator:'head > title'},{text:data.description||data.ogDescription||'',locator:'meta[name="description"]'},...(data.h1||[]).map(text=>({text,locator:'h1'})),...(data.siteEditing?.contentSections||[]).filter(s=>!s.truncated).map(s=>({text:s.text,locator:s.heading||'입력 페이지 본문'}))].filter(u=>u.text&&!testimonial(u.text));
+  const inputUnits=[{text:data.title,locator:'head > title'},{text:data.description||data.ogDescription||'',locator:'meta[name="description"]'},...(data.h1||[]).map(text=>({text,locator:'h1'})),...(!data.siteEditing&&!documents.length?(data.bodyText||'').split(/\n+/).slice(0,32).map(text=>({text,locator:'수집된 본문'})):[]),...(data.siteEditing?.contentSections||[]).filter(s=>!s.truncated).map(s=>({text:s.text,locator:s.heading||'입력 페이지 본문'}))].filter(u=>u.text&&!testimonial(u.text));
   const units=[...inputUnits,...documents.filter(d=>d.source!=='search_excerpt').flatMap(d=>[{text:d.title,locator:d.url},...d.sections.map(s=>({text:s.text,locator:d.url}))])].map(u=>({...u,text:u.text.slice(0,600)}));
   const all=[primary,...units.map(u=>u.text),...documents.filter(d=>d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
   let id:BusinessContext['id']|undefined;
-  if(/면세점|duty\s*free/i.test(primary)&&/시드니|sydney|매장|store/i.test(all))id='duty_free';
+  const logistics=/해외\s*이사|귀국\s*이사|국제\s*운송|국제\s*물류|포워딩|freight\s*(?:forward|service)|international\s*(?:moving|relocation)/i;
+  const logisticsUnits=units.filter(u=>logistics.test(u.text));
+  if((logistics.test(primary)||logisticsUnits.length>=2)&&/운송|포장|화물|견적|통관|freight|moving/i.test(all))id='international_logistics';
+  else if(/면세점|duty\s*free/i.test(primary)&&/시드니|sydney|매장|store/i.test(all))id='duty_free';
   else if(/직구|구매대행|cross.border/i.test(primary)&&/호주|australia|해외/i.test(all))id='cross_border';
   else if(/투어|공항\s*픽업|여행|숙소|airport.{0,20}(transfer|pickup)|\btours?\b/i.test(primary)&&/예약|픽업|여행사|가이드|booking|tour/i.test(all))id='travel_booking';
   else if(/health foods|supplements|nutritional|건강식품|영양제/i.test(all)&&/TGA|AUST\s*L|Australian.made|호주산/i.test(all)&&/제품|products?|브랜드|brand/i.test(all))id='supplements';
   if(!id)return;
   const p=profiles[id],has=(keyword:string)=>all.toLowerCase().replace(/\s/g,'').includes(keyword.toLowerCase().replace(/\s/g,''));
-  const evidence=units.filter(u=>/면세|duty.free|직구|구매대행|health foods|supplement|TGA|공항|투어|예약|ingredients/i.test(u.text)).slice(0,8);
-  const checks=p.checks.map(c=>{const found=units.filter(u=>c.match.test(u.text)).sort((a,b)=>Number(/^https?:/.test(b.locator)&&!documents.some(d=>d.url===b.locator&&d.url===data.finalUrl))-Number(/^https?:/.test(a.locator)&&!documents.some(d=>d.url===a.locator&&d.url===data.finalUrl))).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3);return {id:'business-'+c.id,label:c.label,status:found.length?'observed' as const:'review' as const,evidence:found,guide:c.guide};});
+  // The supplemental collector strips testimonials. Do not let a customer's
+  // one-off quote or transit time become a provider's shipping/insurance terms.
+  const merchantDocs=documents.filter(d=>d.source!=='search_excerpt');
+  const sourceUnits=id==='international_logistics'&&merchantDocs.length?units.filter(u=>merchantDocs.some(d=>d.url===u.locator)||['head > title','meta[name="description"]','h1'].includes(u.locator)):units;
+  const evidence=sourceUnits.filter(u=>id==='international_logistics'?/이사|운송|화물|견적|통관|freight|moving/i.test(u.text):/면세|duty.free|직구|구매대행|health foods|supplement|TGA|공항|투어|예약|ingredients/i.test(u.text)).slice(0,8);
+  const checks=p.checks.map(c=>{const found=sourceUnits.filter(u=>c.match.test(u.text)).sort((a,b)=>Number(/^https?:/.test(b.locator)&&!documents.some(d=>d.url===b.locator&&d.url===data.finalUrl))-Number(/^https?:/.test(a.locator)&&!documents.some(d=>d.url===a.locator&&d.url===data.finalUrl))).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3);return {id:'business-'+c.id,label:c.label,status:found.length?'observed' as const:'review' as const,evidence:found,guide:c.guide};});
   const searchOnly=documents.length>0&&documents.every(d=>d.source==='search_excerpt');
   return BusinessContextSchema.parse({version:1,id,label:p.label,industry:p.industry,kind:p.kind,goalKey:p.goalKey,goalLabel:p.goalLabel,evidence,documents:documents.slice(0,4),keywords:p.keywords.filter(has).slice(0,5),checks,note:searchOnly?'사이트가 JinjjaScanner의 수집을 차단해 네이버 검색 요약으로 업종·고객 질문을 보완한 제한 진단입니다. HTML·본문 원문·가격·예약 조건·이벤트는 확인하지 않았으며 검색 요약을 답변 사실이나 HTML 통과 근거로 사용하지 않습니다. 사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 재진단하면 원문 검증이 가능합니다.':'입력 페이지와 허용된 자사 공개 상세·이용안내를 함께 검토했습니다. 보완 원문은 메인 페이지의 H1·메타·CTA 관측값에 합산하지 않습니다. 상품별 조건은 서로 분리하며 원문 신호 확인은 정확성·최신성·실제 동작 검증을 뜻하지 않습니다.'});
 }

@@ -3,6 +3,7 @@ import {budgetFetch} from './runtime/budget';
 import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import {marketKeywordCandidates} from './competitorResearch';
+import {analyzeBusinessContext} from './businessContext';
 import {
   KeywordRankTracking,
   KeywordRankItem,
@@ -20,6 +21,11 @@ const MAX_KEYWORDS = 5;
 async function generateKeywords(
   data: ExtractedWebsiteData
 ): Promise<string[]> {
+  const business=analyzeBusinessContext(data);
+  if(business?.id==='international_logistics'){
+    const brand=data.ogSiteName||data.title.split(/[|–·]/)[0].split(' - ')[0].trim();
+    return [...new Set([brand,...business.keywords].filter(k=>k.length>=2&&k.length<=30))].slice(0,MAX_KEYWORDS);
+  }
   if(data.communityContext){
     const brand=data.ogSiteName||data.title.split(/[|–·]/)[0].split(' - ')[0].trim();
     return [...new Set([brand,...marketKeywordCandidates(data).map(k=>k.keyword)].filter((k):k is string=>typeof k==='string'&&k.length>=2&&k.length<=30))].slice(0,MAX_KEYWORDS);

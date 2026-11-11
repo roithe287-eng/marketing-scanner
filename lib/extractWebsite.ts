@@ -327,9 +327,9 @@ export async function extractWebsite(
   }
 
   // An explicit denial is not a transport error: do not retry through another host/protocol.
-  if(res&&(res.status===403||res.status===429)){
+  if(res&&[403,406,429].includes(res.status)){
     await res.body?.cancel();
-    throw new WebsiteCollectionError(res.status===429?'rate_limited':'forbidden',res.status);
+    throw new WebsiteCollectionError(res.status===429?'rate_limited':res.status===406?'not_acceptable':'forbidden',res.status);
   }
 
   // 2차: www. 추가해서 재시도
@@ -354,9 +354,9 @@ export async function extractWebsite(
     }
   }
 
-  if(res&&(res.status===403||res.status===429)){
+  if(res&&[403,406,429].includes(res.status)){
     await res.body?.cancel();
-    throw new WebsiteCollectionError(res.status===429?'rate_limited':'forbidden',res.status);
+    throw new WebsiteCollectionError(res.status===429?'rate_limited':res.status===406?'not_acceptable':'forbidden',res.status);
   }
 
   // 3차: http로 다운그레이드 시도
@@ -389,7 +389,7 @@ export async function extractWebsite(
   }
 
   if (!res.ok) {
-    if(res.status===403||res.status===429){await res.body?.cancel();throw new WebsiteCollectionError(res.status===429?'rate_limited':'forbidden',res.status);}
+    if([403,406,429].includes(res.status)){await res.body?.cancel();throw new WebsiteCollectionError(res.status===429?'rate_limited':res.status===406?'not_acceptable':'forbidden',res.status);}
     throw new Error(
       `웹사이트 응답 오류: HTTP ${res.status}. 사이트가 외부 접근을 차단하고 있을 수 있습니다.`
     );
