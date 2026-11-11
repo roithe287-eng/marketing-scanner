@@ -76,3 +76,15 @@ test('seasonal policy scopes, mobile component and report exports agree; old evi
  delete report.siteDiagnostics!.pages[0].localPlaceEvidence!.seasonal;
  assert.equal(buildLocalPlaceReview(report.siteDiagnostics)?.seasonal,undefined);
 });
+
+test('ski clothing and summer board rentals never invent winter equipment offerings',()=>{
+ const clothes=captureLocalPlaceEvidence(html('무주 스키복 대여'),url)!;
+ const review=buildSeasonalPlaceReview(clothes,url,'2026-11-12')!;
+ assert.ok(review.terms.some(t=>t.label==='스키복 대여'));
+ assert.ok(!review.terms.some(t=>t.label==='스키 렌탈'||t.label==='보드 렌탈'));
+ for(const name of ['가평 웨이크보드 렌탈','양양 서핑보드 대여']){
+  const e=captureLocalPlaceEvidence(html(name),url)!;
+  assert.ok(!e.seasonal?.profiles.some(p=>p.id==='ski'),name);
+  assert.ok(e.seasonal?.profiles.length,name);
+ }
+});
