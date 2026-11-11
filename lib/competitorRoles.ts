@@ -3,11 +3,15 @@ const within=(host:string,parent:string)=>host===parent||host.endsWith(`.${paren
 const employmentHosts=['saramin.co.kr','jobkorea.co.kr','wanted.co.kr','jobplanet.co.kr','teamblind.com','incruit.com','catch.co.kr','jumpit.co.kr','rememberapp.co.kr','work.go.kr','work24.go.kr','albamon.com','alba.co.kr','roketpunch.com','rocketpunch.com'];
 const companyHosts=['thevc.kr','crunchbase.com','companyinfo.co.kr','nicebizinfo.com','bizno.net','kreport.co.kr'];
 const contentHosts=['wikipedia.org','namu.wiki','news.naver.com','brunch.co.kr','tistory.com','medium.com'];
+const legalReferenceHosts=['easylaw.go.kr','law.go.kr'];
 export const isEmploymentQuery=(query:string)=>/채용|구인|구직|취업|헤드헌팅|리크루팅|인재.?추천|인재.?매칭|recruit|job.?search|hr.?solution/i.test(query);
 const isCompanyDataQuery=(query:string)=>/기업.?정보|기업.?분석|투자.?정보|기업.?데이터|스타트업.?데이터|신용.?평가/.test(query);
 export function unrelatedPageReason(page:{domain:string;link:string;title:string;description?:string},query:string):string|undefined {
   const host=page.domain.toLowerCase().replace(/^www\./,'').replace(/\.$/,'');
   let path='';try{path=new URL(page.link).pathname;}catch{}
+  // These sources explain laws; a matching topic does not make them service providers.
+  // Do not exclude other public service providers merely because they use a .go.kr domain.
+  if(legalReferenceHosts.some(h=>within(host,h)))return '공공 법령·생활법령 안내: 직접 제공 업체가 아닌 참고 자료';
   if(!isEmploymentQuery(query)){
     if(employmentHosts.some(h=>within(host,h)))return '채용·구직·직장인 후기 플랫폼: 대상 상품·서비스의 판매 업체가 아님';
     if(/(?:채용\s*(?:공고|정보|안내)|모집공고|취업정보|구인구직|연봉정보|기업리뷰|회사리뷰)/.test(page.title)
