@@ -65,9 +65,9 @@ export default function PricingPage() {
               <p className="scanner-plan-price">{plan.price === null ? <strong>별도 협의</strong> : <><strong>{formatWon(plan.price)}</strong><span>원{plan.monthly ? ' / 월' : ''}</span></>}</p>
               <p className="scanner-plan-unit">{plan.price !== null && plan.count !== null ? `진단 1회당 ${Number.isInteger(plan.price / plan.count) ? '' : '약 '}${formatWon(Math.round(plan.price / plan.count))}원${plan.monthly ? ' · 제공 횟수 모두 사용 시' : ''}` : '진단 횟수와 이용 범위를 함께 정합니다.'}</p>
               <ul>
-                <li><span aria-hidden="true">✓</span>{plan.count === null ? '필요한 진단 횟수 협의' : `${plan.monthly ? '매월 ' : ''}${plan.count}회 진단`}</li>
-                <li><span aria-hidden="true">✓</span>마케팅·SEO·GEO 종합 진단</li>
-                <li><span aria-hidden="true">✓</span>{plan.pdf === null ? 'PDF 제공 범위 협의' : plan.pdf ? 'PDF 다운로드 포함' : '화면에서 진단 결과 확인 · PDF 미포함'}</li>
+                <li><span aria-hidden="true">✓</span><span>{plan.count === null ? '필요한 진단 횟수 협의' : `${plan.monthly ? '매월 ' : ''}${plan.count}회 진단`}</span></li>
+                <li><span aria-hidden="true">✓</span><span>마케팅·SEO·GEO 종합 진단</span></li>
+                <li><span aria-hidden="true">✓</span><span>{plan.pdf === null ? 'PDF 제공 범위 협의' : plan.pdf ? 'PDF 다운로드 포함' : '화면에서 진단 결과 확인 · PDF 미포함'}</span></li>
               </ul>
               <Link className="scanner-plan-link" href={planInquiryHref(plan.id)} aria-label={`${plan.name}${plan.id.startsWith('single') ? ` ${plan.label}` : ''} 이용 문의`}>{plan.id === 'volume' ? '대량 이용 문의' : '이용 문의'}<span aria-hidden="true">↗</span></Link>
             </article>
