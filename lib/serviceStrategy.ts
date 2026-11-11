@@ -59,16 +59,17 @@ const segments:SegmentSpec[]=[
 export function buildServiceStrategy(data:ExtractedWebsiteData):ServiceStrategy|undefined{
   const business=analyzeBusinessContext(data);
   if(business?.id!=='international_logistics'||data.collectionNotice)return;
+  const inputPage=new URL(data.finalUrl||data.url).href;
   const own=new URL(data.finalUrl||data.url).hostname.replace(/^www\./,'');
   const sources=(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&new URL(d.url).hostname.replace(/^www\./,'')===own)
     .flatMap(d=>d.sections.map(s=>({url:d.url,title:(s.heading||d.title).slice(0,300),text:s.text})))
     .filter(s=>!isConsentBoilerplate(s.text)&&!/고객.{0,5}후기|testimonial|REVIEW_ONLY/i.test(s.title+' '+s.text));
   const selected=segments.flatMap(spec=>{
     const hits=sources.filter(s=>spec.match.test(s.title+' '+s.text));
-    const relevance=(s:z.infer<typeof source>)=>Number(s.url!==data.finalUrl)*4+Number(s.text.length>=80)*4+Number(spec.match.test(s.text))*3+Number(/포장|통관|서류|입출고|물품|보관|화물|cargo|shipment|customs|consolidation|airport/i.test(s.text))*2;
+    const relevance=(s:z.infer<typeof source>)=>Number(new URL(s.url).href!==inputPage)*8+Number(s.text.length>=80)*4+Number(spec.match.test(s.text))*3+Number(/포장|통관|서류|입출고|물품|보관|화물|cargo|shipment|customs|consolidation|airport/i.test(s.text))*6;
     const evidence=hits.sort((a,b)=>relevance(b)-relevance(a)).filter((s,i,a)=>a.findIndex(x=>x.text===s.text)===i).slice(0,3);
     if(!evidence.length)return [];
-    const landing=evidence.find(e=>e.url!==data.finalUrl)?.url;
+    const landing=evidence.find(e=>new URL(e.url).href!==inputPage)?.url;
     const {match,...content}=spec;
     return [{...content,evidence,...(landing?{landingUrl:landing}:{}),diagnosis:landing?
       `${spec.label} 관련 설명을 자사 상세 원문에서 확인했습니다. 이 원문을 출발점으로 고객의 목적, 상담 준비사항, 포함·별도 범위를 한 흐름으로 연결하세요. 현재 화면의 배치와 실제 접수 동작은 별도 점검이 필요합니다.`:
@@ -79,10 +80,12 @@ export function buildServiceStrategy(data:ExtractedWebsiteData):ServiceStrategy|
   const labels=selected.map(s=>s.label).join(' · ');
   const form=sources.find(s=>/입력 항목:/.test(s.text));
   const missingFields=[['물량·화물 제원',/물량|물품|부피|중량|품목|규격|CBM/i],['희망 일정',/일정|희망일|예정일|날짜|시기/],['서비스 유형',/서비스|해외이사|귀국이사|화물|문의유형/]].filter(([,pattern])=>form&&!(pattern as RegExp).test(form.text)).map(([label])=>label);
-  const conditions=sources.filter(s=>/보험|보상|추가\s*비용|약관/.test(s.title+' '+s.text)).slice(0,2);
+  const conditionWords=/보험|보상|추가\s*비용|약관/;
+  const conditionRelevance=(s:z.infer<typeof source>)=>Number(conditionWords.test(s.text))*4+Number(s.text.length>=80);
+  const conditions=sources.filter(s=>conditionWords.test(s.title+' '+s.text)).sort((a,b)=>conditionRelevance(b)-conditionRelevance(a)).filter((s,i,a)=>a.findIndex(x=>x.text===s.text)===i).slice(0,2);
   const hasServiceMetadata=segments.some(s=>s.match.test(data.title+' '+data.description));
   return ServiceStrategySchema.parse({version:1,industry:'logistics',targetUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt||new Date().toISOString(),basis:'source-backed-playbook',
-    summary:`원문에서 확인한 ${labels}를 고객 목적별로 나눴습니다. 검색어→서비스 상세→조건 확인→견적 문의→유효 상담→계약으로 이어지는 실행안을 검토하세요.`,
+    summary:`원문에서 확인한 서비스를 고객 목적별로 나눴습니다: ${labels}. 검색어→서비스 상세→조건 확인→견적 문의→유효 상담→계약으로 이어지는 실행안을 검토하세요.`,
     notice:'원문 인용은 확인한 정보이고 고객 유형·검색어·광고 문구·실행안은 검토 제안입니다. 검색량·광고 계정·실제 전환·계약 성과는 측정하지 않았습니다. 국가·비용·기간·운송 가능 여부는 자사 운영 자료와 대조해 확정하세요.',sources:used,segments:selected,
     findings:[
       {title:'검색에서 서비스가 드러나는가',observed:`페이지 제목: ${data.title.slice(0,300)||'수집 범위에서 미확인'} / 메타 설명: ${data.description.slice(0,500)||'수집 범위에서 미확인'}`,interpretation:hasServiceMetadata?'제목·설명에서 서비스 단서를 확인했습니다. 각 서비스 상세의 검색 의도와 표현이 일치하는지 대조하세요.':'현재 수집한 제목·설명에서 서비스 단서를 확인하지 못했습니다. 브랜드를 모르는 고객에게 무엇을 제공하는지 전달하기 어려울 수 있습니다.',action:`메인에는 실제 핵심 서비스와 브랜드를 함께 설명하고, ${labels} 상세에는 서로 다른 서비스명·대상·확인 가능한 제공 범위를 작성하세요. 검색 결과에 표시되는 제목·설명은 별도로 확인합니다.`,evidence:[{url:data.finalUrl||data.url,title:'메인 제목·설명',text:(data.title+' / '+data.description).slice(0,600)||'수집 범위에서 미확인'}]},

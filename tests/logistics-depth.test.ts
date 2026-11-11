@@ -53,6 +53,19 @@ test('eight detailed questions preserve original facts and add separately labell
  assert.match(buildPrompt(d),/국제물류 상세 진단/);assert.doesNotMatch(buildPrompt(d,'minimal'),/국제물류 상세 진단/);
 });
 
+test('root URL spelling does not turn the homepage into a service landing and repeated terms are deduplicated',()=>{
+ const d=data();d.finalUrl='https://www.pumyang.com';
+ const main=page('해외이사','해외이사 전문 포장과 통관 상담을 안내합니다. 국제운송과 생활 물품 인도를 위한 상담 준비사항을 확인하고 실제 운송 조건을 담당자와 대조해 주세요. 해외이사 서비스 정보를 충분히 확인하세요.','');
+ d.businessDocuments=[main,...d.businessDocuments!,page('보험보상','운송보험 범위와 파손보상 접수는 실제 약관을 확인합니다.','customer/03/')];
+ const p=buildServiceStrategy(d)!;
+ assert.equal(p.segments[0].landingUrl,url+'oversea/01/');assert.equal(p.segments[0].evidence[0].url,url+'oversea/01/');
+ assert.equal(new Set(p.findings[3].evidence.map(e=>e.text)).size,p.findings[3].evidence.length);
+ const storage=d.businessDocuments.find(x=>x.url.endsWith('/oversea/04/'))!;
+ storage.sections.unshift({heading:'보관서비스',text:'AEO는 국제사회가 채택한 민관 협력제도에 대한 일반적인 소개입니다. 이 제도 설명은 특정 서비스 운영 과정이나 상담 준비사항의 근거가 되지 않으며 제공 범위를 확정하지 않습니다.'});
+ assert.doesNotMatch(buildServiceStrategy(d)!.segments.find(s=>s.id==='storage')!.evidence[0].text,/^AEO/);
+ d.businessDocuments=[main];assert.equal(buildServiceStrategy(d)!.segments[0].landingUrl,undefined);
+});
+
 test('full strategy survives report serialization and all four screen views and document export',()=>{
  const d=data(),p=buildServiceStrategy(d)!;
  const report=MarketingReportSchema.parse({...fixture,url,sitePurpose:analyzeWebsitePurpose(d),answerContentPlan:buildAnswerContentPlan(d),serviceStrategy:p});
