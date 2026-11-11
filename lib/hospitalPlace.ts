@@ -26,14 +26,14 @@ export function clinicPlaceIdentity(title:string,identity:string,url:string,clin
 }
 
 /** Only links published on the clinic's own page. Never resolve short links or fetch Place. */
-export function placeChannel(url:string,label:string) {
+export function placeChannel(url:string,label:string,allIndustries=false) {
   try {
     const parsed = new URL(url);
     if (!/^https?:$/.test(parsed.protocol) || parsed.username || parsed.password || parsed.port) return undefined;
     const host = parsed.hostname;
     if (['m.place.naver.com','pcmap.place.naver.com','place.naver.com'].includes(host)) {
-      const match = parsed.pathname.match(/^\/(hospital|place)\/(\d+)(?:\/|$)/);
-      if (match) return {kind:'place' as const,url:'https://m.place.naver.com/'+match[1]+'/'+match[2]};
+      const match = parsed.pathname.match(/^\/(hospital|place|restaurant|cafe|accommodation|hairshop|nailshop|beauty|fitness|golf|attraction|education|shopping|life|business)\/(\d+)(?:\/|$)/);
+      if (match && (allIndustries || ['hospital','place'].includes(match[1]))) return {kind:'place' as const,url:'https://m.place.naver.com/'+match[1]+'/'+match[2]};
     }
     if (host === 'map.naver.com') {
       const id = parsed.pathname.match(/\/(?:entry\/place|place)\/(\d+)(?:\/|$)/)?.[1];

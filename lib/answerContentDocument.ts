@@ -3,10 +3,11 @@ import type {ReportBlock} from './reportDocument';
 import {safeHttpUrl} from './citationMeasurement';
 import {buildHospitalPlaceReview,PLACE_TITLE,PLACE_RULE,PLACE_ROLLOUT,PLACE_EXCLUSIONS} from './hospitalPlace';
 import {comparisonTitle,comparisonScope} from './clinicPlaceInsights';
+import {buildLocalPlaceDocument} from './localPlaceDocument';
 import {ANSWER_CONTENT_TITLE,ANSWER_STATUS,answerQuestionText} from './answerContent';
 export function buildAnswerContentDocument(report:MarketingReport,opportunityFirst=false):ReportBlock[]{
   const place=buildHospitalPlaceReview(report.siteDiagnostics);
-  const placeBlocks:ReportBlock[]=place?[
+  const hospitalBlocks:ReportBlock[]=place?[
     {kind:'subheading',text:PLACE_TITLE+' · 등록 상태는 관리 화면에서 확인'},
     {kind:'body',text:'홈페이지에서 확인한 병의원 · '+place.profile.name,href:place.page.url},
     {kind:'body',text:PLACE_RULE+' '+PLACE_ROLLOUT},
@@ -19,6 +20,7 @@ export function buildAnswerContentDocument(report:MarketingReport,opportunityFir
     {kind:'body',text:place.page.media?'홈페이지 HTML 표본 · 이미지 '+place.page.media.images+'개 / 설명 있는 이미지 '+place.page.media.described+'개 / 영상 요소 '+place.page.media.videos+'개':'홈페이지 미디어 · 미측정'},
     {kind:'body',text:comparisonScope+' 화면에서 직접 입력한 일반 결과와 비교 내용은 해당 화면에서 확인하세요.'}
   ]:[];
+  const placeBlocks:ReportBlock[]=[...buildLocalPlaceDocument(report),...hospitalBlocks];
   const plan=report.answerContentPlan;if(!plan)return placeBlocks;
   const scope:ReportBlock[]=[{kind:'body',text:plan.notice},{kind:'body',text:`분석 범위: ${plan.scope==='submitted-page-and-business'?'입력 페이지·자사 상세·이용안내':plan.scope==='submitted-page-and-products'?'입력 페이지·자사 상품 표본':'입력 페이지'} · 실제 네이버 노출: 미측정 · ${plan.mode==='ai-assisted'?'페이지 맞춤 질문':plan.mode==='limited'?'제한된 내용으로 작성':'기본 질문 가이드'}`},{kind:'body',text:`분석 URL: ${plan.targetUrl}`,href:plan.targetUrl}];
   const blocks:ReportBlock[]=[...placeBlocks,{kind:'heading',text:ANSWER_CONTENT_TITLE},...(opportunityFirst?[{kind:'body' as const,text:'대표 주제에서 고객의 질문을 고르고, 홈페이지에서 답할 내용을 구체화하세요.'}]:scope)];
