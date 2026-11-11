@@ -1,0 +1,21 @@
+.service-strategy { color:#202934; }
+.service-strategy>h3 { font-size:clamp(1.25rem,2.5vw,1.8rem);font-weight:850;line-height:1.45;margin:8px 0 16px;letter-spacing:-.035em; }
+.service-strategy-lead { max-width:78ch;line-height:1.85;margin-bottom:24px; }
+.service-strategy-counts { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:20px 0;margin-bottom:28px;border-block:1px solid #dce2e9;text-align:center; }
+.service-strategy-counts span { display:flex;flex-direction:column;gap:4px;font-size:13px; }.service-strategy-counts strong { font-size:30px;font-weight:850;color:#202d60; }
+.service-strategy-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;align-items:start; }
+.service-strategy-grid>article { min-width:0;padding:26px 24px;border:1px solid #dce2e9;border-radius:16px;background:#fff;overflow-wrap:anywhere; }
+.service-strategy h4 { font-size:19px;line-height:1.55;font-weight:850;letter-spacing:-.025em;margin:0 0 16px; }
+.service-strategy h5 { font-size:13px;font-weight:800;color:#536074;margin:22px 0 8px; }
+.service-strategy p,.service-strategy li { font-size:14px;line-height:1.85; }.service-strategy p { margin-top:0; }
+.service-strategy ul,.service-strategy ol { padding-left:20px;margin:8px 0 18px; }.service-strategy li+li { margin-top:9px; }
+.service-strategy-number { display:block;color:#536074;font-size:12px;font-weight:800;letter-spacing:.14em;margin-bottom:8px; }
+.service-strategy blockquote { margin:18px 0 8px;padding:12px 16px;background:#f4f6fa;border-left:3px solid #8e9db5;font-size:13px;line-height:1.8; }
+.service-strategy a { color:#253a75;text-decoration:underline;text-underline-offset:4px;overflow-wrap:anywhere; }
+.service-strategy-source { font-size:12px!important; }.service-strategy .report-note { margin-top:22px;font-size:12px;color:#536074; }
+.service-strategy-copy { margin-top:24px;border-top:1px solid #dce2e9;padding-top:18px; }.service-strategy-copy>span { display:block;color:#536074;font-size:12px;margin-bottom:12px; }.service-strategy-copy>strong { display:block;font-size:18px;line-height:1.65;margin-bottom:12px; }.service-strategy-copy>b { font-size:13px; }
+.service-strategy-role,.service-strategy-formula { padding:14px;background:#f2f5fb;border-radius:10px;font-weight:650; }
+.service-strategy .service-strategy-section-title { margin:38px 0 20px; }.service-strategy-links { display:flex;gap:14px;flex-wrap:wrap;font-size:12px; }
+.service-strategy .service-strategy-funnel { list-style:none;padding:0;margin:0;display:grid;gap:14px; }.service-strategy-funnel>li { display:flex;gap:20px;align-items:flex-start;border-bottom:1px solid #e1e5eb;padding:10px 0 22px; }.service-strategy-funnel>li>span { flex:0 0 34px;text-align:center;font-weight:850;color:#253a75;font-size:20px; }.service-strategy-funnel h4 { margin-bottom:10px; }.service-strategy-funnel small { color:#536074;overflow-wrap:anywhere; }
+@media(max-width:760px){.service-strategy-grid {grid-template-columns:1fr;gap:16px}.service-strategy-grid>article {padding:22px 18px}.service-strategy-counts {gap:6px}.service-strategy-counts span {font-size:12px}.service-strategy-counts strong {font-size:26px}}
+@media print{.service-strategy-grid{display:block}.service-strategy-grid>article{break-inside:avoid;margin-bottom:18px}.service-strategy-funnel>li{break-inside:avoid}}

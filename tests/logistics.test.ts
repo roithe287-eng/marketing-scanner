@@ -44,7 +44,7 @@ test('live-shaped homepage follows logistics quote journey, without retail requi
   assert.equal(purpose.kind,'service');assert.equal(purpose.goal.key,'contact');assert.equal(purpose.goal.observed,true);
   assert.deepEqual(purpose.goal.evidence.map(e=>e.text),['상담신청']);
   assert.equal(showProductCollection(purpose),false);assert.equal(await classifyIndustry(data),'logistics');
-  assert.equal(plan.primaryKeyword?.term,'해외이사');assert.equal(plan.questions.length,3);
+  assert.equal(plan.primaryKeyword?.term,'해외이사');assert.equal(plan.questions.length,8);
   assert.match(plan.questions[0].question,/견적/);assert.match(plan.questions[1].question,/기업 화물/);assert.match(plan.questions[2].question,/보험/);
   assert.ok(plan.questions.some(q=>q.evidence.some(e=>e.url===url+'customer/07/')));
   assert.doesNotMatch(JSON.stringify(purpose.business?.checks),/REVIEW_ONLY|777만원/);
@@ -77,13 +77,13 @@ test('logistics industry is serializable and uses its own comparison criteria',(
   assert.match(p.label,/국제물류/);assert.ok(p.criteria.some(c=>c.pattern.test('출발지·도착지별 해상운송')));
 });
 
-test('supplemental collection follows three same-site public service pages and respects robots',async t=>{
+test('supplemental collection follows bounded same-site public service pages and respects robots',async t=>{
   const requests:string[]=[];
   t.mock.method(websiteHttp,'fetch',async(input:unknown)=>{const target=String(input);requests.push(target);return new Response(target.includes('/customer/')?quote:target.includes('/international/')?freight:processHtml,{headers:{'content-type':'text/html'}});});
   const seed=captureBusinessDocument(home,url);
   const result=await collectBusinessDocuments(url,{seed,robots:{url:url+'robots.txt',status:'ok',text:'User-agent: *\nAllow: /\nDisallow: /customer/',observedAt:new Date().toISOString()}});
-  assert.deepEqual(new Set(requests),new Set([url+'oversea/01/',url+'international/01/']));
-  assert.equal(result.length,3);assert.equal(result[0],seed);
+  assert.deepEqual(new Set(requests),new Set([url+'oversea/01/',url+'oversea/02/',url+'oversea/04/',url+'international/01/',url+'international/02/']));
+  assert.equal(result.length,6);assert.equal(result[0],seed);
 });
 
 test('legal reference sites are not logistics providers, without excluding public providers or host lookalikes',()=>{

@@ -16,6 +16,7 @@ import "./report-semantic-cards.css";
 import "./report-compact-grid.css";
 import "./report-workspace.css";
 import "./report-sectors.css";
+import "./report-service-strategy.css";
 import "./report-platforms.css";
 import "./report-color-balance.css";
 import "./report-plain-language.css";

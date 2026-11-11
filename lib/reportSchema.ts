@@ -11,6 +11,7 @@ import {SearchSignalsSchema} from './growthSchema';
 import {CompetitorResearchSchema,CompetitorOwnSiteSchema} from './competitorSchema';
 import {OwnProductContextSchema} from './ownProductSchema';
 import {WebsitePurposeSchema} from './websitePurpose';
+import {ServiceStrategySchema} from './serviceStrategy';
 
 // 12가지 마케팅 진단 체크리스트
 export const ChecklistItemSchema = z.object({
@@ -511,6 +512,7 @@ export const MarketingReportSchema = z.object({
   naverOptimization:NaverOptimizationSchema.nullable().optional(),
   officialSeoAudit:OfficialSeoAuditSchema.nullable().optional(),
   answerContentPlan:AnswerContentPlanSchema.nullable().optional(),
+  serviceStrategy:ServiceStrategySchema.optional(),
 
   // v45-W3: 업종별 벤치마크
   industryBenchmark: IndustryBenchmarkSchema.nullable().optional(),

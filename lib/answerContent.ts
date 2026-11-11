@@ -20,7 +20,7 @@ export function answerTopicSubject(keyword:string){
  return keyword+(last>=0xac00&&last<=0xd7a3&&(last-0xac00)%28!==0?'은':'는');
 }
 
-type IntentGuide={question:(keyword:string)=>string;fields:string[];template:(keyword:string)=>string;placement:string;match:RegExp};
+type IntentGuide={question:(keyword:string)=>string;fields:string[];template:(keyword:string)=>string;placement:string;match:RegExp;explanation?:string};
 export const ANSWER_GUIDES:Record<AnswerIntent,IntentGuide>={
   definition:{question:k=>`${answerTopicSubject(k)} 어떤 제품·서비스인가요?`,fields:['대상 고객','핵심 기능·제공 가치'],template:k=>`${answerTopicSubject(k)} [대상 고객]을 위한 [제품·서비스 유형]입니다. [핵심 기능 또는 제공 범위]를 제공합니다.`,placement:'대표 소개 문단 아래',match:/입니다|제공|위한|서비스|제품|소개/},
   price:{question:k=>`${k}의 가격은 무엇에 따라 달라지나요?`,fields:['가격 또는 견적 산정 기준','포함·별도 비용'],template:k=>`${k}의 [가격 또는 견적]은 [산정 기준]에 따라 정해집니다. [포함 항목]은 포함되며, [추가 비용 발생 조건]은 별도로 안내합니다.`,placement:'가격·견적 안내와 문의 버튼 사이',match:/가격|비용|요금|견적|원\b|원입니다|부가세|유료|무료|할인/},
@@ -129,7 +129,7 @@ function purposeGuide(intent:AnswerIntent,p:WebsitePurpose):IntentGuide{
     }[intent as 'scope'|'process'|'proof'];
     if(guide)return {...base,...guide,template:()=>guide.fields.map(field=>`${field}: [실제 이용 안내와 공개 글 상세에서 확인 후 작성]`).join('\n')};
   }
-  if(p.business){const q=businessProfile(p.business.id).questions.find(q=>q.intent===intent);if(q)return {...base,question:()=>q.question,fields:q.fields,placement:q.placement,match:q.match,template:()=>q.fields.map(field=>`${field}: [${p.business?.kind==='service'?'서비스별':'상품별'} 최신 원문과 운영 자료로 확인한 내용]`).join('\n')};}
+  if(p.business){const q=businessProfile(p.business.id).questions.find(q=>q.intent===intent);if(q)return {...base,question:()=>q.question,fields:q.fields,placement:q.placement,match:q.match,explanation:q.explanation,template:()=>q.template||q.fields.map(field=>`${field}: [${p.business?.kind==='service'?'서비스별':'상품별'} 최신 원문과 운영 자료로 확인한 내용]`).join('\n')};}
   if(p.sector){
     const q=p.sector.questions.find(q=>q.intent===intent);
     if(q){const check=sectorProfile(p.sector.id).checks.find(c=>c.id===q.checkId)!;
@@ -181,7 +181,7 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
     const status=evidence.length?(missingFacts.length?'partial':'supported'):(!assisted||limited)?'review':'not_observed';
     const draft=evidence.map(e=>e.text).join('\n');
     return {id:`answer-${i+1}`,question,intent:row.intent,status,evidence,missingFacts,
-      draft,template:guide.template(primary.term),placement:guide.placement,
+      draft,...(guide.explanation?{explanation:guide.explanation}:{}),template:guide.template(primary.term),placement:guide.placement,
       steps:['해당 질문과 첫 문장 답변을 고객이 읽을 수 있는 본문 텍스트로 배치합니다.','수량·금액·기간·예외 조건은 실제 운영 기준과 대조한 뒤 게시합니다.','수정 후 같은 URL을 재진단하고, 실제 검색 노출은 별도로 확인합니다.']};
   }):[];
   const searchOnly=purpose.business?.documents.length&&purpose.business.documents.every(d=>d.source==='search_excerpt');
@@ -190,7 +190,7 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
 }
 
 export function answerQuestionText(question:AnswerQuestion):string{
-  return `Q. ${question.question}\nA. ${question.draft||question.template}${question.missingFacts.length?`\n[게시 전 확인: ${question.missingFacts.join(' / ')}]`:''}`;
+  return `Q. ${question.question}\nA. ${question.draft||question.template}${question.explanation?`\n해석·보완 방향: ${question.explanation}\n작성 제안 (운영 정보 확인 후 사용): ${question.template}`:''}${question.missingFacts.length?`\n[게시 전 확인: ${question.missingFacts.join(' / ')}]`:''}`;
 }
 export function answerPlanText(plan:AnswerContentPlan):string{
   return `${ANSWER_CONTENT_TITLE}\n대표 키워드: ${plan.primaryKeyword?.term||'확인 필요'}\n${plan.notice}\n\n${plan.questions.map(answerQuestionText).join('\n\n')}`;

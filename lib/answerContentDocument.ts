@@ -30,7 +30,7 @@ export function buildAnswerContentDocument(report:MarketingReport,opportunityFir
   if(plan.topicScope==='mixed')blocks.push({kind:'body',text:'여러 주제가 섞여 있습니다. 선택한 대표 키워드는 이 페이지의 후보이며, 상품·서비스별 상세 페이지에서도 확인하세요.'});
   for(const [i,q] of plan.questions.entries()){
     blocks.push({kind:'subheading',text:`추천 질문 ${i+1} · ${ANSWER_STATUS[q.status]}`},{kind:'body',text:answerQuestionText(q)},{kind:'body',text:`수정 위치 제안: ${q.placement}`});
-    if(q.draft&&q.missingFacts.length)blocks.push({kind:'body',text:`추가 작성 형식 (대괄호 확인 후 사용): ${q.template}`});
+    if(q.draft&&q.missingFacts.length&&!q.explanation)blocks.push({kind:'body',text:`추가 작성 형식 (대괄호 확인 후 사용): ${q.template}`});
     for(const e of q.evidence)blocks.push({kind:'body',text:`원문 위치: ${e.location}${e.selector?` · ${e.selector}`:''}`,href:safeHttpUrl(e.url??plan.targetUrl)||undefined});
     q.steps.forEach((s,j)=>blocks.push({kind:'body',text:`${j+1}. ${s}`}));
   }

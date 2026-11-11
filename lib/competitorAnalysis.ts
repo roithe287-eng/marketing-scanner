@@ -264,9 +264,10 @@ export async function analyzeCompetitors(siteData: {
       collectBusinessDocuments(siteData.url,{budgetMs:6000}),
     ]);
     const business=analyzeBusinessContext({...base,businessDocuments,productContext})||initialBusiness;
-    const querySite:QuerySite={...siteData,productSources:productContext.sources,businessDocuments,businessKeywords:business?.keywords};
+    const businessKeywords=[...new Set([...(initialBusiness?.id===business?.id?initialBusiness?.keywords||[]:[]),...business?.keywords||[]])];
+    const querySite:QuerySite={...siteData,productSources:productContext.sources,businessDocuments,businessKeywords};
     // 1. AI 키워드 추출 우선
-    let keyword = (siteData.communityContext?marketKeywordCandidates(querySite)[0]?.keyword:undefined)||business?.keywords.find(k=>usableMarketKeyword(k,querySite))||await extractKeywordWithAI({
+    let keyword = (siteData.communityContext?marketKeywordCandidates(querySite)[0]?.keyword:undefined)||businessKeywords.find(k=>usableMarketKeyword(k,querySite))||await extractKeywordWithAI({
       title: siteData.title,
       ogTitle: siteData.ogTitle,
       ogDescription: siteData.ogDescription,
