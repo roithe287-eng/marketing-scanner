@@ -34,6 +34,7 @@ import {collectBusinessDocuments} from '@/lib/businessResearch';
 import {collectCommunityContext} from '@/lib/collectCommunityContext';
 import {WebsiteCollectionError} from '@/lib/restrictedWebsite';
 import {collectRestrictedWebsite} from '@/lib/collectRestrictedWebsite';
+import {buildServiceStrategy} from '@/lib/serviceStrategy';
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -168,6 +169,7 @@ export async function POST(req: NextRequest) {
     if (geoBaseline) report.geoBaseline = geoBaseline;
     report.keywordRankTracking = keywordRank.value;
     report.answerContentPlan = answerContent.value||buildAnswerContentPlan(websiteData);
+    report.serviceStrategy = buildServiceStrategy(websiteData);
 
     report.adWasteSimulation=null; // Page scores cannot establish ad waste or savings.
 

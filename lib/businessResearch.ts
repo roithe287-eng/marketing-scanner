@@ -17,7 +17,7 @@ const researchPaths:Record<string,string[]>={
   'sdfkorea.com':['/shopinfo/guide.html'],
   'pure-australia.com':['/collections/oznex','/pages/ldv20-official-information','/products/ldv20'],
   'tripozzy.com':['/fit/38567','/fit/42511','/fit/40674'],
-  'pumyang.com':['/oversea/01/','/international/01/','/customer/07/'],
+  'pumyang.com':['/oversea/01/','/oversea/02/','/international/01/','/international/02/','/oversea/04/','/customer/07/','/customer/02/'],
 };
 const UA=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
 const host=(u:URL)=>u.hostname.toLowerCase().replace(/^www\./,'');
@@ -59,7 +59,7 @@ export function captureBusinessDocument(html:string,url:string,capturedAt=new Da
     return (/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label|해외이사|귀국이사|견적|포장|보험|보상|freight|cargo|customs/i.test(text)?5:0);
   };
   const seen=new Set<string>();
-  return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...formSections.slice(0,2),...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(seen.has(s.text))return false;seen.add(s.text);return true;}).slice(0,10)});
+  return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...formSections.slice(0,2),...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(seen.has(s.text))return false;seen.add(s.text);return true;}).slice(0,host(new URL(url))==='pumyang.com'?16:10)});
 }
 
 /** Search snippets are topic hints only. No request is made to a robots-blocked merchant page. */
@@ -104,9 +104,12 @@ export async function collectBusinessDocuments(url:string,options:{seed?:Busines
     };
     let paths=researchPaths[host(base)];
     if(host(base)==='sdfkorea.com')paths=[...paths,...options.productLinks?.slice(0,2)||[]];
-    paths=[...new Set(paths)].filter(p=>new URL(p,base).href!==base.href).slice(0,3);
-    const result=await Promise.allSettled(paths.map(read));
-    for(const r of result)if(r.status==='fulfilled'&&r.value)documents.push(r.value);
+    paths=[...new Set(paths)].filter(p=>new URL(p,base).href!==base.href).slice(0,host(base)==='pumyang.com'?7:3);
+    // Bound per-site concurrency while keeping the existing overall deadline.
+    const pending=[...paths];
+    await Promise.all(Array.from({length:Math.min(3,paths.length)},async()=>{
+      while(pending.length){budgetSignal()?.throwIfAborted();const path=pending.shift()!;const doc=await read(path);if(doc&&!budgetSignal()?.aborted)documents.push(doc);}
+    }));
   });}catch{/* The input document still describes the original collection scope. */}
-  return documents.slice(0,4);
+  return documents.slice(0,host(publicUrl(url))==='pumyang.com'?8:4);
 }

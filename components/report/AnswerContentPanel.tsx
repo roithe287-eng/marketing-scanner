@@ -43,7 +43,8 @@ function BriefingEvidence({evidence,targetUrl,hasDraft}:{evidence:AnswerSource[]
 function BriefingQuestion({q,targetUrl}:{q:AnswerQuestion;targetUrl:string}){
   return <article className="answer-question">
     <div className="briefing-query"><BriefIcon kind="question"/><h4>{q.question}</h4></div>
-    <div className="briefing-answer"><div className="briefing-answer-meta"><span><BriefIcon kind="answer"/>{q.draft?'원문 기반 답변 초안':'확인 후 채울 답변 예시'}</span><small data-state={q.status}>{ANSWER_STATUS[q.status]}</small></div>
+    {q.explanation&&<div className="service-strategy"><h5>해석·보완 방향</h5><p>{q.explanation}</p><div className="service-strategy-copy"><span>상세 답변 작성안 · 대괄호는 실제 운영 정보로 확인 후 작성</span><p>{q.template}</p></div></div>}
+    <div className="briefing-answer"><div className="briefing-answer-meta"><span><BriefIcon kind="answer"/>{q.draft?(q.explanation?'현재 확인한 원문':'원문 기반 답변 초안'):'확인 후 채울 답변 예시'}</span><small data-state={q.status}>{ANSWER_STATUS[q.status]}</small></div>
       <p className="briefing-answer-text">{q.draft||q.template}</p>
       {!q.draft&&<small>대괄호는 실제 운영 정보로 채우세요.</small>}
       <BriefingEvidence evidence={q.evidence} targetUrl={targetUrl} hasDraft={!!q.draft}/>
@@ -56,7 +57,7 @@ function BriefingFollowup({q,index}:{q:AnswerQuestion;index:number}){
       <strong>적용 위치</strong><p>{q.placement}</p>
       {q.missingFacts.length>0&&<><strong>게시 전 확인</strong><ul>{q.missingFacts.map(f=><li key={f}>{f}</li>)}</ul></>}
       {!!q.steps.length&&<><strong>작성 순서</strong><ol>{q.steps.map(step=><li key={step}>{step}</li>)}</ol></>}
-      {q.draft&&q.missingFacts.length>0&&<><strong>추가 작성 형식</strong><p>{q.template}</p></>}
+      {q.draft&&q.missingFacts.length>0&&!q.explanation&&<><strong>추가 작성 형식</strong><p>{q.template}</p></>}
     </div></details>
     <CopyText text={answerQuestionText(q)} label={'질문 '+(index+1)+' · 답변 초안 복사'}/>
   </>;

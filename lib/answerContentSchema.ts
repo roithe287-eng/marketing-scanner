@@ -14,6 +14,7 @@ export const AnswerQuestionSchema=z.object({
   id:z.string().max(30),question:z.string().min(5).max(160),intent:AnswerIntentSchema,
   status:z.enum(['supported','partial','not_observed','review']),
   evidence:z.array(AnswerSourceSchema).max(3),missingFacts:z.array(z.string().max(100)).max(5),
+  explanation:z.string().max(1200).optional(),
   draft:z.string().max(3000),template:z.string().max(1500),
   placement:z.string().max(400),steps:z.array(z.string().max(300)).max(4),
 });
@@ -24,7 +25,7 @@ export const AnswerContentPlanSchema=z.object({
   observation:z.literal('not-measured'),notice:z.string().max(700),
   primaryKeyword:AnswerKeywordSchema.nullable(),secondaryKeywords:z.array(AnswerKeywordSchema).max(2),
   topicScope:z.enum(['focused','mixed','unknown']),
-  questions:z.array(AnswerQuestionSchema).max(3),
+  questions:z.array(AnswerQuestionSchema).max(8),
 });
 export type AnswerContentPlan=z.infer<typeof AnswerContentPlanSchema>;
 export type AnswerSource=z.infer<typeof AnswerSourceSchema>;

@@ -16,3 +16,8 @@ export const MarketingModelReportSchema=z.object({
   finalCta:report.finalCta,
 });
 export const MARKETING_RESPONSE_FORMAT=zodResponseFormat(MarketingModelReportSchema,'marketing_report');
+export const MarketingDetailedModelReportSchema=MarketingModelReportSchema.extend({
+  criticalIssues:MarketingModelReportSchema.shape.criticalIssues.max(6),
+  quickWinsDetailed:MarketingModelReportSchema.shape.quickWinsDetailed.max(5),
+});
+export const MARKETING_DETAILED_RESPONSE_FORMAT=zodResponseFormat(MarketingDetailedModelReportSchema,'marketing_detailed_report');

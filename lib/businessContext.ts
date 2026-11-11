@@ -1,25 +1,26 @@
 import {z} from 'zod';
+import {logisticsQuestions} from './logisticsQuestions';
 import type {ExtractedWebsiteData} from './extractWebsite';
 
 const unit=z.object({text:z.string().max(600),locator:z.string().max(1000)});
 export const BusinessDocumentSchema=z.object({
   url:z.string().url().max(2048),title:z.string().max(300),capturedAt:z.string().datetime(),
   source:z.enum(['merchant_html','search_excerpt']).optional(),
-  sections:z.array(z.object({heading:z.string().max(180),text:z.string().max(600)})).max(10),
+  sections:z.array(z.object({heading:z.string().max(180),text:z.string().max(600)})).max(16),
 });
 export type BusinessDocument=z.infer<typeof BusinessDocumentSchema>;
 export const BusinessContextSchema=z.object({
   version:z.literal(1),id:z.enum(['duty_free','cross_border','supplements','travel_booking','international_logistics']),label:z.string().max(100),
   industry:z.enum(['commerce','ecommerce','travel','logistics']),kind:z.enum(['commerce','mixed','service']),
   goalKey:z.enum(['purchase','contact','booking']),goalLabel:z.string().max(100),
-  evidence:z.array(unit).max(8),documents:z.array(BusinessDocumentSchema).max(4),
+  evidence:z.array(unit).max(8),documents:z.array(BusinessDocumentSchema).max(8),
   keywords:z.array(z.string().max(60)).max(5),
   checks:z.array(z.object({id:z.string().max(80),label:z.string().max(150),status:z.enum(['observed','review']),evidence:z.array(unit).max(3),guide:z.string().max(1200)})).max(6),
   note:z.string().max(1000),
 });
 export type BusinessContext=z.infer<typeof BusinessContextSchema>;
 type CheckSpec={id:string;label:string;match:RegExp;guide:string};
-export type BusinessQuestion={intent:'location'|'eligibility'|'process'|'delivery'|'price'|'choice'|'care'|'proof'|'scope';question:string;fields:string[];match:RegExp;placement:string};
+export type BusinessQuestion={intent:'location'|'eligibility'|'process'|'delivery'|'price'|'choice'|'care'|'proof'|'scope';question:string;fields:string[];match:RegExp;placement:string;explanation?:string;template?:string};
 type Profile={label:string;industry:BusinessContext['industry'];kind:BusinessContext['kind'];goalKey:BusinessContext['goalKey'];goalLabel:string;checks:CheckSpec[];questions:BusinessQuestion[];keywords:string[];caution:string};
 const profiles:Record<BusinessContext['id'],Profile>={
   international_logistics:{label:'해외이사·국제운송 견적 상담형',industry:'logistics',kind:'service',goalKey:'contact',goalLabel:'운송 조건 확인·견적 상담',
@@ -31,11 +32,7 @@ const profiles:Record<BusinessContext['id'],Profile>={
       {id:'process',label:'포장→운송→통관→현지 인도 절차',match:/포장|컨테이너|통관|출항|배송|인도|운송\s*기간|해상|항공/i,guide:'포장·출고·해상/항공 운송·통관·현지 인도의 담당 주체와 준비 자료를 단계별로 연결하세요. 운송기간은 출발·도착지와 통관 등 변동 조건을 함께 검토하고 고객 후기의 기간을 약속으로 바꾸지 마세요.'},
       {id:'terms',label:'포함·추가 비용·보험·파손 보상 조건',match:/보험|보상|파손|약관|추가\s*비용|보관|포함|제외/i,guide:'견적의 포함·별도 비용, 보관료·현지 비용, 보험 가입 범위·면책·보상 신청 절차를 실제 약관과 대조하세요. 국가별 통관·반입 조건은 최신 공식 안내를 확인할 과제로 남기고 모든 화물의 통관·무파손·전액 보상을 보장하지 마세요.'},
       {id:'network',label:'담당 거점·연혁·운송 사례의 확인 근거',match:/네트워크|거점|지사|법인|연혁|사업장|담당|파트너|network/i,guide:'자사 지사와 제휴사를 구분하고 담당 지역·연락처·갱신 시점을 확인하세요. 실제 사례는 운송 구간·화물·수행 범위를 제시하되 고객 정보는 제외하고, 누적 실적·만족도 수치는 집계 기준과 출처를 대조하세요.'},
-    ],questions:[
-      {intent:'price',question:'해외이사·국제운송 견적은 어떤 정보로 산정하며 포함·추가 비용은 무엇인가요?',fields:['출발·도착 국가와 도시, 물량·희망 일정','서비스별 견적 포함·별도 비용'],match:/견적|출발지|도착지|부피|중량|CBM|추가\s*비용/i,placement:'서비스별 견적 안내와 상담신청 폼'},
-      {intent:'process',question:'해외·귀국이사와 기업 화물은 포장·운송·통관·인도 절차가 어떻게 다른가요?',fields:['서비스별 담당 주체와 운송 단계','필요 서류와 일정이 달라지는 조건'],match:/포장|컨테이너|운송|통관|서류|인도/i,placement:'개인 이사·기업 화물별 절차 안내'},
-      {intent:'care',question:'국가별 반입 제한과 운송보험·파손 보상 조건은 어디에서 확인하나요?',fields:['목적지별 반입 조건과 최신 공식 출처','보험 범위·면책·보상 신청 절차'],match:/반입|금지|제한|보험|보상|파손|약관/i,placement:'국가별 안내·운송약관과 상담 연결'},
-    ]},
+    ],questions:logisticsQuestions},
   duty_free:{label:'현지 면세 쇼핑·여행객 방문형',industry:'commerce',kind:'mixed',goalKey:'contact',goalLabel:'매장 방문·면세 문의',
     keywords:['시드니 면세점','시드니면세점','면세 쇼핑','무료 수하물 보관','호주 기념품'],
     caution:'시내 매장·여행객 서비스와 한국 배송 직구몰의 목적을 구분한다. 면세 자격·출국·여권·봉인 조건은 업체 안내의 관측이며 현행 법규를 검증한 판정이 아니다. 한국 배송이나 온라인 결제를 확인 없이 가정하지 않는다.',
@@ -118,7 +115,7 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const evidence=sourceUnits.filter(u=>id==='international_logistics'?/이사|운송|화물|견적|통관|freight|moving/i.test(u.text):/면세|duty.free|직구|구매대행|health foods|supplement|TGA|공항|투어|예약|ingredients/i.test(u.text)).slice(0,8);
   const checks=p.checks.map(c=>{const found=sourceUnits.filter(u=>c.match.test(u.text)).sort((a,b)=>Number(/^https?:/.test(b.locator)&&!documents.some(d=>d.url===b.locator&&d.url===data.finalUrl))-Number(/^https?:/.test(a.locator)&&!documents.some(d=>d.url===a.locator&&d.url===data.finalUrl))).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3);return {id:'business-'+c.id,label:c.label,status:found.length?'observed' as const:'review' as const,evidence:found,guide:c.guide};});
   const searchOnly=documents.length>0&&documents.every(d=>d.source==='search_excerpt');
-  return BusinessContextSchema.parse({version:1,id,label:p.label,industry:p.industry,kind:p.kind,goalKey:p.goalKey,goalLabel:p.goalLabel,evidence,documents:documents.slice(0,4),keywords:p.keywords.filter(has).slice(0,5),checks,note:searchOnly?'사이트가 JinjjaScanner의 수집을 차단해 네이버 검색 요약으로 업종·고객 질문을 보완한 제한 진단입니다. HTML·본문 원문·가격·예약 조건·이벤트는 확인하지 않았으며 검색 요약을 답변 사실이나 HTML 통과 근거로 사용하지 않습니다. 사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 재진단하면 원문 검증이 가능합니다.':'입력 페이지와 허용된 자사 공개 상세·이용안내를 함께 검토했습니다. 보완 원문은 메인 페이지의 H1·메타·CTA 관측값에 합산하지 않습니다. 상품별 조건은 서로 분리하며 원문 신호 확인은 정확성·최신성·실제 동작 검증을 뜻하지 않습니다.'});
+  return BusinessContextSchema.parse({version:1,id,label:p.label,industry:p.industry,kind:p.kind,goalKey:p.goalKey,goalLabel:p.goalLabel,evidence,documents:documents.slice(0,8),keywords:p.keywords.filter(has).slice(0,5),checks,note:searchOnly?'사이트가 JinjjaScanner의 수집을 차단해 네이버 검색 요약으로 업종·고객 질문을 보완한 제한 진단입니다. HTML·본문 원문·가격·예약 조건·이벤트는 확인하지 않았으며 검색 요약을 답변 사실이나 HTML 통과 근거로 사용하지 않습니다. 사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 재진단하면 원문 검증이 가능합니다.':'입력 페이지와 허용된 자사 공개 상세·이용안내를 함께 검토했습니다. 보완 원문은 메인 페이지의 H1·메타·CTA 관측값에 합산하지 않습니다. 상품별 조건은 서로 분리하며 원문 신호 확인은 정확성·최신성·실제 동작 검증을 뜻하지 않습니다.'});
 }
 
 export function businessPrompt(context:BusinessContext|undefined):string{
