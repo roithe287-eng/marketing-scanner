@@ -19,3 +19,8 @@
 .service-strategy .service-strategy-funnel { list-style:none;padding:0;margin:0;display:grid;gap:14px; }.service-strategy-funnel>li { display:flex;gap:20px;align-items:flex-start;border-bottom:1px solid #e1e5eb;padding:10px 0 22px; }.service-strategy-funnel>li>span { flex:0 0 34px;text-align:center;font-weight:850;color:#253a75;font-size:20px; }.service-strategy-funnel h4 { margin-bottom:10px; }.service-strategy-funnel small { color:#536074;overflow-wrap:anywhere; }
 @media(max-width:760px){.service-strategy-grid {grid-template-columns:1fr;gap:16px}.service-strategy-grid>article {padding:22px 18px}.service-strategy-counts {gap:6px}.service-strategy-counts span {font-size:12px}.service-strategy-counts strong {font-size:26px}}
 @media print{.service-strategy-grid{display:block}.service-strategy-grid>article{break-inside:avoid;margin-bottom:18px}.service-strategy-funnel>li{break-inside:avoid}}
+.logistics-briefing-reference {padding:20px 24px;border-left:3px solid #8e9db5;background:#f4f6fa;border-radius:10px;margin:22px 0;}
+.logistics-briefing-reference strong {display:block;font-size:15px;margin-bottom:12px;}.logistics-briefing-reference p:last-child {font-size:12px;color:#536074;margin-bottom:0;}
+.logistics-briefing-evidence {margin:18px 0;padding:14px 16px;background:#f7f8fa;border:1px solid #dce2e9;border-radius:10px;overflow-wrap:anywhere;}
+.logistics-briefing-evidence summary {cursor:pointer;font-size:13px;font-weight:750;line-height:1.7;}.logistics-briefing-evidence>div {margin:14px 0;font-size:12px;}
+.logistics-briefing .service-strategy-funnel>li>div {min-width:0;flex:1;}

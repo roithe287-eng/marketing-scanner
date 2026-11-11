@@ -2,6 +2,7 @@ import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {analyzeBusinessContext} from './businessContext';
 import {isConsentBoilerplate} from './contentBoilerplate';
+import {buildLogisticsBriefing,LogisticsBriefingSchema} from './logisticsBriefing';
 
 const text=z.string().min(1).max(1200);
 const source=z.object({url:z.string().url().max(2048),title:z.string().max(300),text:z.string().max(600)});
@@ -18,6 +19,7 @@ export const ServiceStrategySchema=z.object({
   metrics:z.array(z.object({name:text,formula:text,required:text,interpretation:text})).max(6),
   experiments:z.array(z.object({title:text,hypothesis:text,change:text,metric:text,decision:text})).max(4),
   content:z.array(z.object({title:text,angle:text,outline:z.array(text).max(4),cta:text,sourceUrls:z.array(z.string().url()).max(3)})).max(5),
+  briefing:LogisticsBriefingSchema.optional(),
 });
 export type ServiceStrategy=z.infer<typeof ServiceStrategySchema>;
 type SegmentSpec=Omit<z.infer<typeof segment>,'evidence'|'landingUrl'|'diagnosis'> & {match:RegExp};
@@ -87,6 +89,7 @@ export function buildServiceStrategy(data:ExtractedWebsiteData):ServiceStrategy|
   return ServiceStrategySchema.parse({version:1,industry:'logistics',targetUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt||new Date().toISOString(),basis:'source-backed-playbook',
     summary:`원문에서 확인한 서비스를 고객 목적별로 나눴습니다: ${labels}. 검색어→서비스 상세→조건 확인→견적 문의→유효 상담→계약으로 이어지는 실행안을 검토하세요.`,
     notice:'원문 인용은 확인한 정보이고 고객 유형·검색어·광고 문구·실행안은 검토 제안입니다. 검색량·광고 계정·실제 전환·계약 성과는 측정하지 않았습니다. 국가·비용·기간·운송 가능 여부는 자사 운영 자료와 대조해 확정하세요.',sources:used,segments:selected,
+    briefing:buildLogisticsBriefing(inputPage,sources),
     findings:[
       {title:'검색에서 서비스가 드러나는가',observed:`페이지 제목: ${data.title.slice(0,300)||'수집 범위에서 미확인'} / 메타 설명: ${data.description.slice(0,500)||'수집 범위에서 미확인'}`,interpretation:hasServiceMetadata?'제목·설명에서 서비스 단서를 확인했습니다. 각 서비스 상세의 검색 의도와 표현이 일치하는지 대조하세요.':'현재 수집한 제목·설명에서 서비스 단서를 확인하지 못했습니다. 브랜드를 모르는 고객에게 무엇을 제공하는지 전달하기 어려울 수 있습니다.',action:`메인에는 실제 핵심 서비스와 브랜드를 함께 설명하고, ${labels} 상세에는 서로 다른 서비스명·대상·확인 가능한 제공 범위를 작성하세요. 검색 결과에 표시되는 제목·설명은 별도로 확인합니다.`,evidence:[{url:data.finalUrl||data.url,title:'메인 제목·설명',text:(data.title+' / '+data.description).slice(0,600)||'수집 범위에서 미확인'}]},
       {title:'상담 접수 전에 조건을 구분하는가',observed:form?.text||'수집한 자사 원문에서 상담 양식 라벨을 확보하지 못했습니다.',interpretation:form?(missingFields.length?`공개 라벨에서는 ${missingFields.join(' · ')}을 확인하지 못했습니다. 실제 폼의 선택 항목·입력 안내와 후속 상담에서 받는 정보인지 대조하세요.`:'수집한 라벨에서 서비스·물량·일정 관련 단서를 확인했습니다. 실제 필수 항목과 입력 부담은 화면에서 확인하세요.'):'정적 수집만으로 실제 상담 폼 부재를 판단할 수 없습니다. 서비스 상세에서 상담으로 이어지는 실제 경로를 확인하세요.',action:'초기 접수는 서비스 유형·출발/도착지·희망 시점·연락 경로 중심으로 검토하고 상세 물품 목록과 서류는 후속 상담으로 분리하세요. 이미 받는 정보가 있다면 중복 항목을 추가하지 않습니다.',evidence:form?[form]:[]},

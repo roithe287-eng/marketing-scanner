@@ -17,7 +17,7 @@ const researchPaths:Record<string,string[]>={
   'sdfkorea.com':['/shopinfo/guide.html'],
   'pure-australia.com':['/collections/oznex','/pages/ldv20-official-information','/products/ldv20'],
   'tripozzy.com':['/fit/38567','/fit/42511','/fit/40674'],
-  'pumyang.com':['/oversea/01/','/oversea/02/','/international/01/','/international/02/','/oversea/04/','/customer/07/','/customer/02/'],
+  'pumyang.com':['/oversea/01/','/oversea/02/','/oversea/03/','/international/01/','/international/02/','/oversea/04/','/customer/07/','/customer/02/'],
 };
 const UA=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
 const host=(u:URL)=>u.hostname.toLowerCase().replace(/^www\./,'');
@@ -104,12 +104,12 @@ export async function collectBusinessDocuments(url:string,options:{seed?:Busines
     };
     let paths=researchPaths[host(base)];
     if(host(base)==='sdfkorea.com')paths=[...paths,...options.productLinks?.slice(0,2)||[]];
-    paths=[...new Set(paths)].filter(p=>new URL(p,base).href!==base.href).slice(0,host(base)==='pumyang.com'?7:3);
+    paths=[...new Set(paths)].filter(p=>new URL(p,base).href!==base.href).slice(0,host(base)==='pumyang.com'?8:3);
     // Bound per-site concurrency while keeping the existing overall deadline.
     const pending=[...paths];
     await Promise.all(Array.from({length:Math.min(3,paths.length)},async()=>{
       while(pending.length){budgetSignal()?.throwIfAborted();const path=pending.shift()!;const doc=await read(path);if(doc&&!budgetSignal()?.aborted)documents.push(doc);}
     }));
   });}catch{/* The input document still describes the original collection scope. */}
-  return documents.slice(0,host(publicUrl(url))==='pumyang.com'?8:4);
+  return documents.slice(0,host(publicUrl(url))==='pumyang.com'?9:4);
 }

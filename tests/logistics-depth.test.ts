@@ -81,5 +81,5 @@ test('expanded detail collection respects a maximum of three parallel public req
  let active=0,maximum=0;const requests:string[]=[];
  t.mock.method(websiteHttp,'fetch',async(input:unknown)=>{active++;maximum=Math.max(maximum,active);requests.push(String(input));await new Promise(r=>setTimeout(r,5));active--;return new Response(html('해외이사','<p>해외이사 포장과 운송 상담 절차를 확인하세요.</p>'),{headers:{'content-type':'text/html'}});});
  const docs=await collectBusinessDocuments(url,{seed:page('해외이사','해외이사 전문 포장과 견적 상담을 안내합니다.',''),robots:{url:url+'robots.txt',status:'ok',text:'User-agent: *\nAllow: /',observedAt:new Date().toISOString()}});
- assert.equal(requests.length,7);assert.equal(docs.length,8);assert.ok(maximum<=3);assert.equal(new Set(requests).size,7);
+ assert.equal(requests.length,8);assert.equal(docs.length,9);assert.ok(maximum<=3);assert.equal(new Set(requests).size,8);
 });

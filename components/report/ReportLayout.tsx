@@ -12,6 +12,7 @@ import NonCommerceSectorPanel from './NonCommerceSectorPanel';
 import {showProductCollection} from '@/lib/websitePurpose';
 import AnswerContentPanel from './AnswerContentPanel';
 import ServiceStrategyPanel from './ServiceStrategyPanel';
+import LogisticsBriefingPanel from './LogisticsBriefingPanel';
 import {buildHospitalPlaceReview} from '@/lib/hospitalPlace';
 import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
 import DiagnosisComparisonPanel from './DiagnosisComparisonPanel';
@@ -94,6 +95,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     </Chapter>
     <Chapter id="geo" number="02" title="AI가 브랜드를 읽는 방식" note="실제 답변·출처·페이지 준비도를 나누어 확인하세요.">
       <ReportSections chapter="geo" diagrams={diagrams} briefs={briefs} items={[
+        ...(report.serviceStrategy?.briefing?[{id:'geo-logistics-briefing',label:'네이버 AI 브리핑 대응',children:<LogisticsBriefingPanel plan={report.serviceStrategy.briefing}/>}]:[]),
         {id:'geo-observations',label:'실제 AI 답변',children:report.llmCitationTest?<LlmCitationCard citation={report.llmCitationTest}/>:<p className="report-empty">저장된 AI 답변 관측이 없습니다.</p>},
         {id:'geo-questions',label:'질문별 페이지',children:<AnswerPageMap data={data}/>},
         {id:'geo-brand',label:'브랜드 표현 검토',children:<BrandReview data={data}/>},

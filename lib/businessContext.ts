@@ -13,7 +13,7 @@ export const BusinessContextSchema=z.object({
   version:z.literal(1),id:z.enum(['duty_free','cross_border','supplements','travel_booking','international_logistics']),label:z.string().max(100),
   industry:z.enum(['commerce','ecommerce','travel','logistics']),kind:z.enum(['commerce','mixed','service']),
   goalKey:z.enum(['purchase','contact','booking']),goalLabel:z.string().max(100),
-  evidence:z.array(unit).max(8),documents:z.array(BusinessDocumentSchema).max(8),
+  evidence:z.array(unit).max(8),documents:z.array(BusinessDocumentSchema).max(9),
   keywords:z.array(z.string().max(60)).max(5),
   checks:z.array(z.object({id:z.string().max(80),label:z.string().max(150),status:z.enum(['observed','review']),evidence:z.array(unit).max(3),guide:z.string().max(1200)})).max(6),
   note:z.string().max(1000),
@@ -115,7 +115,7 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const evidence=sourceUnits.filter(u=>id==='international_logistics'?/이사|운송|화물|견적|통관|freight|moving/i.test(u.text):/면세|duty.free|직구|구매대행|health foods|supplement|TGA|공항|투어|예약|ingredients/i.test(u.text)).slice(0,8);
   const checks=p.checks.map(c=>{const found=sourceUnits.filter(u=>c.match.test(u.text)).sort((a,b)=>Number(/^https?:/.test(b.locator)&&!documents.some(d=>d.url===b.locator&&d.url===data.finalUrl))-Number(/^https?:/.test(a.locator)&&!documents.some(d=>d.url===a.locator&&d.url===data.finalUrl))).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3);return {id:'business-'+c.id,label:c.label,status:found.length?'observed' as const:'review' as const,evidence:found,guide:c.guide};});
   const searchOnly=documents.length>0&&documents.every(d=>d.source==='search_excerpt');
-  return BusinessContextSchema.parse({version:1,id,label:p.label,industry:p.industry,kind:p.kind,goalKey:p.goalKey,goalLabel:p.goalLabel,evidence,documents:documents.slice(0,8),keywords:p.keywords.filter(has).slice(0,5),checks,note:searchOnly?'사이트가 JinjjaScanner의 수집을 차단해 네이버 검색 요약으로 업종·고객 질문을 보완한 제한 진단입니다. HTML·본문 원문·가격·예약 조건·이벤트는 확인하지 않았으며 검색 요약을 답변 사실이나 HTML 통과 근거로 사용하지 않습니다. 사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 재진단하면 원문 검증이 가능합니다.':'입력 페이지와 허용된 자사 공개 상세·이용안내를 함께 검토했습니다. 보완 원문은 메인 페이지의 H1·메타·CTA 관측값에 합산하지 않습니다. 상품별 조건은 서로 분리하며 원문 신호 확인은 정확성·최신성·실제 동작 검증을 뜻하지 않습니다.'});
+  return BusinessContextSchema.parse({version:1,id,label:p.label,industry:p.industry,kind:p.kind,goalKey:p.goalKey,goalLabel:p.goalLabel,evidence,documents:documents.slice(0,9),keywords:p.keywords.filter(has).slice(0,5),checks,note:searchOnly?'사이트가 JinjjaScanner의 수집을 차단해 네이버 검색 요약으로 업종·고객 질문을 보완한 제한 진단입니다. HTML·본문 원문·가격·예약 조건·이벤트는 확인하지 않았으며 검색 요약을 답변 사실이나 HTML 통과 근거로 사용하지 않습니다. 사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 재진단하면 원문 검증이 가능합니다.':'입력 페이지와 허용된 자사 공개 상세·이용안내를 함께 검토했습니다. 보완 원문은 메인 페이지의 H1·메타·CTA 관측값에 합산하지 않습니다. 상품별 조건은 서로 분리하며 원문 신호 확인은 정확성·최신성·실제 동작 검증을 뜻하지 않습니다.'});
 }
 
 export function businessPrompt(context:BusinessContext|undefined):string{

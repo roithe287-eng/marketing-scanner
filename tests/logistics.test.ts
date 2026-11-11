@@ -82,8 +82,8 @@ test('supplemental collection follows bounded same-site public service pages and
   t.mock.method(websiteHttp,'fetch',async(input:unknown)=>{const target=String(input);requests.push(target);return new Response(target.includes('/customer/')?quote:target.includes('/international/')?freight:processHtml,{headers:{'content-type':'text/html'}});});
   const seed=captureBusinessDocument(home,url);
   const result=await collectBusinessDocuments(url,{seed,robots:{url:url+'robots.txt',status:'ok',text:'User-agent: *\nAllow: /\nDisallow: /customer/',observedAt:new Date().toISOString()}});
-  assert.deepEqual(new Set(requests),new Set([url+'oversea/01/',url+'oversea/02/',url+'oversea/04/',url+'international/01/',url+'international/02/']));
-  assert.equal(result.length,6);assert.equal(result[0],seed);
+  assert.deepEqual(new Set(requests),new Set([url+'oversea/01/',url+'oversea/02/',url+'oversea/03/',url+'oversea/04/',url+'international/01/',url+'international/02/']));
+  assert.equal(result.length,7);assert.equal(result[0],seed);
 });
 
 test('legal reference sites are not logistics providers, without excluding public providers or host lookalikes',()=>{

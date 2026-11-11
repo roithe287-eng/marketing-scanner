@@ -1,5 +1,6 @@
 import type {ServiceStrategy} from './serviceStrategy';
 import type {ReportBlock} from './reportDocument';
+import {buildLogisticsBriefingDocument} from './logisticsBriefingDocument';
 export function buildServiceStrategyDocument(plan?:ServiceStrategy):ReportBlock[]{
   if(!plan)return [];
   const b:ReportBlock[]=[];
@@ -22,5 +23,5 @@ export function buildServiceStrategyDocument(plan?:ServiceStrategy):ReportBlock[
   for(const m of plan.metrics){add('subheading',m.name);add('body','산식: '+m.formula+'\n필요 데이터: '+m.required+'\n판단: '+m.interpretation);}
   add('heading','4주 실행·검증 순서');
   for(const e of plan.experiments){add('subheading',e.title);add('body','가설: '+e.hypothesis+'\n변경: '+e.change+'\n지표: '+e.metric+'\n채택 기준: '+e.decision);}
-  return b;
+  return [...b,...buildLogisticsBriefingDocument(plan.briefing)];
 }
