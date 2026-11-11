@@ -1,6 +1,8 @@
 import * as cheerio from 'cheerio';
 import {PLACE_DETECTION_ORDER,placeSector} from './localPlaceCatalog';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
+import {captureSeasonalEvidence} from './seasonalPlaceEvidence';
+import {seasonalIdentitySector} from './seasonalPlaceCatalog';
 import {placeChannel} from './hospitalPlace';
 import {sameSite,siteIdentity} from './siteIdentity';
 
@@ -39,6 +41,8 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   let sector=PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.identity.test(semantic)||s.types.some(t=>ownTypes.includes(t)));
   // Branded homepages often have only a brand in the title. Their own description may identify the offering.
   if(!sector&&!provider.test(description))sector=PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.id!=='local'&&s.identity.test(industryText(description)));
+  const seasonalSector=seasonalIdentitySector(semantic+' '+(!provider.test(description)?description:''));
+  if((!sector||sector.id==='local')&&seasonalSector)sector=placeSector(seasonalSector);
   if(!sector&&!links.length&&!entities.length&&!($('address,[itemprop="address"]').length&&/영업시간|운영시간|방문\s*(?:예약|상담)|오시는\s*길/.test($('body').text())))return;
   sector=sector||placeSector('local');
   const root=$('body').clone();root.find('script,style,noscript,form,input,textarea,[hidden],[aria-hidden="true"],.reviews,.testimonials,[data-private]').remove();
@@ -63,5 +67,6 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   const specs:[string,string,RegExp][]=[['offer','상품·서비스 설명',new RegExp(sector.services.join('|'),'i')],['hours','운영시간 안내',/영업시간|진료시간|운영시간|휴무|브레이크타임|라스트오더/],['price','가격·비용 안내',/가격|요금|비용|상담료|수강료|[\d,]+\s*원/],['visit','방문·주차 안내',/주차|오시는\s*길|찾아오시는|휠체어/],['booking','예약·문의 안내',/예약|방문\s*상담|문의|연락처/],['conditions','이용·취소 조건',/취소|환불|준비\s*(?:서류|사항|물)|이용\s*조건|포함|불포함/]];
   const signals=specs.flatMap(([key,label,re])=>{const line=lines.find(v=>re.test(v));if(!line)return [];const at=line.search(re);return [{key,label,excerpt:line.slice(Math.max(0,at-35),at+110).trim()}];});
   const images=root.find('img').slice(0,200).toArray();
-  return {sector:sector.id,name,identity,address,branch,franchise,links,terms,signals,media:{images:images.length,described:images.filter(e=>!!clean($(e).attr('alt'))).length,videos:Math.min(100,root.find('video,iframe[src*="youtube"],iframe[src*="vimeo"]').length)}};
+  const seasonal=captureSeasonalEvidence({sector:sector.id,identity,description,headings:root.find('h2,h3').slice(0,20).toArray().map(e=>clean($(e).text(),160)),lines});
+  return {...(seasonal?{seasonal}:{}),sector:sector.id,name,identity,address,branch,franchise,links,terms,signals,media:{images:images.length,described:images.filter(e=>!!clean($(e).attr('alt'))).length,videos:Math.min(100,root.find('video,iframe[src*="youtube"],iframe[src*="vimeo"]').length)}};
 }

@@ -9,7 +9,7 @@ export const LOCAL_PLACE_SCOPE='네이버 지역 검색 API의 최대 5개 결�
 /** Fixed credential destination; adapter is never selected by user input. */
 export const localPlaceHttp={fetch:budgetFetch};
 export function localPlaceQueries(evidence:LocalPlaceEvidence){
-  const region=evidence.address.match(/^[가-힣]+\s+[가-힣]+(?:시|군|구)/u)?.[0]||'';
+  const region=evidence.address.match(/^[가-힣]+\s+[가-힣]+(?:시|군|구)/u)?.[0]||evidence.seasonal?.destinations[0]?.label||'';
   return [...new Set([region?`${evidence.name} ${region}`:evidence.name,evidence.name])].map(q=>q.slice(0,180)).slice(0,2);
 }
 export function localPlaceItem(raw:unknown,evidence:LocalPlaceEvidence,url:string):LocalPlaceItem|null {

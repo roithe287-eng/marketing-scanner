@@ -72,7 +72,7 @@ export function captureSiteDiagnosticSeed(html:string,url:string,hospitalContext
     if(group)groups.set(group,[...groups.get(group)||[],a.attr('href')||'']);
   });
   const medicalLinks=[...groups.values()].flatMap(g=>g.slice(0,1)).concat([...groups.values()].flatMap(g=>g.slice(1,3)));
-  const localLinks=localPlaceEvidence?$('a[href]').slice(0,400).toArray().filter(e=>/메뉴|가격|요금|서비스|취급|오시는\s*길|주차|매장|지점|이용\s*안내|menu|price|service|location|contact/i.test($(e).text()+' '+($(e).attr('href')||''))).map(e=>$(e).attr('href')||'').slice(0,12):[];
+  const localLinks=localPlaceEvidence?$('a[href]').slice(0,400).toArray().filter(e=>/시즌|렌탈|대여|강습|체험|픽업|반납|패키지|메뉴|가격|요금|서비스|취급|오시는\s*길|주차|매장|지점|이용\s*안내|menu|price|service|location|contact/i.test($(e).text()+' '+($(e).attr('href')||''))).map(e=>$(e).attr('href')||'').slice(0,12):[];
   return {page,links,...(medicalLinks.length?{medicalLinks}: {}),...(localLinks.length?{localLinks}:{})};
 }
 
