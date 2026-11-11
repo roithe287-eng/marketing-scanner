@@ -255,14 +255,15 @@ export async function analyzeCompetitors(siteData: {
   bodyText?: string;
 }): Promise<CompetitorAnalysisResult | null> {
   try {
-    // Every domain checks product evidence even when a generic slogan supplied a keyword.
+    // Known service journeys use service evidence rather than a product collection attempt.
     const base={...siteData,finalUrl:siteData.url,h2:siteData.h2||[],bodyText:siteData.bodyText||''};
     const initialBusiness=analyzeBusinessContext({...base,description:base.description||base.bodyText.slice(0,500)});
+    const skipProductCollection=!!siteData.communityContext||initialBusiness?.kind==='service';
     const [productContext,businessDocuments]:[OwnProductContext,Awaited<ReturnType<typeof collectBusinessDocuments>>]=await Promise.all([
-      siteData.communityContext||initialBusiness?.kind==='service'?Promise.resolve({status:'not_observed' as const,discovery:'input_page' as const,attemptedPages:0,sources:[],commerce:false,note:siteData.communityContext?'커뮤니티는 게시글 탐색·회원 참여를 확인합니다.':'서비스의 이용 조건과 상담·예약 경로를 확인합니다.'}):collectOwnProductContext(siteData.url),
+      skipProductCollection?Promise.resolve({status:'not_observed' as const,discovery:'input_page' as const,attemptedPages:0,sources:[],commerce:false,note:siteData.communityContext?'커뮤니티는 게시글 탐색·회원 참여를 확인합니다.':'서비스의 이용 조건과 상담·예약 경로를 확인합니다.'}):collectOwnProductContext(siteData.url),
       collectBusinessDocuments(siteData.url,{budgetMs:6000}),
     ]);
-    const business=analyzeBusinessContext({...base,businessDocuments,productContext});
+    const business=analyzeBusinessContext({...base,businessDocuments,productContext})||initialBusiness;
     const querySite:QuerySite={...siteData,productSources:productContext.sources,businessDocuments,businessKeywords:business?.keywords};
     // 1. AI 키워드 추출 우선
     let keyword = (siteData.communityContext?marketKeywordCandidates(querySite)[0]?.keyword:undefined)||business?.keywords.find(k=>usableMarketKeyword(k,querySite))||await extractKeywordWithAI({
@@ -298,7 +299,7 @@ export async function analyzeCompetitors(siteData: {
     if (!keyword || keyword.length < 2) {
       return {searchKeyword:'',keywordSource:'fallback',competitors:[],filtering:{policyVersion:2,reviewedCount:0,metadataCheckedCount:0,excluded:[]},
         research:{version:2,provider:'naver_web',capturedAt:new Date().toISOString(),requestedCount:0,returnedCount:0,apiStart:1,totalDocuments:null,
-          ...(productContext?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:'회사명 외에 판매 상품·서비스를 확인할 원문 근거가 부족해 경쟁사 검색을 보류했습니다.',keywordEvidence:[],alternatives:[],attemptedKeywords:[],eligibleCount:0,budgetDeferredCount:0,successfulPages:0,selectedCount:0,
+          ...(!skipProductCollection?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:'회사명 외에 판매 상품·서비스를 확인할 원문 근거가 부족해 경쟁사 검색을 보류했습니다.',keywordEvidence:[],alternatives:[],attemptedKeywords:[],eligibleCount:0,budgetDeferredCount:0,successfulPages:0,selectedCount:0,
           selectionStatus:'insufficient_source',selectionMessage:'메인 HTML과 공개 상품 원문에서 비교할 상품군을 확인하지 못했습니다. 상품이 없거나 사이트에 정보가 부족하다는 판정은 아닙니다. 동적 로딩·접근 제한·검색 API의 수집 범위를 확인해 주세요.'},
         ourSite:{url:siteData.url,domain:ourDomain,title:siteData.title,metaDescription:siteData.description,h1:siteData.h1[0]||''}};
     }
@@ -329,7 +330,7 @@ export async function analyzeCompetitors(siteData: {
       searchKeyword: keyword,
       keywordSource,
       research:{version:2,provider:'naver_web',capturedAt:response.capturedAt,requestedCount:30,returnedCount:response.items.length,apiStart:response.start,totalDocuments:response.total,
-        ...(productContext?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:business?'현재 원문에서 확인한 업종·지역·구매 여정의 검색어를 사용합니다. 면세점 방문·해외직구·브랜드 제품·여행 예약을 구분하며 검색량이나 주력 매출 순위는 측정하지 않았습니다.':productContext?.sources.length?'자사 상품 원문에서 여러 상품명에 공통으로 확인되는 구체적인 품목을 우선했습니다. 한 상품의 넓은 분류보다 상품명 근거를 우선하며, 전체 쇼핑몰의 매출·주력 순위를 뜻하지 않습니다.':keywordSource==='ai'?'페이지에 실제 있는 상품·서비스 표현으로 AI가 업종 검색어를 제안하고 원문 포함 여부와 회사명 단독 검색 여부를 확인했습니다.':'제목·설명·H1·H2·메타 키워드·수집 본문의 상품·서비스 관련성을 규칙으로 비교하고 회사명 단독 검색어는 제외했습니다.',
+        ...(!skipProductCollection?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:business?'현재 원문에서 확인한 업종·서비스와 고객의 이용 목적에 맞는 검색어를 사용합니다. 검색량이나 주력 매출 순위는 측정하지 않았습니다.':productContext?.sources.length?'자사 상품 원문에서 여러 상품명에 공통으로 확인되는 구체적인 품목을 우선했습니다. 한 상품의 넓은 분류보다 상품명 근거를 우선하며, 전체 쇼핑몰의 매출·주력 순위를 뜻하지 않습니다.':keywordSource==='ai'?'페이지에 실제 있는 상품·서비스 표현으로 AI가 업종 검색어를 제안하고 원문 포함 여부와 회사명 단독 검색 여부를 확인했습니다.':'제목·설명·H1·H2·메타 키워드·수집 본문의 상품·서비스 관련성을 규칙으로 비교하고 회사명 단독 검색어는 제외했습니다.',
         keywordEvidence:keywordEvidence(keyword,querySite).evidence,alternatives:marketKeywordCandidates(querySite).filter(c=>c.keyword!==keyword).slice(0,3).map(c=>({keyword:c.keyword,fields:[...new Set(c.evidence.map(e=>e.field))]})),attemptedKeywords,
         eligibleCount:selection.eligibleCount,budgetDeferredCount:selection.budgetDeferredCount,successfulPages:candidates.filter(c=>!c.fetchError).length,selectedCount:competitors.length,
         selectionStatus:competitors.length?'matched':'no_relevant_candidates',selectionMessage:competitors.length?'후보 페이지 원문에서 대상 상품·서비스 검색어와 관련 표현을 확인했습니다.':'검색 응답 중 상품·서비스의 관련성을 원문으로 확인한 업체가 없습니다. 관련 없는 업체나 수집 실패 페이지로 비교표를 채우지 않았습니다.'},

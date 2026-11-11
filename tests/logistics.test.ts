@@ -10,6 +10,11 @@ import {citationFallbackQuestions} from '../lib/analyzeCitation';
 import {classifyIndustry} from '../lib/industryClassifier';
 import {IndustryCategorySchema} from '../lib/reportSchema';
 import {positionProfile} from '../lib/industryPositioning';
+import {analyzeCompetitors} from '../lib/competitorAnalysis';
+import {selectSearchCandidates} from '../lib/competitorSelection';
+import {competitorDisplay} from '../lib/competitorDisplay';
+import {buildCompetitorDocument} from '../lib/competitorDocument';
+import {fixture} from './fixtures/report';
 
 const url='https://www.pumyang.com/';
 // Reduced public markup reproducing the site's generic title, navigation CTA,
@@ -79,4 +84,40 @@ test('supplemental collection follows three same-site public service pages and r
   const result=await collectBusinessDocuments(url,{seed,robots:{url:url+'robots.txt',status:'ok',text:'User-agent: *\nAllow: /\nDisallow: /customer/',observedAt:new Date().toISOString()}});
   assert.deepEqual(new Set(requests),new Set([url+'oversea/01/',url+'international/01/']));
   assert.equal(result.length,3);assert.equal(result[0],seed);
+});
+
+test('legal reference sites are not logistics providers, without excluding public providers or host lookalikes',()=>{
+  const items=['easylaw.go.kr','www.law.go.kr','public-provider.go.kr','easylaw.go.kr.carrier.test'].map(host=>({title:'해외이사 안내',description:'해외이사 서비스',link:`https://${host}/`}));
+  const selection=selectSearchCandidates(items,'pumyang.com','해외이사');
+  assert.deepEqual(selection.candidates.map(c=>c.domain),['public-provider.go.kr','easylaw.go.kr.carrier.test']);
+  assert.equal(selection.excluded.length,2);assert.match(selection.excluded[0].reason,/참고 자료/);
+  const old={searchKeyword:'해외이사',competitors:items.map((c,i)=>({...c,domain:new URL(c.link).hostname,rank:i+1}))};
+  const original=JSON.stringify(old);
+  assert.equal(competitorDisplay(old).competitors.length,2);assert.equal(JSON.stringify(old),original);
+});
+
+test('logistics competitor pipeline skips product collection and keeps provider evidence in exports',async t=>{
+  const keys=['OPENAI_API_KEY','NAVER_CLIENT_ID','NAVER_CLIENT_SECRET'] as const,env=keys.map(k=>process.env[k]);
+  delete process.env.OPENAI_API_KEY;process.env.NAVER_CLIENT_ID='test';process.env.NAVER_CLIENT_SECRET='test';
+  const requests:string[]=[];
+  const mockFetch=async(input:unknown)=>{
+    const target=String(input);requests.push(target);
+    if(target.includes('openapi.naver.com'))return Response.json({items:[
+      {title:'해외이사 생활법령',description:'해외이사 법령 안내',link:'https://easylaw.go.kr/'},
+      {title:'해외이사 전문 운송',description:'해외이사 견적과 통관 서비스',link:'https://carrier.test/'},
+    ]});
+    assert.ok(!target.includes('easylaw.go.kr'),'reference sites must not consume the metadata budget');
+    if(target.endsWith('/robots.txt'))return new Response('User-agent: *\nAllow: /');
+    if(target.startsWith('https://carrier.test'))return new Response('<title>해외이사 전문 운송</title><meta name="description" content="해외이사 견적과 통관 서비스">');
+    return new Response(target.includes('/customer/')?quote:target.includes('/oversea/')?processHtml:target.includes('/international/')?freight:home,{headers:{'content-type':'text/html'}});
+  };
+  t.mock.method(websiteHttp,'fetch',mockFetch);t.mock.method(globalThis,'fetch',mockFetch);
+  try{
+    const result=await analyzeCompetitors({url,title:'범양해운',ogTitle:'범양해운',description:'범양해운',h1:[],h2:[],keywords:'',bodyText:'안전하고 신속한 해외이사 서비스\n편안하고 빠른 귀국이사 서비스\n화물 운송과 견적 상담'});
+    assert.ok(result);assert.equal(result.searchKeyword,'해외이사');assert.equal(result.research.productContext,undefined);
+    assert.deepEqual(result.competitors.map(c=>c.domain),['carrier.test']);assert.match(result.filtering.excluded[0].reason,/참고 자료/);
+    assert.ok(!requests.some(u=>/sitemap|openapi.naver.com\/v1\/search\/shop/.test(u)),'no product discovery for the service journey');
+    const exported=JSON.stringify(buildCompetitorDocument({...fixture,competitorAnalysis:result}));
+    assert.match(exported,/해외이사/);assert.doesNotMatch(exported,/자사 상품 원문 추가 확인|면세점 방문/);
+  }finally{keys.forEach((k,i)=>{if(env[i]===undefined)delete process.env[k];else process.env[k]=env[i];});}
 });
