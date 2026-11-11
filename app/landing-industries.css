@@ -7,7 +7,7 @@
 .scanner-common-examples .scanner-example-title>span {color:#273c5d;text-decoration-color:#a3b2cd}
 .scanner-industry-purpose {margin:14px 0 22px;font-size:15px;font-weight:450;line-height:1.7;color:#4f5d70;word-break:keep-all}
 .scanner-industry-options {display:flex;justify-content:center;flex-wrap:wrap;gap:8px;max-width:940px;margin:0 auto}
-.scanner-industry-options button {max-width:100%;min-height:44px;padding:8px 15px;border:1px solid #d8dfe7;border-radius:24px;background:#fff;color:#435166;font:inherit;font-size:14px;font-weight:600;line-height:1.4;cursor:pointer;overflow-wrap:anywhere}
+.scanner-industry-options button {display:inline-flex;align-items:center;justify-content:center;text-align:center;max-width:100%;min-height:44px;padding:8px 15px;border:1px solid #d8dfe7;border-radius:24px;background:#fff;color:#435166;font:inherit;font-size:14px;font-weight:600;line-height:1.4;cursor:pointer;overflow-wrap:anywhere}
 .scanner-industry-options button[aria-pressed=true] {border-color:var(--industry-accent);background:var(--industry-accent);color:#fff;font-weight:700}
 .scanner-industry-options button:hover {border-color:var(--industry-accent)}
 .scanner-industry-more {margin:6px auto 20px;max-width:940px}
@@ -25,7 +25,7 @@
 .scanner-industry-step-icon {color:var(--industry-accent);line-height:0}
 .scanner-industry-step-icon svg {width:28px;height:28px}
 .scanner-industry-flow small {font-size:17px;font-weight:800;color:var(--industry-accent);line-height:1.15;letter-spacing:-.05em;font-variant-numeric:tabular-nums}
-.scanner-industry-flow strong {font-size:16px;font-weight:700;color:#273c54;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}
+.scanner-industry-flow strong {display:flex;align-items:center;justify-content:center;min-height:3.2em;text-align:center;font-size:16px;font-weight:700;color:#273c54;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}
 .scanner-industry-flow li:last-child {border-color:color-mix(in srgb,var(--industry-accent) 55%,white);box-shadow:inset 0 -3px color-mix(in srgb,var(--industry-accent) 27%,white)}
 .scanner-landing--gate .scanner-common-examples .scanner-features-heading {margin-bottom:26px}
 .scanner-common-examples .scanner-feature-grid {align-items:stretch}
@@ -33,10 +33,12 @@
 .scanner-landing--gate .scanner-feature-card[data-kind=action] {--feature-accent:#7f536d}
 .scanner-landing--gate .scanner-common-examples .scanner-common-graphic {display:grid;place-items:center;height:auto;aspect-ratio:200/96;margin-bottom:14px;color:var(--feature-accent)}
 .scanner-common-graphic>svg {display:block;width:100%;height:100%;max-height:112px;font-family:var(--font-sans)}
+.scanner-common-graphic text {letter-spacing:0;font-variant-numeric:tabular-nums}
 .scanner-landing--gate .scanner-common-examples .scanner-feature-card h3 {font-size:26px;line-height:1.5;margin:0 0 16px;font-weight:850;color:#1e2e45;letter-spacing:-.045em}
 .scanner-common-examples .scanner-feature-card h3>span {padding-inline:2px;background:linear-gradient(transparent 72%,color-mix(in srgb,var(--feature-accent) 18%,white) 72%,color-mix(in srgb,var(--feature-accent) 18%,white) 94%,transparent 94%);box-decoration-break:clone;-webkit-box-decoration-break:clone}
 .scanner-common-examples .feature-reading {margin-top:0}
 .scanner-landing--gate .scanner-common-examples .feature-reading>.reading-summary {padding:10px 2px;min-height:44px}
+.scanner-common-examples .scanner-feature-description {word-break:keep-all;overflow-wrap:anywhere}
 .scanner-common-examples .scanner-feature-description strong {color:var(--feature-accent);font-weight:750}
 .scanner-common-examples .scanner-feature-detail {margin:16px 0 0;padding-top:12px;font-size:13px;font-weight:600;line-height:1.7}
 .scanner-common-result {margin-top:22px;border-top:1px solid #dce3eb}

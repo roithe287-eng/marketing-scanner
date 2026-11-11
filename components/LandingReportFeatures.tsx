@@ -22,13 +22,14 @@ function FeatureGraphic({kind}:{kind:typeof features[number]['kind']}) {
       kind==='action'?<><path d="M49 37h32M119 37h32" opacity=".4"/>{[30,100,170].map((x,i)=><circle key={x} cx={x} cy="37" r="19" fill={i===2?'currentColor':'white'}/>)}</>:
       <><path d="m100 12 27 10 12 26-12 25-27 11-27-11-12-25 12-26Z" opacity=".3"/><path d="m100 12 14 23 25 13-22 14-17 22-17-22-22-14 25-13Z" fill="currentColor" fillOpacity=".12"/>{[[100,12],[127,22],[139,48],[127,73],[100,84],[73,73],[61,48],[73,22]].map(([x,y])=><circle key={`${x}-${y}`} cx={x} cy={y} r="3" fill="currentColor"/>)}<circle cx="100" cy="48" r="16" fill="white"/></>}
     </g>
-    <g fill="currentColor" fontSize="19" fontWeight="700" textAnchor="middle" dominantBaseline="central">
-      {kind==='search'?<><text x="145" y="30">SEO</text><text x="145" y="68">AI</text></>:
-      kind==='citation'?<><text x="104" y="43" fontSize="16">언급</text><text x="157" y="73" fontSize="16">출처</text></>:
-      kind==='competition'?<text x="107" y="58" fill="white" fontSize="15">우리</text>:
-      kind==='rewrite'?<><text x="46" y="44" fontSize="17">기존</text><text x="154" y="44" fontSize="17">개선</text></>:
-      kind==='action'?<>{[30,100,170].map((x,i)=><g key={x}><text x={x} y="38" fill={i===2?'white':'currentColor'} fontSize="17">0{i+1}</text><text x={x} y="76" fontSize="16">{['확인','수정','측정'][i]}</text></g>)}</>:
-      <text x="100" y="49">8</text>}
+    {/* Set the baseline on each text node: iOS WebKit does not reliably use a group baseline. */}
+    <g fill="currentColor" fontSize="19" fontWeight="700">
+      {kind==='search'?<><text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x="145" y="29">SEO</text><text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x="145" y="67">AI</text></>:
+      kind==='citation'?<><text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x="104" y="42.5" fontSize="16">언급</text><text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x="157" y="72" fontSize="16">출처</text></>:
+      kind==='competition'?<text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x="107" y="58" fill="white" fontSize="15">우리</text>:
+      kind==='rewrite'?<><text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x="46" y="44" fontSize="17">기존</text><text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x="154" y="44" fontSize="17">개선</text></>:
+      kind==='action'?<>{[30,100,170].map((x,i)=><g key={x}><text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x={x} y="37" fill={i===2?'white':'currentColor'} fontSize="17">0{i+1}</text><text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x={x} y="76" fontSize="16">{['확인','수정','측정'][i]}</text></g>)}</>:
+      <text textAnchor="middle" dominantBaseline="central" alignmentBaseline="central" x="100" y="48">8</text>}
     </g>
   </svg></div>;
 }
