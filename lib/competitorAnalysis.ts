@@ -259,7 +259,7 @@ export async function analyzeCompetitors(siteData: {
     const base={...siteData,finalUrl:siteData.url,h2:siteData.h2||[],bodyText:siteData.bodyText||''};
     const initialBusiness=analyzeBusinessContext({...base,description:base.description||base.bodyText.slice(0,500)});
     const [productContext,businessDocuments]:[OwnProductContext,Awaited<ReturnType<typeof collectBusinessDocuments>>]=await Promise.all([
-      siteData.communityContext||initialBusiness?.id==='travel_booking'?Promise.resolve({status:'not_observed' as const,discovery:'input_page' as const,attemptedPages:0,sources:[],commerce:false,note:siteData.communityContext?'커뮤니티는 게시글 탐색·회원 참여를 확인합니다.':'여행 상품은 물품 배송 대신 예약 조건을 확인합니다.'}):collectOwnProductContext(siteData.url),
+      siteData.communityContext||initialBusiness?.kind==='service'?Promise.resolve({status:'not_observed' as const,discovery:'input_page' as const,attemptedPages:0,sources:[],commerce:false,note:siteData.communityContext?'커뮤니티는 게시글 탐색·회원 참여를 확인합니다.':'서비스의 이용 조건과 상담·예약 경로를 확인합니다.'}):collectOwnProductContext(siteData.url),
       collectBusinessDocuments(siteData.url,{budgetMs:6000}),
     ]);
     const business=analyzeBusinessContext({...base,businessDocuments,productContext});
@@ -305,7 +305,7 @@ export async function analyzeCompetitors(siteData: {
     console.log(`[경쟁사] 키워드: "${keyword}" (${keywordSource})`);
 
     // Inspect more search items without increasing the eight-page collection budget.
-    const commerce=productContext.commerce===true&&business?.id!=='duty_free'&&business?.id!=='travel_booking';
+    const commerce=productContext.commerce===true&&business?.id!=='duty_free'&&business?.kind!=='service';
     const searchQuery=(term:string)=>commerce?`${term} 쇼핑몰`:term;
     const attemptedKeywords=[searchQuery(keyword)];
     let response = await searchNaverWeb(searchQuery(keyword), 30);

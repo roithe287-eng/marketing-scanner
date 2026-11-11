@@ -3,7 +3,7 @@ import type {ExtractedWebsiteData} from './extractWebsite';
 import {marketKeywordCandidates} from './competitorResearch';
 import {analyzeWebsitePurpose,isNonCommerce,outOfPurpose,type WebsitePurpose} from './websitePurpose';
 import {sectorProfile,sectorTopicPatterns} from './nonCommerceSectors';
-import {businessProfile} from './businessContext';
+import {businessProfile,analyzeBusinessContext} from './businessContext';
 import {isConsentBoilerplate} from './contentBoilerplate';
 import {AnswerContentPlanSchema,AnswerIntentSchema,type AnswerContentPlan,type AnswerSource,type AnswerKeyword,type AnswerIntent,type AnswerQuestion} from './answerContentSchema';
 
@@ -56,6 +56,7 @@ export function answerSources(data:AnswerPageData):AnswerSource[]{
     if(doc.source==='search_excerpt')continue;
     for(const section of doc.sections)add(section.text,'body',`보완 원문 · ${section.heading||doc.title}`,undefined,doc.url);
   }
+  if(data.businessDocuments?.some(d=>d.source!=='search_excerpt')&&analyzeBusinessContext(data)?.id==='international_logistics')return sources;
   if(data.productContext?.status==='observed')for(const p of data.productContext.sources){
     add([p.name,...p.categories].join(' · '),'product','확인한 자사 상품',undefined,p.url);
   }
@@ -128,7 +129,7 @@ function purposeGuide(intent:AnswerIntent,p:WebsitePurpose):IntentGuide{
     }[intent as 'scope'|'process'|'proof'];
     if(guide)return {...base,...guide,template:()=>guide.fields.map(field=>`${field}: [실제 이용 안내와 공개 글 상세에서 확인 후 작성]`).join('\n')};
   }
-  if(p.business){const q=businessProfile(p.business.id).questions.find(q=>q.intent===intent);if(q)return {...base,question:()=>q.question,fields:q.fields,placement:q.placement,match:q.match,template:()=>q.fields.map(field=>`${field}: [상품별 최신 원문과 운영 자료로 확인한 내용]`).join('\n')};}
+  if(p.business){const q=businessProfile(p.business.id).questions.find(q=>q.intent===intent);if(q)return {...base,question:()=>q.question,fields:q.fields,placement:q.placement,match:q.match,template:()=>q.fields.map(field=>`${field}: [${p.business?.kind==='service'?'서비스별':'상품별'} 최신 원문과 운영 자료로 확인한 내용]`).join('\n')};}
   if(p.sector){
     const q=p.sector.questions.find(q=>q.intent===intent);
     if(q){const check=sectorProfile(p.sector.id).checks.find(c=>c.id===q.checkId)!;
@@ -166,7 +167,7 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
   const limited=(data.bodyText||'').trim().length<80||data.isJsHeavy===true;
   const intents=defaultIntents(primary?.term||'',pool,purpose);
   const fallbackRows=intents.map(intent=>({question:purposeGuide(intent,purpose).question(primary?.term||'이 페이지'),intent,evidenceIds:[] as string[],missingFacts:purposeGuide(intent,purpose).fields}));
-  const rows=purpose.business?fallbackRows.map(row=>{const matched=pool.filter(p=>p.kind==='body'&&purposeGuide(row.intent,purpose).match.test(p.text)).sort((a,b)=>Number(!!b.url&&b.url!==data.finalUrl)-Number(!!a.url&&a.url!==data.finalUrl));const source=matched[0]?.url;return {...row,evidenceIds:matched.filter(p=>p.url===source).slice(0,2).map(p=>p.id)};}):assisted?ai!.questions.map((q,i)=>isNonCommerce(purpose)&&(!intents.includes(q.intent)||outOfPurpose(q.question,purpose))?fallbackRows[i]:q):fallbackRows;
+  const rows=purpose.business?fallbackRows.map(row=>{const matched=pool.filter(p=>p.kind==='body'&&purposeGuide(row.intent,purpose).match.test(p.text)).sort((a,b)=>{const relevance=(s:AnswerSource)=>Number(!!s.url&&s.url!==data.finalUrl)+(purpose.business?.id==='international_logistics'&&row.intent==='price'&&/출발지/.test(s.text)&&/도착지/.test(s.text)?2:0);return relevance(b)-relevance(a);});const source=matched[0]?.url;return {...row,evidenceIds:matched.filter(p=>p.url===source).slice(0,2).map(p=>p.id)};}):assisted?ai!.questions.map((q,i)=>isNonCommerce(purpose)&&(!intents.includes(q.intent)||outOfPurpose(q.question,purpose))?fallbackRows[i]:q):fallbackRows;
   const usedQuestions=new Set<string>();
   const questions:AnswerQuestion[]=primary?rows.map((row,i)=>{
     const guide=purposeGuide(row.intent,purpose);

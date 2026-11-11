@@ -23,6 +23,7 @@ export const INDUSTRY_LABELS: Record<IndustryCategory, string> = {
   beauty: "뷰티·미용",
   food: "식음료·외식",
   travel: "여행·숙박",
+  logistics: "해외이사·국제물류",
   it_service: "IT·서비스",
   manufacturing: "제조·산업",
   finance: "금융·투자",
@@ -46,6 +47,7 @@ const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
   beauty: ["미용", "뷰티", "네일", "왁싱", "피부관리", "메이크업", "미용실", "salon", "beauty"],
   food: ["음식점", "카페", "레스토랑", "맛집", "배달", "delivery", "restaurant", "cafe"],
   travel: ["여행", "숙박", "호텔", "펜션", "리조트", "관광", "투어", "travel", "hotel"],
+  logistics: ["해외이사", "귀국이사", "국제운송", "국제물류", "포워딩", "해상운송", "항공운송", "freight", "relocation"],
   it_service: ["SaaS", "소프트웨어", "앱", "플랫폼", "솔루션", "개발", "cloud", "app"],
   manufacturing: ["제조", "공장", "생산", "산업재", "부품", "설비", "manufacturing"],
   finance: ["금융", "은행", "보험", "투자", "대출", "카드", "finance", "banking"],
@@ -129,7 +131,7 @@ H2: ${(data.h2 || []).slice(0, 5).join(" | ")}
 
 [20개 카테고리]
 education / medical / commerce / realestate / legal / beauty / food /
-travel / it_service / manufacturing / finance / consulting / media /
+travel / logistics / it_service / manufacturing / finance / consulting / media /
 sports / pet / automotive / parenting / interior / ecommerce / etc
 
 JSON만 응답:

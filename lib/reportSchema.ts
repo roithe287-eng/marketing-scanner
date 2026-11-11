@@ -321,6 +321,7 @@ export const IndustryCategorySchema = z.enum([
   "beauty",
   "food",
   "travel",
+  "logistics",
   "it_service",
   "manufacturing",
   "finance",

@@ -2,7 +2,7 @@ import React from 'react';
 import {COMMUNITY_REVIEW_AREAS,type RestrictedWebsiteReport} from '@/lib/restrictedWebsite';
 
 export default function RestrictedWebsiteReportView({report}:{report:RestrictedWebsiteReport}){
-  const reason=report.reason==='robots'?'사이트의 robots.txt 수집 규칙':report.reason==='rate_limited'?'사이트의 요청 빈도 제한':'사이트 서버의 접근 제한';
+  const reason=report.reason==='robots'?'사이트의 robots.txt 수집 규칙':report.reason==='rate_limited'?'사이트의 요청 빈도 제한':report.reason==='not_acceptable'?'사이트가 수집 요청 형식을 허용하지 않는 응답':'사이트 서버의 접근 제한';
   return <div id="report-area" className="space-y-6 pt-8" aria-label="원문 수집 제한 안내">
     <section className="jm-card p-6 md:p-10">
       <p className="report-eyebrow">COLLECTION STATUS</p>

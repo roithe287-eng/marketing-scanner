@@ -3,7 +3,7 @@ import {z} from 'zod';
 const publicLink=z.string().max(2048).url().refine(value=>{try{const u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;}catch{return false;}});
 export const RestrictedWebsiteReportSchema=z.object({
   kind:z.literal('restricted_website'),version:z.literal(1),url:publicLink,observedAt:z.string().datetime(),
-  reason:z.enum(['forbidden','rate_limited','robots']),httpStatus:z.number().int().optional(),
+  reason:z.enum(['forbidden','rate_limited','robots','not_acceptable']),httpStatus:z.number().int().optional(),
   searchStatus:z.enum(['observed','empty','unavailable']),
   sources:z.array(z.object({url:publicLink,title:z.string().max(300),description:z.string().max(600)})).max(5),
   communityCandidate:z.boolean(),

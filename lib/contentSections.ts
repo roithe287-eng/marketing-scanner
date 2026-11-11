@@ -22,7 +22,7 @@ export function captureContentSections($:CheerioAPI,baseUrl?:string):ContentSect
   const copy=item.clone();copy.find('script,style,noscript,template').remove();copy.find('br').replaceWith(' ');
   const text=clean(copy.text());if(!text||isConsentBoilerplate(text))return;
   if(/^h[1-3]$/.test(tag)){heading=text.slice(0,180);return;}
-  const serviceLabel=text.length>=5&&/컨설팅|마케팅|교육|홈페이지\s*제작/.test(text);
+  const serviceLabel=text.length>=5&&/컨설팅|마케팅|교육|홈페이지\s*제작|해외\s*이사|귀국\s*이사|국제\s*운송|해상\s*운송|항공\s*운송|견적|포장|통관|보험\s*보상|freight/i.test(text);
   if((text.length<24&&!serviceLabel&&!(text.length>=8&&/\d/.test(text)&&/경력|전문|센터|네트워크|교육기관|연속|수상/.test(text)))||/^(?:개인정보|이용약관|copyright|사업자등록|통신판매업)/i.test(text))return;
   const key=text.normalize('NFKC').toLowerCase();if(seen.has(key))return;seen.add(key);
   const section=item.closest('section,article,[data-section],.section_wrap');
