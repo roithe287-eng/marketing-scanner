@@ -35,7 +35,7 @@ for(const[d,id,industry,goal,question]of cases)test(`${id}: purpose, FAQ, GEO an
   const original={title:d.title,h1:[...d.h1],description:d.description,cta:[...d.ctaButtons]};
   const p=analyzeWebsitePurpose(d),plan=buildAnswerContentPlan(d);
   assert.equal(p.business?.id,id);assert.equal(p.goal.key,goal);assert.equal(p.goal.observed,false);
-  assert.equal(await classifyIndustry(d),industry);assert.equal(plan.questions.length,3);
+  assert.equal(await classifyIndustry(d),industry);assert.equal(plan.questions.length,id==='travel_booking'?6:3);
   assert.ok(plan.questions.some(q=>question.test(q.question)));assert.equal(plan.scope,'submitted-page-and-business');
   assert.ok(citationFallbackQuestions(d,'브랜드').some(q=>question.test(q.question)));
   assert.ok(p.checks.every(c=>['goal','price'].includes(c.id)||c.id.startsWith('business-')));

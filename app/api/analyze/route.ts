@@ -128,7 +128,7 @@ export async function POST(req: NextRequest) {
     const websiteData = await withBudget(14_000,()=>extractWebsite(url),undefined,"페이지 수집 시간이 초과되었습니다. 최종 페이지 URL을 확인한 뒤 다시 시도해 주세요.");
     const [products,businessDocuments,siteDiagnostics,communityContext]=await Promise.all([
       !websiteData.communityContext&&(!isNonCommerce(analyzeWebsitePurpose(websiteData))||websiteData.productDiscovery?.sources.length)?collectOwnProductContext(websiteData.finalUrl,{seed:websiteData.productDiscovery,robots:websiteData.seoEvidence?.robots,budgetMs:7000}):Promise.resolve(undefined),
-      websiteData.collectionNotice?Promise.resolve(websiteData.businessDocuments||[]):collectBusinessDocuments(websiteData.finalUrl,{seed:websiteData.businessDocuments?.[0],robots:websiteData.seoEvidence?.robots,productLinks:websiteData.productDiscovery?.productLinks,budgetMs:6000}),
+      websiteData.collectionNotice||websiteData.communityContext?Promise.resolve(websiteData.businessDocuments||[]):collectBusinessDocuments(websiteData.finalUrl,{seed:websiteData.businessDocuments?.[0],robots:websiteData.seoEvidence?.robots,productLinks:websiteData.productDiscovery?.productLinks,links:websiteData.businessLinks,nonCommerce:isNonCommerce(analyzeWebsitePurpose(websiteData)),budgetMs:6000}),
       collectSiteDiagnostics(websiteData.finalUrl,{seed:websiteData.diagnosticSeed,robots:websiteData.seoEvidence?.robots,limited:!!websiteData.collectionNotice,budgetMs:6000}),
       collectCommunityContext(websiteData.finalUrl,websiteData.communityContext,websiteData.seoEvidence?.robots),
     ]);

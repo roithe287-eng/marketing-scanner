@@ -5,7 +5,7 @@ export function buildServiceStrategyDocument(plan?:ServiceStrategy):ReportBlock[
   if(!plan)return [];
   const b:ReportBlock[]=[];
   const add=(kind:ReportBlock['kind'],text:string,href?:string)=>b.push({kind,text,...(href?{href}:{})});
-  add('heading','서비스별 고객·검색·광고·상담 전략');add('body',plan.summary);add('body',plan.notice);
+  add('heading',plan.industry==='noncommerce'?'목적별 고객·검색·콘텐츠·이용 전략':'서비스별 고객·검색·광고·상담 전략');add('body',plan.summary);add('body',plan.notice);
   for(const f of plan.findings){add('subheading',f.title);add('body','현재 관측: '+f.observed+'\n해석: '+f.interpretation+'\n실행: '+f.action);f.evidence.forEach(e=>add('body','원문: '+e.text,e.url));}
   for(const s of plan.segments){
     add('subheading',s.label+' · 고객과 선택 기준');add('body','고객 가설: '+s.audience);add('body',s.diagnosis);
@@ -18,10 +18,17 @@ export function buildServiceStrategyDocument(plan?:ServiceStrategy):ReportBlock[
   add('heading','채널별 광고·콘텐츠 실행안');
   for(const c of plan.channels){add('subheading',c.label+' · '+c.role);add('body','운영 구성: '+c.setup);add('body','소재·메시지: '+c.creative);add('body','전환 기준: '+c.conversion);add('body','집행 전·후 확인: '+c.review);}
   for(const c of plan.content){add('subheading',c.title);add('body',c.angle);c.outline.forEach(x=>add('body',x));add('body','연결 행동: '+c.cta);c.sourceUrls.forEach(url=>add('body','소재 검토 원문',url));}
-  add('heading','상담 전환·성과 검증');
+  add('heading',plan.industry==='noncommerce'?'목적별 행동·성과 검증':'상담 전환·성과 검증');
   for(const f of plan.funnel){add('subheading',f.stage);add('body',f.definition+'\n'+f.check+'\n측정 이벤트 제안: '+f.event);}
   for(const m of plan.metrics){add('subheading',m.name);add('body','산식: '+m.formula+'\n필요 데이터: '+m.required+'\n판단: '+m.interpretation);}
   add('heading','4주 실행·검증 순서');
   for(const e of plan.experiments){add('subheading',e.title);add('body','가설: '+e.hypothesis+'\n변경: '+e.change+'\n지표: '+e.metric+'\n채택 기준: '+e.decision);}
+  if(plan.briefingPlan){const n=plan.briefingPlan;
+    add('heading','업종별 네이버 AI 브리핑 대응');add('body',n.notice);
+    for(const x of n.blocks){add('subheading',x.title);add('body','고객 질문: '+x.question+'\n담을 내용: '+x.fields.join(' · ')+'\n수정 위치: '+x.placement+'\n실행 제안: '+x.action+'\n작성 초안 · 확인 후 사용: '+x.draft);for(const e of x.evidence)add('body','자사 원문: '+e.text,e.url);}
+    for(const c of n.channels){add('subheading',c.title);add('body',c.role+'\n'+c.deliverable);}
+    for(const v of n.verification){add('subheading',v.title);add('body',v.action+'\n확인 항목: '+v.metric);}
+    for(const r of n.references)add('body','공식 참고 안내 · 노출 결과 아님: '+r.label,r.url);
+  }
   return [...b,...buildLogisticsBriefingDocument(plan.briefing)];
 }

@@ -12,6 +12,7 @@ import NonCommerceSectorPanel from './NonCommerceSectorPanel';
 import {showProductCollection} from '@/lib/websitePurpose';
 import AnswerContentPanel from './AnswerContentPanel';
 import ServiceStrategyPanel from './ServiceStrategyPanel';
+import NonCommerceBriefingPanel from './NonCommerceBriefingPanel';
 import LogisticsBriefingPanel from './LogisticsBriefingPanel';
 import {buildHospitalPlaceReview} from '@/lib/hospitalPlace';
 import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
@@ -85,7 +86,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     <Chapter id="overview" number="01" title="우리 홈페이지, 무엇부터 바꾸면 될까요?" note="홈페이지 내용 → 고객 질문과 답변 → 우선 할 일 순서로 확인하세요.">
       <ReportSections chapter="overview" diagrams={diagrams} briefs={briefs} items={[
         {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
-        ...(report.serviceStrategy?[{id:'overview-services',label:'서비스·고객별 전략',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="segments"/>}]:[]),
+        ...(report.serviceStrategy?[{id:'overview-services',label:report.serviceStrategy.industry==='noncommerce'?'고객·목적별 전략':'서비스·고객별 전략',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="segments"/>}]:[]),
         {id:'overview-questions',label:placeReview?'플레이스·AI 브리핑':'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst placeReview={placeReview} clinicWebAllowed={clinicWebAllowed}/>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
         ...(report.sitePurpose?.sector||report.siteDiagnostics?.medicalAudit?[{id:'overview-sector',label:'업종별 확인',children:<>{report.sitePurpose&&<NonCommerceSectorPanel purpose={report.sitePurpose}/>}<MedicalAuditPanel audit={report.siteDiagnostics?.medicalAudit}/></>}]:[]),
@@ -96,6 +97,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     <Chapter id="geo" number="02" title="AI가 브랜드를 읽는 방식" note="실제 답변·출처·페이지 준비도를 나누어 확인하세요.">
       <ReportSections chapter="geo" diagrams={diagrams} briefs={briefs} items={[
         ...(report.serviceStrategy?.briefing?[{id:'geo-logistics-briefing',label:'네이버 AI 브리핑 대응',children:<LogisticsBriefingPanel plan={report.serviceStrategy.briefing}/>}]:[]),
+        ...(report.serviceStrategy?.briefingPlan?[{id:'geo-noncommerce-briefing',label:'업종별 AI 브리핑 대응',children:<NonCommerceBriefingPanel plan={report.serviceStrategy.briefingPlan}/>}]:[]),
         {id:'geo-observations',label:'실제 AI 답변',children:report.llmCitationTest?<LlmCitationCard citation={report.llmCitationTest}/>:<p className="report-empty">저장된 AI 답변 관측이 없습니다.</p>},
         {id:'geo-questions',label:'질문별 페이지',children:<AnswerPageMap data={data}/>},
         {id:'geo-brand',label:'브랜드 표현 검토',children:<BrandReview data={data}/>},
@@ -129,7 +131,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     <Chapter id="actions" number="05" title="확인한 내용을 실행으로" note="담당 업무와 수정안, 일정, 목표 지표를 각각 확인하세요.">
       <ReportSections chapter="actions" diagrams={diagrams} briefs={briefs} items={[
         {id:'actions-board',label:'담당자별 작업',children:<><ExecutionBoard report={report} plan={execution}/><PageWorkMap plan={execution}/></>},
-        ...(report.serviceStrategy?[{id:'actions-acquisition',label:'광고·콘텐츠 실행',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="acquisition"/>},{id:'actions-conversion',label:'상담 전환·검증',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="conversion"/>}]:[]),
+        ...(report.serviceStrategy?[{id:'actions-acquisition',label:'광고·콘텐츠 실행',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="acquisition"/>},{id:'actions-conversion',label:report.serviceStrategy.industry==='noncommerce'?'목적별 전환·검증':'상담 전환·검증',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="conversion"/>}]:[]),
         {id:'actions-guide',label:'실행 가이드',children:<GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'actions-issues',label:'핵심 이슈',children:<div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} key={`${issue.title}-${index}`}/>)}</div>},
         {id:'actions-copy',label:'카피 제안',children:<CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis}/>},

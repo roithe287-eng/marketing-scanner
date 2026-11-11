@@ -10,7 +10,7 @@ import {CONSENT_WIDGET_SELECTOR} from './contentBoilerplate';
 import type {SiteEditing} from './siteEditingSchema';
 import type {OwnProductContext} from './ownProductSchema';
 import {captureProductSeed,type OwnProductSeed} from './productDiscovery';
-import {captureBusinessDocument,hasBusinessResearch} from './businessResearch';
+import {captureBusinessDocument,captureBusinessLinks} from './businessResearch';
 import type {BusinessDocument} from './businessContext';
 import {restrictedBusinessWebsite} from './restrictedBusiness';
 import {captureSiteDiagnosticSeed,type SiteDiagnosticSeed} from './siteDiagnostics';
@@ -24,6 +24,7 @@ export type ExtractedWebsiteData = {
   diagnosticSeed?:SiteDiagnosticSeed;
   collectionNotice?:string;
   businessDocuments?:BusinessDocument[];
+  businessLinks?:string[];
   productDiscovery?:OwnProductSeed;
   productContext?:OwnProductContext;
   officialSeoEvidence?:OfficialSeoEvidence;
@@ -420,7 +421,8 @@ export async function extractWebsite(
   const productDiscovery=captureProductSeed(html,finalUrl);
   const diagnosticSeed=captureSiteDiagnosticSeed(html,finalUrl);
   if(/(?:^|[\s,:])(?:noindex|none)(?:$|[\s,])/i.test(res.headers.get('x-robots-tag')||''))diagnosticSeed.page.noindex=true;
-  const businessDocuments=hasBusinessResearch(finalUrl)?[captureBusinessDocument(html,finalUrl)]:undefined;
+  const businessDocuments=[captureBusinessDocument(html,finalUrl)];
+  const businessLinks=captureBusinessLinks(html,finalUrl);
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
   const communityContext=captureCommunityContext($,finalUrl);
@@ -736,6 +738,7 @@ export async function extractWebsite(
     productDiscovery,
     diagnosticSeed,
     businessDocuments,
+    businessLinks,
     siteEditing,
     officialSeoEvidence,
     seoEvidence: {capturedAt:new Date().toISOString(),titleCount,descriptionCount,canonicals,robotsMeta,xRobotsTag:res.headers.get("x-robots-tag")||"",htmlLang:$("html").attr("lang")||"",jsonLdErrors,microdataCount,rdfaCount,imagesMissingAlt:imageWithoutAlt,imagesEmptyAlt,robots,httpStatus:res.status},

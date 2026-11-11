@@ -46,7 +46,7 @@ test('a hospital service provider is consulting; patient-related copy cannot cha
   assert.doesNotMatch(JSON.stringify(data.siteEditing),/NEVER_CAPTURE|회원 가입 의사 확인/);
   assert.ok(purposePrompt(data).includes('병원이 고객인'));
   const plan=buildAnswerContentPlan(data),geo=citationFallbackQuestions(data,'메디컬컨설팅그룹');
-  assert.match(plan.primaryKeyword!.term,/컨설팅/);assert.deepEqual(plan.questions.map(q=>q.intent),['scope','process','price']);
+  assert.match(plan.primaryKeyword!.term,/컨설팅/);assert.deepEqual(plan.questions.slice(0,3).map(q=>q.intent),['scope','process','price']);
   assert.doesNotMatch(JSON.stringify([...plan.questions.map(q=>q.question),...geo.map(q=>q.question)]),/초진|진료 예약|비급여|진료 시간|장바구니|배송/);
   assert.ok(outOfPurpose('초진 예약 안내를 추가하세요',p));
   assert.ok(!outOfPurpose('병원 마케팅의 성과 보고 범위를 확인하세요',p));

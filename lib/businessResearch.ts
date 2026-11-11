@@ -24,6 +24,22 @@ const host=(u:URL)=>u.hostname.toLowerCase().replace(/^www\./,'');
 const clean=(v:unknown,max=600)=>typeof v==='string'?v.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,max):'';
 export const hasBusinessResearch=(url:string)=>{try{return !!researchPaths[host(new URL(url))];}catch{return false;}};
 
+/** Follow observed explanatory links only; never invent a site's service paths. */
+export function captureBusinessLinks(html:string,url:string):string[]{
+  const $=cheerio.load(html),groups=new Map<number,string[]>();
+  $('a[href]').slice(0,500).each((_,el)=>{
+    const a=$(el),raw=a.attr('href')||'',target=ownPublicUrl(raw,url);
+    if(!target||raw.startsWith('#')||target.href===new URL(url).href||a.closest('[hidden],[aria-hidden="true"]').length)return;
+    if(/(?:logout|delete|remove|unsubscribe|write|modify|edit|submit|download|privacy|policy|review|testimonial)/i.test(target.pathname)||/\.(?:pdf|zip|png|jpe?g|mp4)$/i.test(target.pathname))return;
+    if([...target.searchParams.keys()].some(k=>/token|auth|session|email|phone|password|action|mode/i.test(k)))return;
+    const label=clean(a.text()||a.find('img[alt]').attr('alt'),100),text=label+' '+target.pathname;
+    const group=/절차|과정|준비|process|guide|procedure/i.test(text)?1:/비용|요금|견적|이용\s*조건|faq|price|pricing/i.test(text)?2:/서비스|업무\s*분야|진료\s*(?:과목|분야)|교육\s*과정|커리큘럼|사업\s*분야|service|curriculum|capabilit/i.test(text)?0:/담당|의료진|강사|구성원|사례|portfolio|case|team|about/i.test(text)?3:/이용\s*안내|문의\s*안내|상담\s*안내|contact/i.test(text)?4:null;
+    if(group!==null)groups.set(group,[...groups.get(group)||[],target.href]);
+  });
+  const ordered=[0,1,2,3,4].flatMap(key=>(groups.get(key)||[]).slice(0,1));
+  return [...new Set([...ordered,...[...groups.values()].flat()])].slice(0,12);
+}
+
 /** Only public catalogue fields from a known declarative payload; no general state walk or execution. */
 export function captureBusinessDocument(html:string,url:string,capturedAt=new Date().toISOString()):BusinessDocument{
   const $=cheerio.load(html),title=clean($('head > title').first().text(),300);
@@ -76,9 +92,9 @@ export async function collectRestrictedBusinessEvidence(url:string):Promise<Busi
 }
 
 /** Same-site, robots-aware, bounded supplemental collection; failures never erase primary observations. */
-export async function collectBusinessDocuments(url:string,options:{seed?:BusinessDocument;robots?:RobotsObservation;productLinks?:string[];budgetMs?:number}={}):Promise<BusinessDocument[]>{
+export async function collectBusinessDocuments(url:string,options:{seed?:BusinessDocument;robots?:RobotsObservation;productLinks?:string[];links?:string[];nonCommerce?:boolean;budgetMs?:number}={}):Promise<BusinessDocument[]>{
   const documents:BusinessDocument[]=options.seed?[options.seed]:[];
-  if(!hasBusinessResearch(url))return documents;
+  if(!hasBusinessResearch(url)&&!options.nonCommerce)return documents;
   try{await withBudget(options.budgetMs??6000,async()=>{
     const base=publicUrl(url),rules=new Map<string,Promise<RobotsObservation>>();
     if(options.robots)rules.set(base.origin,Promise.resolve(options.robots));
@@ -102,14 +118,14 @@ export async function collectBusinessDocuments(url:string,options:{seed?:Busines
       }catch{/* Partial research remains usable; an unavailable source is not evidence of absence. */}
       return null;
     };
-    let paths=researchPaths[host(base)];
+    let paths=researchPaths[host(base)]||options.links||[];
     if(host(base)==='sdfkorea.com')paths=[...paths,...options.productLinks?.slice(0,2)||[]];
-    paths=[...new Set(paths)].filter(p=>new URL(p,base).href!==base.href).slice(0,host(base)==='pumyang.com'?8:3);
+    paths=[...new Set(paths)].filter(p=>ownPublicUrl(p,url)?.href!==base.href&&!!ownPublicUrl(p,url)).slice(0,host(base)==='pumyang.com'?8:options.nonCommerce?5:3);
     // Bound per-site concurrency while keeping the existing overall deadline.
     const pending=[...paths];
     await Promise.all(Array.from({length:Math.min(3,paths.length)},async()=>{
       while(pending.length){budgetSignal()?.throwIfAborted();const path=pending.shift()!;const doc=await read(path);if(doc&&!budgetSignal()?.aborted)documents.push(doc);}
     }));
   });}catch{/* The input document still describes the original collection scope. */}
-  return documents.slice(0,host(publicUrl(url))==='pumyang.com'?9:4);
+  return documents.slice(0,host(publicUrl(url))==='pumyang.com'?9:options.nonCommerce?6:4);
 }

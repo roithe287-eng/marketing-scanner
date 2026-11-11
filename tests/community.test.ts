@@ -53,7 +53,7 @@ test('community topics, answer plans and citation questions ignore other busines
   assert.equal(keywordEvidence('건강식품',data).grounded,false);
   assert.doesNotMatch(competitorOwnText(data),/건강식품|진료 예약 광고/);
   const plan=buildAnswerContentPlan(data,{primaryKeyword:'건강식품',secondaryKeywords:[],topicScope:'focused',questions:[]});
-  assert.deepEqual(plan.questions.map(q=>q.intent),['scope','process','proof']);
+  assert.deepEqual(plan.questions.slice(0,3).map(q=>q.intent),['scope','process','proof']);
   assert.match(plan.questions.map(q=>q.question).join(' '),/회원가입|원출처/);
   assert.ok(plan.questions.every(q=>q.draft===''&&q.missingFacts.length>0));
   const questions=citationFallbackQuestions(data,'실무마당');assert.equal(questions.length,5);assert.match(JSON.stringify(questions),/커뮤니티/);assert.doesNotMatch(JSON.stringify(questions),/진료비|학습 대상|커리큘럼|배송/);
