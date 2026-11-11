@@ -27,6 +27,7 @@ import "./report-opening-radar.css";
 import "./report-typography.css";
 import "./report-medical.css";
 import "./clinic-place.css";
+import "./local-place.css";
 import "./answer-content.css";
 import "./reading-disclosure.css";
 import "./landing-industries.css";

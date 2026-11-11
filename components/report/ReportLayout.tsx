@@ -15,6 +15,8 @@ import ServiceStrategyPanel from './ServiceStrategyPanel';
 import NonCommerceBriefingPanel from './NonCommerceBriefingPanel';
 import LogisticsBriefingPanel from './LogisticsBriefingPanel';
 import {buildHospitalPlaceReview} from '@/lib/hospitalPlace';
+import {buildLocalPlaceReview} from '@/lib/localPlaceReview';
+import LocalPlacePanel from './LocalPlacePanel';
 import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
 import DiagnosisComparisonPanel from './DiagnosisComparisonPanel';
 import {buildExecutionPlan} from '@/lib/reportExecution';
@@ -68,6 +70,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
   },[expiry]);
   const data=useMemo(()=>buildReportInsights(report),[report]);
   const placeReview=useMemo(()=>buildHospitalPlaceReview(report.siteDiagnostics),[report.siteDiagnostics]);
+  const localPlaceReview=useMemo(()=>buildLocalPlaceReview(report.siteDiagnostics),[report.siteDiagnostics]);
   const sources=useMemo(()=>buildSourceLibrary(report),[report]);
   const diagrams=useMemo(()=>buildReportDiagrams(report,data,sources),[report,data,sources]);
   const briefs=useMemo(()=>buildSectionBriefs(report,data,sources),[report,data,sources]);
@@ -87,7 +90,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
       <ReportSections chapter="overview" diagrams={diagrams} briefs={briefs} items={[
         {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
         ...(report.serviceStrategy?[{id:'overview-services',label:report.serviceStrategy.industry==='noncommerce'?'고객·목적별 전략':'서비스·고객별 전략',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="segments"/>}]:[]),
-        {id:'overview-questions',label:placeReview?'플레이스·AI 브리핑':'고객 질문·답변',children:<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst placeReview={placeReview} clinicWebAllowed={clinicWebAllowed}/>},
+        {id:'overview-questions',label:placeReview||localPlaceReview?'플레이스·고객 질문':'고객 질문·답변',children:<>{localPlaceReview&&<LocalPlacePanel key={localPlaceReview.page.url} review={localPlaceReview}/>}<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst placeReview={placeReview} clinicWebAllowed={clinicWebAllowed}/></>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
         ...(report.sitePurpose?.sector||report.siteDiagnostics?.medicalAudit?[{id:'overview-sector',label:'업종별 확인',children:<>{report.sitePurpose&&<NonCommerceSectorPanel purpose={report.sitePurpose}/>}<MedicalAuditPanel audit={report.siteDiagnostics?.medicalAudit}/></>}]:[]),
         {id:'overview-observations',label:'영역별 근거',children:<>{report.evidenceReview&&<EvidenceReviewPanel review={report.evidenceReview}/>}<ConversionPath data={data}/></>},

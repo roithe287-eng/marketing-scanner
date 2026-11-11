@@ -10,6 +10,7 @@ import {captureSiteDiagnosticSeed,buildSiteDiagnosticFindings,inspectCrawlerPoli
 import type {DiagnosticResource,SiteDiagnostics} from './siteDiagnosticsSchema';
 import {buildMedicalAudit} from './medicalAudit';
 import {medicalSensitiveUrl} from './medicalEvidence';
+import {collectLocalPlace} from './collectLocalPlace';
 
 const UA=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
 const privateRoute=/\/(?:login|logout|signout|sign[-_]?in|sign[-_]?up|register|write|delete|remove|unsubscribe|payment|pay|download|attachment)(?:[\/._-]|$)/i;
@@ -48,6 +49,8 @@ export function inspectSitemapXml(text:string,url:string,now=Date.now()){
 
 /** Bounded public samples: 3 supplemental HTML pages, or 7 for medical facilities; same deadline. */
 export async function collectSiteDiagnostics(url:string,options:{seed?:SiteDiagnosticSeed;robots?:RobotsObservation;limited?:boolean;budgetMs?:number}={}):Promise<SiteDiagnostics>{
+  // Start alongside HTML samples. Lookup errors never fail the diagnosis.
+  const placeLookup=collectLocalPlace(options.seed?.page.localPlaceEvidence,url,!!options.limited);
   const medical=!!options.seed?.page.medicalEvidence?.facilityCandidate,pageLimit=medical?7:3;
   const observedAt=new Date().toISOString(),pages=options.seed?[options.seed.page]:[],attempts:DiagnosticResource[]=[];
   const base=new URL(url),robots=options.robots;
@@ -86,7 +89,7 @@ export async function collectSiteDiagnostics(url:string,options:{seed?:SiteDiagn
   };
   if(!options.limited)try{await withBudget(options.budgetMs??6000,async()=>{
     await Promise.allSettled([
-      collectPages([...(options.seed?.medicalLinks||[]),...(options.seed?.links||[])],pageLimit),
+      collectPages([...(options.seed?.medicalLinks||[]),...(options.seed?.localLinks||[]),...(options.seed?.links||[])],pageLimit),
       (async()=>{const result=await read(mapUrl,'xml');sitemap={...sitemap,...result.resource};if(result.text===undefined)return;let parsed=inspectSitemapXml(result.text,result.resource.url);if(!parsed){sitemap.status='unsupported';sitemap.note='XML urlset 또는 sitemapindex를 확인하지 못했습니다. 다른 형식은 직접 확인합니다.';return;}
         if(parsed.kind==='sitemapindex'){
           sitemap.note=`사이트맵 인덱스 ${parsed.entries}개 중 하위 문서 최대 1개 표본 검사`;
@@ -105,6 +108,7 @@ export async function collectSiteDiagnostics(url:string,options:{seed?:SiteDiagn
   const snapshot=pages.slice(0,pageLimit+1).sort((a,b)=>a.url===url?-1:b.url===url?1:a.url.localeCompare(b.url));
   const findings=buildSiteDiagnosticFindings(snapshot);
   const medicalAudit=buildMedicalAudit(snapshot,limited,url);
+  const localPlaceLookup=await placeLookup;
   if(sitemap.invalidDates||sitemap.futureDates)findings.push({id:'sitemap-dates',title:'사이트맵 변경일 확인',status:'review',evidence:`검사 표본 ${sitemap.entries}개 · lastmod ${sitemap.lastmod}개 · 형식·날짜 이상 ${sitemap.invalidDates}개 · 미래 날짜 ${sitemap.futureDates}개`,action:'실제 주요 콘텐츠가 변경된 날짜만 반영합니다. 모든 페이지를 오늘 날짜로 바꾸거나 오래되었다는 이유만으로 갱신하지 않습니다.',urls:[sitemap.url]});
-  return {version:1,observedAt,targetUrl:url,limited,scopeNote:limited?'원문 수집이 제한되어 추가 페이지 검사를 수행하지 않았습니다. 미측정을 결함·0점으로 표시하지 않습니다.':`입력 페이지와 내부 링크·사이트맵에서 선택한 최대 ${pageLimit}개 HTML을 비교합니다. 현재 ${snapshot.length}개 수집. 전체 사이트, 브라우저 렌더링, 외부 CSS, 실제 태그 전송·보안 취약점·면허는 검사하지 않습니다. 사이트맵은 최대 2개 문서·URL 1,500개 표본입니다.`,pages:snapshot,attempts:attempts.slice(0,medical?14:8),sitemap:{...sitemap},llms:{...llms},crawlers:inspectCrawlerPolicies(robots,url),findings:findings.slice(0,50),...(medicalAudit?{medicalAudit}:{})};
+  return {version:1,observedAt,targetUrl:url,limited,...(localPlaceLookup?{localPlaceLookup}:{}),scopeNote:limited?'원문 수집이 제한되어 추가 페이지 검사를 수행하지 않았습니다. 미측정을 결함·0점으로 표시하지 않습니다.':`입력 페이지와 내부 링크·사이트맵에서 선택한 최대 ${pageLimit}개 HTML을 비교합니다. 현재 ${snapshot.length}개 수집. 전체 사이트, 브라우저 렌더링, 외부 CSS, 실제 태그 전송·보안 취약점·면허는 검사하지 않습니다. 사이트맵은 최대 2개 문서·URL 1,500개 표본입니다.`,pages:snapshot,attempts:attempts.slice(0,medical?14:8),sitemap:{...sitemap},llms:{...llms},crawlers:inspectCrawlerPolicies(robots,url),findings:findings.slice(0,50),...(medicalAudit?{medicalAudit}:{})};
 }
