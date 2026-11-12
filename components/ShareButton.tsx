@@ -13,12 +13,13 @@ export default function ShareButton({report,competitorLoading=false,onShareCreat
   const [error,setError] = useState('');
   const busy = useRef(false);
   const active=useRef<AbortController|null>(null);
+  const initialReport=useRef(report);
   const currentReport=useRef(report);
   const savedReport=useRef<MarketingReport|null>(null);
   currentReport.current=report;
   useEffect(()=>{
     // The parent retains the exact saved snapshot so later edits keep its original expiry.
-    if(savedReport.current!==report){const retained=report.sharedRetention;savedReport.current=retained?report:null;setUrl(retained?`${window.location.origin}/r/${retained.reportId}`:'');setExpiresAt(retained?.expiresAt??null);setCopied(false);setShowDetails(false);setError('');busy.current=false;setLoading(false);}
+    if(savedReport.current!==report){const retained=report===initialReport.current?report.sharedRetention:undefined;savedReport.current=retained?report:null;setUrl(retained?`${window.location.origin}/r/${retained.reportId}`:'');setExpiresAt(retained?.expiresAt??null);setCopied(false);setShowDetails(false);setError('');busy.current=false;setLoading(false);}
     return()=>active.current?.abort();
   },[report]);
   useEffect(()=>{if(!copied)return;const timer=setTimeout(()=>setCopied(false),2200);return()=>clearTimeout(timer);},[copied]);
