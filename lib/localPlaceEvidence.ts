@@ -43,7 +43,7 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   $('a[href]').slice(0,500).each((_,e)=>{const a=$(e);const link=placeChannel(a.attr('href')||'',clean(a.text())+' '+clean(a.attr('aria-label')),true);if(link&&!links.some(l=>l.url===link.url)&&links.length<8)links.push(link);});
   const industryText=(value:string)=>value.replace(/(?:반려동물|반려견|애견|강아지|고양이)\s*동반/gu,'');
   const semantic=classificationText(industryText([identity,clean(entity?.name),ownTypes.join(' ')].join(' ')));
-  let sector=role==='home'?placeSector('home_service'):role==='education'?placeSector('education'):PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.identity.test(semantic)||s.types.some(t=>ownTypes.includes(t)));
+  let sector=role==='home'?placeSector('home_service'):role==='education'?placeSector('education'):role==='retail'?placeSector(placeSector('pet_store').identity.test(semantic)?'pet_store':'retail'):PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.identity.test(semantic)||s.types.some(t=>ownTypes.includes(t)));
   // Branded homepages often have only a brand in the title. Their own description may identify the offering.
   if(!sector&&!provider.test(description))sector=PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.id!=='local'&&s.identity.test(classificationText(industryText(description))));
   const seasonalSector=seasonalIdentitySector(semantic+' '+(!provider.test(description)?description:''));

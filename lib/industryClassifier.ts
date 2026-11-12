@@ -127,7 +127,11 @@ export function groundedIndustrySuggestion(value:unknown,data:ExtractedWebsiteDa
   const evidence=typeof result.evidence==='string'?result.evidence.replace(/\s+/g,' ').trim():'';
   if(evidence.length<4||evidence.length>200||isExcludedOffering(evidence))return 'etc';
   const source=classificationText([data.title,data.description,...data.h1||[],providerBody(data)].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ')).replace(/\s+/g,' ');
-  return source.includes(evidence)?category as IndustryCategory:'etc';
+  if(!source.includes(evidence))return 'etc';
+  // A literal quotation alone does not support an arbitrary category. Require
+  // an industry signal in the quoted provider evidence as well.
+  const hints=CATEGORY_HINTS[category as IndustryCategory].filter(h=>!['브랜드','제품','매장','상담','앱','플랫폼','콘텐츠','설계','app','store','shop','content'].includes(h));
+  return hints.some(h=>/^[a-z ]+$/i.test(h)?new RegExp('\\b'+h.replace(/ /g,'\\s+')+'\\b','i').test(evidence):evidence.includes(h))?category as IndustryCategory:'etc';
 }
 
 /**
