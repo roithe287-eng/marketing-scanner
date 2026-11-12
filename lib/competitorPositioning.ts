@@ -6,7 +6,7 @@ import {competitorDisplay} from './competitorDisplay';
 export const POSITION_METHOD='industry-evidence-v5';
 export const POSITION_AXES={x:'상품·서비스 설명',y:'선택·이용 근거'};
 export const POSITION_NOTE='동일하게 페이지 제목·메타 설명만 비교합니다. 좌표는 표현 탐지 지표이며 가격 수준·품질·시장점유율·검색 순위·성과를 평가한 점수가 아닙니다.';
-export const POSITION_CHECK_SCOPE='네 항목은 위의 같은 제목·메타 설명을 서로 다른 관점으로 읽습니다. 띄어쓰기와 영문 대소문자는 구분하지 않습니다. 본문·이미지와 다른 말로 표현한 의미, 실제 제공 여부는 이 표현 탐지에 포함되지 않습니다.';
+export const POSITION_CHECK_SCOPE='네 항목은 같은 제목·메타 설명을 서로 다른 관점으로 읽습니다. 띄어쓰기와 영문 대소문자는 구분하지 않습니다. 본문·이미지와 다른 말로 표현한 의미, 실제 제공 여부는 이 표현 탐지에 포함되지 않습니다.';
 export const POSITION_DRAFT_NOTE='항목별 대안입니다. 한 페이지에 네 안을 모두 합치지 말고 주된 목적에 맞는 안을 고르세요. [대괄호]는 본문·운영 자료에서 확인한 값으로 교체하고 해당하지 않는 내용은 삭제하세요. 미확인·예정인 내용을 현재 제공 사실로 바꾸지 않습니다.';
 export const POSITION_CRITERIA=positionProfile('etc').criteria;
 type Input={id:string;name:string;url:string;own:boolean;title?:string;description?:string;fetchError?:string;searchRank?:number;sourceLabel?:string};
