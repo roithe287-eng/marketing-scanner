@@ -20,7 +20,7 @@ test('each decision stage has a separate landing structure, CTA and completion m
  assert.equal(new Set(segments.map(s=>s.metric)).size,3);
  assert.match(segments[0].landingBlocks.join(' '),/첫 화면.*이용 대상/);
  assert.match(segments[1].landingBlocks.join(' '),/비교표.*별도 비용.*원자료/);
- assert.match(segments[2].landingBlocks.join(' '),/준비 체크리스트.*완료 화면/);
+ assert.match(segments[2].landingBlocks.join(' '),/준비 체크리스트.*완료 안내/);
  assert.ok(segments.every(s=>s.landingBlocks.every(b=>b.endsWith('야 합니다.'))));
 });
 test('metadata guides specify fields, observed text and saved-value completion checks',()=>{
