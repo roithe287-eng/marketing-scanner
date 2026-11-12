@@ -4,7 +4,7 @@ import type {ExtractedWebsiteData} from './extractWebsite';
 import {analyzeWebsitePurpose} from './websitePurpose';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
 import {classificationText,ownBusinessRole,providerIdentity,isContextOnlyEvidence} from './websiteIdentity';
-import {SKI_DESTINATIONS} from './seasonalPlaceCatalog';
+import {SKI_DESTINATIONS,seasonalProfile} from './seasonalPlaceCatalog';
 
 export const CompetitionScopeSchema=z.object({
   version:z.literal(1),sourceUrl:z.string().url().max(4000),
@@ -73,7 +73,8 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
   if(own.specialties.length&&!own.specialties.some(s=>candidate.specialties.includes(s))&&(strict||candidate.specialties.length))return '진료·교육·작업 분야 또는 시즌 서비스가 다르거나 원문 근거가 부족함';
   if(own.destinations.length&&!own.destinations.some(s=>candidate.destinations.includes(s))&&(strict||candidate.destinations.length))return '스키장·이용 목적지가 다르거나 후보의 해당 지역 운영 근거가 부족함';
   if(own.area&&!candidate.nationwide){
-    const overlap=candidate.area&&(own.area===candidate.area||own.area.startsWith(candidate.area+' ')||candidate.area.startsWith(own.area+' '));
+    const sameDestination=own.destinations.some(id=>candidate.destinations.includes(id));
+    const overlap=candidate.area?(own.area===candidate.area||own.area.startsWith(candidate.area+' ')||candidate.area.startsWith(own.area+' ')):sameDestination;
     if(!overlap&&(strict||candidate.area))return '지역 서비스의 운영 지역이 다르거나 후보 원문에서 해당 지역을 확인하지 못함';
   }
 }
@@ -81,6 +82,7 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
 /** A client noun cannot be the whole query for a provider with a clear role. */
 export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean{
   if(!scope)return true;
+  if(scope.profile==='rental'&&!/렌탈|렌털|렌트|대여|강습|rental/i.test(query))return false;
   const roleTerms:Record<string,RegExp>={international_logistics:/이사|물류|운송|포워딩|통관|freight|relocation|logistics/i,agency:/광고|마케팅|브랜딩|제작|대행/,medical_consulting:/컨설팅|마케팅|광고|개원/,software:/소프트웨어|솔루션|시스템|SaaS|프로그램/i,manufacturing:/제조|생산|공장|가공/,home:/시공|인테리어|리모델링|청소|소독|방역|수리|누수|이사/,education:/교육|학원|수업|강의|과정|수강|학교|클래스/};
   return !roleTerms[scope.profile]||roleTerms[scope.profile].test(query);
 }
@@ -90,5 +92,8 @@ export function eligibleMetadata(text:string|undefined):string{
 }
 
 export function competitionScopeLabel(scope:CompetitionScope):string{
-  return [scope.label,...scope.specialties.filter(s=>!s.startsWith('season:')),scope.area,...scope.destinations.map(id=>SKI_DESTINATIONS.find(d=>d.id===id)?.label||id)].filter(Boolean).join(' · ');
+  const season=scope.specialties.find(s=>s.startsWith('season:'))?.slice(7);
+  const label=season&&seasonalProfile(season)?.label||scope.label;
+  const destinations=scope.destinations.map(id=>SKI_DESTINATIONS.find(d=>d.id===id)?.label||id).filter(label=>!scope.area.split(' ').includes(label));
+  return [label,...scope.specialties.filter(s=>!s.startsWith('season:')),scope.area,...destinations].filter(Boolean).join(' · ');
 }

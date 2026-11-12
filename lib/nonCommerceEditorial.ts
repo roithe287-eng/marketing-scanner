@@ -36,7 +36,15 @@ export const INDUSTRY_AXES:Record<string,[string,string,string,string]>={
 export function editorialFocus(book:NonCommercePlaybook){
  const fields=book.local?.fields||INDUSTRY_AXES[book.id]||INDUSTRY_AXES.service;
  const mode=book.id==='public_service'?'public':book.id==='content'?'read':book.id==='community'?'community':/^방문·/.test(book.outcome)?'visit':'request';
- return {fields,mode,information:['public','read','community'].includes(mode),questions:book.local?.questions||[`${koreanParticle(fields[0],'topic')} 어떻게 구분하나요?`,`${koreanParticle(fields[2],'topic')} 어디에서 확인하나요?`]};
+ return {fields,mode,information:['public','read','community'].includes(mode),questions:[`${koreanParticle(fields[0],'topic')} 어떻게 구분하나요?`,`${koreanParticle(fields[2],'topic')} 어디에서 확인하나요?`]};
+}
+/** Local catalog fields do not have a shared question order. Match their own topic. */
+export function editorialFieldMatcher(field:string,fallback:RegExp):RegExp{
+ const words=field.split(/[\s·/()]+/).filter(w=>w.length>=2&&!/^(포함|별도|여부|조건|안내|구분|확인|실제|범위|기준|대상|최종|해당|연도)$/.test(w));
+ if(!words.length)return fallback;
+ const topic=words.map(w=>w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|');
+ // A weekend pickup condition does not substantiate a weekend rental price.
+ return /비용|요금|가격|보증금/.test(field)?new RegExp(`(?=[\\s\\S]*(?:${topic}))(?=[\\s\\S]*(?:비용|요금|가격|보증금|추가금|결제|\\d[\\d,]*\\s*원))`,'i'):new RegExp(topic,'i');
 }
 /** A quotation belongs to one editorial block; metadata is context, not body evidence. */
 export function allocateSources(sources:StrategySource[],matchers:RegExp[]):StrategySource[][]{
