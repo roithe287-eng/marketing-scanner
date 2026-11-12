@@ -25,7 +25,7 @@ import {GEO_TITLE,GEO_DESCRIPTION,GEO_METRICS} from './geoPresentation';
 import {buildGeoFocus} from './geoFocus';
 import {buildGrowthDocument} from './growthDocument';
 import {buildCompetitorDocument} from './competitorDocument';
-export type ReportBlock = {text:string;kind:'title'|'heading'|'subheading'|'body';href?:string};
+export type ReportBlock = {text:string;kind:'title'|'heading'|'subheading'|'body';href?:string;emphasis?:string[]};
 const labels:Record<string,string> = {
   sourceUrl:'관측 URL',capturedAt:'수집 시각',locator:'원문 위치',evidenceType:'근거 종류',brandedTests:'브랜드 포함 질문 분모',brandedCited:'브랜드 포함 질문 인용 수',unbrandedTests:'브랜드 미포함 질문 분모',unbrandedCited:'브랜드 미포함 질문 인용 수',unclassifiedTests:'질문 유형 미분류 수',engine:'AI 엔진',overallScore:'종합 점수',grade:'등급',summary:'요약',score:'점수',status:'상태',message:'안내',currentValue:'현재 상태',diagnosis:'진단',guide:'개선 가이드',evidence:'확인 근거',priorityActions:'우선 실행 과제',
   firstView:'첫 화면',cta:'행동 유도',copywriting:'카피라이팅',trust:'신뢰',conversionFlow:'전환 흐름',adLanding:'광고 랜딩',mobileUx:'모바일 UX',seo:'SEO',

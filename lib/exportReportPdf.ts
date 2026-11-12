@@ -50,6 +50,10 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
         setFont(line);ctx.fillStyle=line.color;
         const top=line.y+(line.lineHeight-line.size)/2;
         ctx.fillText(line.text,line.x,top);
+        for(const range of line.emphasis||[]){
+          const start=line.x+ctx.measureText(line.text.slice(0,range.start)).width,end=line.x+ctx.measureText(line.text.slice(0,range.end)).width;
+          ctx.strokeStyle='#9aacc3';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(start,top+line.size+2);ctx.lineTo(end,top+line.size+2);ctx.stroke();
+        }
         if((line.href||line.targetId) && line.width) {
           ctx.strokeStyle=line.color;ctx.lineWidth=0.5;ctx.beginPath();
           ctx.moveTo(line.x,top+line.size+2);ctx.lineTo(line.x+line.width,top+line.size+2);ctx.stroke();

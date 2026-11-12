@@ -1,11 +1,12 @@
 import type {MarketingReport} from './reportSchema';
 import type {ReportBlock} from './reportDocument';
-import {buildCompetitorPositioning,POSITION_NOTE,POSITION_METHOD,POSITION_SIZE_NOTE,positioningActions,positionCheckReason,positionCheckNextStep,positionFieldFinding} from './competitorPositioning';
+import {buildCompetitorPositioning,POSITION_NOTE,POSITION_METHOD,POSITION_SIZE_NOTE,POSITION_CHECK_SCOPE,POSITION_DRAFT_NOTE,positioningActions,positionCheckReason,positionCheckNextStep,positionFieldFinding,positionCheckDraft} from './competitorPositioning';
+import {draftEmphasis} from './reportEmphasis';
 import {COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE,COMPETITOR_SOURCES} from './competitorResearch';
 import {safeHttpUrl} from './citationMeasurement';
 export function buildCompetitorDocument(report:MarketingReport):ReportBlock[] {
   const model=buildCompetitorPositioning(report);if(!model)return [];
-  const b:ReportBlock[]=[];const add=(kind:ReportBlock['kind'],text:string,href?:string)=>{b.push({kind,text,href});};
+  const b:ReportBlock[]=[];const add=(kind:ReportBlock['kind'],text:string,href?:string,emphasis?:string[])=>{b.push({kind,text,href,...(emphasis?.length?{emphasis}:{})});};
   const {analysis,rows,own}=model,r=analysis.research;
   if(r?.selectionMessage)add('body',r.selectionMessage);
   if(r?.productContext){const p=r.productContext;add('subheading',`자사 상품 원문 추가 확인 · 표본 ${p.sources.length}개`);add('body',p.note);add('body',`수집 상태: ${p.status} · URL 발견 경로: ${p.discovery} · HTML 수집 시도 ${p.attemptedPages}개. 검색 요약은 AI 입력이나 상품 근거로 사용하지 않습니다.`);for(const s of p.sources){add('body',`${s.name} · ${s.kind==='catalog_product'?'공개 상품 목록':'상품 원문'} · ${s.categories.join(' / ')}`);add('body',s.url,safeHttpUrl(s.url)||undefined);}}
@@ -24,18 +25,24 @@ export function buildCompetitorDocument(report:MarketingReport):ReportBlock[] {
   }else add('body','이전 보고서에는 키워드 선정 근거와 검색 시각이 저장되지 않았습니다. 현재 보고서에 저장된 후보만 비교합니다.');
   if(analysis.filtering){add('subheading','후보 선정 기록');add('body',`검토한 검색 응답 ${analysis.filtering.reviewedCount}건 · 제외 ${analysis.filtering.excluded.length}건 · 상세 수집 시도 ${analysis.filtering.metadataCheckedCount}개`);for(const c of analysis.filtering.excluded)add('body',`제외: ${c.domain} · ${c.reason} · ${c.title}`);}
   add('body','대형몰·포털·SNS 및 채용·연봉·기업정보·기사 페이지를 역할에 따라 제외합니다. 신규 보고서는 후보 페이지 제목·설명·H1에서 상품·서비스 검색어 일치를 확인해야 비교에 포함하며, 수집 실패·관련성 부족으로 5곳 미만이거나 0곳일 수 있습니다. 실제 상품·서비스·지역·고객층·판매 방식은 함께 대조하세요.');
+  add('body',POSITION_CHECK_SCOPE);add('body',POSITION_DRAFT_NOTE);
   for(const [i,row] of rows.entries()){
     add('subheading',`${row.own?'자사':`후보 ${i}`} · ${row.name}`);if(row.url)add('body',row.url,row.url);
     add('body',row.x===null?`좌표 판정 보류: ${row.reason}`:`X 상품·서비스 설명 ${row.x}/100 · Y 선택·이용 근거 ${row.y}/100 · 크기 단서 ${row.signalCount}/8개`);
     add('body',`검색어 구성 단어: ${row.terms.join(' · ')} · 원문에서 확인: ${row.matched.join(' · ')||'미탐지'}`);
     add('body',row.termFields.map(f=>`${f.label}: 검색어 구성 단어 ${f.matched.length}/${row.terms.length}개`).join(' / '));
+    add('body',`페이지 제목: ${row.title||'미저장'}`);add('body',`메타 설명: ${row.description||'미저장'}`);
     for(const c of row.checks){
-      add('body',`${c.label} · ${row.x===null?'판정 보류':c.found?'표현 확인':'미탐지'}: ${positionCheckReason(row,c)}`);
-      add('body',`확인 기준 표현: ${c.examples.join(' · ')}. 띄어쓰기·영문 대소문자 차이는 무시하며, 본문·이미지와 다른 말로 표현한 의미까지 판정하지는 않습니다.`);
+      add('subheading',`${c.label} · ${row.x===null?'판정 보류':c.found?'표현 확인':'미탐지'}`,undefined,[c.label]);
+      add('body',`고객의 질문: ${c.editorial.question}`);
+      add('body',positionCheckReason(row,c),undefined,[c.label,...c.signals]);
+      add('body',`확인 기준 표현: ${c.examples.join(' · ')}`);
       for(const source of c.sources)add('body',`${source.label}: ${positionFieldFinding(source)}`);
-      add('body',`다음 확인: ${positionCheckNextStep(row,c)}`);
+      const draft=positionCheckDraft(row,c);
+      if(draft){add('body',`페이지 제목 제안: ${draft.title}`,undefined,draftEmphasis(draft.title));add('body',`메타 설명 제안: ${draft.description}`,undefined,draftEmphasis(draft.description));}
+      else add('body','수정안 보류: 원문·실제 운영 상태 확인 후 작성');
+      add('body',`항목별 확인: ${positionCheckNextStep(row,c)}`);
     }
-    add('body',`페이지 제목: ${row.title||'미저장'}`);add('body',`페이지 설명: ${row.description||'미저장'}`);
     if(!row.own){const c=analysis.competitors[i-1];if(c.searchRank)add('body',`웹문서 검색 응답 순서: ${c.searchRank}번째`);if(c.selectionEvidence)add('body',`선정 근거: ${c.selectionEvidence}`);add('body',`검색 결과 제목: ${c.title}`);add('body',`검색 요약: ${c.description}`);
       for(const [label,value] of [['H1',c.h1],['CTA 문구',c.ctaTexts?.join(' / ')],['AI 핵심 메시지 해석',c.keyMessage],['AI 차별점 해석',c.differentiation],['수집 오류',c.fetchError]])if(value)add('body',`${label}: ${value}`);
     }
