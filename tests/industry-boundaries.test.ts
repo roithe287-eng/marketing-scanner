@@ -25,7 +25,7 @@ const cases=[
  ['software-lawyer','법무법인 새길 소프트웨어 저작권','변호사 법률 상담과 지식재산 소송','','service','legal','legal'],
  ['beauty-training','새길 미용학원','미용사 자격증 교육과 커리큘럼 수강 신청','','education','education','education'],
  ['marketing-training','마케팅 실무 교육·강의','광고대행 담당자를 위한 교육과 커리큘럼 안내','','education','education','education'],
- ['pet-friendly','반려견 동반 숙소 호텔 새길','여행객의 숙박 예약과 객실 안내','','service','travel_booking','travel'],
+ ['pet-friendly','반려견 동반 숙소 호텔 새길','여행객의 숙박 예약과 객실 안내','','service','hospitality','travel'],
  ['pet-only','반려견 호텔 새길','반려견을 위한 위탁 돌봄과 예약 안내','','service','place_pet_care','pet'],
  ['pet-clinic','새길 동물병원','강아지 고양이 진료 예약','','service','place_veterinary','pet'],
  ['human-clinic','새길 한의원','사람의 진료 과목과 진료시간 예약 안내','','service','medical','medical'],

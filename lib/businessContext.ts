@@ -1,4 +1,6 @@
 import {sameSite} from './siteIdentity';
+import type {LocalPlaceEvidence} from './localPlaceSchema';
+import {PLACE_DETECTION_ORDER,placeSector} from './localPlaceCatalog';
 import {ownBusinessRole,isContextOnlyEvidence,isSecondarySection,classificationText,purposeSchemaTypes} from './websiteIdentity';
 import {z} from 'zod';
 import {logisticsQuestions} from './logisticsQuestions';
@@ -89,12 +91,20 @@ const profiles:Record<BusinessContext['id'],Profile>={
     ]},
 };
 export const businessProfile=(id:BusinessContext['id'])=>profiles[id];
-type Input=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'schemaTypes'|'jsonLdSchemas'|'productContext'|'businessDocuments'>>;
+type Input=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'schemaTypes'|'jsonLdSchemas'|'productContext'|'businessDocuments'|'diagnosticSeed'>> & {localPlaceEvidence?:LocalPlaceEvidence};
 
 /** Infer from current merchant text. A known domain alone never produces a diagnosis. */
 export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   if(purposeSchemaTypes(data).some(t=>/^(Article|BlogPosting|NewsArticle|Course)$/i.test(t)))return;
-  if(ownBusinessRole(data)&&ownBusinessRole(data)!=='retail')return;
+  const role=ownBusinessRole(data);
+  if(role&&role!=='retail')return;
+  const headings=[data.title,...data.h1||[]].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ');
+  if(role!=='retail'&&/블로그|매거진|칼럼|뉴스레터|(?:^|[\s·|])뉴스(?:$|[\s·|])/.test(headings))return;
+  const place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
+  const headingIdentity=classificationText(headings).replace(/(?:반려동물|반려견|애견|강아지|고양이)\s*동반/gu,'');
+  const placeIdentity=place?.sector||(role!=='retail'?PLACE_DETECTION_ORDER.find(id=>placeSector(id).identity.test(headingIdentity)):undefined);
+  const placeProfiles:Record<BusinessContext['id'],string[]>={international_logistics:[],duty_free:['retail'],cross_border:['retail','pet_store','pharmacy'],supplements:['retail','pharmacy'],travel_booking:['travel']};
+  const compatible=(id:BusinessContext['id'])=>(!placeIdentity||placeIdentity==='local'||placeProfiles[id].includes(placeIdentity))&&!(role==='retail'&&['international_logistics','travel_booking'].includes(id));
   const documents=(data.businessDocuments||[]).filter(d=>sameSite(d.url,data.finalUrl||data.url)).map(d=>({...d,sections:d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url))})).filter(d=>!isSecondarySection(d.title,'',d.url));
   const identity=[data.title,data.description,data.ogDescription,...(data.h1||[])].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ');
   const primary=classificationText(identity|| (documents.length&&documents.every(d=>d.source==='search_excerpt')?documents.map(d=>d.title).join(' '):''));
@@ -105,11 +115,11 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   let id:BusinessContext['id']|undefined;
   const logistics=/해외\s*이사|귀국\s*이사|국제\s*운송|국제\s*물류|포워딩|freight\s*(?:forward|service)|international\s*(?:moving|relocation)/i;
   const logisticsUnits=units.filter(u=>logistics.test(u.text));
-  if((logistics.test(primary)||logisticsUnits.length>=2)&&/운송|포장|화물|견적|통관|freight|moving/i.test(all))id='international_logistics';
-  else if(/면세점|duty\s*free/i.test(primary)&&/시드니|sydney|매장|store/i.test(all))id='duty_free';
-  else if(/직구|구매대행|cross.border/i.test(primary)&&/호주|australia|해외/i.test(all))id='cross_border';
-  else if(/투어|공항\s*픽업|여행|숙소|airport.{0,20}(transfer|pickup)|\btours?\b/i.test(primary)&&/예약|픽업|여행사|가이드|booking|tour/i.test(all))id='travel_booking';
-  else if(/health foods|supplements|nutritional|건강식품|영양제/i.test(all)&&/TGA|AUST\s*L|Australian.made|호주산/i.test(all)&&/제품|products?|브랜드|brand/i.test(all))id='supplements';
+  if(compatible('international_logistics')&&(logistics.test(primary)||logisticsUnits.length>=2)&&/운송|포장|화물|견적|통관|freight|moving/i.test(all))id='international_logistics';
+  else if(compatible('duty_free')&&/면세점|duty\s*free/i.test(primary)&&/시드니|sydney|매장|store/i.test(all))id='duty_free';
+  else if(compatible('cross_border')&&/직구|구매대행|cross.border/i.test(primary)&&/호주|australia|해외/i.test(all))id='cross_border';
+  else if(compatible('travel_booking')&&/투어|공항\s*픽업|여행|숙소|airport.{0,20}(transfer|pickup)|\btours?\b/i.test(primary)&&/예약|픽업|여행사|가이드|booking|tour/i.test(all))id='travel_booking';
+  else if(compatible('supplements')&&/health foods|supplements|nutritional|건강식품|영양제/i.test(all)&&/TGA|AUST\s*L|Australian.made|호주산/i.test(all)&&/제품|products?|브랜드|brand/i.test(all))id='supplements';
   if(!id)return;
   const p=profiles[id],has=(keyword:string)=>all.toLowerCase().replace(/\s/g,'').includes(keyword.toLowerCase().replace(/\s/g,''));
   // The supplemental collector strips testimonials. Do not let a customer's

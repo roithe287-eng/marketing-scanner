@@ -112,7 +112,9 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
 /** A client noun cannot be the whole query for a provider with a clear role. */
 export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean{
   if(!scope)return true;
-  if(scope.profile==='rental'&&!/렌탈|렌털|렌트|대여|강습|rental/i.test(query))return false;
+  if(!['insurance','finance','unknown','service','mixed'].includes(scope.profile)&&/^(?:(?:자동차|차량|여행|배상책임)\s*)?보험(?:\s*(?:가입|상담|보장|보장\s*분석))?$/.test(query.trim()))return false;
+  if(scope.profile==='medical'&&/^(?:호주산?\s*)?(?:영양제|건강식품|건강기능식품)$/.test(query.trim()))return false;
+  if(scope.profile==='rental'&&!/렌탈|렌털|렌터카|렌트|대여|강습|rental/i.test(query))return false;
   const roleTerms:Record<string,RegExp>={international_logistics:/이사|물류|운송|포워딩|통관|freight|relocation|logistics/i,agency:/광고|마케팅|브랜딩|제작|대행/,medical_consulting:/컨설팅|마케팅|광고|개원/,software:/소프트웨어|솔루션|시스템|SaaS|프로그램/i,manufacturing:/제조|생산|공장|가공/,home:/시공|인테리어|리모델링|청소|소독|방역|수리|누수|이사/,education:/교육|학원|수업|강의|과정|수강|학교|클래스/};
   return !roleTerms[scope.profile]||roleTerms[scope.profile].test(query);
 }
