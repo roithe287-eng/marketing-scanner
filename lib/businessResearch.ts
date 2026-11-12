@@ -9,6 +9,7 @@ import {evaluateRobots,type RobotsObservation} from './robotsRules';
 import {withBudget,budgetSignal} from './runtime/budget';
 import {getScannerContactUrl} from './siteConfig';
 import {searchNaverWeb} from './naverWebSearch';
+import {publicBusinessSections} from './publicBusinessSections';
 import {pageRegion} from './pageRegions';
 
 // Researched public URLs are discovery hints, never pre-written findings or score overrides.
@@ -33,11 +34,11 @@ export function captureBusinessLinks(html:string,url:string):string[]{
     if(/(?:logout|delete|remove|unsubscribe|write|modify|edit|submit|download|privacy|policy|review|testimonial)/i.test(target.pathname)||/\.(?:pdf|zip|png|jpe?g|mp4)$/i.test(target.pathname))return;
     if([...target.searchParams.keys()].some(k=>/token|auth|session|email|phone|password|action|mode/i.test(k)))return;
     const label=clean(a.text()||a.find('img[alt]').attr('alt'),100),text=label+' '+target.pathname;
-    const group=/절차|과정|준비|process|guide|procedure/i.test(text)?1:/비용|요금|견적|이용\s*조건|faq|price|pricing/i.test(text)?2:/서비스|업무\s*분야|진료\s*(?:과목|분야)|교육\s*과정|커리큘럼|사업\s*분야|service|curriculum|capabilit/i.test(text)?0:/담당|의료진|강사|구성원|사례|portfolio|case|team|about/i.test(text)?3:/이용\s*안내|문의\s*안내|상담\s*안내|contact/i.test(text)?4:null;
-    if(group!==null)groups.set(group,[...groups.get(group)||[],target.href]);
+    const group=/절차|과정|준비|입원|입퇴원|이용방법|대여방법|process|guide|procedure|hospitalization|admission/i.test(text)?1:/비용|요금|견적|비급여|진료비|메뉴|이용\s*조건|faq|price|pricing|nonbenefit|menu/i.test(text)?2:/서비스|업무\s*분야|진료\s*(?:과목|분야)|교육\s*과정|커리큘럼|사업\s*분야|service|curriculum|capabilit/i.test(text)?0:/담당|의료진|변호사|전문가|강사|구성원|사례|portfolio|case|team|about|doctor/i.test(text)?3:/이용\s*안내|문의\s*안내|상담\s*안내|진료\s*안내|운영\s*시간|영업\s*시간|오시는\s*길|주차|contact|location|hours|map/i.test(text)?4:null;
+    if(group!==null&&label.length<=70)groups.set(group,[...new Set([...groups.get(group)||[],target.href])]);
   });
-  const ordered=[0,1,2,3,4].flatMap(key=>(groups.get(key)||[]).slice(0,1));
-  return [...new Set([...ordered,...[...groups.values()].flat()])].slice(0,12);
+  const ordered=[0,1,2].flatMap(i=>[0,1,2,3,4].flatMap(key=>(groups.get(key)||[]).slice(i,i+1)));
+  return [...new Set(ordered)].slice(0,12);
 }
 
 /** Only public catalogue fields from a known declarative payload; no general state walk or execution. */
@@ -65,17 +66,17 @@ export function captureBusinessDocument(html:string,url:string,capturedAt=new Da
   $('script,style,noscript,template,form,blockquote,[class*="review" i],[id*="review" i],[class*="testimonial" i],[class*="comment" i],[id*="comment" i]').remove();
   // Preserve visible line boundaries before the generic section collector collapses spaces.
   $('br').replaceWith('\u001e');
-  const sections=captureContentSections($,url).filter(s=>!s.truncated).flatMap(s=>{
+  const sections=[...publicBusinessSections(html),...captureContentSections($,url).filter(s=>!s.truncated).flatMap(s=>{
     const lines=s.text.split(/\u001e+/u).flatMap(text=>text.split(/(?<=[.!?。])(?:\s+|(?=[-•]))/u));
     return lines.filter(text=>text.trim().length>=12&&text.trim().length<=600).map(text=>({heading:s.heading,text:clean(text)}));
-  });
+  })];
   // Keep multiple decision conditions, rather than the first ten generic introduction lines.
   const useful=(s:{text:string;heading:string})=>{
     const text=s.heading+' '+s.text;
-    return (/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label|해외이사|귀국이사|견적|포장|보험|보상|freight|cargo|customs/i.test(text)?5:0);
+    return (/혈압측정|주치의 회진|협진 경과|반납.*(?:절차|확인)|픽업.*(?:시간|장소)|접수.*(?:순서|서류)|적용\(|분기 적용|진찰료 별도/.test(s.text)?25:0)+(/병원장|대표원장|원장|변호사|담당자|대표강사/.test(s.text)&&s.text.length<100&&!/^(?:전|현)\)/.test(s.text)?20:0)+(/금액|가격|요금|비용|진료비|비급여|운영시간|진료시간|입원치료|준비물|절차|정형외과전문의|상담료/.test(text)?8:0)+(/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label|해외이사|귀국이사|견적|포장|보험|보상|freight|cargo|customs/i.test(text)?5:0);
   };
   const seen=new Set<string>();
-  return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...formSections.slice(0,2),...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(seen.has(s.text))return false;seen.add(s.text);return true;}).slice(0,host(new URL(url))==='pumyang.com'?16:10)});
+  return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...formSections.slice(0,2),...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(seen.has(s.text)||/^[A-Z\s]{4,20}$/.test(s.text))return false;seen.add(s.text);return true;}).slice(0,16)});
 }
 
 /** Search snippets are topic hints only. No request is made to a robots-blocked merchant page. */
@@ -120,12 +121,12 @@ export async function collectBusinessDocuments(url:string,options:{seed?:Busines
     };
     let paths=researchPaths[host(base)]||options.links||[];
     if(host(base)==='sdfkorea.com')paths=[...paths,...options.productLinks?.slice(0,2)||[]];
-    paths=[...new Set(paths)].filter(p=>ownPublicUrl(p,url)?.href!==base.href&&!!ownPublicUrl(p,url)).slice(0,host(base)==='pumyang.com'?8:options.nonCommerce?5:3);
+    paths=[...new Set(paths)].filter(p=>ownPublicUrl(p,url)?.href!==base.href&&!!ownPublicUrl(p,url)).slice(0,host(base)==='pumyang.com'?8:options.nonCommerce?7:3);
     // Bound per-site concurrency while keeping the existing overall deadline.
     const pending=[...paths];
     await Promise.all(Array.from({length:Math.min(3,paths.length)},async()=>{
       while(pending.length){budgetSignal()?.throwIfAborted();const path=pending.shift()!;const doc=await read(path);if(doc&&!budgetSignal()?.aborted)documents.push(doc);}
     }));
   });}catch{/* The input document still describes the original collection scope. */}
-  return documents.slice(0,host(publicUrl(url))==='pumyang.com'?9:options.nonCommerce?6:4);
+  return documents.slice(0,host(publicUrl(url))==='pumyang.com'?9:options.nonCommerce?8:4);
 }

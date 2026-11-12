@@ -134,7 +134,8 @@ export async function POST(req: NextRequest) {
     ]);
     if(products)websiteData.productContext=products;
     if(communityContext)websiteData.communityContext=communityContext;
-    if(businessDocuments.length)websiteData.businessDocuments=businessDocuments;
+    const sourceDocuments=[...businessDocuments,...siteDiagnostics.pages.filter(p=>!p.noindex).flatMap(p=>p.businessDocument?[p.businessDocument]:[])];
+    websiteData.businessDocuments=sourceDocuments.filter((d,i,a)=>a.findIndex(v=>v.url===d.url)===i).slice(0,9);
     if(siteDiagnostics.medicalAudit)websiteData.medicalAudit=siteDiagnostics.medicalAudit;
     const pageEvidence=capturePageEvidence(websiteData);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);

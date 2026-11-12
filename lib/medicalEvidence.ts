@@ -1,3 +1,4 @@
+import {publicBusinessSections} from './publicBusinessSections';
 import * as cheerio from 'cheerio';
 import type {MedicalPageEvidence,MedicalEvidence} from './medicalAuditSchema';
 import {MEDICAL_PROFILES} from './medicalProfiles';
@@ -15,9 +16,9 @@ export const medicalSensitiveUrl=(value:string)=>{try{return /\/(?:mychart|mypag
 const signals:[string,RegExp][]=[
   ['scope',/진료\s*(?:과목|분야|대상|안내)|검사\s*(?:항목|안내)|시술\s*(?:안내|대상)/],
   ['doctors',/의료진|한의사|치과의사|전문의|원장\s*(?:소개|약력)|담당\s*의사/],
-  ['process',/진료\s*절차|검사\s*준비|초진|접수\s*후|상담\s*후|내원\s*준비|사후\s*관리|회복\s*안내/],
+  ['process',/진료\s*절차|검사\s*준비|입원치료\s*일정|주치의\s*회진|초진(?!기록)|접수\s*후|상담\s*후|내원\s*준비|사후\s*관리|회복\s*안내/],
   ['risk',/부작용|주의사항|금기|제외\s*대상|적용\s*(?:대상|한계)|개인차|위험/],
-  ['cost',/비급여|진료비|비용|보험|급여\s*적용|포함\s*(?:항목|범위)/],
+  ['cost',/금액\s*\(원\)|비급여|진료비|비용|보험|급여\s*적용|포함\s*(?:항목|범위)/],
   ['hours',/진료\s*시간|접수\s*마감|휴진|점심\s*시간|(?:평일|토요일|일요일).{0,30}\d{1,2}(?:시|:)/],
   ['location',/오시는\s*길|도로명|주차|소재지|주소\s*[:：]/],
   ['author',/작성\s*[:：]|검토\s*[:：]|감수\s*[:：]|의학\s*감수|최종\s*(?:검토|수정)|업데이트\s*[:：]/],
@@ -81,7 +82,8 @@ export function captureMedicalEvidence(html:string,url:string,providerOnly=false
   const observed:MedicalPageEvidence['signals']=[];
   const evidence=(text:string,locator:string):MedicalEvidence=>({text:clean(text),locator,url});
   if(!sensitive){
-    for(const [key,re] of signals){const unit=units.find(u=>re.test(u.text));if(unit)observed.push({key,evidence:evidence(unit.text,unit.locator)});}
+    const publicUnits=publicBusinessSections(html).map(s=>({text:s.text,locator:s.heading||'본문'}));
+    for(const [key,re] of signals){const unit=[...publicUnits,...units].filter(u=>re.test(u.text)&&!(key==='process'&&/제증명|기록지|기록사본|진단서/.test(u.text))).sort((a,b)=>Number(b.text.length>=15)-Number(a.text.length>=15))[0];if(unit)observed.push({key,evidence:evidence(unit.text,unit.locator)});}
     for(const profile of MEDICAL_PROFILES){const unit=profile.match.test(identity)?{text:identity,locator:'title / description / h1'}:units.find(u=>/^(?:h1|h2|h3)$/.test(u.locator)&&profile.match.test(u.text));if(unit)observed.push({key:`profile:${profile.id}`,evidence:evidence(unit.text,unit.locator)});}
   }
   const declared=nodes.some(n=>values(n['@type']).map(term).some(t=>FACILITIES.has(t)&&t!=='MedicalOrganization'));

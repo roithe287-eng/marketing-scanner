@@ -16,9 +16,10 @@ export function localPlaceItem(raw:unknown,evidence:LocalPlaceEvidence,url:strin
   if(!raw||typeof raw!=='object')return null;
   const item=raw as Record<string,unknown>,name=clean(item.title,200);if(!name)return null;
   const link=publicLink(item.link),address=clean(item.address,300),roadAddress=clean(item.roadAddress,300);
-  const nameMatch=key(name)===key(evidence.name);
-  const addressMatch=!!evidence.address&&[address,roadAddress].some(a=>key(a).length>=10&&(key(a)===key(evidence.address)||key(evidence.address).includes(key(a))));
+  const addressKey=(s:string)=>key(s).replace(/특별자치시|특별자치도|특별시|광역시/g,'');
+  const addressMatch=!!evidence.address&&[address,roadAddress].some(a=>addressKey(a).length>=10&&addressKey(evidence.address).includes(addressKey(a)));
   const domainMatch=!!link&&sameSite(link,url);
+  const nameMatch=key(name)===key(evidence.name)||(domainMatch&&addressMatch&&key(name).length>=4&&key(evidence.name).endsWith(key(name)));
   const branchMatch=!evidence.branch||key(name).includes(key(evidence.branch));
   const headquarters=evidence.franchise&&!evidence.branch;
   const consistent=nameMatch&&branchMatch&&!headquarters&&(domainMatch||addressMatch);
@@ -31,7 +32,7 @@ export async function collectLocalPlace(evidence:LocalPlaceEvidence|undefined,ur
   const base={observedAt:new Date().toISOString(),queries:[] as string[],items:[] as LocalPlaceItem[]};
   if(limited)return {...base,status:'limited',note:'홈페이지 수집 제한으로 업체 식별과 API 조회를 보류했습니다.'};
   const id=process.env.NAVER_CLIENT_ID,secret=process.env.NAVER_CLIENT_SECRET;
-  if(!id||!secret)return {...base,status:'unavailable',note:'지역 검색 API 연결이 준비되지 않아 업체 정보를 조회하지 못했습니다. 미조회는 미등록을 뜻하지 않습니다.'};
+  if(!id||!secret)return {...base,status:'unavailable',note:'지역 검색 API 인증정보 미설정'};
   const queries=localPlaceQueries(evidence);
   const requests=queries.map(async query=>{
     const endpoint=new URL('https://openapi.naver.com/v1/search/local.json');
@@ -45,8 +46,8 @@ export async function collectLocalPlace(evidence:LocalPlaceEvidence|undefined,ur
     });
   });
   const results=await Promise.allSettled(requests),success=results.filter((r):r is PromiseFulfilledResult<LocalPlaceItem[]>=>r.status==='fulfilled');
-  if(!success.length)return {...base,queries,status:'error',note:'API 응답·시간 제한으로 조회하지 못했습니다. 미조회는 미등록을 뜻하지 않습니다.'};
+  if(!success.length)return {...base,queries,status:'error',note:'지역 검색 API 응답 오류·시간 초과'};
   const unique=new Map<string,LocalPlaceItem>();for(const result of success)for(const item of result.value){const k=key(item.name)+'|'+key(item.roadAddress||item.address);if(!unique.has(k))unique.set(k,item);}
   const items=[...unique.values()].sort((a,b)=>Number(b.match==='consistent')-Number(a.match==='consistent')).slice(0,5);
-  return {...base,queries,items,status:items.length?'observed':'empty',note:(items.length?'동일 상호나 다른 지점이 포함될 수 있습니다. 이름·주소·홈페이지를 함께 확인하세요.':'이 검색 표본에서 업체를 찾지 못했습니다. 미등록·미노출로 단정하지 말고 상호·지점명으로 직접 확인하세요.')+(success.length<results.length?' 일부 검색어는 응답을 확인하지 못했습니다.':'')};
+  return {...base,queries,items,status:items.length?'observed':'empty',note:(items.length?'업체명·주소·홈페이지 대조 결과':'조회 결과 0건 · 검색어 확인 필요')+(success.length<results.length?' 일부 검색어는 응답을 확인하지 못했습니다.':'')};
 }

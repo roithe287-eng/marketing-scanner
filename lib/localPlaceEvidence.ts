@@ -1,3 +1,4 @@
+import {publicBusinessSections} from './publicBusinessSections';
 import * as cheerio from 'cheerio';
 import {PLACE_DETECTION_ORDER,placeSector} from './localPlaceCatalog';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
@@ -50,7 +51,7 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   const lines=root.text().slice(0,30000).split(/\n+/u).map(v=>clean(v,700)).filter(Boolean);
   const text=lines.join(' ');
   const positive=lines.filter(v=>!/(?:불가|미제공|하지\s*않|취급하지|시행하지|운영하지|서비스\s*종료)/u.test(v)).join(' ');
-  const address=addressText(entity?.address)||clean($('address,[itemprop="address"]').first().text(),300)||clean(text.match(/(?:서울(?:특별시)?|부산(?:광역시)?|대구(?:광역시)?|인천(?:광역시)?|광주(?:광역시)?|대전(?:광역시)?|울산(?:광역시)?|세종(?:특별자치시)?|경기(?:도)?|강원(?:특별자치도)?|충청[남북]도|전[라북남특별자치]+도|경상[남북]도|제주(?:특별자치도)?)\s+[가-힣]+(?:시|군|구)\s+[^|\n]{3,65}/u)?.[0],150);
+  const address=addressText(entity?.address)||clean($('address,[itemprop="address"]').first().text(),300)||clean(lines.join('\n').match(/(?:서울(?:특별시)?|부산(?:광역시)?|대구(?:광역시)?|인천(?:광역시)?|광주(?:광역시)?|대전(?:광역시)?|울산(?:광역시)?|세종(?:특별자치시)?|경기(?:도)?|강원(?:특별자치도)?|충청[남북]도|전[라북남특별자치]+도|경상[남북]도|제주(?:특별자치도)?)\s+[가-힣]+(?:시|군|구)\s+[^|\n]{3,65}/u)?.[0],150);
   const physical=!!address||!!links.length||!!entities.length||/오시는\s*길|매장\s*(?:안내|찾기)|방문\s*상담|주차|찾아오시는/.test(text);
   if(!physical&&/쇼핑몰|온라인\s*(?:전용|전문)|인터넷\s*쇼핑/.test(identity+' '+description))return;
   const name=clean(entity?.name,120)||siteName||clean(title.split(/[|｜–—]|\s-\s|::/)[0],120)||clean(h1,120);
@@ -64,8 +65,9 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   for(const term of ['어린이','가족','단체','직장인','초보','입문','소형견','대형견','고양이','강아지','기업'])if(positive.includes(term))add('고객·목적',term);
   if(branch)add('지역·지점',branch);
   const region=address.match(/^[가-힣]+\s+[가-힣]+(?:시|군|구)/u)?.[0];if(region)add('지역·지점',region);
-  const specs:[string,string,RegExp][]=[['offer','상품·서비스 설명',new RegExp(sector.services.join('|'),'i')],['hours','운영시간 안내',/영업시간|진료시간|운영시간|휴무|브레이크타임|라스트오더/],['price','가격·비용 안내',/가격|요금|비용|상담료|수강료|[\d,]+\s*원/],['visit','방문·주차 안내',/주차|오시는\s*길|찾아오시는|휠체어/],['booking','예약·문의 안내',/예약|방문\s*상담|문의|연락처/],['conditions','이용·취소 조건',/취소|환불|준비\s*(?:서류|사항|물)|이용\s*조건|포함|불포함/]];
-  const signals=specs.flatMap(([key,label,re])=>{const line=lines.find(v=>re.test(v));if(!line)return [];const at=line.search(re);return [{key,label,excerpt:line.slice(Math.max(0,at-35),at+110).trim()}];});
+  const specs:[string,string,RegExp][]=[['offer','상품·서비스 설명',new RegExp(sector.services.join('|'),'i')],['hours','운영시간 안내',/영업시간|진료시간|운영시간|휴무|브레이크타임|라스트오더/],['price','가격·비용 안내',/가격|요금|비용|비급여|진료비|금액\s*\(원\)|상담료|수강료|[\d,]+\s*원/],['visit','방문·주차 안내',/주차|오시는\s*길|찾아오시는|휠체어/],['booking','예약·문의 안내',/예약|방문\s*상담|문의|연락처/],['conditions','이용·취소 조건',/취소|환불|준비\s*(?:서류|사항|물)|이용\s*조건|포함|불포함/]];
+  const detailed=publicBusinessSections(html).map(s=>s.text);
+  const signals=specs.flatMap(([key,label,re])=>{const line=[...detailed,...lines].filter(v=>re.test(v)).sort((a,b)=>Number(b.length>=15)-Number(a.length>=15)||Number(/\d/.test(b))-Number(/\d/.test(a)))[0];if(!line)return [];const at=line.search(re);return [{key,label,excerpt:line.slice(Math.max(0,at-35),at+110).trim()}];});
   const images=root.find('img').slice(0,200).toArray();
   const seasonal=captureSeasonalEvidence({sector:sector.id,identity,description,headings:root.find('h2,h3').slice(0,20).toArray().map(e=>clean($(e).text(),160)),lines});
   return {...(seasonal?{seasonal}:{}),sector:sector.id,name,identity,address,branch,franchise,links,terms,signals,media:{images:images.length,described:images.filter(e=>!!clean($(e).attr('alt'))).length,videos:Math.min(100,root.find('video,iframe[src*="youtube"],iframe[src*="vimeo"]').length)}};

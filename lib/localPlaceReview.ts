@@ -21,8 +21,12 @@ export function buildLocalPlaceReview(diagnostics?:SiteDiagnostics|null){
     booking:['예약·문의','실제 이용 가능한 예약 또는 문의 경로를 연결하고 홈페이지에서도 같은 절차를 안내하세요.'],
     conditions:['이용 조건','취소·환불·대상·준비사항 등 방문 전 필요한 조건을 상품·서비스와 함께 설명하세요.'],
   };
-  const checks=Object.entries(info).map(([key,[label,action]])=>{const page=pages.find(p=>p.localPlaceEvidence!.signals.some(s=>s.key===key));const signal=page?.localPlaceEvidence!.signals.find(s=>s.key===key);return {key,label,status:signal?'홈페이지 문구 관측':'표본에서 미확인',excerpt:signal?.excerpt||'수집 표본에서 관련 표현을 확인하지 못했습니다. 실제 누락 여부는 원문에서 확인하세요.',url:page?.url||root.url,action};});
-  const lookup:LocalPlaceLookup=diagnostics.localPlaceLookup||{status:'not_queried',observedAt:diagnostics.observedAt,queries:[],items:[],note:'저장된 보고서에는 API 조회가 없습니다. 같은 URL로 새로 진단하면 업체 검색을 수행합니다.'};
+  const lookup:LocalPlaceLookup=diagnostics.localPlaceLookup||{status:'not_queried',observedAt:diagnostics.observedAt,queries:[],items:[],note:'저장된 보고서에 API 조회 기록 없음'};
+  const checks=Object.entries(info).map(([key,[label,action]])=>{
+    const hits=pages.flatMap(p=>(p.localPlaceEvidence?.signals||[]).filter(s=>s.key===key).map(s=>({signal:s,url:p.url}))).sort((a,b)=>Number(b.signal.excerpt.length>=20)-Number(a.signal.excerpt.length>=20)||b.signal.excerpt.length-a.signal.excerpt.length);
+    const hit=hits[0],item=key==='visit'?lookup.items.find(i=>i.match==='consistent'&&(i.roadAddress||i.address)):undefined;
+    return {key,label,status:hit?'홈페이지 확인':item?'네이버 API 확인':'수집된 근거 없음',excerpt:hit?.signal.excerpt||(item?item.roadAddress||item.address:'수집된 근거 없음'),url:hit?.url||item?.mapUrl||root.url,action};
+  });
   const seasonal=buildSeasonalPlaceReview(evidence,root.url,lookup.observedAt);
   return {evidence,sector,terms,checks,lookup,seasonal,page:{url:root.url,title:root.title,description:root.description},policies:[...placePolicies(sector.id),...(seasonal?SEASONAL_PLACE_POLICIES:[])],reviewedOn:PLACE_POLICY_REVIEWED,apiDoc:PLACE_API_DOC,
     steps:[

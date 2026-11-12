@@ -1671,3 +1671,5 @@ button,input,textarea,select { font-family:inherit; }
 .medical-checks .naver-check-body>p{line-height:1.85}
 .medical-audit .naver-badge{white-space:nowrap}
 @media(max-width:700px){.medical-profile-grid{grid-template-columns:1fr}.medical-classification{padding:14px}.medical-audit .report-card-heading{flex-wrap:wrap}}
+
+.service-fact-title{text-decoration-color:#9eb1cd;text-decoration-thickness:2px;text-underline-offset:.32em;}

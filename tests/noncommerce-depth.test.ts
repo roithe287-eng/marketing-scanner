@@ -67,7 +67,7 @@ test('only observed public links are followed with robots, count and concurrency
   let active=0,max=0;const requests:string[]=[];
   t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>{requests.push(String(input));active++;max=Math.max(max,active);await new Promise(r=>setTimeout(r,5));active--;return new Response('<title>상세 업무 안내</title><main><p>대상과 제공 업무의 범위를 확인하고 진행 절차와 실제 조건을 안내합니다.</p></main>',{headers:{'content-type':'text/html'}});});
   const options={seed:captureBusinessDocument(html,url),links,nonCommerce:true,robots:{url:url+'robots.txt',status:'ok' as const,text:'User-agent: *\nAllow: /\nDisallow: /pricing',observedAt:new Date().toISOString()}};
-  const docs=await collectBusinessDocuments(url,options);assert.equal(requests.length,4);assert.equal(docs.length,5);assert.ok(max<=3);assert.ok(!requests.some(u=>u.includes('pricing')));
+  const docs=await collectBusinessDocuments(url,options);assert.equal(requests.length,5);assert.equal(docs.length,6);assert.ok(max<=3);assert.ok(!requests.some(u=>u.includes('pricing')));
   requests.length=0;assert.equal((await collectBusinessDocuments(url,{...options,nonCommerce:false})).length,1);assert.equal(requests.length,0);
 });
 

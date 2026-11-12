@@ -97,8 +97,8 @@ export const SECTOR_PROFILES:Profile[]=[
     checks:[
       check('scope','진료 과목·대상',/진료\s*과목|진료\s*분야|진료\s*대상|치료|검사|시술/,'해당 병의원의 실제 진료 범위와 대상·제외 조건을 확인하세요.'),
       check('proof','의료진·운영 주체',/의료진|원장|전문의|의사|약력|경력/,'의료진의 실제 역할·이력을 확인하고 관측 문구를 검증된 자격으로 단정하지 마세요.'),
-      check('process','진료 절차·준비사항',/진료\s*절차|검사\s*전|내원|준비\s*사항|준비물|초진/,'예약·내원·검사·진료의 실제 순서와 방문 전 준비사항을 연결하세요.'),
-      check('price','비용·적용 조건',/비급여|급여|진료비|검사비|시술비|비용/,'관측된 비용의 적용 대상·포함 범위·별도 확인 조건을 담당 자료와 대조하세요.'),
+      check('process','진료 절차·준비사항',/진료\s*절차|입원치료\s*일정|주치의\s*회진|검사\s*전|내원|준비\s*사항|준비물|초진(?!기록)/,'예약·내원·검사·진료의 실제 순서와 방문 전 준비사항을 연결하세요.'),
+      check('price','비용·적용 조건',/비급여|급여|진료비|검사비|시술비|비용|금액\s*\(원\)/,'관측된 비용의 적용 대상·포함 범위·별도 확인 조건을 담당 자료와 대조하세요.'),
       check('location','진료 시간·위치',/진료\s*시간|휴진|점심\s*시간|오시는\s*길|주소|주차/,'진료 시간·휴진·위치·주차 안내를 현재 운영 정보와 대조하세요.'),
       check('contact','예약·문의·정보 안내',/예약|접수|문의|개인정보/,'예약 접수와 확정의 차이, 실제 연결 경로와 입력 정보 안내를 확인하세요.'),
     ],questions:[
@@ -169,7 +169,7 @@ export function sectorTopicPatterns(id:NonCommerceSector['id']):RegExp[]{
 }
 
 /** Page title/H1/description lead; a footer or URL keyword alone cannot classify a page. */
-export function analyzeNonCommerceSector(units:SectorEvidence[],actions:SectorEvidence[]):NonCommerceSector|undefined{
+export function analyzeNonCommerceSector(units:SectorEvidence[],actions:SectorEvidence[],supplemental:SectorEvidence[]=[]):NonCommerceSector|undefined{
   const primary=(u:SectorEvidence)=>u.locator==='head > title'?16:u.locator==='h1'?12:u.locator==='meta[name="description"]'?10:0;
   const candidates=SECTOR_PROFILES.map((p,index)=>{
     const evidence=units.filter(u=>p.match.test(u.text));
@@ -183,8 +183,8 @@ export function analyzeNonCommerceSector(units:SectorEvidence[],actions:SectorEv
   const p=selected.p;
   return NonCommerceSectorSchema.parse({version:1,id:p.id,label:p.label,evidence:selected.evidence.slice(0,4),journey:p.journey,questions:p.questions,caution:p.caution,
     checks:p.checks.map(c=>{
-      const rank=(u:SectorEvidence)=>(actions.includes(u)?(c.id==='contact'?12:0):primary(u)?1:u.locator==='h2'?2:8)-(u.text.length>300?5:0)-(/사무소.{0,180}사무소|(?:로|길)\s*\d/.test(u.text)?20:0);
-      const evidence=[...units,...actions].filter(u=>c.match.test(u.text)).sort((a,b)=>rank(b)-rank(a)).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3).map(u=>{
+      const rank=(u:SectorEvidence)=>(c.id==='proof'&&/^[가-힣]{2,4}\s*(?:대표)?(?:병원장|원장|변호사|강사)$/.test(u.text)?20:0)+(c.id==='contact'&&u.locator.includes('입력 항목')?20:0)+(u.text.length>=15?3:0)+(/^(?:전|현)\)/.test(u.text)?-3:0)+(actions.includes(u)?(c.id==='contact'?12:0):primary(u)?1:u.locator==='h2'?2:8)-(u.text.length>300?5:0)-(/사무소.{0,180}사무소|(?:로|길)\s*\d/.test(u.text)?20:0);
+      const evidence=[...supplemental,...units,...actions].filter(u=>c.match.test(u.text)&&!(c.id==='process'&&/제증명|기록지|기록사본|진단서/.test(u.text))).sort((a,b)=>rank(b)-rank(a)).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3).map(u=>{
         if(u.text.length<=240)return u;
         const start=Math.max(0,u.text.search(c.match)-45);return {...u,text:u.text.slice(start,start+240)};
       });

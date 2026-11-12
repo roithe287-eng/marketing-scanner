@@ -1,3 +1,4 @@
+import {sameSite} from './siteIdentity';
 import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {NonCommerceSectorSchema,analyzeNonCommerceSector,sectorActionPattern} from './nonCommerceSectors';
@@ -80,7 +81,9 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const genericCandidate=structuredKind||(['public_service','content','education','organization','service'] as const)
     .filter(k=>matched[k].length>=2||(matched[k].some(u=>primaryWeight(u)>0)&&(k!=='service'||actions.some(a=>Object.values(actionPatterns).some(re=>re.test(a.text))))))
     .sort((a,b)=>purposeScore(b)-purposeScore(a))[0];
-  const sectorCandidate=analyzeNonCommerceSector(units,actions);
+  const supplemental=(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&sameSite(d.url,data.finalUrl||data.url)).flatMap(d=>d.sections.map(s=>({text:short(s.text),locator:d.url}))).filter(u=>u.text.length>=4);
+  const checkUnits=[...supplemental,...units].filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i);
+  const sectorCandidate=analyzeNonCommerceSector(units,actions,supplemental);
   const sectorPrimary=sectorCandidate?.evidence.reduce((n,u)=>n+primaryWeight(u),0)||0;
   const informative=genericCandidate&&['content','education','public_service'].includes(genericCandidate)&&purposeScore(genericCandidate)>=sectorPrimary;
   const competingPrimary=!sectorPrimary&&genericCandidate&&matched[genericCandidate].some(u=>primaryWeight(u)>0);
@@ -97,11 +100,11 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const evidence=(business?business.evidence:structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?matched[candidate]:units).slice(0,commerce?6:8);
   if(commerce&&evidence.length<8)evidence.push(...purchase.slice(0,8-evidence.length));
   const pricingPattern=/가격|비용|요금|견적|유료|무료|수강료|구독료|수수료|참가비|pricing|fees|\bcost\b/i;
-  const pricingObserved=units.some(u=>pricingPattern.test(u.text));
+  const pricingObserved=checkUnits.some(u=>pricingPattern.test(u.text));
   const pricingApplies=commerce||['service','education','unknown'].includes(kind)||(kind==='organization'&&pricingObserved)||(kind==='content'&&units.some(u=>/구독료|유료\s*구독/.test(u.text)))||(kind==='public_service'&&units.some(u=>/신청\s*수수료|참가비/.test(u.text)));
   const checks:WebsitePurpose['checks']=[];
   const check=(id:string,label:string,re:RegExp,guide:string,applicable=true)=>{
-    const found=units.filter(u=>re.test(u.text)).slice(0,3);
+    const found=checkUnits.filter(u=>re.test(u.text)).slice(0,3);
     checks.push({id,label,status:!applicable?'not_applicable':found.length?'observed':'review',evidence:found,guide});
   };
   check('audience','대상과 제공 가치',/대상|위한|제공|해결|소개|전문|목적|\bfor\b|help|provide/i,'누구를 위한 어떤 정보·업무인지 원문과 실제 제공 범위를 대조하세요. 미감지를 실제 부재로 단정하지 않습니다.');
