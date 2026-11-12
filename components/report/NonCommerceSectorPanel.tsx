@@ -10,15 +10,15 @@ export default function NonCommerceSectorPanel({purpose}:{purpose:WebsitePurpose
     <div className="sector-journey" aria-label="업종별 정보 탐색 흐름">{sector.journey.map((stage,i)=><div key={stage}><span>{String(i+1).padStart(2,'0')}</span><strong>{stage}</strong>{i<2&&<b aria-hidden="true">→</b>}</div>)}</div>
     <div className="sector-check-grid">{sector.checks.map(c=><details key={c.id} className={`sector-check reading-fold sector-check-${c.status}`}>
       <summary className="reading-summary"><span className="reading-caption"><strong>{c.label}</strong>
-        <span className="sector-status">{c.status==='observed'?'문구 확인':'보강 검토'}</span></span><ReadingToggle/></summary>
+        <span className="sector-status">{c.status==='observed'?'문구 확인':'근거 미수집'}</span></span><ReadingToggle/></summary>
       <div className="reading-body">
         <div className="sector-current"><span>홈페이지에서 읽은 내용</span>{c.evidence.length
-          ? c.evidence.map((e,i)=><blockquote key={i}>{e.text}</blockquote>)
-          : <p>연결할 문구를 수집하지 못했습니다. 실제 안내 화면과 먼저 대조하세요.</p>}</div>
-        <div className="sector-next"><span>연결할 개선 방향</span><p>{c.guide}</p></div>
+          ? c.evidence.map((e,i)=><blockquote key={i}>{e.text}{/^https?:\/\//.test(e.locator)&&<a href={e.locator} target="_blank" rel="noopener noreferrer"> 원문 ↗</a>}</blockquote>)
+          : <p>수집된 근거 없음</p>}</div>
+
       </div>
     </details>)}</div>
     <div className="sector-goal"><div><span>실제로 이어질 행동</span><strong>{purpose.goal.label}</strong></div><p>{purpose.goal.observed?purpose.goal.evidence.map(e=>e.text).join(' · '):'상담·예약·신청 중 실제 제공하는 경로와 완료 기준을 확인하세요.'}</p></div>
-    <p className="sector-scope">입력 페이지의 문구 관측입니다. 항목 수는 품질 점수·성과·법적 적합성 판정이 아닙니다. {sector.caution}</p>
+
   </section>;
 }

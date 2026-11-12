@@ -15,7 +15,7 @@ const channel=z.object({id:z.string(),label:text,role:text,setup:text,creative:t
 export const ServiceStrategySchema=z.object({
   version:z.literal(1),industry:z.enum(['logistics','noncommerce']),targetUrl:z.string().url(),capturedAt:z.string().datetime(),
   basis:z.literal('source-backed-playbook'),summary:text,notice:text,sources:z.array(source).max(24),
-  findings:z.array(z.object({title:text,observed:text,interpretation:text,action:text,evidence:z.array(source).max(3)})).max(5),
+  findings:z.array(z.object({title:text,observed:text,interpretation:z.string().max(1200),action:z.string().max(1200),evidence:z.array(source).max(3)})).max(6),
   segments:z.array(segment).min(1).max(5),channels:z.array(channel).max(4),
   funnel:z.array(z.object({stage:text,event:text,definition:text,check:text})).max(6),
   metrics:z.array(z.object({name:text,formula:text,required:text,interpretation:text})).max(6),

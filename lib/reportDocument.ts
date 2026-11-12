@@ -56,15 +56,15 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
     blocks.push({kind:'body',text:`분석 방향: ${opening.purpose} · 다음 행동: ${opening.goal}`});
     const sector=report.sitePurpose?.sector;
     if(sector){blocks.push({kind:'heading',text:`${sector.label} · 업종 맞춤 진단`},{kind:'body',text:sector.journey.join(' → ')},{kind:'body',text:'입력 URL의 관련 문구 관측입니다. 항목 수는 품질 점수·성과·법적 적합성 판정이 아닙니다.'});
-      for(const c of sector.checks){blocks.push({kind:'subheading',text:`${c.label} · ${c.status==='observed'?'문구 확인':'보강 검토'}`},{kind:'body',text:`개선 방향: ${c.guide}`});for(const e of c.evidence)blocks.push({kind:'body',text:`원문: ${e.text}`});}
-      blocks.push({kind:'body',text:sector.caution});
+      for(const c of sector.checks){blocks.push({kind:'subheading',text:`${c.label} · ${c.status==='observed'?'문구 확인':'근거 미수집'}`});for(const e of c.evidence)blocks.push({kind:'body',text:`원문: ${e.text}`});}
+
     }
     blocks.push(...buildAnswerContentDocument(report,true));
   }
-  if(report.sitePurpose){const p=report.sitePurpose;blocks.push({kind:'heading',text:'페이지 목적별 분석'},{kind:'body',text:`분류 후보: ${p.label} · 다음 행동 후보: ${p.goal.label}`},{kind:'body',text:p.note},{kind:'body',text:`원문 ${p.sourceUrl} · 수집 ${p.capturedAt||'미기록'}`});for(const c of p.checks){blocks.push({kind:'subheading',text:c.label+' · '+({observed:'원문 신호 확인',review:'추가 확인',not_applicable:'해당 없음'}[c.status])},{kind:'body',text:c.guide});for(const e of c.evidence)blocks.push({kind:'body',text:`원문: ${e.text} · 위치: ${e.locator}`});}}
+  if(report.sitePurpose){const p=report.sitePurpose;blocks.push({kind:'heading',text:'페이지 목적별 분석'},{kind:'body',text:`분류 후보: ${p.label} · 다음 행동 후보: ${p.goal.label}`},{kind:'body',text:`원문 ${p.sourceUrl} · 수집 ${p.capturedAt||'미기록'}`});for(const c of p.checks){blocks.push({kind:'subheading',text:c.label+' · '+({observed:'원문 신호 확인',review:'추가 확인',not_applicable:'해당 없음'}[c.status])});for(const e of c.evidence)blocks.push({kind:'body',text:`원문: ${e.text} · 위치: ${e.locator}`});}}
   if(report.sitePurpose?.community){const c=report.sitePurpose.community;blocks.push({kind:'subheading',text:`커뮤니티 공개 페이지 표본 ${c.pages.length}개`});for(const page of c.pages)blocks.push({kind:'body',text:`${page.pageType} · ${page.title} · ${page.url}`,href:safeHttpUrl(page.url)||undefined});for(const attempt of c.attempts.filter(a=>a.status!=='observed'))blocks.push({kind:'body',text:`추가 확인 필요: ${attempt.url} · ${attempt.note}`});}
   blocks.push(...buildServiceStrategyDocument(report.serviceStrategy));
-  if(report.productContext&&showProductCollection(report.sitePurpose)){const p=report.productContext;blocks.push({kind:'heading',text:p.sources.length?`상품 정보 보완 · 공개 상품 표본 ${p.sources.length}개`:'상품 정보 수집 범위와 확인 상태'},{kind:'body',text:p.note});for(const s of p.sources)blocks.push({kind:'body',text:s.name+' · '+s.url,href:safeHttpUrl(s.url)||undefined});}
+  if(report.productContext&&showProductCollection(report.sitePurpose)){const p=report.productContext;blocks.push({kind:'heading',text:p.sources.length?`상품 정보 보완 · 공개 상품 표본 ${p.sources.length}개`:'상품 정보 수집 범위와 확인 상태'});for(const s of p.sources)blocks.push({kind:'body',text:s.name+' · '+s.url,href:safeHttpUrl(s.url)||undefined});}
   blocks.push({kind:'heading',text:'광고비·목표 CPA 시나리오'},{kind:'body',text:AD_BUDGET_NOTE+' 화면 입력값은 저장되지 않습니다. CPA=광고비÷전환 수, 목표 예산=직접 정한 목표 CPA×현재 전환 수입니다. 절감 효과 예측이 아닙니다.'});
   if(report.integrity){blocks.push({kind:'heading',text:'결과의 근거와 검증 범위'},{kind:'body',text:report.integrity.note});for(const warning of report.integrity.warnings)blocks.push({kind:'body',text:warning.message});}
   if(report.analysisWarnings?.length)for(const warning of report.analysisWarnings)blocks.push({kind:'body',text:`부가 분석 확인 필요: ${warning.label} · ${warning.status}`});

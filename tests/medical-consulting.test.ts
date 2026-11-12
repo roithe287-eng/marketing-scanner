@@ -103,6 +103,6 @@ test('saved report and document use provider criteria and discard patient-care r
   const text=buildReportDocument(report).map(b=>b.text).join('\n');
   const offer=buildContentFacets(buildSourceLibrary(report)).find(f=>f.id==='offer')!;
   assert.ok(offer.evidence.some(e=>e.text.includes('컨설팅')));assert.ok(offer.evidence.every(e=>!/회원 가입 의사|개인정보를 처리/.test(e.text)));
-  for(const check of report.sitePurpose!.sector!.checks)assert.ok(text.includes(check.guide));
+  for(const check of report.sitePurpose!.sector!.checks){assert.ok(text.includes(check.label));for(const e of check.evidence)assert.ok(text.includes(e.text));}
   assert.ok(text.includes('병원 컨설팅·마케팅'));assert.ok(text.includes('병원명 / 지역'));
 });

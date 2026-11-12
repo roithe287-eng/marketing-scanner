@@ -1,5 +1,5 @@
 import type {ExtractedWebsiteData} from './extractWebsite';
-import {analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
+import {analyzeWebsitePurpose,isNonCommerce,type WebsitePurpose} from './websitePurpose';
 import type {ServiceStrategy} from './serviceStrategy';
 import {isConsentBoilerplate} from './contentBoilerplate';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
@@ -14,6 +14,15 @@ export function nonCommerceSources(data:ExtractedWebsiteData):StrategySource[]{
   // Metadata may anchor a sparse-page proposal, never a factual body answer.
   if(!candidates.length)candidates.push({url,title:'입력 페이지 제목·설명',text:[data.title,data.description].filter(Boolean).join(' · ').slice(0,600)});
   return candidates.filter(s=>s.text.trim().length>=4&&s.text.length<=600&&!isConsentBoilerplate(s.text)&&!/후기|testimonial|REVIEW_ONLY/i.test(s.title)).filter((s,i,a)=>a.findIndex(v=>v.text===s.text)===i).sort((a,b)=>Number(b.url!==url)-Number(a.url!==url)||Number(b.text.length>=40)-Number(a.text.length>=40)).slice(0,24);
+}
+
+export function buildStrategyFindings(p:WebsitePurpose,sources:StrategySource[],url:string):ServiceStrategy['findings']{
+  const eligibleChecks=p.checks.filter(c=>c.status!=='not_applicable').slice(0,6);
+  const findings=eligibleChecks.map(c=>({
+    title:c.label,observed:(c.evidence.length?c.evidence.map(e=>e.text).join(' / '):'수집된 근거 없음').slice(0,1100),interpretation:'',action:'',
+    evidence:c.evidence.map(e=>({url:/^https?:\/\//.test(e.locator)?e.locator:sources.find(s=>s.text.includes(e.text))?.url||url,title:c.label,text:e.text.slice(0,600)})).slice(0,3),
+  }));
+  return findings;
 }
 
 /** Purpose-specific decisions, grounded in bounded own-source observations. No inferred score changes. */
@@ -36,12 +45,11 @@ export function buildNonCommerceStrategy(data:ExtractedWebsiteData):ServiceStrat
     const {match,...rest}=s;
     return {...rest,evidence,...(landing?{landingUrl:landing}:{}),diagnosis:hits.length?'해당 판단 단계와 관련된 자사 문구를 확인했습니다. 이 문구가 질문에 충분히 답하는지, 실제 다음 행동으로 연결되는지는 상세 화면에서 대조하세요.':'이번 원문 표본에서 이 단계의 직접적인 설명을 확보하지 못했습니다. 아래 인용은 업종·주제를 식별한 근거이며 해당 기능·절차의 존재를 의미하지 않습니다.',landingBlocks:[`${noun}의 목적·적용 범위를 설명하는 첫 문단`,`${prep} 확인 항목`,'실제 제공·제외 범위 또는 적용 조건',`${book.proof}의 원자료 링크`,'진행 절차·변경 조건·최종 확인일',`다음 행동: ${book.cta} 버튼과 이후 안내`],cta:book.cta,metric:`단계별 이동률과 ${end}의 연결 여부 · 실제 데이터 확인 필요`};
   });
-  const eligibleChecks=p.checks.filter(c=>c.status!=='not_applicable').slice(0,5);
-  const findings=eligibleChecks.map(c=>({title:c.label,observed:bounded(c.evidence.length?c.evidence.map(e=>e.text).join(' / '):'입력 페이지의 수집 범위에서 해당 문구를 확보하지 못했습니다.'),interpretation:c.evidence.length?'관련 문구를 관측했지만 안내의 완결성·최신성·동작까지 검증한 것은 아닙니다. 사용자가 결정을 위해 필요한 조건을 이 영역에서 이해할 수 있는지 대조하세요.':'미확인은 실제 부재가 아닙니다. 상세 페이지·동적 화면·별도 안내를 먼저 확인하고 설명이 필요한 부분을 정하세요.',action:bounded(c.guide+' 수정 위치: 관련 상세 본문과 다음 행동 안내 사이. 완료 확인: 원문 조건과 화면·연결 경로를 함께 대조합니다.'),evidence:c.evidence.map(e=>({url:sources.find(s=>s.text.includes(e.text))?.url||url,title:c.label,text:e.text.slice(0,600)})).slice(0,3)}));
+  const findings=buildStrategyFindings(p,sources,url);
   const endEvent=information?'meaningful_followup':education?'participation_confirmed':book.id==='medical'?'attendance_confirmed':'outcome_confirmed';
   return {version:1,industry:'noncommerce',targetUrl:url,capturedAt:data.seoEvidence?.capturedAt||new Date().toISOString(),basis:'source-backed-playbook',
     summary:`${book.label} 관점에서 입력 페이지와 자사 상세 원문을 검토했습니다. ${book.stages.join(' → ')} 흐름에 맞춰 설명·검색·콘텐츠·이용 행동을 연결합니다. 아래 세 그룹은 관측된 서비스 개수가 아닌 고객 판단 단계별 전략 가설입니다.`,
-    notice:bounded('자사 원문 인용과 마케팅 제안을 구분했습니다. 검색량·광고 계정·전환 성과·AI 브리핑 인용은 측정하지 않았습니다. '+book.caution),sources,segments,findings,
+    notice:bounded('실행 제안 · '+book.caution),sources,segments,findings,
     briefingPlan:buildNonCommerceBriefing(book,sources),
     channels:[
       {id:'search',label:'검색 유입·검색 광고',role:`${book.label}의 실제 질문을 관련 상세 안내에 연결`,setup:`탐색·비교·행동 의도의 검색어를 분리하고 ${prep}에 맞는 페이지로 연결하세요. 브랜드 검색과 일반 주제 검색은 따로 봅니다. 유료 집행은 운영 목적·검색 수요·예산 확인 후 선택합니다.`,creative:`${book.label} + 확인할 조건 + ${book.cta} 문구를 문구의 출발점으로 검토합니다. 실제 제공하지 않는 분야나 지역을 확장하지 않습니다.`,conversion:`클릭과 ${end} 여부를 같은 성과로 계산하지 않습니다. 외부 신청·예약 시스템은 완료 데이터 연결 여부부터 확인하세요.`,review:'검색량·단가는 미측정입니다. 실제 검색어 보고서의 무관한 의도를 구분하고 유효한 정보 탐색어를 일괄 제외하지 마세요.'},

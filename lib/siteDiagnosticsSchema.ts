@@ -1,3 +1,4 @@
+import {BusinessDocumentSchema} from './businessContext';
 import {z} from 'zod';
 import {MedicalPageEvidenceSchema,MedicalAuditSchema} from './medicalAuditSchema';
 import {LocalPlaceEvidenceSchema,LocalPlaceLookupSchema} from './localPlaceSchema';
@@ -8,6 +9,7 @@ export const DiagnosticFindingSchema=z.object({
   evidence:z.string().max(2500),action:z.string().max(1500),urls:z.array(HttpUrl).max(8),
 });
 export const DiagnosticPageSchema=z.object({
+  businessDocument:BusinessDocumentSchema.optional(),
   localPlaceEvidence:LocalPlaceEvidenceSchema.optional(),
   medicalEvidence:MedicalPageEvidenceSchema.optional(),
   url:HttpUrl,title:z.string().max(500),description:z.string().max(1500),

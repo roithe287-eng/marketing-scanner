@@ -47,9 +47,9 @@ for(const item of sectorCases)test(`URL-backed sector classification, report, qu
   const before=JSON.stringify(report),$=render(report);
   assert.equal($('.sector-check').length,6);assert.equal($('.sector-journey>div').length,3);assert.equal($('.report-hero-score').length,0);
   assert.match($('.report-hero-purpose').text(),new RegExp(sector.label.replace(/[·]/g,'.')));
-  for(const c of sector.checks){assert.ok($('.sector-check-grid').text().includes(c.label));assert.ok($('.sector-check-grid').text().includes(c.guide));}
+  for(const c of sector.checks){assert.ok($('.sector-check-grid').text().includes(c.label));for(const e of c.evidence)assert.ok($('.sector-check-grid').text().includes(e.text));}
   assert.equal($('#report-view-overview-main .report-radar').length,0);assert.equal($('#report-view-overview-questions .answer-content').length,1);
-  const blocks=buildReportDocument(report);for(const c of sector.checks){assert.ok(blocks.some(b=>b.text.includes(c.guide)));for(const e of c.evidence)assert.ok(blocks.some(b=>b.text.includes(e.text)));}
+  const blocks=buildReportDocument(report);for(const c of sector.checks){for(const e of c.evidence)assert.ok(blocks.some(b=>b.text.includes(e.text)));}
   const summary=buildReportSummaryPage(report,measure);assert.ok(summary.lines.some(l=>l.text.includes(sector.label)));
   for(const p of [summary,...buildVisualPdfPages(report,measure)])for(const l of p.lines){assert.ok(l.x>=47&&l.x+l.width<=743,l.text);assert.ok(l.y+l.lineHeight<=1045,l.text);}
   assert.equal(JSON.stringify(report),before,'UI/export do not mutate observations');

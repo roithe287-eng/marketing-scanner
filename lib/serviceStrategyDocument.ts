@@ -1,3 +1,4 @@
+import {serviceFindingPresentation} from './serviceFindingPresentation';
 import type {ServiceStrategy} from './serviceStrategy';
 import type {ReportBlock} from './reportDocument';
 import {buildLogisticsBriefingDocument} from './logisticsBriefingDocument';
@@ -5,10 +6,10 @@ export function buildServiceStrategyDocument(plan?:ServiceStrategy):ReportBlock[
   if(!plan)return [];
   const b:ReportBlock[]=[];
   const add=(kind:ReportBlock['kind'],text:string,href?:string)=>b.push({kind,text,...(href?{href}:{})});
-  add('heading',plan.industry==='noncommerce'?'목적별 고객·검색·콘텐츠·이용 전략':'서비스별 고객·검색·광고·상담 전략');add('body',plan.summary);add('body',plan.notice);
-  for(const f of plan.findings){add('subheading',f.title);add('body','현재 관측: '+f.observed+'\n해석: '+f.interpretation+'\n실행: '+f.action);f.evidence.forEach(e=>add('body','원문: '+e.text,e.url));}
+  add('heading',plan.industry==='noncommerce'?'목적별 고객·검색·콘텐츠·이용 전략':'서비스별 고객·검색·광고·상담 전략');add('body',`확인한 원문 ${new Set(plan.sources.map(s=>s.url)).size}개`);
+  for(const f of plan.findings.map(serviceFindingPresentation)){add('subheading',f.title);add('body',f.observed);if(plan.industry!=='noncommerce'){if(f.action)add('body','수정 제안: '+f.action);}for(const url of new Set(f.evidence.map(e=>e.url)))add('body','원문 보기',url);}
   for(const s of plan.segments){
-    add('subheading',s.label+' · 고객과 선택 기준');add('body','고객 가설: '+s.audience);add('body',s.diagnosis);
+    add('subheading',s.label+' · 고객과 선택 기준');if(plan.industry!=='noncommerce')add('body','고객 가설: '+s.audience);
     s.questions.forEach(q=>add('body','고객 질문: '+q));s.evidence.forEach(e=>add('body','원문: '+e.text,e.url));
     add('body','검색어 기획 예시 · 검색량 미측정: '+s.keywords.join(' / '));
     if(s.landingUrl)add('body','랜딩 후보 · 실제 화면 확인',s.landingUrl);
