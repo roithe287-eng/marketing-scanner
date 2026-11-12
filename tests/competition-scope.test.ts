@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {load} from 'cheerio';
+import {unrelatedPageReason} from '../lib/competitorRoles';
 import {captureCompetitorPage,analyzeCompetitors} from '../lib/competitorAnalysis';
 import {buildCompetitionScope,competitionMismatch} from '../lib/competitionScope';
 import {competitorOwnText,marketKeywordCandidates,usableMarketKeyword} from '../lib/competitorResearch';
@@ -127,4 +128,31 @@ test('cargo items cannot become a logistics competitor market',()=>{
 test('unsupported English headings cannot become product categories',()=>{
  const own=scope('가온 온라인 쇼핑몰');
  for(const phrase of ['Trusted Quality','Stroke Foundation'])assert.equal(usableMarketKeyword(phrase,{scope:own,title:'가온',description:phrase,h2:[phrase],bodyText:phrase}),false);
+});
+
+test('tourism, medical and restaurant directories cannot become the listed provider',()=>{
+ for(const [host,query] of [['korean.visitkorea.or.kr','스키 렌탈'],['www.visitbusan.net','부산 식당'],['modoodoc.com','한방병원'],['goodoc.co.kr','병원'],['diningcode.com','식당'],['siksinhot.com','식당']]){
+  const result=selectSearchCandidates([{title:query+' 업체 안내',description:query,link:`https://${host}/detail`}],'own.example',query);
+  assert.equal(result.candidates.length,0,host);assert.match(result.excluded[0].reason,/안내 플랫폼/);
+ }
+});
+test('redirected directory is rejected after a provider-looking search result',()=>{
+ const own=scope('무주 스키 렌탈');
+ const c={...candidate('무주 스키 렌탈','스키 장비 대여'),finalUrl:'https://korean.visitkorea.or.kr/detail'};
+ const excluded:any[]=[];
+ assert.equal(finalizeSearchCandidates([c],'스키 렌탈',excluded,5,false,own,'own.example').length,0);
+ assert.match(excluded[0].reason,/안내 플랫폼/);
+});
+test('stored directory candidate is removed along with obsolete comparison prose',()=>{
+ const analysis=MarketingReportSchema.parse({...fixture,competitorAnalysis:{searchKeyword:'스키 렌탈',ourSite:{url,domain:'own.example',title:'무주 스키 렌탈',metaDescription:'스키 장비 대여',h1:''},competitors:[candidate('무주 스키 렌탈','스키 장비 대여','','https://korean.visitkorea.or.kr/detail')],overallComparison:'관광 포털보다 유리합니다',ourPositioning:'기존 비교'}}).competitorAnalysis!;
+ const clean=competitorDisplay(analysis);assert.equal(clean.competitors.length,0);assert.equal(clean.overallComparison,undefined);assert.equal(clean.ourPositioning,undefined);
+});
+test('directory host boundary does not exclude an unrelated domain',()=>{
+ const result=selectSearchCandidates([{title:'스키 렌탈',description:'장비 대여',link:'https://visitkorea.or.kr.example.net/'}],'own.example','스키 렌탈');
+ assert.equal(result.candidates.length,1);
+});
+
+
+test('tourism content can still compare other tourism information portals',()=>{
+ assert.equal(unrelatedPageReason({domain:'korean.visitkorea.or.kr',link:'https://korean.visitkorea.or.kr/detail',title:'관광 정보'},'관광 정보',true),undefined);
 });
