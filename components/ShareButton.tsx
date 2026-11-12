@@ -1,9 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import {retentionTime} from '@/lib/reportRetention';
 import {requestJson} from '@/lib/client/request';
 import type { MarketingReport } from '@/lib/reportSchema';
 export default function ShareButton({report,competitorLoading=false,onShareCreated}:{report:MarketingReport;competitorLoading?:boolean;onShareCreated?:(saved:MarketingReport)=>void}) {
+  const tooltipId=useId();
+  const [showDetails,setShowDetails]=useState(false);
   const [loading,setLoading] = useState(false);
   const [url,setUrl] = useState('');
   const [expiresAt,setExpiresAt]=useState<number|null>(null);
@@ -16,9 +18,10 @@ export default function ShareButton({report,competitorLoading=false,onShareCreat
   currentReport.current=report;
   useEffect(()=>{
     // The parent retains the exact saved snapshot so later edits keep its original expiry.
-    if(savedReport.current!==report){savedReport.current=null;setUrl('');setExpiresAt(null);setCopied(false);setError('');busy.current=false;setLoading(false);}
+    if(savedReport.current!==report){const retained=report.sharedRetention;savedReport.current=retained?report:null;setUrl(retained?`${window.location.origin}/r/${retained.reportId}`:'');setExpiresAt(retained?.expiresAt??null);setCopied(false);setShowDetails(false);setError('');busy.current=false;setLoading(false);}
     return()=>active.current?.abort();
   },[report]);
+  useEffect(()=>{if(!copied)return;const timer=setTimeout(()=>setCopied(false),2200);return()=>clearTimeout(timer);},[copied]);
   async function share() {
     if (busy.current || competitorLoading) return;
     busy.current=true;setLoading(true);setError('');setCopied(false);
@@ -37,13 +40,21 @@ export default function ShareButton({report,competitorLoading=false,onShareCreat
         link=`${window.location.origin}/r/${data.id}`;setUrl(link);onShareCreated?.(saved);
       }
       if(controller.signal.aborted||currentReport.current!==snapshot) return;
-      try {await navigator.clipboard.writeText(link);if(!controller.signal.aborted&&currentReport.current===snapshot) setCopied(true);} catch { /* The selectable link below remains available. */ }
+      try {await navigator.clipboard.writeText(link);if(!controller.signal.aborted&&currentReport.current===snapshot) setCopied(true);} catch { setShowDetails(true); }
     } catch(error) {if(!controller.signal.aborted&&currentReport.current===snapshot)setError(error instanceof Error?error.message:'공유 링크 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');}
     finally {if(active.current===controller&&!controller.signal.aborted){active.current=null;busy.current=false;setLoading(false);}}
   }
-  return <div className="flex flex-col gap-2 max-w-md" data-hide-on-export>
-    <button type="button" className="rounded-full border px-5 py-3 text-sm font-bold disabled:opacity-50" disabled={loading || competitorLoading} onClick={share}>{competitorLoading?'추가 분석 완료 후 공유 가능':loading?'공유 링크 생성 중...':copied?'링크가 복사되었습니다':url?'링크 다시 복사':'결과 보관·링크 복사'}</button>
-    {url && <div className="text-xs rounded-lg bg-neutral-50 p-3 break-all"><a className="underline" href={url} target="_blank" rel="noopener noreferrer">{url}</a><p className="mt-2">{expiresAt?`${retentionTime(expiresAt)}에 자동 만료됩니다.`:'최대 7일간 보관됩니다.'} 저장할 때 이용한 계정·등록 네트워크와 관리자만 열람할 수 있으며, 열람·복사로 기간이 연장되지 않습니다.</p></div>}
+  return <div className="report-share" data-hide-on-export
+    onMouseEnter={()=>setShowDetails(true)} onMouseLeave={e=>{if(!e.currentTarget.contains(document.activeElement))setShowDetails(false);}}
+    onFocus={()=>setShowDetails(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setShowDetails(false);}}
+    onKeyDown={e=>{if(e.key==='Escape')setShowDetails(false);}}>
+    <button type="button" className="report-share-button rounded-full border px-5 py-3 text-sm font-bold disabled:opacity-50" aria-describedby={url?tooltipId:undefined} disabled={loading || competitorLoading} onClick={share}>{competitorLoading?'추가 분석 완료 후 공유 가능':loading?'공유 링크 생성 중...':copied?'링크가 복사되었습니다':url?'링크 다시 복사':'결과 보관·링크 복사'}</button>
+    {url && <div id={tooltipId} role="note" aria-label="링크 보관 안내" className="report-share-tooltip" hidden={!showDetails}>
+      <strong>보관된 보고서 링크</strong><a href={url} target="_blank" rel="noopener noreferrer">{url}</a>
+      <p>{expiresAt?`${retentionTime(expiresAt)}에 자동 만료됩니다.`:'최대 7일간 보관됩니다.'}</p>
+      <p>저장할 때 이용한 계정·등록 네트워크와 관리자만 열람할 수 있습니다. 열람·복사로 보관 기간이 연장되지 않습니다.</p>
+    </div>}
+    <span className="sr-only" role="status" aria-live="polite">{copied?'보고서 링크를 복사했습니다.':''}</span>
     {error && <p role="alert" className="text-xs text-jm-red">{error}</p>}
   </div>;
 }

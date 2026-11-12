@@ -13,7 +13,7 @@ export default function LocalPlacePanel({review}:{review:LocalPlaceReview}){
   const matched=review.terms.filter(t=>unique.has(norm(t.term)));
   const {evidence,lookup,sector}=review;
   return <section className="local-place" aria-label={LOCAL_PLACE_TITLE}>
-    <header className="lp-heading"><span>지역·방문 업종 맞춤 진단</span><h3>{LOCAL_PLACE_TITLE}</h3><p>업체를 찾고, 방문 전 궁금한 정보를 채우고, 해당하는 공지를 실행으로 연결하세요.</p></header>
+    <header className="lp-heading"><div className="lp-api-heading"><span className="lp-api-mark" aria-hidden="true">N</span><div><strong>네이버 플레이스</strong><span>네이버 지역 검색 <b>OPEN API</b></span></div></div><h3>{LOCAL_PLACE_TITLE}</h3><p>API 업체 조회값 · 홈페이지 관측 정보 · 업종별 공지 실행안</p></header>
     <div className="lp-identity"><span className="lp-marker" aria-hidden="true">⌖</span><div><small>홈페이지에서 식별한 업체</small><h4>{evidence.name}</h4><p>{sector.label}{evidence.franchise?' · 본사·가맹점 구분':''}{evidence.branch?' · '+evidence.branch:''}</p>{evidence.address&&<p>{evidence.address}</p>}<a href={review.page.url} target="_blank" rel="noopener noreferrer">홈페이지 원문 ↗</a></div></div>
     <div className="lp-stats"><div><span>업체 조회</span><strong>{LOOKUP_LABELS[lookup.status]}</strong></div><div><span>조회 결과 표본</span><strong>{lookup.status==='observed'||lookup.status==='empty'?lookup.items.length+'개':'미조회'}</strong></div><div><span>적용 조건 검토 공지</span><strong>{review.policies.length}개</strong></div></div>
     <p className="lp-note">{lookup.note}</p>

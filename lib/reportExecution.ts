@@ -34,7 +34,7 @@ export function buildExecutionPlan(report:MarketingReport,data:ReportInsights=bu
  });
  // Only the starting list is deduplicated. Every original evidence row remains in the board and backlog.
  const seen=new Set<string>();
- const first=tasks.filter(t=>{const topic=guideTopic(t.title);const key=t.guideScope==='account'?t.id:topic==='ai'?'answer-content':/\bH1\b/i.test(t.title)?'heading-h1':t.title.replace(/\s+/g,'').toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).slice(0,3);
+ const first=tasks.filter(t=>{const topic=guideTopic(t.title);const key=t.guideScope==='account'?t.id:topic==='ai'?'answer-content':['heading','image','title','description','social'].includes(topic)?topic:t.title.replace(/\s+/g,'').toLowerCase();if(seen.has(key))return false;seen.add(key);return true;}).slice(0,3);
  return {tasks,first};
 }
 export type ExecutionPlan=ReturnType<typeof buildExecutionPlan>;

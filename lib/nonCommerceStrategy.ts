@@ -27,6 +27,47 @@ export function buildStrategyFindings(p:WebsitePurpose,sources:StrategySource[],
   return findings;
 }
 
+export function buildNonCommerceSegments(p:WebsitePurpose,sources:StrategySource[],url:string,topic:string):ServiceStrategy['segments']{
+  const book=nonCommercePlaybook(p,topic),information=['content','community','public_service'].includes(book.id),education=book.id==='education';
+  const noun=information?'이용자':'고객',end=book.outcome,prep=book.preparation.join('·');
+  const stageContent:Record<string,{blocks:string[];cta:string;metric:string}>={
+    discover:{blocks:[
+      `첫 화면: ${book.label}의 [제공 서비스·주제]와 [이용 대상]을 한 문장으로 써야 합니다.`,
+      `대상 안내: ${book.preparation[0]}에 따라 적용되는 경우와 제외되는 경우를 나눠야 합니다.`,
+      `서비스 소개: ${book.assets[0]}의 핵심 내용을 사진 또는 본문으로 설명해야 합니다.`,
+      `기초 질문: 처음 방문한 ${noun}이 묻는 제공 범위·이용 조건에 짧게 답해야 합니다.`,
+      '상세 연결: 소개한 서비스명마다 해당 상세 페이지의 실제 URL을 연결해야 합니다.',
+      '다음 버튼: 「대상·서비스 자세히 보기」를 서비스 소개 바로 아래에 배치해야 합니다.',
+    ],cta:'대상·서비스 자세히 보기',metric:'서비스 상세 이동 이용자 ÷ 소개 페이지 방문 이용자 × 100'},
+    compare:{blocks:[
+      `비교표: ${book.preparation.join(' / ')}를 각각 행으로 구분해야 합니다.`,
+      '비용·범위: 적용되는 금액 또는 산정 기준, 포함 항목, 별도 비용을 같은 표에 써야 합니다.',
+      `담당·근거: ${book.proof}를 주장 바로 옆의 원문 링크로 연결해야 합니다.`,
+      '조건 차이: 대상·기간·제외 조건이 달라지는 경우를 비교표 아래에 명시해야 합니다.',
+      '자료 표기: 표 아래에 [원자료 링크·작성 주체·확인일]을 적어야 합니다.',
+      `다음 버튼: 「조건 확인 후 ${book.cta}」를 비교표 끝에 배치해야 합니다.`,
+    ],cta:`조건 확인 후 ${book.cta}`,metric:'조건·근거 열람 후 행동 경로 이동 이용자 ÷ 비교 페이지 방문 이용자 × 100'},
+    act:{blocks:[
+      `준비 체크리스트: ${prep}를 ${book.cta} 전에 확인할 항목으로 제시해야 합니다.`,
+      `행동 경로: 「${book.cta}」 버튼에 실제 [예약·접수·공식 안내 URL]을 연결해야 합니다.`,
+      `진행 순서: ${book.stages.join(' → ')}의 담당자와 완료 조건을 순서대로 써야 합니다.`,
+      '처리 안내: [운영시간·예상 회신 시점]과 접수 후 받을 안내를 버튼 옆에 표시해야 합니다.',
+      '변경·오류: 일정 변경, 취소 또는 접속 실패 시 [담당 확인 경로]를 제공해야 합니다.',
+      `완료 화면: ${end} 상태를 클릭·신청 상태와 구분해 표시해야 합니다.`,
+    ],cta:book.cta,metric:`${end} 확인 건 ÷ 행동 경로에 진입한 고유 이용자 × 100`},
+  };
+  const stages=[
+    {id:'discover',label:'탐색 단계',audience:`${book.audience} 중 주제와 제공 범위를 처음 확인하는 ${noun} 가설입니다. 유입 검색어·접수 사유로 실제 비중을 확인하세요.`,questions:[`${topic}에서 실제 다루는 범위는 무엇인가`,`${prep}에 맞는 안내인가`],keywords:[`${book.label} 안내`,`${book.label} 대상`,`${book.label} 준비사항`],match:/대상|위한|제공|범위|소개|업무|과정|주제/,headline:`${book.label}, 나에게 적용되는 범위부터 확인하세요`,message:`${prep}에 맞춰 [실제 제공·적용 범위]를 확인하세요. [제외 조건]은 관련 원문과 담당 안내에서 확인할 수 있도록 구성합니다.`},
+    {id:'compare',label:'비교·검토 단계',audience:`${book.proof} 등의 근거를 확인한 뒤 다음 행동을 결정하려는 ${noun} 가설입니다. 근거 문서 열람과 실제 후속 행동을 따로 확인하세요.`,questions:['어떤 조건을 같은 기준으로 비교해야 하는가','현재 안내를 뒷받침하는 원자료와 담당자는 누구인가','다르게 적용되는 경우와 추가 확인 항목은 무엇인가'],keywords:[`${book.label} 선택 기준`,`${book.label} 확인사항`,`${book.label} 절차`],match:/조건|비교|담당|사례|자료|공고|과정|제외|포함/,headline:`조건과 근거를 함께 보고 판단하세요`,message:`[확인 가능한 원자료]와 [동일 조건의 비교 항목]을 함께 안내합니다. ${book.proof}의 실제 확인 경로를 연결하세요.`},
+    {id:'act',label:'행동·이용 단계',audience:`${prep} 등 준비 항목을 확인하고 ‘${book.cta}’ 경로로 이동하려는 ${noun} 가설입니다. 버튼 클릭과 ${end} 여부를 구분해서 집계하세요.`,questions:[`${book.cta} 전에 무엇을 준비해야 하는가`,'접수·이동 이후 어떤 안내를 받는가','변경이나 추가 확인은 어디에서 진행하는가'],keywords:[`${book.label} 이용 방법`,`${book.label} 진행 순서`,`${book.label} ${information?'공식 안내':education?'신청 안내':'문의'}`],match:/신청|상담|예약|접수|문의|안내|이용|관련|출처/,headline:`준비사항을 확인하고 다음 단계로 이동하세요`,message:`${prep} 등 준비 항목을 먼저 정리하세요. [실제 행동 경로]에서 [접수·이동 이후 안내]를 확인하고 조건이 다르면 [담당 확인 경로]로 연결합니다.`},
+  ];
+  return stages.map(s=>{
+    const hits=sources.filter(e=>s.match.test(e.text)),evidence=(hits.length?hits:sources).slice(0,2),landing=hits.find(e=>e.url!==url)?.url;
+    const {match,...rest}=s;
+    return {...rest,evidence,...(landing?{landingUrl:landing}:{}),diagnosis:hits.length?`${s.label} 관련 원문 ${hits.length}개`:'단계별 직접 근거 미수집',landingBlocks:stageContent[s.id].blocks,cta:stageContent[s.id].cta,metric:stageContent[s.id].metric};
+  });
+}
+
 /** Purpose-specific decisions, grounded in bounded own-source observations. No inferred score changes. */
 export function buildNonCommerceStrategy(data:ExtractedWebsiteData):ServiceStrategy|undefined{
   const p=analyzeWebsitePurpose(data);if(!isNonCommerce(p)||data.collectionNotice||p.business?.id==='international_logistics')return;
@@ -37,16 +78,7 @@ export function buildNonCommerceStrategy(data:ExtractedWebsiteData):ServiceStrat
   const noun=information?'이용자':'고객',end=book.outcome;
   const prep=book.preparation.join('·');
   const bounded=(s:string)=>s.slice(0,1100);
-  const stages=[
-    {id:'discover',label:'탐색 단계',audience:`${book.audience} 중 주제와 제공 범위를 처음 확인하는 ${noun} 가설입니다. 유입 검색어·접수 사유로 실제 비중을 확인하세요.`,questions:[`${topic}에서 실제 다루는 범위는 무엇인가`,`${prep}에 맞는 안내인가`],keywords:[`${book.label} 안내`,`${book.label} 대상`,`${book.label} 준비사항`],match:/대상|위한|제공|범위|소개|업무|과정|주제/,headline:`${book.label}, 나에게 적용되는 범위부터 확인하세요`,message:`${prep}에 맞춰 [실제 제공·적용 범위]를 확인하세요. [제외 조건]은 관련 원문과 담당 안내에서 확인할 수 있도록 구성합니다.`},
-    {id:'compare',label:'비교·검토 단계',audience:`${book.proof} 등의 근거를 확인한 뒤 다음 행동을 결정하려는 ${noun} 가설입니다. 근거 문서 열람과 실제 후속 행동을 따로 확인하세요.`,questions:['어떤 조건을 같은 기준으로 비교해야 하는가','현재 안내를 뒷받침하는 원자료와 담당자는 누구인가','다르게 적용되는 경우와 추가 확인 항목은 무엇인가'],keywords:[`${book.label} 선택 기준`,`${book.label} 확인사항`,`${book.label} 절차`],match:/조건|비교|담당|사례|자료|공고|과정|제외|포함/,headline:`조건과 근거를 함께 보고 판단하세요`,message:`[확인 가능한 원자료]와 [동일 조건의 비교 항목]을 함께 안내합니다. ${book.proof}의 실제 확인 경로를 연결하세요.`},
-    {id:'act',label:'행동·이용 단계',audience:`${prep} 등 준비 항목을 확인하고 ‘${book.cta}’ 경로로 이동하려는 ${noun} 가설입니다. 버튼 클릭과 ${end} 여부를 구분해서 집계하세요.`,questions:[`${book.cta} 전에 무엇을 준비해야 하는가`,'접수·이동 이후 어떤 안내를 받는가','변경이나 추가 확인은 어디에서 진행하는가'],keywords:[`${book.label} 이용 방법`,`${book.label} 진행 순서`,`${book.label} ${information?'공식 안내':education?'신청 안내':'문의'}`],match:/신청|상담|예약|접수|문의|안내|이용|관련|출처/,headline:`준비사항을 확인하고 다음 단계로 이동하세요`,message:`${prep} 등 준비 항목을 먼저 정리하세요. [실제 행동 경로]에서 [접수·이동 이후 안내]를 확인하고 조건이 다르면 [담당 확인 경로]로 연결합니다.`},
-  ];
-  const segments=stages.map(s=>{
-    const hits=sources.filter(e=>s.match.test(e.text)),evidence=(hits.length?hits:sources).slice(0,2),landing=hits.find(e=>e.url!==url)?.url;
-    const {match,...rest}=s;
-    return {...rest,evidence,...(landing?{landingUrl:landing}:{}),diagnosis:hits.length?'해당 판단 단계와 관련된 자사 문구를 확인했습니다. 이 문구가 질문에 충분히 답하는지, 실제 다음 행동으로 연결되는지는 상세 화면에서 대조하세요.':'이번 원문 표본에서 이 단계의 직접적인 설명을 확보하지 못했습니다. 아래 인용은 업종·주제를 식별한 근거이며 해당 기능·절차의 존재를 의미하지 않습니다.',landingBlocks:[`${noun}의 목적·적용 범위를 설명하는 첫 문단`,`${prep} 확인 항목`,'실제 제공·제외 범위 또는 적용 조건',`${book.proof}의 원자료 링크`,'진행 절차·변경 조건·최종 확인일',`다음 행동: ${book.cta} 버튼과 이후 안내`],cta:book.cta,metric:`단계별 이동률과 ${end}의 연결 여부 · 실제 데이터 확인 필요`};
-  });
+  const segments=buildNonCommerceSegments(p,sources,url,topic);
   const findings=buildStrategyFindings(p,sources,url);
   const endEvent=information?'meaningful_followup':education?'participation_confirmed':book.id==='medical'?'attendance_confirmed':'outcome_confirmed';
   return {version:1,industry:'noncommerce',targetUrl:url,capturedAt:data.seoEvidence?.capturedAt||new Date().toISOString(),basis:'source-backed-playbook',

@@ -77,7 +77,7 @@ test('all report categories read continuously and their menus link to individual
  assert.equal($('.keyword-workspace-nav a').length,3);
  assert.equal($('#report-view-geo-comparison').length,0,'no empty comparison destination without a baseline');
  assert.equal($('.report-nav a[aria-current="location"]').attr('href'),'#report-overview');
- assert.equal($('#report-overview .site-content-overview').length,1);assert.equal($('.section-reading[open]').length,0);
+ assert.equal($('#report-overview .site-content-overview').length,1);assert.equal($('.section-reading[open]').length,1);assert.equal($('#report-view-overview-questions>.section-reading[open]').length,1);
  assert.equal($('#report-view-overview-main>.section-reading').length,0,'primary observations remain directly available');
  for(const group of ['execution-tasks','growth-tasks','answer-questions','naver-checks','official-docs']){
   assert.ok($(`[data-report-item-group="${group}"]`).length>1,group);

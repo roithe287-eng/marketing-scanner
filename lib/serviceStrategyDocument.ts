@@ -1,3 +1,4 @@
+import {draftEmphasis} from './reportEmphasis';
 import {serviceFindingPresentation} from './serviceFindingPresentation';
 import type {ServiceStrategy} from './serviceStrategy';
 import type {ReportBlock} from './reportDocument';
@@ -31,5 +32,5 @@ export function buildServiceStrategyDocument(plan?:ServiceStrategy):ReportBlock[
     for(const v of n.verification){add('subheading',v.title);add('body',v.action+'\n확인 항목: '+v.metric);}
     for(const r of n.references)add('body','공식 참고 안내 · 노출 결과 아님: '+r.label,r.url);
   }
-  return [...b,...buildLogisticsBriefingDocument(plan.briefing)];
+  return [...b,...buildLogisticsBriefingDocument(plan.briefing)].map(block=>/작성 초안|문구 초안|^랜딩 \d/.test(block.text)?{...block,emphasis:[...(block.emphasis||[]),...draftEmphasis(block.text)]}:block);
 }

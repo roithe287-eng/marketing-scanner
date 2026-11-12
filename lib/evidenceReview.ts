@@ -1,3 +1,4 @@
+import {actionableGuide} from './actionableGuides';
 import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import type {MarketingReport,ChecklistItem} from './reportSchema';
@@ -65,6 +66,7 @@ export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebs
     facts[6].note='회원가입·게시판·구독 링크의 문구와 주소를 관측했습니다. 게시글 제목 속 문의·신청은 전환 버튼으로 계산하지 않습니다.';
     facts[7].value=`탐색·참여·별도 서비스 링크 ${navigation.length}개 표본 · 전체 버튼 수와 완료 이벤트는 미측정`;
   }
+  if(!data.collectionNotice)for(const fact of facts)fact.guide=actionableGuide(fact,data,goal)||fact.guide;
   const notApplicable=new Set<string>();
   if(purpose.checks.find(c=>c.id==='price')?.status==='not_applicable')notApplicable.add('price_info');
   if(['content','public_service'].includes(purpose.kind)){notApplicable.add('trust_review');notApplicable.add('trust_certification');if(purpose.goal.key==='read')notApplicable.add('contact_info');}
