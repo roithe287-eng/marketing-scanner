@@ -5,7 +5,7 @@ import {Guidebook} from './SiteGuidebook';
 import EvidenceFlow from './EvidenceFlow';
 import {buildSiteGuide,guideInstruction} from '@/lib/siteGuidebook';
 import React,{useId,useState,type CSSProperties} from 'react';
-import PositionCheckCard from './PositionCheckCard';
+import PositionEvidenceReview from './PositionEvidenceReview';
 import {POSITION_INDUSTRIES} from '@/lib/industryPositioning';
 import type {MarketingReport,IndustryCategory} from '@/lib/reportSchema';
 import {buildCompetitorPositioning,POSITION_AXES,POSITION_NOTE,POSITION_CRITERIA,positioningActions,positioningBrief,positionCoordinates,positionDiameter,POSITION_SIZE_NOTE} from '@/lib/competitorPositioning';
@@ -80,9 +80,7 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
       <p>{active.x===null?active.reason:`제목 ${active.termFields[0].matched.length}/${active.terms.length}개 · 설명 ${active.termFields[1].matched.length}/${active.terms.length}개 연결 · 선택 정보 ${active.checks.filter(c=>c.found).length}/4종류 · 업종별 단서 ${active.signalCount}/8개`}</p>
       {active.searchRank&&<p>네이버 웹문서 API 응답의 {active.searchRank}번째 항목 · 비교 번호와 별개</p>}
       <div className="position-terms"><strong>비교 검색어 포함 여부 · 좌표와 별도 확인</strong>{active.terms.map(t=><span key={t} data-found={active.matched.includes(t)}>{active.x===null?'—':active.matched.includes(t)?'확인':'미탐지'} · {t}</span>)}</div>
-      <p className="position-check-scope">제목·메타 설명 기준입니다. 항목을 펼치면 탐지한 표현과 원문을 볼 수 있습니다.</p>
-      <div className="position-checks">{active.checks.map(c=><PositionCheckCard key={`${active.id}-${c.id}`} row={active} check={c}/>)}</div>
-      <details className="position-method"><summary>계산에 사용한 원문 전체 보기<ReadingToggle variant="report"/></summary><div><strong>페이지 제목</strong><p>{active.title||'저장된 값 없음'}</p><strong>페이지 설명</strong><p>{active.description||'저장된 값 없음'}</p><p>{active.sourceLabel}. 구버전 후보는 메타 설명과 OG 설명의 대체 여부가 기록되지 않았습니다. 엄밀한 같은 시점 비교는 재진단하세요.</p>{active.url&&<a href={active.url} target="_blank" rel="noopener noreferrer">해당 페이지 확인</a>}</div></details>
+      <PositionEvidenceReview row={active}/>
     </article>
     <details className="position-method"><summary>좌표 계산 기준<ReadingToggle variant="report"/></summary><div><p>선택한 업종의 네 가지 정보 기준으로 계산합니다. 가로축은 앞의 두 기준, 세로축은 뒤의 두 기준에서 찾은 표현 수를 각각 0~100으로 환산합니다. 각 기준은 다른 표현을 최대 2개까지 반영합니다. 분석용 비교 규칙이며 업종 평균이나 성과 지표가 아닙니다.</p><ul>{model.profile.criteria.map(c=><li key={c.id}><strong>{c.label}</strong> · {c.action}</li>)}</ul><p>{POSITION_SIZE_NOTE} 서로 다른 숫자·표현도 같은 종류에서는 최대 2개까지만 반영합니다. 도형의 최소 크기는 선택 편의를 위한 것이며 단서 0개도 작은 버블로 표시합니다.</p><p>제목과 설명 두 필드가 모두 있어야 표시합니다. 수집 실패·정보 부족을 0점이나 중앙값으로 대체하지 않습니다. 본문·이미지·실제 가격·품질은 이 좌표의 평가 범위가 아닙니다.</p></div></details>
     <div className="position-actions"><p className="report-eyebrow">NEXT EDIT FOR YOUR PAGE</p><h4>자사에서 바로 검토할 작업</h4><p>점수를 올리기 위해 표현을 채우기보다, 고객이 선택하는 데 필요한 실제 정보를 보완하세요.</p>{actions.map((a,i)=><article key={a.title}><span className="position-step">{String(i+1).padStart(2,'0')}</span><div><h5>{a.title}</h5><EvidenceFlow label={`${a.title} 근거와 실행`} items={[{label:'확인한 근거',role:'current',kicker:'AS-IS',content:a.evidence},{label:'실행 방향',role:'proposal',content:a.action},{label:'확인할 지표',role:'verify',content:a.metric}]}/><div className="position-template"><strong>TO-BE 작성 틀 · 사실 확인 후 사용</strong><p>{a.template}</p></div><Guidebook compact title={a.title} evidence={a.evidence} proposal={a.template}/></div></article>)}<button type="button" className="report-secondary-button" onClick={copy}>자사 개선 작업 복사</button><span role="status">{status}</span>{fallback&&<label className="growth-copy-fallback">직접 복사할 작업 지시서<textarea readOnly value={fallback} rows={10}/></label>}</div>

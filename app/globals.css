@@ -1551,6 +1551,37 @@ button,input,textarea,select { font-family:inherit; }
 .position-field-result blockquote { margin:10px 0 0; padding:0 0 0 12px; border-left:2px solid #c4d0df; font-size:14px; line-height:1.85; white-space:pre-wrap; color:#263c56; }
 @media(max-width:640px){.report-source-guide { padding:16px; }.position-check-detail>summary { padding-top:16px; }.position-field-result { padding:12px; }}
 
+/* Distinct decision lenses share their source; underlines identify the meaningful differences. */
+.report-key-emphasis,.position-checks strong.report-key-emphasis{display:inline;margin:0;font-size:inherit;font-weight:750;color:inherit;text-decoration-line:underline;text-decoration-color:#a6b7cc;text-decoration-thickness:2px;text-underline-offset:5px;text-decoration-skip-ink:auto}
+.position-check-heading strong.report-key-emphasis{font-size:18px;font-weight:800;color:#203957}
+.position-checks .position-check-card{padding:22px;min-width:0}
+.position-lens-question{margin:18px 0 10px;font-size:18px;font-weight:750;line-height:1.6;color:#172c46}
+.position-field-findings{margin:16px 0;display:grid;gap:8px;font-size:13px}
+.position-field-findings>div{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;align-items:start}
+.position-field-findings dt{font-weight:700;color:#43566d}
+.position-field-findings dd{margin:0;line-height:1.7;color:#536176;overflow-wrap:anywhere}
+.position-rewrite{margin-top:20px;padding:18px;background:#f4f7fb;border:1px solid #dce5ef;border-radius:10px}
+.position-rewrite h5,.position-next-step h5{margin:0;font-size:15px;font-weight:750;color:#213c5a;line-height:1.65}
+.position-checks .position-draft-caption{font-size:12px;margin:5px 0 14px;color:#67768a}
+.position-rewrite-field+.position-rewrite-field{border-top:1px solid #dce5ef;margin-top:16px;padding-top:16px}
+.position-rewrite-field h6{margin:0;font-size:12px;font-weight:700;color:#5b6c80}
+.position-checks .position-rewrite-field p{margin-top:8px;font-size:15px;line-height:1.95;color:#203957}
+.position-next-step{margin-top:20px}
+.position-rewrite-pending{padding:14px;background:#f5f7fa;border-radius:8px}
+.position-shared-source{padding:20px;border:1px solid #dae3ee;border-radius:12px;background:#f8fafc;margin:20px 0}
+.position-shared-source h5,.position-reading-guide h5{margin:0 0 12px;font-size:17px;font-weight:750;color:#203957}
+.position-shared-source h5 small{display:block;margin-top:6px;font-size:12px;font-weight:500;color:#617086}
+.position-source-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.position-source-fields>div{min-width:0}
+.position-source-fields h6{margin:0 0 8px;font-size:13px;font-weight:700;color:#536176}
+.position-source-fields blockquote{margin:0;padding-left:12px;border-left:2px solid #b5c6da;font-size:15px;line-height:1.8;white-space:pre-wrap;overflow-wrap:anywhere;color:#243d58}
+.position-shared-source p,.position-reading-guide p,.position-source-footnote{font-size:13px;line-height:1.8;color:#627187}
+.position-shared-source>a{display:inline-block;margin-top:6px;font-size:13px;font-weight:650;text-decoration:underline;text-underline-offset:3px}
+.position-reading-guide{margin:0 0 22px;padding:0 2px}
+.position-reading-guide p{margin:7px 0}
+.position-source-footnote{margin:16px 0 0}
+@media(max-width:640px){.position-checks .position-check-card{padding:18px}.position-source-fields{grid-template-columns:1fr;gap:18px}.position-shared-source{padding:16px}.position-rewrite{padding:14px}.position-field-findings>div{grid-template-columns:70px minmax(0,1fr);gap:8px}.position-lens-question{font-size:17px}}
+
 /* Official SEO: compact findings, opt-in reference catalog. */
 .official-seo{scroll-margin-top:90px;min-width:0}
 .official-seo .naver-counts{grid-template-columns:repeat(3,minmax(0,1fr))}

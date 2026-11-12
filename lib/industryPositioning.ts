@@ -1,4 +1,5 @@
 import type {IndustryCategory,MarketingReport} from './reportSchema';
+import {positionEditorial} from './positionEditorial';
 
 export type PositionCriterion={id:string;label:string;pattern:RegExp;description:string;examples:string[];action:string;template:string;weight:number};
 type Spec=[string,string,string,string];
@@ -27,7 +28,7 @@ const SPECS:Record<IndustryCategory,[Spec,Spec,Spec,Spec]>={
  interior:[['cost','견적·계약 조건','견적|평당|비용|계약|추가비|하자','견적 포함 범위와 추가 비용·보증'],['scope','공간·시공 범위','주거|상업|아파트|평형|공간|설계|시공','공간 종류와 설계·시공 범위'],['proof','시공·자격 근거','포트폴리오|사례|면허|등록|완공|사진','실제 시공 사례와 자격·등록 자료'],['process','진행·사후 관리','실측|상담|공정|기간|일정|하자|A/S','실측부터 완공, 사후 관리까지']],
  etc:[['cost','가격·조건','가격|비용|요금|견적|환불|교환|할인|무료|\\d[\\d,]*원','가격 또는 견적 기준과 이용 조건'],['scope','대상·범위','대상|전용|맞춤|기업|초보|단체|B2B|B2C|포함|제외|제품|서비스','누구에게 무엇을 제공하는지'],['proof','사례·근거','사례|포트폴리오|고객사|후기|리뷰|인증|특허|시험|수상','직접 확인 가능한 사례와 근거'],['process','진행·지원','절차|진행|배송|상담|문의|예약|지원|A/S','이용 절차와 문의·지원 방법']],
 };
-export function positionProfile(category:IndustryCategory){return {id:category,label:POSITION_INDUSTRIES[category],criteria:SPECS[category].map(([id,label,pattern,description])=>({id,label,description,examples:pattern.split('|').map(term=>term.includes('\\d')?'금액 표기 (예: 10,000원)':term),pattern:new RegExp(pattern,'i'),weight:25,action:`${description}을 확인된 사실로 설명하고 해당 원문·안내를 연결하세요.`,template:`[${description}]을 실제 운영 기준에 맞게 작성하세요.`}))};}
+export function positionProfile(category:IndustryCategory){return {id:category,label:POSITION_INDUSTRIES[category],criteria:SPECS[category].map(([id,label,pattern,description],index)=>{const editorial=positionEditorial(category,index);return {id,label,description,editorial,examples:pattern.split('|').map(term=>term.includes('\\d')?'금액 표기 (예: 10,000원)':term),pattern:new RegExp(pattern,'i'),weight:25,action:editorial.verify,template:editorial.description};})};}
 export function defaultPositionIndustry(report:MarketingReport):{category:IndustryCategory;basis:string} {
  if(report.sitePurpose?.business?.industry==='logistics')return {category:'logistics',basis:'현재 원문에 근거한 국제물류 업종 분류'};
  const saved=report.industryBenchmark?.category;if(saved&&saved!=='etc')return {category:saved,basis:'저장된 업종 분류'};

@@ -3,7 +3,7 @@ import type { ReportBlock } from './reportDocument';
 export const PDF_PAGE = { width:794, height:1123, padding:48, contentBottom:1039, contentWidth:694 };
 export const PDF_FONT = '"Pretendard Variable", Pretendard, sans-serif';
 export type PdfTextStyle = { size:number; weight:number; color:string; lineHeight:number };
-export type PdfLine = PdfTextStyle & { text:string; x:number; y:number; width:number; href?:string; targetId?:string; sourceId?:number };
+export type PdfLine = PdfTextStyle & { text:string; x:number; y:number; width:number; href?:string; targetId?:string; sourceId?:number; emphasis?:{start:number;end:number}[] };
 export type PdfPage = { lines:PdfLine[]; title?:string; anchors?:string[] };
 export type TextMeasurer = (text:string, style:PdfTextStyle) => number;
 export type WrappedLine = { text:string; newlineAfter:boolean };

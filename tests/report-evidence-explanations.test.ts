@@ -12,6 +12,7 @@ import {buildReportInsights,sourceReferenceGuide} from '../lib/reportInsights';
 import {buildInsightsDocument} from '../lib/reportInsightsDocument';
 import CompetitorLandscape from '../components/report/CompetitorLandscape';
 import PositionCheckCard from '../components/report/PositionCheckCard';
+import PositionEvidenceReview from '../components/report/PositionEvidenceReview';
 import {SourceDirectory} from '../components/report/InsightPanels';
 
 const input={id:'own',name:'테스트 의류',url:fixture.url,own:true,title:'과잠 단체복',description:'주문 제작 유니폼 상담'};
@@ -45,12 +46,14 @@ test('search-volume placeholder is replaced by evidence-backed comparable extern
 test('missing expressions retain each checked field and the exact criteria instead of implying no service',()=>{
   const row=scorePosition(input,'과잠','commerce'),check=row.checks[0];
   assert.equal(check.found,false);assert.equal(check.sources.length,2);assert.ok(check.sources.every(s=>s.matches.length===0));
-  assert.match(positionCheckReason(row,check),/제목과 메타 설명 두 곳/);
+  assert.ok(positionCheckReason(row,check).includes(check.label));
   const $=load(renderToStaticMarkup(React.createElement(PositionCheckCard,{row,check})));
-  assert.equal($('.position-check-heading span').text(),'미탐지');assert.equal($('.position-field-result').length,2);
-  assert.deepEqual($('.position-field-result blockquote').map((_,el)=>$(el).text()).get(),[input.title,input.description]);
+  assert.equal($('.position-check-heading span').text(),'미탐지');assert.equal($('.position-field-findings>div').length,2);
+  const shared=load(renderToStaticMarkup(React.createElement(PositionEvidenceReview,{row})));
+  assert.deepEqual(shared('.position-source-fields blockquote').map((_,el)=>shared(el).text()).get(),[input.title,input.description]);
   for(const text of check.examples)assert.ok($('.position-criterion-words').text().includes(text));
-  assert.match($.text(),/본문·이미지/);assert.match($.text(),/해당하지 않는 내용은 추가하지 마세요/);assert.doesNotMatch($.text(),/서비스 부재를 뜻하지 않습니다/);
+  assert.match(shared('.position-reading-guide').text(),/본문·이미지/);assert.match(shared('.position-reading-guide').text(),/해당하지 않는 내용은 삭제/);
+  assert.equal($('.position-rewrite-field').length,2);assert.doesNotMatch($.text(),/반영 가능한 표현 없음/);
   assert.ok(check.examples.includes('금액 표기 (예: 10,000원)'));assert.doesNotMatch(check.examples.join(' '),/\\d/);
 });
 
@@ -60,7 +63,7 @@ test('partial and failed collection stay unknown even if a retained field contai
     assert.equal(row.x,null);assert.match(positionCheckReason(row,check),/미탐지나 0점으로 처리하지 않습니다/);
     const $=load(renderToStaticMarkup(React.createElement(PositionCheckCard,{row,check})));
     assert.equal($('.position-check-heading span').text(),'판정 보류');
-    if(!row.description)assert.match($('.position-field-result').last().text(),/원문 미확보/);
+    if(!row.description)assert.match($('.position-field-findings>div').last().text(),/원문 미확보/);
     if(row.fetchError)assert.match($.text(),/수집 실패/);
   }
 });
@@ -98,7 +101,7 @@ test('PDF and copied work instructions carry field-level findings and retain una
   const row=scorePosition(input,'과잠','ecommerce'),before=JSON.stringify(sample);
   const brief=positioningBrief(sample,row),pdf=buildCompetitorDocument(sample).map(b=>b.text).join('\n');
   for(const content of [brief,pdf]){
-    for(const value of [input.title,input.description,'확인 기준 표현:','페이지 제목:','메타 설명:','반영 가능한 표현 없음'])assert.ok(content.includes(value),value);
+    for(const value of [input.title,input.description,'확인 기준 표현:','페이지 제목:','메타 설명:','이 관점의 기준 표현 미탐지','페이지 제목 제안:','메타 설명 제안:'])assert.ok(content.includes(value),value);
     assert.doesNotMatch(content,/검색량 미측정/);
   }
   assert.equal(JSON.stringify(sample),before);

@@ -3,6 +3,7 @@ import type { MarketingReport } from './reportSchema';
 import { PDF_PAGE, wrapPdfText, type PdfTextStyle, type TextMeasurer } from './pdfLayout';
 import type { VisualPdfPage } from './reportVisualPdf';
 import {reportRoles,reportFieldRole} from './reportRoles';
+import {reportEmphasisParts} from './reportEmphasis';
 
 export type ReadingBlock = ReportBlock & { sourceId?:number; anchor?:string; targetId?:string; originalText?:string; references?:{id:string;label:string}[] };
 export type ReadingSection = { id:string; title:string; group:string; blocks:ReadingBlock[] };
@@ -246,6 +247,19 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
       }
       const f=field(block);if(f)renderField(block,f);else renderText(block);
     }
+  }
+  // Map authored emphasis through line wrapping without changing source text or text metrics.
+  const authored=new Map<number,{text:string;ranges:{start:number;end:number}[];offset:number}>(sections.flatMap(s=>s.blocks).filter(b=>b.sourceId!==undefined&&b.emphasis?.length).map(b=>{
+    let at=0;const ranges:{start:number;end:number}[]=[];
+    for(const part of reportEmphasisParts(b.text,b.emphasis)){if(part.emphasis)ranges.push({start:at,end:at+part.text.length});at+=part.text.length;}
+    return [b.sourceId!,{text:b.text,ranges,offset:0}] as const;
+  }));
+  for(const p of pages)for(const line of p.lines){
+    const source=line.sourceId===undefined?undefined:authored.get(line.sourceId);if(!source||!line.text)continue;
+    const at=source.text.indexOf(line.text,source.offset);if(at<0)continue;
+    const end=at+line.text.length;source.offset=end;
+    const ranges=source.ranges.filter(r=>r.start<end&&r.end>at).map(r=>({start:Math.max(0,r.start-at),end:Math.min(line.text.length,r.end-at)}));
+    if(ranges.length)line.emphasis=ranges;
   }
   return pages;
 }

@@ -6,6 +6,8 @@ import {competitorDisplay} from './competitorDisplay';
 export const POSITION_METHOD='industry-evidence-v5';
 export const POSITION_AXES={x:'상품·서비스 설명',y:'선택·이용 근거'};
 export const POSITION_NOTE='동일하게 페이지 제목·메타 설명만 비교합니다. 좌표는 표현 탐지 지표이며 가격 수준·품질·시장점유율·검색 순위·성과를 평가한 점수가 아닙니다.';
+export const POSITION_CHECK_SCOPE='네 항목은 위의 같은 제목·메타 설명을 서로 다른 관점으로 읽습니다. 띄어쓰기와 영문 대소문자는 구분하지 않습니다. 본문·이미지와 다른 말로 표현한 의미, 실제 제공 여부는 이 표현 탐지에 포함되지 않습니다.';
+export const POSITION_DRAFT_NOTE='항목별 대안입니다. 한 페이지에 네 안을 모두 합치지 말고 주된 목적에 맞는 안을 고르세요. [대괄호]는 본문·운영 자료에서 확인한 값으로 교체하고 해당하지 않는 내용은 삭제하세요. 미확인·예정인 내용을 현재 제공 사실로 바꾸지 않습니다.';
 export const POSITION_CRITERIA=positionProfile('etc').criteria;
 type Input={id:string;name:string;url:string;own:boolean;title?:string;description?:string;fetchError?:string;searchRank?:number;sourceLabel?:string};
 export const POSITION_SIZE_NOTE='버블 면적은 선택한 업종의 정보 단서 수에 따라 커집니다. 같은 표현은 한 번만 세며 종류별 최대 2개, 총 8개입니다. 실제 서비스 품질·매출·검색 순위의 강점은 아닙니다.';
@@ -51,18 +53,30 @@ export type PositionCheck=PositionRow['checks'][number];
 export function positionFieldFinding(source:PositionCheck['sources'][number]) {
   if(!source.text)return '원문 미확보 · 표현 유무를 확인할 수 없음';
   const excluded=source.excluded.length?`제외한 표현: ${source.excluded.map(e=>`“${e.context}”`).join(' · ')} (없음·미제공·예정 등의 인접 표현)` : '';
-  return [source.matches.length?`확인: ${source.matches.join(' · ')}`:'반영 가능한 표현 없음',excluded].filter(Boolean).join(' / ');
+  return [source.matches.length?`확인: ${source.matches.join(' · ')}`:'이 관점의 기준 표현 미탐지',excluded].filter(Boolean).join(' / ');
 }
 export function positionCheckReason(row:PositionRow,check:PositionCheck) {
   if(row.x===null)return `${row.reason}. 아래 원문 기록만 확인하며 이 항목을 미탐지나 0점으로 처리하지 않습니다.`;
-  if(check.found)return `${check.sources.filter(s=>s.matches.length).map(s=>`${s.label}에서 ${s.matches.join(' · ')}`).join(' / ')} 표현을 확인했습니다. 중복을 제외하고 ${check.signalCount}/2개를 좌표·버블 크기에 반영합니다.`;
-  if(check.sources.some(s=>s.excluded.length))return '관련 단어는 있지만 바로 뒤에 없음·미제공·예정 등의 표현이 있어, 현재 제공 정보로 세지 않았습니다. 아래에서 제외한 원문을 확인하세요.';
-  return '제목과 메타 설명 두 곳을 확인했지만 아래 기준 표현과 일치하는 단어가 없었습니다. 본문·이미지에만 있거나 다른 말로 표현된 정보는 이 결과에 반영되지 않습니다.';
+  if(check.found)return `${check.label} 관점에서 “${check.signals.join(' · ')}” 표현을 확인했습니다. ${check.sources.filter(s=>!s.matches.length).map(s=>s.label).join('·')||'두 필드의 구체적인 조건'} 보완 여부를 검토하세요.`;
+  if(check.sources.some(s=>s.excluded.length))return `${check.label} 관련 단어 바로 뒤에 없음·미제공·예정 등의 표현이 있어 현재 제공 정보로 세지 않았습니다.`;
+  return `현재 제목·설명에서는 ${check.label} 관련 표현을 찾지 못했습니다. 보완할 정보는 ${check.description}입니다.`;
 }
 export function positionCheckNextStep(row:PositionRow,check:PositionCheck) {
   if(row.x===null)return '페이지 제목과 메타 설명을 모두 확보한 뒤 다시 비교하세요. 수집 오류와 실제 설명 누락을 먼저 구분해 주세요.';
-  if(check.found)return '표현이 실제 제공 조건과 맞는지, 본문에서 구체적인 내용을 확인할 수 있는지 대조하세요.';
-  return `${check.description}이 실제로 제공되는지 본문에서 확인하세요. 제목·설명에도 필요한 정보라면 사실에 맞게 요약하고, 해당하지 않는 내용은 추가하지 마세요.`;
+  return check.editorial.verify;
+}
+export function positionCheckDraft(row:PositionRow,check:PositionCheck){
+  if(row.x===null)return null;
+  // A retained negative is evidence, not an invitation to make a positive marketing claim.
+  if(!check.found&&check.sources.some(s=>s.excluded.length))return null;
+  const brand=row.own&&row.name!=='자사'?row.name:'[확인한 업체명]';
+  return {title:`${brand} | [${check.editorial.titleSubject}]`,description:check.editorial.description};
+}
+export function positionFieldDirection(source:PositionCheck['sources'][number],check:PositionCheck){
+  if(!source.text)return '원문을 확보한 후 수정안을 검토합니다.';
+  if(source.excluded.length&&!source.matches.length)return '제외된 표현의 실제 운영 상태를 먼저 확인합니다.';
+  if(source.matches.length)return source.label==='페이지 제목'?'확인된 주제는 유지하고 고객이 선택할 조건을 구체화합니다.':'확인된 표현에 해당하는 조건·근거를 본문과 연결합니다.';
+  return source.label==='페이지 제목'?`업체명에 ${check.editorial.titleSubject} 중 이 페이지의 핵심 주제를 덧붙입니다.`:`${check.description} 중 실제 확인한 정보를 한두 문장으로 설명합니다.`;
 }
 export function positionGroups(rows:PositionRow[]) {
   const groups=new Map<string,{x:number;y:number;rows:PositionRow[]}>();
@@ -83,7 +97,7 @@ export function positioningActions(row:PositionRow) {
   if(row.x===null)return [{title:'먼저 비교할 원문 확보',evidence:row.reason,action:'해당 URL의 페이지 제목과 메타 설명이 실제로 제공되는지 확인하고 다시 분석하세요. 수집 제한과 설명 부재는 별도로 점검합니다.',template:'원문 수집 후 같은 키워드·같은 두 필드로 비교',metric:'동일 범위로 비교 가능한 원문 2/2개 확보'}];
   const tasks=[];
   if((row.keywordScore??0)<100)tasks.push({title:'대표 검색어와 페이지 주제 연결',evidence:row.termFields.map(f=>`${f.label}에서 미탐지: ${row.terms.filter(t=>!f.matched.includes(t)).join(' · ')||'없음'}`).join(' / '),action:'이 검색어가 실제 주력 상품·서비스와 맞는지 먼저 확인하세요. 맞으면 제목과 설명에 자연스럽게 반영하고, 다르면 주력 상품을 설명하는 입력 페이지로 다시 진단합니다.',template:`[실제 제공하는 서비스·제품] | [브랜드]`,metric:'대상 URL의 검색 노출·클릭·CTR을 같은 검색어·기간으로 전후 비교'});
-  row.checks.filter(c=>!c.found).slice(0,2).forEach(c=>tasks.push({title:`${c.label} 설명 검토`,evidence:positionCheckReason(row,c)+` 확인 기준: ${c.examples.join(' · ')}.`,action:positionCheckNextStep(row,c),template:c.template,metric:c.id==='process'?'문의 버튼 클릭률·문의 완료 세션 비율을 전후 비교':'해당 URL의 CTR·유입 후 문의 완료 세션 비율을 전후 비교'}));
+  row.checks.filter(c=>!c.found).slice(0,2).forEach(c=>{const draft=positionCheckDraft(row,c);tasks.push({title:`${c.label} 설명 검토`,evidence:positionCheckReason(row,c),action:positionCheckNextStep(row,c),template:draft?`제목: ${draft.title}\n설명: ${draft.description}\n[ ] 안은 사실 확인 후 교체`:'미제공·예정 표현은 유지하고 운영 상태를 먼저 확인하세요.',metric:c.id==='process'?'문의 버튼 클릭률·문의 완료 세션 비율을 전후 비교':'해당 URL의 CTR·유입 후 문의 완료 세션 비율을 전후 비교'});});
   if(!tasks.length)tasks.push({title:'현재 표현의 사실성과 연결 페이지 점검',evidence:'검색어와 업종별 네 가지 정보 표현을 모두 탐지했습니다.',action:'표현을 더 늘리기보다 가격 조건·사례 원문·진행 안내가 실제 페이지에 연결되어 있는지 점검하고 고객 질문에 맞춰 내용을 보완하세요.',template:'[설명 속 약속] → [실제로 확인 가능한 근거·안내 페이지]',metric:'CTR·문의 완료 세션 비율·문의 내용의 적합성을 함께 비교'});
   return tasks.slice(0,3);
 }
@@ -91,6 +105,7 @@ export function positioningBrief(report:MarketingReport,row:PositionRow) {
   return [`검색 메시지 포지셔닝 · ${row.name}`,row.url,`대표 키워드: ${report.competitorAnalysis?.searchKeyword||''}`,POSITION_NOTE,POSITION_SIZE_NOTE,COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE,
     row.x===null?row.reason:`${row.profile.label} 기준 · X 상품·서비스 설명 ${row.x}/100 · Y 선택·이용 근거 ${row.y}/100 · 버블 단서 ${row.signalCount}/8개`,
     `페이지 제목: ${row.title||'원문 미확보'}`,`메타 설명: ${row.description||'원문 미확보'}`,
-    ...row.checks.flatMap(c=>[`${c.label}: ${positionCheckReason(row,c)}`,`확인 기준 표현: ${c.examples.join(' · ')}`, ...c.sources.map(s=>`${s.label}: ${positionFieldFinding(s)}`)]),
+    POSITION_CHECK_SCOPE,POSITION_DRAFT_NOTE,
+    ...row.checks.flatMap(c=>{const draft=positionCheckDraft(row,c);return [`${c.label}: ${positionCheckReason(row,c)}`,`고객의 질문: ${c.editorial.question}`,`확인 기준 표현: ${c.examples.join(' · ')}`, ...c.sources.map(s=>`${s.label}: ${positionFieldFinding(s)}`),...(draft?[`페이지 제목 제안: ${draft.title}`,`메타 설명 제안: ${draft.description}`]:['수정안 보류: 원문·실제 운영 상태 확인 후 작성']),`항목별 확인: ${positionCheckNextStep(row,c)}`];}),
     ...positioningActions(row).flatMap((t,i)=>[`\n${i+1}. ${t.title}`,`근거: ${t.evidence}`,`실행: ${t.action}`,`작성 틀: ${t.template}`,`확인 지표: ${t.metric}`])].join('\n');
 }
