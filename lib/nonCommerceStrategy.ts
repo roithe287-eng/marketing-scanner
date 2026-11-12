@@ -1,3 +1,4 @@
+import {providerIdentity,isSecondarySection,isOtherBranch} from './websiteIdentity';
 import {koreanParticle} from './koreanParticle';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {analyzeWebsitePurpose,isNonCommerce,type WebsitePurpose} from './websitePurpose';
@@ -11,10 +12,10 @@ export function nonCommerceSources(data:ExtractedWebsiteData):StrategySource[]{
   const url=data.finalUrl||data.url,host=new URL(url).hostname.replace(/^www\./,'');
   const own=(value:string)=>{try{const u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password&&u.hostname.replace(/^www\./,'')===host;}catch{return false;}};
   const candidates:StrategySource[]=data.communityContext?data.communityContext.evidence.map(e=>({url,title:'커뮤니티 운영·이용 안내',text:e.text})):
-    (data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&own(d.url)).flatMap(d=>d.sections.map(s=>({url:d.url,title:(s.heading||d.title).slice(0,300),text:s.text})));
-  if(!data.communityContext&&!candidates.length)for(const s of data.siteEditing?.contentSections||[]){if(!s.truncated)candidates.push({url,title:s.heading.slice(0,300),text:s.text});}
+    (data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&own(d.url)&&!isOtherBranch(d.title,data.diagnosticSeed?.page.localPlaceEvidence?.branch)).flatMap(d=>d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url)).map(s=>({url:d.url,title:(s.heading||d.title).slice(0,300),text:s.text})));
+  if(!data.communityContext&&!candidates.length)for(const s of data.siteEditing?.contentSections||[]){if(!s.truncated&&!isSecondarySection(s.heading,s.text,s.url))candidates.push({url,title:s.heading.slice(0,300),text:s.text});}
   // Metadata may anchor a sparse-page proposal, never a factual body answer.
-  if(!candidates.length)candidates.push({url,title:'입력 페이지 제목·설명',text:[data.title,data.description].filter(Boolean).join(' · ').slice(0,600)});
+  if(!candidates.length)candidates.push({url,title:'입력 페이지 제목·설명',text:providerIdentity(data).slice(0,600)});
   const filtered=candidates.filter(s=>s.text.trim().length>=4&&s.text.length<=600&&!isConsentBoilerplate(s.text)&&!/후기|testimonial|REVIEW_ONLY/i.test(s.title)).filter((s,i,a)=>a.findIndex(v=>v.text===s.text)===i).sort((a,b)=>Number(b.url!==url)-Number(a.url!==url));
   const groups=[...new Set(filtered.map(s=>s.url))].map(url=>filtered.filter(s=>s.url===url));
   return Array.from({length:16},(_,i)=>groups.flatMap(group=>group[i]?[group[i]]:[])).flat().slice(0,24);
@@ -69,7 +70,7 @@ export function nonCommerceEditorialSections(p:WebsitePurpose,sources:StrategySo
 export function buildNonCommerceStrategy(data:ExtractedWebsiteData):ServiceStrategy|undefined{
   const p=analyzeWebsitePurpose(data);if(!isNonCommerce(p)||data.collectionNotice||p.business?.id==='international_logistics')return;
   const sources=nonCommerceSources(data);if(!sources.length)return;
-  const book=nonCommercePlaybook(p,[data.title,data.description,...data.h1].join(' '),data.diagnosticSeed?.page.localPlaceEvidence);
+  const book=nonCommercePlaybook(p,providerIdentity(data),data.diagnosticSeed?.page.localPlaceEvidence);
   const url=data.finalUrl||data.url,topic=(data.h1[0]||data.title||book.label).replace(/\s+/g,' ').slice(0,70);
   return {version:1,industry:'noncommerce',targetUrl:url,capturedAt:data.seoEvidence?.capturedAt||new Date().toISOString(),basis:'source-backed-playbook',sources,findings:buildStrategyFindings(p,sources,url),...nonCommerceEditorialSections(p,sources,url,topic,book)};
 }

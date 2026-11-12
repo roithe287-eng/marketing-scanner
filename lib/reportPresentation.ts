@@ -1,3 +1,4 @@
+import {providerIdentity} from './websiteIdentity';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
 import {applyActionableGuides} from './actionableGuides';
 import {analyzeWebsitePurpose} from './websitePurpose';
@@ -34,7 +35,7 @@ export function reportForPresentation(report:MarketingReport):MarketingReport {
     const place=report.siteDiagnostics?.pages.find(p=>canonicalPage(p.url)===canonicalPage(page.finalUrl))?.localPlaceEvidence;
     const fresh=analyzeWebsitePurpose({url:report.url,finalUrl:page.finalUrl,title:page.title,description:page.description,h1:page.h1,h2:page.h2,bodyText:page.bodyText,siteEditing:page.siteEditing,ctaButtons:page.ctaButtons,businessDocuments:documents,localPlaceEvidence:place});
     if(fresh.kind===report.sitePurpose.kind&&(fresh.sector?.id===report.sitePurpose.sector?.id||!fresh.sector&&((place?.sector==='veterinary'&&report.sitePurpose.sector?.id==='medical')||(!!place?.branch&&['restaurant','cafe'].includes(place.sector)&&report.sitePurpose.sector?.id==='franchise')))){
-      const book=nonCommercePlaybook(fresh,[page.title,page.description,...page.h1].join(' '),place);
+      const book=nonCommercePlaybook(fresh,providerIdentity(page),place);
       report={...report,sitePurpose:fresh,serviceStrategy:{...plan,...nonCommerceEditorialSections(fresh,plan.sources,page.finalUrl,(page.h1[0]||page.title||fresh.label).slice(0,70),book),findings:buildStrategyFindings(fresh,plan.sources,page.finalUrl)}};
     }
   }

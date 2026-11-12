@@ -1,3 +1,5 @@
+import {sameSite} from './siteIdentity';
+import {ownBusinessRole,isContextOnlyEvidence,isSecondarySection,classificationText,purposeSchemaTypes} from './websiteIdentity';
 import {z} from 'zod';
 import {logisticsQuestions} from './logisticsQuestions';
 import type {ExtractedWebsiteData} from './extractWebsite';
@@ -87,17 +89,19 @@ const profiles:Record<BusinessContext['id'],Profile>={
     ]},
 };
 export const businessProfile=(id:BusinessContext['id'])=>profiles[id];
-type Input=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'schemaTypes'|'productContext'|'businessDocuments'>>;
+type Input=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'schemaTypes'|'jsonLdSchemas'|'productContext'|'businessDocuments'>>;
 
 /** Infer from current merchant text. A known domain alone never produces a diagnosis. */
 export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
-  if((data.schemaTypes||[]).some(t=>/^(Article|BlogPosting|NewsArticle|Course)$/i.test(t)))return;
-  const documents=data.businessDocuments||[];
-  const primary=[data.title,data.description,data.ogDescription,...(data.h1||[]),...(data.h2||[]),...documents.map(d=>d.title)].join(' ');
+  if(purposeSchemaTypes(data).some(t=>/^(Article|BlogPosting|NewsArticle|Course)$/i.test(t)))return;
+  if(ownBusinessRole(data)&&ownBusinessRole(data)!=='retail')return;
+  const documents=(data.businessDocuments||[]).filter(d=>sameSite(d.url,data.finalUrl||data.url)).map(d=>({...d,sections:d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url))})).filter(d=>!isSecondarySection(d.title,'',d.url));
+  const identity=[data.title,data.description,data.ogDescription,...(data.h1||[])].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ');
+  const primary=classificationText(identity|| (documents.length&&documents.every(d=>d.source==='search_excerpt')?documents.map(d=>d.title).join(' '):''));
   const testimonial=(text:string)=>/[★☆]|testimonial|고객.{0,5}후기|highly recommend|I.ve been using|I love that/i.test(text);
-  const inputUnits=[{text:data.title,locator:'head > title'},{text:data.description||data.ogDescription||'',locator:'meta[name="description"]'},...(data.h1||[]).map(text=>({text,locator:'h1'})),...(!data.siteEditing&&!documents.length?(data.bodyText||'').split(/\n+/).slice(0,32).map(text=>({text,locator:'수집된 본문'})):[]),...(data.siteEditing?.contentSections||[]).filter(s=>!s.truncated).map(s=>({text:s.text,locator:s.heading||'입력 페이지 본문'}))].filter(u=>u.text&&!testimonial(u.text));
+  const inputUnits=[{text:data.title,locator:'head > title'},{text:data.description||data.ogDescription||'',locator:'meta[name="description"]'},...(data.h1||[]).map(text=>({text,locator:'h1'})),...(!data.siteEditing&&!documents.length?(data.bodyText||'').split(/\n+/).slice(0,32).map(text=>({text,locator:'수집된 본문'})):[]),...(data.siteEditing?.contentSections||[]).filter(s=>!s.truncated&&!isSecondarySection(s.heading,s.text,s.url)).map(s=>({text:s.text,locator:s.heading||'입력 페이지 본문'}))].filter(u=>u.text&&!testimonial(u.text)&&!isContextOnlyEvidence(u.locator,u.text));
   const units=[...inputUnits,...documents.filter(d=>d.source!=='search_excerpt').flatMap(d=>[{text:d.title,locator:d.url},...d.sections.map(s=>({text:s.text,locator:d.url}))])].map(u=>({...u,text:u.text.slice(0,600)}));
-  const all=[primary,...units.map(u=>u.text),...documents.filter(d=>d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
+  const all=[primary,...units.map(u=>u.text),...documents.filter(d=>!identity&&d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
   let id:BusinessContext['id']|undefined;
   const logistics=/해외\s*이사|귀국\s*이사|국제\s*운송|국제\s*물류|포워딩|freight\s*(?:forward|service)|international\s*(?:moving|relocation)/i;
   const logisticsUnits=units.filter(u=>logistics.test(u.text));

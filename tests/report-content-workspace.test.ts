@@ -13,7 +13,7 @@ import ReportSourceLibrary from '../components/report/ReportSourceLibrary';
 import SiteContentOverview from '../components/report/SiteContentOverview';
 
 const url='https://education.example.org/';
-test('late service paragraphs and linked reviews survive large menus, while hidden controls do not become evidence',()=>{
+test('raw linked reviews survive collection but do not become provider answer facts',()=>{
  const paragraph='해외 진학 프로그램은 학생의 목표와 준비 상황에 따라 상담과 학교 지원 절차를 안내합니다.';
  const review='고등학교 진학을 준비하며 상담을 통해 학교별 지원 조건과 준비 서류를 확인했습니다. 후기 원문에서 당시 조건을 함께 안내합니다.';
  const $=load(`<body><div class="gnb_wrap">${Array.from({length:150},(_,i)=>`<p>메뉴 ${i} 국가별 프로그램 안내</p>`).join('')}</div><main><h2>진학 프로그램</h2><p>${paragraph}</p><div class="rev"><dl><dd><a href="/reviews/one?idx=7">${review}</a></dd></dl></div><p>18년 평균상담경력</p><div hidden><p>비공개 안내가 본문 근거로 들어가면 안 됩니다.</p></div><div style="display: none"><p>숨겨진 팝업 문구도 수집하지 않습니다.</p></div><a href="javascript:void(0)">신청하기</a><a>상담하기</a></main></body>`);
@@ -22,7 +22,7 @@ test('late service paragraphs and linked reviews survive large menus, while hidd
  assert.equal(sections.filter(s=>s.text===review).length,1);assert.ok(!sections.some(s=>/메뉴|비공개|숨겨진/.test(s.text)));
  assert.ok(captured.elements.filter(e=>['신청하기','상담하기'].includes(e.text)).every(e=>!e.href));
  const pool=answerSources({url,finalUrl:url,title:'진학 프로그램',description:'',ogDescription:'',h1:[],h2:[],bodyText:'메뉴뿐인 이전 본문',siteEditing:captured,isJsHeavy:false});
- assert.ok(pool.some(s=>paragraph.includes(s.text)&&s.kind==='body'));assert.ok(pool.some(s=>s.text.includes('후기 원문')));
+ assert.ok(pool.some(s=>paragraph.includes(s.text)&&s.kind==='body'));assert.ok(!pool.some(s=>s.text.includes('후기 원문')));
 });
 
 test('source grouping deduplicates copy and tracking URLs without merging different functional destinations',()=>{

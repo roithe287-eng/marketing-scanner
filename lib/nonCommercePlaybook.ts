@@ -1,3 +1,4 @@
+import {ownBusinessRole} from './websiteIdentity';
 import {koreanParticle} from './koreanParticle';
 import type {WebsitePurpose} from './websitePurpose';
 import type {AnswerIntent} from './answerContentSchema';
@@ -46,8 +47,9 @@ export const NONCOMMERCE_PLAYBOOKS:Record<string,NonCommercePlaybook>={
 };
 const serviceMatchers:[string,RegExp][]=[['software',/소프트웨어|SaaS|software|업무\s*솔루션/i],['accounting',/세무|회계|기장|tax\s*account/i],['agency',/마케팅|광고\s*대행|브랜딩|웹\s*제작|디자인\s*(?:대행|스튜디오)/i],['home',/인테리어|리모델링|시공|청소/i],['repair',/수리|복원|수선|repair/i],['hospitality',/숙박|호텔|리조트|펜션|캠핑|체험|렌탈|대관/i],['hiring',/채용\s*(?:대행|서비스)|헤드헌팅|인력\s*(?:서비스|파견)/i],['event',/촬영|웨딩|행사\s*(?:대행|기획)|스튜디오/i]];
 export function nonCommercePlaybook(p:WebsitePurpose,identity='',place?:LocalPlaceEvidence):NonCommercePlaybook{
+  const role=ownBusinessRole({title:identity});
   const special=(p.kind==='service'||p.kind==='education')?(/유학|어학\s*연수/.test(identity)?'study_abroad':p.kind==='service'?(/부동산\s*(?:중개|매물)|공인중개/.test(identity)?'real_estate':/필라테스|피트니스|요가|헬스장/.test(identity)?'fitness':/렌탈|렌털|설치\s*서비스/.test(identity)?'rental':serviceMatchers.find(([,match])=>match.test(identity))?.[0]):undefined):undefined;
-  const key=p.community?'community':p.sector?.id||p.business?.id||special||p.kind;
+  const key=p.community?'community':p.sector?.id||p.business?.id||(p.kind==='service'&&role&&['agency','software','home'].includes(role)?role:undefined)||special||p.kind;
   let result=NONCOMMERCE_PLAYBOOKS[key]||NONCOMMERCE_PLAYBOOKS.service;
   // Strong professional/HQ identities win over places mentioned in client examples.
   const localEligible=!p.community&&(!p.sector||p.sector.id==='medical'&&place?.sector==='veterinary')&&(!p.business||p.business.id==='travel_booking')&&['service','education'].includes(p.kind)&&!['software','agency','accounting','hiring','study_abroad'].includes(key);
