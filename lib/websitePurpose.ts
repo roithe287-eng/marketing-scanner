@@ -34,6 +34,7 @@ const patterns={
 } as const;
 const actionPatterns={purchase:/장바구니|구매하기|바로\s*구매|결제하기|add to cart|buy now|checkout/i,booking:/예약|진료\s*접수|book (?:a|an)|appointment/i,application:/신청|수강|접수|지원하기|apply|enroll|register/i,download:/다운로드|자료\s*받기|안내서\s*받기|download/i,subscribe:/구독|뉴스레터\s*신청|subscribe/i,contact:/문의|상담|견적|contact|consult|demo/i} as const;
 const actionLabels={purchase:'구매·결제',contact:'상담·문의',booking:'예약·접수',application:'신청·등록',download:'자료 다운로드',subscribe:'구독',read:'본문·자료 읽기',unknown:'다음 행동 확인'};
+const sectorPlaces:Partial<Record<NonNullable<WebsitePurpose['sector']>['id'],string[]>>={medical:['medical'],legal:['legal'],rehabilitation:['legal'],insurance:['finance'],property_sales:['real_estate']};
 const short=(s:string,max=600)=>s.replace(/\s+/g,' ').trim().slice(0,max);
 export const isNonCommerce=(p:WebsitePurpose|undefined)=>!!p&&!['commerce','mixed','unknown'].includes(p.kind);
 export const showProductCollection=(p:WebsitePurpose|undefined)=>!p||!isNonCommerce(p);
@@ -96,9 +97,12 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const checkUnits=[...supplemental,...units.filter(u=>!isSecondarySection(u.locator,u.text))].filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i);
   const place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
   const rawSector=analyzeNonCommerceSector(identityUnits,actions,supplemental);
+  // Insurance and referral information describe conditions, not a new business.
+  // A specific first-party place identity must agree with the specialist sector.
+  const incompatibleSector=!!place&&place.sector!=='local'&&!!rawSector&&!!sectorPlaces[rawSector.id]&&!sectorPlaces[rawSector.id]!.includes(place.sector);
   const clientSector=!!role&&role!=='education'&&rawSector?.id!=='medical_consulting';
   const branchStore=!!place?.branch&&['restaurant','cafe'].includes(place.sector)&&rawSector?.id==='franchise'&&!/가맹\s*(?:모집|문의|상담|개설|계약|본부)|프랜차이즈\s*창업/.test([data.title,data.description,...(data.h1||[])].join(' '));
-  const sectorCandidate=(place?.sector==='veterinary'&&rawSector?.id==='medical')||branchStore||clientSector?undefined:rawSector;
+  const sectorCandidate=incompatibleSector||branchStore||clientSector?undefined:rawSector;
   const sectorPrimary=sectorCandidate?.evidence.reduce((n,u)=>n+primaryWeight(u),0)||0;
   const informative=genericCandidate&&['content','education','public_service'].includes(genericCandidate)&&purposeScore(genericCandidate)>=sectorPrimary;
   const competingPrimary=!sectorPrimary&&genericCandidate&&matched[genericCandidate].some(u=>primaryWeight(u)>0);

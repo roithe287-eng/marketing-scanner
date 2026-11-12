@@ -99,9 +99,13 @@ export function classifyIndustryFromEvidence(data: ExtractedWebsiteData): Indust
     const place=data.diagnosticSeed?.page.localPlaceEvidence;
     const book=nonCommercePlaybook(purpose,providerIdentity(data),place);
     const season=book.id.startsWith('season_')?SEASON_INDUSTRIES[book.id.slice(7)]:undefined;
+    if(!season&&place?.sector==='rental'&&/렌터카|렌트카|(?:자동차|차량)\s*대여/.test(providerIdentity(data)))return 'automotive';
     const local=book.local&&place?PLACE_INDUSTRIES[place.sector]:undefined;
     const category=season||local||SERVICE_INDUSTRIES[book.id];
     if(category)return category;
+    // A concrete local business without a benchmark category must not fall
+    // through to incidental words such as insurance in its operating terms.
+    if(book.local&&place&&place.sector!=='local')return 'etc';
   }
   if(data.productContext?.sources.length&&(data.productContext.commerce===true||data.productContext.discovery==='public_catalog'))return 'ecommerce';
   if(purpose.kind==='commerce'&&ownBusinessRole(data)==='retail')return 'ecommerce';
