@@ -76,7 +76,7 @@ test('sections show a brief before opening their evidence and copy instructions'
    assert.ok(folds.length>0,chapter);
    for(const el of folds.toArray()){
      const fold=$(el);
-     assert.equal(fold.attr('open'),undefined);
+     assert.equal(fold.attr('open'),fold.parent().attr('data-report-panel')==='overview-questions'?'open':undefined);
      assert.ok(fold.children('summary').find('.reading-preview').text().trim());
      assert.ok(fold.children('.reading-body').text().trim());
      assert.equal(fold.find('>summary button,>summary a').length,0);

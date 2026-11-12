@@ -1,5 +1,6 @@
+import {applyActionableGuides} from './actionableGuides';
 import {analyzeWebsitePurpose} from './websitePurpose';
-import {buildStrategyFindings} from './nonCommerceStrategy';
+import {buildNonCommerceSegments,buildStrategyFindings} from './nonCommerceStrategy';
 import type {MarketingReport} from './reportSchema';
 import {excludedPlatformReason} from './competitorSelection';
 import {ownHost,safeHttpUrl} from './citationMeasurement';
@@ -11,6 +12,7 @@ import {PAGE_EVIDENCE_METADATA_LIMITS} from './pageEvidence';
 
 /** Reapply candidate policy to saved reports without mutating their observations. */
 export function reportForPresentation(report:MarketingReport):MarketingReport {
+  report=applyActionableGuides(report);
   const diagnostics=report.siteDiagnostics;
   if (diagnostics?.medicalAudit?.reviewedOn==='2026-11-04') report={...report,siteDiagnostics:{...diagnostics,medicalAudit:currentPlacePolicy(diagnostics.medicalAudit,!!buildHospitalPlaceReview(diagnostics))}};
   const page=report.pageEvidence;
@@ -30,7 +32,7 @@ export function reportForPresentation(report:MarketingReport):MarketingReport {
     }
     const fresh=analyzeWebsitePurpose({url:report.url,finalUrl:page.finalUrl,title:page.title,description:page.description,h1:page.h1,h2:page.h2,bodyText:page.bodyText,siteEditing:page.siteEditing,ctaButtons:page.ctaButtons,businessDocuments:documents});
     if(fresh.kind===report.sitePurpose.kind&&fresh.sector?.id===report.sitePurpose.sector?.id){
-      report={...report,sitePurpose:fresh,serviceStrategy:{...plan,findings:buildStrategyFindings(fresh,plan.sources,page.finalUrl)}};
+      report={...report,sitePurpose:fresh,serviceStrategy:{...plan,segments:buildNonCommerceSegments(fresh,plan.sources,page.finalUrl,(page.h1[0]||page.title||fresh.label).slice(0,70)),findings:buildStrategyFindings(fresh,plan.sources,page.finalUrl)}};
     }
   }
   const storedAnalysis=report.competitorAnalysis;if(!storedAnalysis)return report;const analysis=competitorDisplay(storedAnalysis);

@@ -1,3 +1,4 @@
+import DraftText from './DraftText';
 import React from 'react';
 import type {LogisticsBriefing} from '@/lib/logisticsBriefing';
 import {safeHttpUrl} from '@/lib/citationMeasurement';
@@ -19,7 +20,7 @@ export default function LogisticsBriefingPanel({plan}:{plan:LogisticsBriefing}){
       <h5>자사에서 확인한 원문 단서</h5><p>{s.observed.join(' · ')||'수집 범위에서 미확인'}</p>
       <h5>추가로 대조할 내용</h5><p>{s.review.length?`${s.review.join(' · ')} 관련 단서를 이번 수집에서 확인하지 못했습니다. 실제 안내의 존재 여부를 확인하세요.`:'관련 표현은 확인했습니다. 각 항목의 설명이 충분한지, 현재 조건과 일치하는지 대조하세요.'}</p>
       <Evidence sources={s.evidence}/><h5>구체적인 보완 제안</h5><p>{s.action}</p><h5>적용 위치</h5><p>{s.placement}</p>
-      <div className="service-strategy-copy"><span>작성 초안 · 대괄호는 실제 운영 조건 확인 후 작성</span><p>{s.draft}</p></div>
+      <div className="service-strategy-copy"><span>작성 초안 · 대괄호는 실제 운영 조건 확인 후 작성</span><p><DraftText text={s.draft}/></p></div>
     </article>)}</div>
     <h4 className="service-strategy-section-title">5단계마다 고객 준비·업체 역할·확인 기준을 작성하세요</h4>
     <ol className="service-strategy-funnel">{plan.steps.map((s,i)=><li key={s.title}><span>{String(i+1).padStart(2,'0')}</span><div><h4>{s.title}</h4><h5>고객이 준비할 일</h5><p>{s.customer}</p><h5>업체가 설명할 일</h5><p>{s.operator}</p><h5>작성 전 확인</h5><p>{s.verify}</p><Evidence sources={s.evidence}/></div></li>)}</ol>

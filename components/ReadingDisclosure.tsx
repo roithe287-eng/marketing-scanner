@@ -13,14 +13,15 @@ export function ReadingToggle({variant='default'}:{variant?:'default'|'report'}=
 type Props = {
   title: string;
   preview?: string;
+  defaultOpen?: boolean;
   index?: string;
   className?: string;
   children: React.ReactNode;
 };
 
-export default function ReadingDisclosure({title, preview, index, className = '', children}: Props) {
+export default function ReadingDisclosure({title, preview, index, defaultOpen=false, className = '', children}: Props) {
   return (
-    <details className={`reading-fold ${className}`}>
+    <details open={defaultOpen || undefined} className={`reading-fold ${className}`}>
       <summary className="reading-summary">
         <span className="reading-caption">
           <strong>{index?<><span className="reading-index" aria-hidden="true">{index}</span><span className="reading-title">{title}</span></>:title}</strong>
