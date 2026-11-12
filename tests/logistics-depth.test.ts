@@ -49,7 +49,7 @@ test('eight detailed questions preserve original facts and add separately labell
  const d=data(),p=buildAnswerContentPlan(d);assert.equal(p.questions.length,8);assert.equal(new Set(p.questions.map(q=>q.question)).size,8);
  assert.ok(p.questions.every(q=>q.explanation&&q.template.length>100&&q.missingFacts.length));
  for(const q of p.questions){assert.equal(q.draft,q.evidence.map(e=>e.text).join('\n'));assert.ok(new Set(q.evidence.map(e=>e.url)).size<=1);}
- const rendered=renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan:p}));assert.match(rendered,/해석·보완 방향/);assert.match(rendered,/상세 답변 작성안/);
+ const rendered=renderToStaticMarkup(React.createElement(AnswerContentPanel,{plan:p}));assert.doesNotMatch(rendered,/해석·보완 방향/);assert.match(rendered,/추가 작성 형식/);for(const q of p.questions)assert.ok(rendered.includes(q.draft.split('\n')[0]));
  assert.match(buildPrompt(d),/국제물류 상세 진단/);assert.doesNotMatch(buildPrompt(d,'minimal'),/국제물류 상세 진단/);
 });
 
@@ -73,7 +73,7 @@ test('full strategy survives report serialization and all four screen views and 
  const text=buildReportDocument(report).map(b=>b.text).join('\n');
  for(const s of p.segments){assert.ok(text.includes(s.headline));assert.ok(text.includes(s.landingBlocks[5]));}
  for(const m of p.metrics)assert.ok(text.includes(m.formula));
- assert.ok(text.includes(p.experiments[3].decision));assert.match(text,/해석·보완 방향/);
+ assert.ok(text.includes(p.experiments[3].decision));assert.doesNotMatch(text,/해석·보완 방향/);
  for(const view of ['segments','search','acquisition','conversion'] as const){const markup=renderToStaticMarkup(React.createElement(ServiceStrategyPanel,{plan:p,view}));assert.doesNotMatch(markup,/undefined|NaN/);assert.ok(markup.length>1000);}
 });
 

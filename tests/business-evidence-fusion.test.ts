@@ -84,3 +84,14 @@ for(const profile of SEASONAL_PROFILES)test('seasonal detail source retains rent
   const doc=captureBusinessDocument(`<title>${profile.label}</title><main><h2>예약 및 이용 절차</h2><p>예약 확인 후 대여 · 반납시간 18:00 · 이용요금 30,000원</p></main>`,url+'season');
   assert.ok(doc.sections.some(s=>s.text.includes('반납시간 18:00')));
 });
+
+test('consent boilerplate and parking discounts cannot become clinic scope or treatment fees',()=>{
+ const body='<p>2) 개인정보 수집방법 : 홈페이지(회원가입, 빠른상담, 온라인예약, 치료후기)</p><p>개인정보수집동의 [자세히보기]</p><div><p>주차안내</p><p>건물 지하1층 타워주차 이용</p></div><table><thead><tr><th>구분</th><th>금액</th></tr></thead><tbody><tr><td>도수치료</td><td>3시간 무료</td></tr></tbody></table>';
+ const doc=captureBusinessDocument(page(body),url+'map');
+ assert.doesNotMatch(JSON.stringify(doc),/개인정보|치료후기/);assert.match(JSON.stringify(doc),/주차.*3시간 무료/);
+ const p=analyzeWebsitePurpose({url,finalUrl:url,title:'메타한방병원',description:'한의과 진료 안내',h1:[],h2:[],bodyText:'',businessDocuments:[doc]});
+ for(const id of ['scope','price'])assert.doesNotMatch(JSON.stringify(p.checks.find(c=>c.id===id)),/3시간 무료/);
+ assert.match(JSON.stringify(p.checks.find(c=>c.id==='location')),/3시간 무료/);
+ const privacy=captureBusinessDocument('<title>메타한방병원 개인정보취급방침</title><main><p>개인정보 관리책임자와 회원탈퇴를 안내합니다.</p></main>',url+'info/privacy');
+ assert.equal(privacy.sections.length,0);
+});

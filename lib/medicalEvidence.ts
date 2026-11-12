@@ -1,3 +1,4 @@
+import {isConsentBoilerplate} from './contentBoilerplate';
 import {publicBusinessSections} from './publicBusinessSections';
 import * as cheerio from 'cheerio';
 import type {MedicalPageEvidence,MedicalEvidence} from './medicalAuditSchema';
@@ -83,7 +84,7 @@ export function captureMedicalEvidence(html:string,url:string,providerOnly=false
   const evidence=(text:string,locator:string):MedicalEvidence=>({text:clean(text),locator,url});
   if(!sensitive){
     const publicUnits=publicBusinessSections(html).map(s=>({text:s.text,locator:s.heading||'본문'}));
-    for(const [key,re] of signals){const unit=[...publicUnits,...units].filter(u=>re.test(u.text)&&!(key==='process'&&/제증명|기록지|기록사본|진단서/.test(u.text))).sort((a,b)=>Number(b.text.length>=15)-Number(a.text.length>=15))[0];if(unit)observed.push({key,evidence:evidence(unit.text,unit.locator)});}
+    for(const [key,re] of signals){const unit=[...publicUnits,...units].filter(u=>re.test(u.text)&&!isConsentBoilerplate(u.text)&&!(['scope','cost'].includes(key)&&/주차|출차|타워주차/.test(u.text))&&!(key==='process'&&/제증명|기록지|기록사본|진단서/.test(u.text))).sort((a,b)=>Number(b.text.length>=15)-Number(a.text.length>=15))[0];if(unit)observed.push({key,evidence:evidence(unit.text,unit.locator)});}
     for(const profile of MEDICAL_PROFILES){const unit=profile.match.test(identity)?{text:identity,locator:'title / description / h1'}:units.find(u=>/^(?:h1|h2|h3)$/.test(u.locator)&&profile.match.test(u.text));if(unit)observed.push({key:`profile:${profile.id}`,evidence:evidence(unit.text,unit.locator)});}
   }
   const declared=nodes.some(n=>values(n['@type']).map(term).some(t=>FACILITIES.has(t)&&t!=='MedicalOrganization'));

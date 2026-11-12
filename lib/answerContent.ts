@@ -194,7 +194,7 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
 }
 
 export function answerQuestionText(question:AnswerQuestion):string{
-  return `Q. ${question.question}\nA. ${question.draft||question.template}${question.explanation?`\n해석·보완 방향: ${question.explanation}\n작성 제안 (운영 정보 확인 후 사용): ${question.template}`:''}${question.missingFacts.length?`\n[게시 전 확인: ${question.missingFacts.join(' / ')}]`:''}`;
+  return `Q. ${question.question}\nA. ${question.draft||question.template}${question.missingFacts.length?`\n[게시 전 확인: ${question.missingFacts.join(' / ')}]`:''}`;
 }
 export function answerPlanText(plan:AnswerContentPlan):string{
   return `${ANSWER_CONTENT_TITLE}\n대표 키워드: ${plan.primaryKeyword?.term||'확인 필요'}\n${plan.notice}\n\n${plan.questions.map(answerQuestionText).join('\n\n')}`;

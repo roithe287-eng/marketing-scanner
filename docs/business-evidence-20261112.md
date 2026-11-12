@@ -15,3 +15,5 @@ Validation:
 - Production TypeScript and Next.js build pass. Live Naver lookup is verified through the production scanner after deployment; local tests use controlled API responses, not production credentials.
 
 Naver field contract: https://developers.naver.com/docs/serviceapi/search/local/local.md
+
+Production verification also returned one consistent Naver result for 메타한방병원 with its industry, road address and cadastral address. The live report exposed two additional context errors, now covered by a regression: privacy-policy copy must not become a service claim, and a parking discount associated with a treatment must remain labeled as parking, not treatment pricing. The same pass removed repeated explanatory paragraphs from answer cards and copied/exported answers.

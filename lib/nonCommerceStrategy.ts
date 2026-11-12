@@ -13,7 +13,9 @@ export function nonCommerceSources(data:ExtractedWebsiteData):StrategySource[]{
   if(!data.communityContext&&!candidates.length)for(const s of data.siteEditing?.contentSections||[]){if(!s.truncated)candidates.push({url,title:s.heading.slice(0,300),text:s.text});}
   // Metadata may anchor a sparse-page proposal, never a factual body answer.
   if(!candidates.length)candidates.push({url,title:'입력 페이지 제목·설명',text:[data.title,data.description].filter(Boolean).join(' · ').slice(0,600)});
-  return candidates.filter(s=>s.text.trim().length>=4&&s.text.length<=600&&!isConsentBoilerplate(s.text)&&!/후기|testimonial|REVIEW_ONLY/i.test(s.title)).filter((s,i,a)=>a.findIndex(v=>v.text===s.text)===i).sort((a,b)=>Number(b.url!==url)-Number(a.url!==url)||Number(b.text.length>=40)-Number(a.text.length>=40)).slice(0,24);
+  const filtered=candidates.filter(s=>s.text.trim().length>=4&&s.text.length<=600&&!isConsentBoilerplate(s.text)&&!/후기|testimonial|REVIEW_ONLY/i.test(s.title)).filter((s,i,a)=>a.findIndex(v=>v.text===s.text)===i).sort((a,b)=>Number(b.url!==url)-Number(a.url!==url));
+  const groups=[...new Set(filtered.map(s=>s.url))].map(url=>filtered.filter(s=>s.url===url));
+  return Array.from({length:16},(_,i)=>groups.flatMap(group=>group[i]?[group[i]]:[])).flat().slice(0,24);
 }
 
 export function buildStrategyFindings(p:WebsitePurpose,sources:StrategySource[],url:string):ServiceStrategy['findings']{

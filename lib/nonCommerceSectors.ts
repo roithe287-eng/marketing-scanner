@@ -1,3 +1,4 @@
+import {isConsentBoilerplate} from './contentBoilerplate';
 import {z} from 'zod';
 import {sectorJourneys} from './nonCommerceJourneys';
 
@@ -184,7 +185,7 @@ export function analyzeNonCommerceSector(units:SectorEvidence[],actions:SectorEv
   return NonCommerceSectorSchema.parse({version:1,id:p.id,label:p.label,evidence:selected.evidence.slice(0,4),journey:p.journey,questions:p.questions,caution:p.caution,
     checks:p.checks.map(c=>{
       const rank=(u:SectorEvidence)=>(c.id==='proof'&&/^[가-힣]{2,4}\s*(?:대표)?(?:병원장|원장|변호사|강사)$/.test(u.text)?20:0)+(c.id==='contact'&&u.locator.includes('입력 항목')?20:0)+(u.text.length>=15?3:0)+(/^(?:전|현)\)/.test(u.text)?-3:0)+(actions.includes(u)?(c.id==='contact'?12:0):primary(u)?1:u.locator==='h2'?2:8)-(u.text.length>300?5:0)-(/사무소.{0,180}사무소|(?:로|길)\s*\d/.test(u.text)?20:0);
-      const evidence=[...supplemental,...units,...actions].filter(u=>c.match.test(u.text)&&!(c.id==='process'&&/제증명|기록지|기록사본|진단서/.test(u.text))).sort((a,b)=>rank(b)-rank(a)).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3).map(u=>{
+      const evidence=[...supplemental,...units,...actions].filter(u=>c.match.test(u.text)&&!isConsentBoilerplate(u.text)&&!(p.id==='medical'&&['scope','price'].includes(c.id)&&/주차|출차|타워주차/.test(u.text))&&!(c.id==='process'&&/제증명|기록지|기록사본|진단서/.test(u.text))).sort((a,b)=>rank(b)-rank(a)).filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i).slice(0,3).map(u=>{
         if(u.text.length<=240)return u;
         const start=Math.max(0,u.text.search(c.match)-45);return {...u,text:u.text.slice(start,start+240)};
       });

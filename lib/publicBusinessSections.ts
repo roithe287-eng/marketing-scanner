@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import {isConsentBoilerplate} from './contentBoilerplate';
 import {pageRegion} from './pageRegions';
 
 const clean=(s:string)=>s.replace(/\s+/gu,' ').trim();
@@ -9,7 +10,7 @@ export function publicBusinessSections(html:string):{heading:string;text:string}
   $('[style]').each((_,e)=>{if(/display\s*:\s*none|visibility\s*:\s*hidden/i.test($(e).attr('style')||''))$(e).remove();});
   $('br').replaceWith(' · ');
   let heading='';
-  const add=(text:string,label=heading)=>{text=clean(text);if(text.length>=4&&text.length<=600&&!out.some(s=>s.text===text))out.push({heading:label.slice(0,180),text});};
+  const add=(text:string,label=heading)=>{text=clean(text);if(text.length>=4&&text.length<=600&&!isConsentBoilerplate(text)&&!out.some(s=>s.text===text))out.push({heading:label.slice(0,180),text});};
   $('body h1,body h2,body h3,body h4,body p,body li,body tr,body dt,body dd,body address').slice(0,1200).each((_,e)=>{
     if(['nav','header','footer'].includes(pageRegion($,e)))return;
     const node=$(e),text=clean(node.text());
@@ -20,7 +21,9 @@ export function publicBusinessSections(html:string):{heading:string;text:string}
       const headers=node.closest('table').find('thead tr').last().children('th,td').toArray().map(c=>clean($(c).text()));
       const simple=headers.length===cells.length&&!cells.toArray().some(c=>$(c).attr('rowspan')||$(c).attr('colspan'));
       const row=cells.toArray().map((c,i)=>`${simple&&headers[i]?headers[i]+': ':''}${clean($(c).text())}`).filter(Boolean).join(' · ');
-      add(row,clean(node.closest('table').find('caption').text())||heading);return;
+      const table=node.closest('table'),nearby=clean(table.prevAll('h1,h2,h3,h4,p,div').first().text());
+      const context=clean(table.find('caption').text())||(nearby.length<=180?nearby:'')||heading;
+      add(context?context+' · '+row:row,context);return;
     }
     if(node.closest('table').length)return;
     if(e.tagName==='dt'){const dd=node.next('dd');if(dd.length)add(text+': '+dd.text());return;}

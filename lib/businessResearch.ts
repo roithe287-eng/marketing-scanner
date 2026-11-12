@@ -9,6 +9,7 @@ import {evaluateRobots,type RobotsObservation} from './robotsRules';
 import {withBudget,budgetSignal} from './runtime/budget';
 import {getScannerContactUrl} from './siteConfig';
 import {searchNaverWeb} from './naverWebSearch';
+import {isConsentBoilerplate} from './contentBoilerplate';
 import {publicBusinessSections} from './publicBusinessSections';
 import {pageRegion} from './pageRegions';
 
@@ -44,6 +45,7 @@ export function captureBusinessLinks(html:string,url:string):string[]{
 /** Only public catalogue fields from a known declarative payload; no general state walk or execution. */
 export function captureBusinessDocument(html:string,url:string,capturedAt=new Date().toISOString()):BusinessDocument{
   const $=cheerio.load(html),title=clean($('head > title').first().text(),300);
+  if(/(?:privacy|policy|terms|agreement)(?:[./_-]|$)/i.test(new URL(url).pathname)&&/개인정보\s*(?:처리|취급)\s*방침|이용\s*약관|privacy\s*policy|terms\s*(?:of|and)/i.test(title+' '+$('h1,h2').text()))return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[]});
   const catalog:{heading:string;text:string}[]=[];
   // Public form labels describe the inquiry journey; never capture entered values.
   const formSections:{heading:string;text:string}[]=[];
@@ -76,7 +78,7 @@ export function captureBusinessDocument(html:string,url:string,capturedAt=new Da
     return (/혈압측정|주치의 회진|협진 경과|반납.*(?:절차|확인)|픽업.*(?:시간|장소)|접수.*(?:순서|서류)|적용\(|분기 적용|진찰료 별도/.test(s.text)?25:0)+(/병원장|대표원장|원장|변호사|담당자|대표강사/.test(s.text)&&s.text.length<100&&!/^(?:전|현)\)/.test(s.text)?20:0)+(/금액|가격|요금|비용|진료비|비급여|운영시간|진료시간|입원치료|준비물|절차|정형외과전문의|상담료/.test(text)?8:0)+(/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label|해외이사|귀국이사|견적|포장|보험|보상|freight|cargo|customs/i.test(text)?5:0);
   };
   const seen=new Set<string>();
-  return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...formSections.slice(0,2),...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(seen.has(s.text)||/^[A-Z\s]{4,20}$/.test(s.text))return false;seen.add(s.text);return true;}).slice(0,16)});
+  return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...formSections.slice(0,2),...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(isConsentBoilerplate(s.text)||seen.has(s.text)||/^[A-Z\s]{4,20}$/.test(s.text))return false;seen.add(s.text);return true;}).slice(0,16)});
 }
 
 /** Search snippets are topic hints only. No request is made to a robots-blocked merchant page. */
