@@ -42,6 +42,7 @@ test('public detail crawl reaches doctors, admissions and itemized fees and feed
     const check=purpose.checks.find(c=>c.id===id)!;assert.equal(check.status,'observed');assert.ok(check.evidence.some(e=>e.locator===url.slice(0,-1)+path&&pattern.test(e.text)),JSON.stringify(check));
   }
   assert.doesNotMatch(JSON.stringify(purpose.checks.find(c=>c.id==='process')),/초진기록지/);
+  assert.doesNotMatch(JSON.stringify(purpose.checks.find(c=>c.id==='contact')),/협진 경과체크/);
   const html=renderToStaticMarkup(React.createElement(ServiceStrategyPanel,{plan,view:'segments'}));
   const exported=buildServiceStrategyDocument(plan).map(b=>b.text).join('\n');
   for(const text of [html,exported])assert.doesNotMatch(text,/완결성·최신성·동작|미확인은 실제 부재|입력 페이지의 수집 범위에서 해당 문구/);
