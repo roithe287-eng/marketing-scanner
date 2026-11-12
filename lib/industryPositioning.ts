@@ -1,11 +1,16 @@
 import type {IndustryCategory,MarketingReport} from './reportSchema';
 import {positionEditorial} from './positionEditorial';
+import type {PositionCategory} from './positionEditorial';
+import {sameSite} from './siteIdentity';
+export type {PositionCategory} from './positionEditorial';
 
 export type PositionCriterion={id:string;label:string;pattern:RegExp;description:string;examples:string[];action:string;template:string;weight:number};
 type Spec=[string,string,string,string];
-export const POSITION_INDUSTRIES:Record<IndustryCategory,string>={education:'교육',medical:'의료·병원',commerce:'커머스·쇼핑',realestate:'부동산',legal:'법률·세무',beauty:'뷰티·미용',food:'식음료·외식',travel:'여행·숙박',logistics:'해외이사·국제물류',it_service:'IT·서비스',manufacturing:'제조·산업',finance:'금융',consulting:'컨설팅·마케팅',media:'미디어·콘텐츠',sports:'스포츠·피트니스',pet:'반려동물',automotive:'자동차',parenting:'육아·아동',interior:'인테리어·건축',ecommerce:'이커머스',etc:'공통 기준'};
+export const POSITION_INDUSTRIES:Record<PositionCategory,string>={ski:'스키·보드 렌탈·강습',rental:'대여·렌탈',education:'교육',medical:'의료·병원',commerce:'커머스·쇼핑',realestate:'부동산',legal:'법률·세무',beauty:'뷰티·미용',food:'식음료·외식',travel:'여행·숙박',logistics:'해외이사·국제물류',it_service:'IT·서비스',manufacturing:'제조·산업',finance:'금융',consulting:'컨설팅·마케팅',media:'미디어·콘텐츠',sports:'스포츠·피트니스',pet:'반려동물',automotive:'자동차',parenting:'육아·아동',interior:'인테리어·건축',ecommerce:'이커머스',etc:'공통 기준'};
 // Editorial comparison lenses, not empirical industry averages or performance scores.
-const SPECS:Record<IndustryCategory,[Spec,Spec,Spec,Spec]>={
+const SPECS:Record<PositionCategory,[Spec,Spec,Spec,Spec]>={
+ ski:[['cost','렌탈 요금·포함 항목','요금|가격|리프트권|시간권|추가금|보증금|환불','시간별 렌탈 요금과 장비·리프트권 포함 여부'],['scope','장비·강습 범위','스키|보드|부츠|의류|헬멧|강습|사이즈','대여 품목·사이즈와 실제 강습 범위'],['proof','장비 상태·담당자','정비|세척|장비 사진|점검|강사|자격|경력','실제 장비 상태·관리와 강습 담당자'],['process','수령·반납·이동','수령|반납|픽업|셔틀|예약|위치|주차|취소','매장 위치와 장비 수령·반납·스키장 이동']],
+ rental:[['cost','대여 비용·보증금','요금|가격|보증금|연장|추가금|환불','기간별 대여료·보증금·별도 비용'],['scope','대여 품목·구성','대여|렌탈|렌털|규격|구성|수량|사이즈','대여 품목과 포함 구성'],['proof','물품 상태·관리','점검|정비|세척|사진|교체|관리','실제 물품 상태와 관리 기준'],['process','수령·반납','수령|반납|배송|설치|예약|취소|위치','수령·설치와 반납·변경 조건']],
  logistics:[['cost','견적·추가 비용','견적|부피|중량|CBM|추가 비용|보험료|보관료','운송 구간·물량별 견적과 포함·별도 비용'],['scope','운송 범위·대상','해외이사|귀국이사|해상|항공|특송|화물|freight|출발지|도착지','개인 이사·기업 화물과 출발·도착 국가·도시'],['proof','거점·책임·실적','지사|네트워크|사업장|담당|보험|보상|연혁|사례','담당 거점과 보상 조건·확인 가능한 운송 사례'],['process','상담·운송·인도','견적|상담|포장|통관|인도|서류|일정','문의부터 포장·통관·현지 인도까지의 절차']],
  ecommerce:[['cost','가격·구매 조건','가격|할인|배송비|무료배송|교환|반품|환불|\\d[\\d,]*원','가격, 배송비, 교환·반품 조건'],['scope','상품·옵션','사이즈|소재|색상|컬러|치수|원산지|용량|구성|남성|여성|아동|과잠|단체복|유니폼|주문제작','제품 종류, 소재, 크기, 선택 가능한 옵션'],['proof','상품 판단 근거','리뷰|후기|인증|성적서|실측|착용|상세사진','실제 리뷰, 실측 정보와 확인 가능한 사진'],['process','주문·배송 안내','당일발송|배송|출고|재고|주문|고객센터|문의','재고와 발송 시점, 주문 후 문의 방법']],
  commerce:[['cost','가격·구매 조건','가격|비용|할인|배송비|반품|환불|\\d[\\d,]*원','가격과 추가 비용, 환불 조건'],['scope','제품·사용 대상','소재|사이즈|구성|제품|전용|가정용|업소용|용량|과잠|단체복|유니폼|주문제작','제품 사양과 사용 대상'],['proof','비교할 근거','후기|리뷰|인증|시험|원산지|실측','실제 후기, 사양과 시험 자료'],['process','구매·지원','배송|주문|매장|재고|상담|문의|A/S','구매 절차와 배송·사후 지원']],
@@ -28,8 +33,14 @@ const SPECS:Record<IndustryCategory,[Spec,Spec,Spec,Spec]>={
  interior:[['cost','견적·계약 조건','견적|평당|비용|계약|추가비|하자','견적 포함 범위와 추가 비용·보증'],['scope','공간·시공 범위','주거|상업|아파트|평형|공간|설계|시공','공간 종류와 설계·시공 범위'],['proof','시공·자격 근거','포트폴리오|사례|면허|등록|완공|사진','실제 시공 사례와 자격·등록 자료'],['process','진행·사후 관리','실측|상담|공정|기간|일정|하자|A/S','실측부터 완공, 사후 관리까지']],
  etc:[['cost','가격·조건','가격|비용|요금|견적|환불|교환|할인|무료|\\d[\\d,]*원','가격 또는 견적 기준과 이용 조건'],['scope','대상·범위','대상|전용|맞춤|기업|초보|단체|B2B|B2C|포함|제외|제품|서비스','누구에게 무엇을 제공하는지'],['proof','사례·근거','사례|포트폴리오|고객사|후기|리뷰|인증|특허|시험|수상','직접 확인 가능한 사례와 근거'],['process','진행·지원','절차|진행|배송|상담|문의|예약|지원|A/S','이용 절차와 문의·지원 방법']],
 };
-export function positionProfile(category:IndustryCategory){return {id:category,label:POSITION_INDUSTRIES[category],criteria:SPECS[category].map(([id,label,pattern,description],index)=>{const editorial=positionEditorial(category,index);return {id,label,description,editorial,examples:pattern.split('|').map(term=>term.includes('\\d')?'금액 표기 (예: 10,000원)':term),pattern:new RegExp(pattern,'i'),weight:25,action:editorial.verify,template:editorial.description};})};}
-export function defaultPositionIndustry(report:MarketingReport):{category:IndustryCategory;basis:string} {
+export function positionProfile(category:PositionCategory){return {id:category,label:POSITION_INDUSTRIES[category],criteria:SPECS[category].map(([id,label,pattern,description],index)=>{const editorial=positionEditorial(category,index);return {id,label,description,editorial,examples:pattern.split('|').map(term=>term.includes('\\d')?'금액 표기 (예: 10,000원)':term),pattern:new RegExp(pattern,'i'),weight:25,action:editorial.verify,template:editorial.description};})};}
+export function defaultPositionIndustry(report:MarketingReport):{category:PositionCategory;basis:string} {
+ const scope=report.competitorAnalysis?.ourSite?.scope;
+ if(scope&&sameSite(scope.sourceUrl,report.url)){
+  const map:Record<string,PositionCategory>={medical:'medical',veterinary:'pet',pet_care:'pet',pet_store:'pet',agency:'consulting',medical_consulting:'consulting',software:'it_service',manufacturing:'manufacturing',education:'education',international_logistics:'logistics',legal:'legal',accounting:'legal',professional:'legal',home:'interior',home_service:'interior',restaurant:'food',cafe:'food',beauty:'beauty',rental:'rental',lodging:'travel',hospitality:'travel',travel:'travel',travel_booking:'travel',fitness:'sports',automotive:'automotive',real_estate:'realestate',community:'media',content:'media'};
+  const category=scope.kind==='commerce'?'ecommerce':scope.profile==='rental'&&scope.specialties.includes('season:ski')?'ski':map[scope.profile];
+  if(category)return {category,basis:'홈페이지 원문에서 확인한 제공 업무·세부 업종 기준'};
+ }
  if(report.sitePurpose?.business?.industry==='logistics')return {category:'logistics',basis:'현재 원문에 근거한 국제물류 업종 분류'};
  const saved=report.industryBenchmark?.category;if(saved&&saved!=='etc')return {category:saved,basis:'저장된 업종 분류'};
  const text=[report.pageEvidence?.title,report.pageEvidence?.description,report.competitorAnalysis?.ourSite?.title,report.competitorAnalysis?.ourSite?.metaDescription,report.competitorAnalysis?.searchKeyword].filter(Boolean).join(' ');

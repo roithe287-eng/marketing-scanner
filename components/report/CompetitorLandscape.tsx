@@ -7,8 +7,8 @@ import EvidenceFlow from './EvidenceFlow';
 import {buildSiteGuide,guideInstruction} from '@/lib/siteGuidebook';
 import React,{useId,useState,type CSSProperties} from 'react';
 import PositionEvidenceReview from './PositionEvidenceReview';
-import {POSITION_INDUSTRIES} from '@/lib/industryPositioning';
-import type {MarketingReport,IndustryCategory} from '@/lib/reportSchema';
+import {POSITION_INDUSTRIES,type PositionCategory} from '@/lib/industryPositioning';
+import type {MarketingReport} from '@/lib/reportSchema';
 import {buildCompetitorPositioning,POSITION_AXES,POSITION_NOTE,POSITION_CRITERIA,positioningActions,positioningBrief,positionCoordinates,positionDiameter,POSITION_SIZE_NOTE} from '@/lib/competitorPositioning';
 import {COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE,COMPETITOR_SOURCES} from '@/lib/competitorResearch';
 import type {OwnProductContext} from '@/lib/ownProductSchema';
@@ -26,7 +26,7 @@ export function ProductCollection({context,defaultOpen=true}:{context?:OwnProduc
 
 export default function CompetitorLandscape({report}:{report:MarketingReport}) {
   const [selected,setSelected]=useState('own'),[status,setStatus]=useState(''),[fallback,setFallback]=useState('');const id=useId();
-  const [industry,setIndustry]=useState<IndustryCategory|undefined>();
+  const [industry,setIndustry]=useState<PositionCategory|undefined>();
   const model=buildCompetitorPositioning(report,industry);if(!model)return null;
   const {analysis,rows,groups,own,known}=model,research=analysis.research;
   const active=rows.find(r=>r.id===selected)||own,actions=positioningActions(own);
@@ -60,7 +60,7 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
     </div></details>
 
     <div className="position-map-heading"><p className="report-eyebrow">MESSAGE POSITIONING</p><h4>업종에 맞춰 비교하는 설명과 근거</h4><CompactText text={POSITION_NOTE} summary="제목·설명에 나타난 정보 단서의 비교입니다. 성과·가격·품질 점수가 아닙니다."/></div>
-    <div className="position-industry"><label>비교할 업종<select value={model.profile.id} onChange={e=>{setIndustry(e.target.value as IndustryCategory);choose('own');}}>{Object.entries(POSITION_INDUSTRIES).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><p>{model.industryBasis}. 모든 업체에 같은 업종 기준을 적용합니다. 업종 선택은 이 화면에만 반영되며 PDF·공유에는 기본 업종을 사용합니다.</p></div>
+    <div className="position-industry"><label>비교할 업종<select value={model.profile.id} onChange={e=>{setIndustry(e.target.value as PositionCategory);choose('own');}}>{Object.entries(POSITION_INDUSTRIES).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><p>{model.industryBasis}. 모든 업체에 같은 업종 기준을 적용합니다. 업종 선택은 이 화면에만 반영되며 PDF·공유에는 기본 업종을 사용합니다.</p></div>
     <div className="position-axis-cards"><article><span>가로축 · 어떤 상품·서비스인가요?</span><h5>{model.profile.criteria.slice(0,2).map(c=>c.label).join(' · ')}</h5><p>오른쪽일수록 제공 내용과 조건을 설명하는 단서가 많습니다.</p></article><article><span>세로축 · 무엇을 확인하고 이용하나요?</span><h5>{model.profile.criteria.slice(2).map(c=>c.label).join(' · ')}</h5><p>위쪽일수록 선택 근거와 이용 방법을 설명하는 단서가 많습니다.</p></article></div>
     <div className="position-size-guide"><div><span className="report-eyebrow">BUBBLE SIZE</span><h5>클수록 선택 정보 단서가 풍부합니다</h5><CompactText text={POSITION_SIZE_NOTE}/></div><div className="position-size-samples" aria-label="버블 크기 예시">{[0,4,8].map(n=><div key={n}><i aria-hidden="true" style={{'--bubble-size':`${positionDiameter(n)}px`,'--bubble-mobile-size':`${positionDiameter(n,true)}px`} as CSSProperties}/><span>{n}개{n===8?' 이상':''}</span></div>)}</div></div>
     <figure className="position-figure"><div className="position-y-caption"><strong>Y · {POSITION_AXES.y}</strong><span>상단: 근거·이용 단서가 더 많음</span></div>

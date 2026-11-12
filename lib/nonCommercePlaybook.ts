@@ -94,9 +94,17 @@ export function nonCommerceQuestionGuides(p:WebsitePurpose,identity='',place?:Lo
     {intent:'care' as const,question:`${scope} 이용 중 변경·중단·추가 확인은 어떻게 안내하나요?`,fields:['변경·중단 적용 조건','담당 확인 경로','안내 갱신 기준'],match:/변경|취소|중단|추가|문의|갱신|수정/,explanation:'최초 안내와 다른 조건이 생겼을 때 이용자가 확인할 경로를 제시합니다. 정정·취소·변경 기준은 실제 운영 자료를 확인한 뒤 작성하며, 적용되지 않는 항목은 제외합니다.'},
   ];
   const locations:Partial<Record<AnswerIntent,string>>={scope:'상세 첫 설명 문단',eligibility:`${book.cta} 버튼 위`,process:'이용 순서 안내',price:'조건별 비용 표',proof:'주장 바로 옆의 원자료 링크',choice:'선택안 비교표',care:'변경·정정 안내'};
-  return [...base,...extra.filter(q=>!base.some(b=>b.intent===q.intent)).map(q=>({...q,placement:locations[q.intent]||'관련 설명 문단'}))].slice(0,8).map(q=>{
+  const localGuides=(book.local?.questions||[]).map(question=>{
+    const intent:AnswerIntent=/비용|얼마|요금|가격/.test(question)?'price':/취소|변경|쉬는 날|휴장/.test(question)?'care':/이동|반납|집결|어디에서 받|예약|접수|신청|절차/.test(question)?'process':/준비|초보|대상|연령|보호자/.test(question)?'eligibility':/근거|자료|담당자/.test(question)?'proof':'scope';
+    const reference=extra.find(q=>q.intent===intent)||extra[0];
+    const match=intent==='price'?/비용|요금|견적|가격|수수료|유료|무료|추가금|보증금|\d[\d,]*\s*원/:intent==='process'?/절차|단계|신청|예약|접수|수령|반납|픽업|이동|집결/:reference.match;
+    const fields=intent==='price'?['산정 기준과 적용 대상','포함·별도 항목','변경 조건']:reference.fields;
+    return {...reference,intent,question,fields,match,placement:locations[intent]||'관련 설명 문단'};
+  });
+  const guides=[...base,...extra.filter(q=>!base.some(b=>b.intent===q.intent)).map(q=>({...q,placement:locations[q.intent]||'관련 설명 문단'}))];
+  return [...localGuides,...guides.filter(q=>!localGuides.some(l=>l.intent===q.intent))].slice(0,8).map(q=>{
     const fields=q.intent==='choice'?[focus.fields[0],focus.fields[2]]:q.intent==='proof'?[focus.fields[1],'원자료·확인일']:q.fields;
-    return {...q,fields,question:book.local&&q.intent==='scope'?focus.questions[0]:book.local&&q.intent==='choice'?focus.questions[1]:q.question,
+    return {...q,fields,question:q.question,
       explanation:`${q.placement}에 ${fields.join(' / ')} 항목을 나눠 써야 합니다.`,
       template:fields.map(field=>`${field}: [현재 원문으로 확인한 ${field}]`).join('\n')};
   });

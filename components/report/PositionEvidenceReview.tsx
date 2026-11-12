@@ -15,6 +15,6 @@ export default function PositionEvidenceReview({row}:{row:PositionRow}){
   </section>
   <div className="position-reading-guide"><h5>관점별로 이렇게 읽으세요</h5><p>{POSITION_CHECK_SCOPE}</p><p>{POSITION_DRAFT_NOTE}</p></div>
   <div className="position-checks">{row.checks.map(check=><PositionCheckCard key={`${row.id}-${check.id}`} row={row} check={check}/>)}</div>
-  <p className="position-source-footnote">구버전 후보는 메타 설명과 OG 설명의 대체 여부가 기록되지 않았습니다. 같은 시점·같은 필드의 비교가 필요하면 다시 분석하세요.</p>
+  {row.legacyMetadata&&<p className="position-source-footnote">구버전 후보는 메타 설명과 OG 설명의 대체 여부가 기록되지 않았습니다. 같은 시점·같은 필드의 비교가 필요하면 다시 분석하세요.</p>}
  </div>;
 }

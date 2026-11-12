@@ -1,15 +1,15 @@
-import {positionProfile,defaultPositionIndustry} from './industryPositioning';
-import type {MarketingReport,IndustryCategory} from './reportSchema';
+import {positionProfile,defaultPositionIndustry,type PositionCategory} from './industryPositioning';
+import type {MarketingReport} from './reportSchema';
 import {queryMatches,COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE} from './competitorResearch';
 import {safeHttpUrl} from './citationMeasurement';
 import {competitorDisplay} from './competitorDisplay';
-export const POSITION_METHOD='industry-evidence-v5';
+export const POSITION_METHOD='industry-evidence-v6';
 export const POSITION_AXES={x:'상품·서비스 설명',y:'선택·이용 근거'};
 export const POSITION_NOTE='동일하게 페이지 제목·메타 설명만 비교합니다. 좌표는 표현 탐지 지표이며 가격 수준·품질·시장점유율·검색 순위·성과를 평가한 점수가 아닙니다.';
 export const POSITION_CHECK_SCOPE='네 항목은 같은 제목·메타 설명을 서로 다른 관점으로 읽습니다. 띄어쓰기와 영문 대소문자는 구분하지 않습니다. 본문·이미지와 다른 말로 표현한 의미, 실제 제공 여부는 이 표현 탐지에 포함되지 않습니다.';
 export const POSITION_DRAFT_NOTE='항목별 대안입니다. 한 페이지에 네 안을 모두 합치지 말고 주된 목적에 맞는 안을 고르세요. [대괄호]는 본문·운영 자료에서 확인한 값으로 교체하고 해당하지 않는 내용은 삭제하세요. 미확인·예정인 내용을 현재 제공 사실로 바꾸지 않습니다.';
 export const POSITION_CRITERIA=positionProfile('etc').criteria;
-type Input={id:string;name:string;url:string;own:boolean;title?:string;description?:string;fetchError?:string;searchRank?:number;sourceLabel?:string};
+type Input={id:string;name:string;url:string;own:boolean;title?:string;description?:string;fetchError?:string;searchRank?:number;sourceLabel?:string;legacyMetadata?:boolean};
 export const POSITION_SIZE_NOTE='버블 면적은 선택한 업종의 정보 단서 수에 따라 커집니다. 같은 표현은 한 번만 세며 종류별 최대 2개, 총 8개입니다. 실제 서비스 품질·매출·검색 순위의 강점은 아닙니다.';
 export function positionCoordinates(x:number,y:number){return {left:22+x*.56,top:78-y*.56};}
 export function positionDiameter(signals:number,mobile=false){const max=mobile?64:80;return Math.sqrt(44**2+(max**2-44**2)*Math.max(0,Math.min(8,signals))/8);}
@@ -33,7 +33,7 @@ function positiveExpressions(text:string,pattern:RegExp) {
   }
   return {matches:[...found.values()],excluded};
 }
-export function scorePosition(input:Input,keyword:string,category:IndustryCategory='etc') {
+export function scorePosition(input:Input,keyword:string,category:PositionCategory='etc') {
   const title=(input.title||'').trim(),description=(input.description||'').trim();
   const fields=[{label:'페이지 제목',text:title},{label:'메타 설명',text:description}];
   const fieldsPresent=fields.filter(f=>f.text).length,match=queryMatches(keyword,`${title} ${description}`);
@@ -83,14 +83,14 @@ export function positionGroups(rows:PositionRow[]) {
   for(const row of rows)if(row.x!==null&&row.y!==null){const key=`${row.x}:${row.y}`;const group=groups.get(key)||{x:row.x,y:row.y,rows:[]};group.rows.push(row);groups.set(key,group);}
   return [...groups.values()].map(g=>({...g,signalCount:g.rows.reduce((sum,r)=>sum+(r.signalCount||0),0)/g.rows.length}));
 }
-export function buildCompetitorPositioning(report:MarketingReport,industry?:IndustryCategory) {
+export function buildCompetitorPositioning(report:MarketingReport,industry?:PositionCategory) {
   const storedAnalysis=report.competitorAnalysis;if(!storedAnalysis)return null;const analysis=competitorDisplay(storedAnalysis);
   const detected=defaultPositionIndustry(report),category=industry||detected.category,profile=positionProfile(category);
   const samePage=(a:string,b:string)=>{try{const x=new URL(a),y=new URL(b);return x.hostname.replace(/^www\./,'')===y.hostname.replace(/^www\./,'')&&x.pathname.replace(/\/$/,'')===y.pathname.replace(/\/$/,'')&&x.search===y.search;}catch{return false;}};
   const page=report.pageEvidence&&samePage(report.pageEvidence.requestedUrl,report.url)?report.pageEvidence:undefined;
   const own=analysis.ourSite&&analysis.ourSite.url&&samePage(analysis.ourSite.url,report.url)?analysis.ourSite:undefined;
   const rows=[scorePosition({id:'own',name:report.meta?.siteName||'자사',url:safeHttpUrl(report.url)||'',own:true,title:page?.title??own?.title,description:page?.description??own?.metaDescription,sourceLabel:page?'저장된 입력 페이지':own?'저장된 경쟁사 분석의 자사 원문':'자사 원문 미저장'},analysis.searchKeyword,category),
-    ...analysis.competitors.map((c,i)=>scorePosition({id:`candidate-${i+1}`,name:c.domain,url:safeHttpUrl(c.link)||'',own:false,title:c.metaTitle,description:c.metaDescription,fetchError:c.fetchError,searchRank:c.searchRank,sourceLabel:'저장된 후보 페이지'},analysis.searchKeyword,category))];
+    ...analysis.competitors.map((c,i)=>scorePosition({id:`candidate-${i+1}`,name:c.domain,url:safeHttpUrl(c.link)||'',own:false,title:c.metaTitle,description:c.metaDescription,fetchError:c.fetchError,searchRank:c.searchRank,sourceLabel:'저장된 후보 페이지',legacyMetadata:(analysis.filtering?.policyVersion??0)<3},analysis.searchKeyword,category))];
   return {analysis,profile,industryBasis:industry?'직접 선택한 업종 기준':detected.basis,rows,groups:positionGroups(rows),known:rows.filter(r=>!r.own&&r.x!==null),own:rows[0]};
 }
 export function positioningActions(row:PositionRow) {
