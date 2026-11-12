@@ -3,7 +3,7 @@ import type {LocalPlaceEvidence} from './localPlaceSchema';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {analyzeWebsitePurpose} from './websitePurpose';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
-import {classificationText,ownBusinessRole,providerIdentity,providerBody,isContextOnlyEvidence} from './websiteIdentity';
+import {classificationText,offeringClauses,ownBusinessRole,providerIdentity,providerBody,isContextOnlyEvidence} from './websiteIdentity';
 import {SKI_DESTINATIONS,seasonalProfile} from './seasonalPlaceCatalog';
 
 export const CompetitionScopeSchema=z.object({
@@ -52,7 +52,7 @@ function providerSpecialties(profile:string,data:Input):string[]{
   // Brand-only metadata may omit the actual service. Use scoped first-party
   // body content only as a fallback; customer cases and related posts stay out.
   const body=classificationText(providerBody(data));
-  const offeringText=classificationText([data.description,body].join('\n')).split(/\n+|(?<=[.!?])\s+/u)
+  const offeringText=[data.description||'',providerBody(data)].flatMap(offeringClauses)
     .filter(t=>/(?:제공|취급|판매|운영|시술|대행)(?:합니다|하고|하며|됩니다|해드립니다|\s*중입니다)|진료\s*과목\s*[:：]/.test(t)&&!/관련|고객사|참고\s*(?:정보|자료)/.test(t)).join('\n');
   return [...new Set([
     ...(metadataFacets.length?metadataFacets:facets.filter(([,re])=>re.test(body))),
@@ -115,6 +115,8 @@ export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean
   if(!['insurance','finance','unknown','service','mixed'].includes(scope.profile)&&/^(?:(?:자동차|차량|여행|배상책임)\s*)?보험(?:\s*(?:가입|상담|보장|보장\s*분석))?$/.test(query.trim()))return false;
   if(scope.profile==='medical'&&/^(?:호주산?\s*)?(?:영양제|건강식품|건강기능식품)$/.test(query.trim()))return false;
   if(scope.profile==='rental'&&!/렌탈|렌털|렌터카|렌트|대여|강습|rental/i.test(query))return false;
+  const localRoleTerms:Record<string,RegExp>={event:/촬영|사진관|웨딩|예식|행사|스튜디오|대관|파티룸/,funeral:/장례|추모|봉안|상조/,living:/세탁|수선|수리|인쇄|도장|택배|보관|수거/,accounting:/세무|회계|기장|신고|노무|특허|변리/};
+  if(localRoleTerms[scope.profile]&&!localRoleTerms[scope.profile].test(query))return false;
   const roleTerms:Record<string,RegExp>={international_logistics:/이사|물류|운송|포워딩|통관|freight|relocation|logistics/i,agency:/광고|마케팅|브랜딩|제작|대행/,medical_consulting:/컨설팅|마케팅|광고|개원/,software:/소프트웨어|솔루션|시스템|SaaS|프로그램/i,manufacturing:/제조|생산|공장|가공/,home:/시공|인테리어|리모델링|청소|소독|방역|수리|누수|이사/,education:/교육|학원|수업|강의|과정|수강|학교|클래스/};
   return !roleTerms[scope.profile]||roleTerms[scope.profile].test(query);
 }
