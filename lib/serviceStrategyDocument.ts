@@ -23,7 +23,7 @@ export function buildServiceStrategyDocument(plan?:ServiceStrategy):ReportBlock[
   add('heading',plan.industry==='noncommerce'?'목적별 행동·성과 검증':'상담 전환·성과 검증');
   for(const f of plan.funnel){add('subheading',f.stage);add('body',f.definition+'\n'+f.check+'\n측정 이벤트 제안: '+f.event);}
   for(const m of plan.metrics){add('subheading',m.name);add('body','산식: '+m.formula+'\n필요 데이터: '+m.required+'\n판단: '+m.interpretation);}
-  add('heading','4주 실행·검증 순서');
+  add('heading',plan.industry==='noncommerce'?'실행·검증 순서':'4주 실행·검증 순서');
   for(const e of plan.experiments){add('subheading',e.title);add('body','가설: '+e.hypothesis+'\n변경: '+e.change+'\n지표: '+e.metric+'\n채택 기준: '+e.decision);}
   if(plan.briefingPlan){const n=plan.briefingPlan;
     add('heading','업종별 네이버 AI 브리핑 대응');add('body',n.notice);

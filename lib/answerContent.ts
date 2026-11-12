@@ -13,7 +13,7 @@ export const ANSWER_CONTENT_NOTICE='입력한 페이지의 수집된 내용으�
 export const ANSWER_STATUS={supported:'답변 근거 확인',partial:'추가 정보 필요',not_observed:'수집 범위에서 미확인',review:'페이지 답변 대조 필요'};
 const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
 const compact=(text:string)=>clean(text).replace(/\s/g,'').toLocaleLowerCase();
-export type AnswerPageData=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'ogDescription'|'h1'|'h2'|'bodyText'|'isJsHeavy'|'siteEditing'|'seoEvidence'|'productContext'> & Pick<ExtractedWebsiteData,'businessDocuments'|'communityContext'>;
+export type AnswerPageData=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'ogDescription'|'h1'|'h2'|'bodyText'|'isJsHeavy'|'siteEditing'|'seoEvidence'|'productContext'> & Pick<ExtractedWebsiteData,'businessDocuments'|'communityContext'|'diagnosticSeed'>;
 
 /** Korean topic particle for generated guide copy; source quotes are never rewritten. */
 export function answerTopicSubject(keyword:string){
@@ -167,7 +167,7 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
   const assisted=!!(ai&&primary&&compact(primary.term)===compact(ai.primaryKeyword));
   const secondaries=(assisted?ai!.secondaryKeywords.map(k=>keyword(k,pool)).filter((k):k is AnswerKeyword=>!!k):fallback.slice(1)).filter((k,i,a)=>(!products.length||k.evidence.some(e=>e.kind==='product'))&&compact(k.term)!==compact(primary?.term||'')&&a.findIndex(v=>compact(v.term)===compact(k.term))===i).slice(0,2);
   const limited=(data.bodyText||'').trim().length<80||data.isJsHeavy===true;
-  const expanded=isNonCommerce(purpose)&&purpose.business?.id!=='international_logistics'?nonCommerceQuestionGuides(purpose,[data.title,data.description,...data.h1].join(' ')):undefined;
+  const expanded=isNonCommerce(purpose)&&purpose.business?.id!=='international_logistics'?nonCommerceQuestionGuides(purpose,[data.title,data.description,...data.h1].join(' '),data.diagnosticSeed?.page.localPlaceEvidence):undefined;
   const guideFor=(intent:AnswerIntent):IntentGuide=>{const q=expanded?.find(q=>q.intent===intent);return q?{...q,question:()=>q.question,template:()=>q.template}:purposeGuide(intent,purpose);};
   const intents=expanded?.map(q=>q.intent)||defaultIntents(primary?.term||'',pool,purpose);
   const fallbackRows=intents.map(intent=>({question:guideFor(intent).question(primary?.term||'이 페이지'),intent,evidenceIds:[] as string[],missingFacts:guideFor(intent).fields}));
@@ -186,7 +186,7 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
     const draft=evidence.map(e=>e.text).join('\n');
     return {id:`answer-${i+1}`,question,intent:row.intent,status,evidence,missingFacts,
       draft,...(guide.explanation?{explanation:guide.explanation}:{}),template:guide.template(primary.term),placement:guide.placement,
-      steps:['해당 질문과 첫 문장 답변을 고객이 읽을 수 있는 본문 텍스트로 배치합니다.','수량·금액·기간·예외 조건은 실제 운영 기준과 대조한 뒤 게시합니다.','수정 후 같은 URL을 재진단하고, 실제 검색 노출은 별도로 확인합니다.']};
+      steps:expanded?[`${guide.placement}에 질문을 소제목으로 넣어야 합니다.`,`${guide.fields.join(' / ')}을 항목별 답변으로 써야 합니다.`]:['해당 질문과 첫 문장 답변을 고객이 읽을 수 있는 본문 텍스트로 배치합니다.','수량·금액·기간·예외 조건은 실제 운영 기준과 대조한 뒤 게시합니다.','수정 후 같은 URL을 재진단하고, 실제 검색 노출은 별도로 확인합니다.']};
   }):[];
   const searchOnly=purpose.business?.documents.length&&purpose.business.documents.every(d=>d.source==='search_excerpt');
   const notice=searchOnly?purpose.business!.note:purpose.business?'입력 페이지와 자사 공개 상세·이용안내에서 확인한 자료로 만든 고객 질문입니다. 답변 근거마다 원문 URL을 구분하며 상품별 조건·가격·기간·효능·인증의 정확성과 최신성은 별도로 대조해야 합니다. 실제 검색 수요·노출·광고 성과는 측정하지 않았습니다.':products.length?'입력 페이지와 확인한 자사 상품 표본으로 만든 추천 질문입니다. 상품명은 주제 선택의 근거이며 가격·효능·배송·사용법의 답변 근거가 아닙니다. 표본의 대표 키워드를 사이트 전체 주력 품목으로 단정하지 않습니다. 네이버 자동완성 순위·AI 브리핑 노출은 측정하지 않았습니다. 게시 전 실제 상품 상세와 운영 조건을 확인해 주세요.':ANSWER_CONTENT_NOTICE;
