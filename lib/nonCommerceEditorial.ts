@@ -1,3 +1,4 @@
+import {koreanParticle} from './koreanParticle';
 import type {NonCommercePlaybook} from './nonCommercePlaybook';
 import type {ServiceStrategy} from './serviceStrategy';
 import type {StrategySource} from './nonCommerceBriefing';
@@ -35,7 +36,7 @@ export const INDUSTRY_AXES:Record<string,[string,string,string,string]>={
 export function editorialFocus(book:NonCommercePlaybook){
  const fields=book.local?.fields||INDUSTRY_AXES[book.id]||INDUSTRY_AXES.service;
  const mode=book.id==='public_service'?'public':book.id==='content'?'read':book.id==='community'?'community':/^방문·/.test(book.outcome)?'visit':'request';
- return {fields,mode,information:['public','read','community'].includes(mode),questions:book.local?.questions||[`${fields[0]}은 어떻게 구분하나요?`,`${fields[2]}은 어디에서 확인하나요?`]};
+ return {fields,mode,information:['public','read','community'].includes(mode),questions:book.local?.questions||[`${koreanParticle(fields[0],'topic')} 어떻게 구분하나요?`,`${koreanParticle(fields[2],'topic')} 어디에서 확인하나요?`]};
 }
 /** A quotation belongs to one editorial block; metadata is context, not body evidence. */
 export function allocateSources(sources:StrategySource[],matchers:RegExp[]):StrategySource[][]{
@@ -47,20 +48,20 @@ export const STAGE_MATCHERS=[/소개|대상|제공|범위|업무|주제|메뉴|�
 export function editorialChannels(book:NonCommercePlaybook):ServiceStrategy['channels']{
  const f=editorialFocus(book),[scope,proof,cost,operation]=f.fields;
  return [
-  {id:'search',label:'검색 · 질문별 유입',role:`${scope}을 찾는 방문자 연결`,setup:`「${book.label}」와 「${book.preparation[0]}」 검색어를 서로 다른 상세 주제에 연결해야 합니다.`,creative:`제목은 [실제 서비스명] + [${book.preparation[0]}] + [업체명] 순서로 작성해야 합니다.`,conversion:`검색 유입의 ${book.stages[1]} 도달률을 집계해야 합니다.`,review:'실제 검색어 보고서에서 동명 업체·무관한 업무를 제외해야 합니다.'},
+  {id:'search',label:'검색 · 질문별 유입',role:`${koreanParticle(scope,'object')} 찾는 방문자 연결`,setup:`「${book.label}」와 「${book.preparation[0]}」 검색어를 서로 다른 상세 주제에 연결해야 합니다.`,creative:`제목은 [실제 서비스명] + [${book.preparation[0]}] + [업체명] 순서로 작성해야 합니다.`,conversion:`검색 유입의 ${book.stages[1]} 도달률을 집계해야 합니다.`,review:'실제 검색어 보고서에서 동명 업체·무관한 업무를 제외해야 합니다.'},
   {id:'content',label:book.local?'플레이스 · 지점 정보':'검색·AI 답변 · 원문 설명',role:book.local?'매장 선택에 필요한 등록정보 정리':`${cost} 질문의 답변 문서 작성`,setup:book.local?`스마트플레이스의 업체명·지점·주소와 홈페이지를 맞추고 「${operation}」 항목을 담당자가 갱신해야 합니다.`:`「${cost}」 질문에 대한 답을 첫 문단에 쓰고 상세 조건을 표로 정리해야 합니다.`,creative:book.local?`「${proof}」에 맞는 현재 매장 자료를 등록하고 사진의 촬영 시점과 설명을 써야 합니다.`:`「${proof}」의 원문 링크·작성자·확인일을 주장 옆에 표시해야 합니다.`,conversion:book.local?'공개 플레이스에서 홈페이지·길찾기·예약의 실제 연결 주소를 각각 확인해야 합니다.':'질문 문서에서 관련 상세 설명으로 이동한 이용자를 집계해야 합니다.',review:book.local?'API에서 확인한 업체 기본정보와 사업주가 직접 확인할 운영정보를 구분해야 합니다.':'게시 URL의 검색 수집 여부와 실제 AI 답변의 인용 URL을 각각 기록해야 합니다.'},
-  {id:'visual',label:'사진·영상 · 과정 설명',role:`${book.assets[0]}을 시각 자료로 설명`,setup:`전체 홍보 영상 대신 「${book.preparation[1]}」 한 가지를 설명하는 사진·영상 묶음을 만들어야 합니다.`,creative:`첫 장면에 질문, 중간에 실제 자료, 마지막에 「${book.assets[1]}」 원문 이동을 넣어야 합니다.`,conversion:'소재별 상세 페이지 이동 수와 도착 후 이탈을 나눠 확인해야 합니다.',review:'화면 속 자료와 본문 조건이 같은지 확인하고 공개 권한이 없는 정보는 가려야 합니다.'},
+  {id:'visual',label:'사진·영상 · 과정 설명',role:`${koreanParticle(book.assets[0],'object')} 시각 자료로 설명`,setup:`전체 홍보 영상 대신 「${book.preparation[1]}」 한 가지를 설명하는 사진·영상 묶음을 만들어야 합니다.`,creative:`첫 장면에 질문, 중간에 실제 자료, 마지막에 「${book.assets[1]}」 원문 이동을 넣어야 합니다.`,conversion:'소재별 상세 페이지 이동 수와 도착 후 이탈을 나눠 확인해야 합니다.',review:'화면 속 자료와 본문 조건이 같은지 확인하고 공개 권한이 없는 정보는 가려야 합니다.'},
   {id:'followup',label:f.information?'이용 동선 · 후속 자료':f.mode==='visit'?'방문 동선 · 현장 안내':'접수 운영 · 담당 처리',role:`${book.stages[2]} 이후 다음 상태 안내`,setup:f.information?`「${operation}」 링크를 본문 끝에 배치하고 이동한 문서의 제목과 기관을 표시해야 합니다.`:f.mode==='visit'?'지도 핀·출입구·주차장 위치를 구분하고 휴무일 안내를 길찾기 버튼 옆에 표시해야 합니다.':`${book.stages[2]} 기록에 담당자·접수시각·처리상태를 연결해야 합니다.`,creative:f.information?'본문 끝에는 이미 읽은 설명 대신 추가로 확인할 문서 제목을 써야 합니다.':f.mode==='visit'?'도착 후 입장·대기·수령 위치를 사진 한 장과 짧은 캡션으로 설명해야 합니다.':'접수 완료 화면에는 요청 내용의 구분·다음 안내 시점·변경 방법을 써야 합니다.',conversion:`${book.outcome} 기록을 클릭 기록과 분리해야 합니다.`,review:f.information?'끊어진 출처·종료된 공고·이동된 게시판 링크를 수정해야 합니다.':f.mode==='visit'?'현장 이용 기록이 연결되지 않으면 길찾기 클릭을 방문 수로 표시하지 않아야 합니다.':'미배정·중복·진행 불가 상태를 나눠 담당자가 처리해야 합니다.'},
  ];
 }
 export function editorialContent(book:NonCommercePlaybook,sources:StrategySource[]):ServiceStrategy['content']{
  const [scope,proof,terms,operation]=editorialFocus(book).fields;
  const specs=[
-  {title:book.assets[0],angle:`${scope}을 한눈에 구분할 자료`,outline:[`${scope}: 실제 제공하는 항목별로 소제목을 나눠야 합니다.`,'대상별 적용 예시를 한 가지씩 쓰고 제외 항목을 바로 아래에 표시해야 합니다.','소개한 각 항목에 해당 상세 URL을 연결해야 합니다.'],cta:'제공 항목 자세히 보기'},
+  {title:book.assets[0],angle:`${koreanParticle(scope,'object')} 한눈에 구분할 자료`,outline:[`${scope}: 실제 제공하는 항목별로 소제목을 나눠야 합니다.`,'대상별 적용 예시를 한 가지씩 쓰고 제외 항목을 바로 아래에 표시해야 합니다.','소개한 각 항목에 해당 상세 URL을 연결해야 합니다.'],cta:'제공 항목 자세히 보기'},
   {title:`${terms} 비교표`,angle:`${terms}의 차이를 비교할 자료`,outline:[`행은 선택안, 열은 「${terms}」 기준으로 비교표를 만들어야 합니다.`,'별도 확인이 필요한 칸에는 확인 경로를 표시해야 합니다.','서로 다른 기간·단위·범위의 수치를 같은 조건으로 정리해야 합니다.'],cta:'조건별 차이 보기'},
-  {title:`${proof} 근거 자료`,angle:`${proof}을 설명하는 근거 자료`,outline:[`${proof}을 보여주는 원자료를 선택해야 합니다.`,'자료마다 실제 적용 대상과 작성일을 붙여야 합니다.','사진·도표에 보이는 내용을 캡션과 본문으로 설명해야 합니다.'],cta:'근거 자료 열기'},
+  {title:`${proof} 근거 자료`,angle:`${koreanParticle(proof,'object')} 설명하는 근거 자료`,outline:[`${koreanParticle(proof,'object')} 보여주는 원자료를 선택해야 합니다.`,'자료마다 실제 적용 대상과 작성일을 붙여야 합니다.','사진·도표에 보이는 내용을 캡션과 본문으로 설명해야 합니다.'],cta:'근거 자료 열기'},
   {title:'이용 전 준비표',angle:`${book.cta} 전에 정리할 항목`,outline:book.preparation.slice(0,3).map(x=>`「${x}」의 확인 방법과 준비 시점을 써야 합니다.`),cta:book.cta},
-  {title:'변경·예외 안내',angle:`${operation}이 달라지는 경우의 처리`,outline:['변경 사유별로 적용되는 안내를 구분해야 합니다.','기존 조건·변경된 조건·적용일을 함께 표시해야 합니다.','확인이 필요한 사람과 갱신 담당자의 연락 경로를 나눠 써야 합니다.'],cta:'변경 조건 확인'},
+  {title:'변경·예외 안내',angle:`${koreanParticle(operation,'subject')} 달라지는 경우의 처리`,outline:['변경 사유별로 적용되는 안내를 구분해야 합니다.','기존 조건·변경된 조건·적용일을 함께 표시해야 합니다.','확인이 필요한 사람과 갱신 담당자의 연락 경로를 나눠 써야 합니다.'],cta:'변경 조건 확인'},
   {title:'진행 상태 안내',angle:`${book.stages[2]} 이후 어디까지 진행됐는지 설명`,outline:[`${book.stages[2]} 완료 화면에 현재 상태를 표시해야 합니다.`,`${book.stages[3]}에 필요한 다음 행동과 담당 역할을 알려야 합니다.`,`${book.stages[4]} 확인 방법을 마지막 단계에 써야 합니다.`],cta:'다음 단계 확인'},
  ];
  const evidence=allocateSources(sources,[/소개|범위|대상|업무|메뉴/,/비교|가격|비용|조건|요금|기간/,/의료진|강사|담당|인증|자료|사진|규격|약관/,/준비|서류|필수|체크/,/변경|예외|취소|정정/,/접수|확정|진행|조회|절차/]);
@@ -75,13 +76,13 @@ export function editorialMeasurement(book:NonCommercePlaybook):Pick<ServiceStrat
   funnel:book.stages.map((stage,i)=>({stage,event:event[i],definition:definition[i],check:checks[i]})),
   metrics:[
    {name:'상세 정보 연결률',formula:'관련 상세 이동 이용자 ÷ 소개 페이지 방문 이용자 × 100',required:'소개·상세 페이지별 고유 이용자',interpretation:`${scope}별로 나눠 확인해야 합니다.`},
-   {name:'조건 열람률',formula:'조건 영역 열람 이용자 ÷ 상세 페이지 방문 이용자 × 100',required:'조건 영역 열람 이벤트·상세 방문',interpretation:`${terms}을 읽기 전에 이탈하는지 확인해야 합니다.`},
+   {name:'조건 열람률',formula:'조건 영역 열람 이용자 ÷ 상세 페이지 방문 이용자 × 100',required:'조건 영역 열람 이벤트·상세 방문',interpretation:`${koreanParticle(terms,'object')} 읽기 전에 이탈하는지 확인해야 합니다.`},
    {name:f.information?'후속 자료 이동률':f.mode==='visit'?'길찾기 실행률':'정상 접수율',formula:f.information?'공식·관련 문서 이동 이용자 ÷ 본문 열람 이용자 × 100':f.mode==='visit'?'길찾기 실행 이용자 ÷ 위치 안내 열람 이용자 × 100':'정상 접수 건 ÷ 접수 화면 진입 이용자 × 100',required:f.information?'본문 열람·외부 이동 기록':f.mode==='visit'?'위치 열람·길찾기 실행 기록':'접수 화면 방문·서버 성공·중복 제거 기록',interpretation:'같은 기간과 유입 집단으로 계산해야 합니다.'},
    {name:`${book.outcome} 연결률`,formula:`같은 집단의 ${book.outcome} 확인 이용자 ÷ 앞 단계 확인 이용자 × 100`,required:'앞 단계와 최종 상태를 연결한 이용 기록',interpretation:'연결할 수 없는 외부·오프라인 결과는 계산하지 않아야 합니다.'},
    ...(f.information?[{name:'안내 갱신 완료율',formula:'원자료와 대조해 갱신한 문서 수 ÷ 점검 대상 문서 수 × 100',required:'문서별 원자료·확인일·검수 상태',interpretation:'내용을 수정하지 않은 자동 날짜 변경은 갱신으로 계산하지 않아야 합니다.'}]:[{name:f.mode==='visit'?'방문 정보 정합률':'처리 대기시간',formula:f.mode==='visit'?'현장과 일치하는 정보 항목 수 ÷ 점검한 정보 항목 수 × 100':'정상 접수부터 담당자의 첫 답변까지 소요시간 중앙값',required:f.mode==='visit'?'주소·운영시간·휴무·주차의 현장 대조표':'접수·답변 시각·운영시간',interpretation:f.mode==='visit'?'지점별로 따로 집계해야 합니다.':'자동 수신 알림을 담당자 답변으로 계산하지 않아야 합니다.'}]),
   ],
   experiments:[
-   {title:'01 · 첫 화면 정리',hypothesis:`${scope}이 첫 화면에서 바로 구분되는가`,change:`첫 제목과 설명에 ${scope}을 쓰고 상세 연결 버튼을 배치해야 합니다.`,metric:'소개 → 상세 이동률',decision:'수정 전후 같은 유입 경로에서 상세 이동과 다음 단계 이탈을 비교해야 합니다.'},
+   {title:'01 · 첫 화면 정리',hypothesis:`${koreanParticle(scope,'subject')} 첫 화면에서 바로 구분되는가`,change:`첫 제목과 설명에 ${koreanParticle(scope,'object')} 쓰고 상세 연결 버튼을 배치해야 합니다.`,metric:'소개 → 상세 이동률',decision:'수정 전후 같은 유입 경로에서 상세 이동과 다음 단계 이탈을 비교해야 합니다.'},
    {title:'02 · 선택 조건 구체화',hypothesis:`${terms} 관련 질문에 본문이 답하는가`,change:`실제 문의에서 반복된 질문 하나를 골라 ${terms} 표를 보완해야 합니다.`,metric:'조건 열람률·동일 질문 재문의 건',decision:'조건 열람이 늘고 같은 질문이 줄었는지 대조해야 합니다.'},
    {title:'03 · 다음 행동 연결',hypothesis:`${book.cta} 경로가 중간에 끊기지 않는가`,change:`버튼 → ${book.stages[2]} → ${book.stages[3]} 화면을 PC·모바일에서 각각 실행해야 합니다.`,metric:f.information?'연결 오류·후속 자료 이동률':f.mode==='visit'?'지도 오류·길찾기 실행률':'접수 오류·중복·완료율',decision:'연결 오류를 해결한 뒤 정상 완료 기록으로 비교해야 합니다.'},
    {title:'04 · 운영 결과 대조',hypothesis:`${operation} 안내와 실제 처리가 일치하는가`,change:`변경한 안내의 적용일을 남기고 ${book.outcome} 기록과 연결해야 합니다.`,metric:`${book.outcome} 연결률·갱신 누락`,decision:'관찰 기간을 채운 같은 집단의 결과로 유지·재수정을 결정해야 합니다.'},

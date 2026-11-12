@@ -128,3 +128,14 @@ test('restaurant branch and franchise headquarters keep different objectives aft
   assert.equal(book.id,expected);
  }
 });
+
+test('industry labels use grammatical Korean particles in generated instructions',async()=>{
+ const {koreanParticle}=await import('../lib/koreanParticle');
+ assert.equal(koreanParticle('비급여 안내','object'),'비급여 안내를');
+ assert.equal(koreanParticle('담당 의료진','object'),'담당 의료진을');
+ assert.equal(koreanParticle('운영 정보','subject'),'운영 정보가');
+ assert.equal(koreanParticle('적용 범위','topic'),'적용 범위는');
+ assert.equal(koreanParticle('예약 요청','and'),'예약 요청과');
+ const plan=nonCommerceEditorialSections(purpose,sources,url,'병의원',NONCOMMERCE_PLAYBOOKS.medical);
+ assert.doesNotMatch(JSON.stringify(plan),/안내을|안내은|범위을|정보이/);
+});

@@ -1,3 +1,4 @@
+import {koreanParticle} from './koreanParticle';
 import type {WebsitePurpose} from './websitePurpose';
 import type {AnswerIntent} from './answerContentSchema';
 import {sectorProfile} from './nonCommerceSectors';
@@ -87,7 +88,7 @@ export function nonCommerceQuestionGuides(p:WebsitePurpose,identity='',place?:Lo
     {intent:'process' as const,question:`${scope} 이용은 어떤 절차로 확인하고 진행하나요?`,fields:['실제 진행 순서','담당 주체','단계별 완료 기준'],match:/절차|단계|진행|신청|상담|접수|이용/,explanation:`${book.stages.join(' → ')} 흐름은 검토할 흐름입니다. 실제 운영 절차에 맞춰 수정하고 각 단계의 이용자 준비사항과 다음 행동을 함께 설명합니다.`},
     ...(p.pricingObserved&&!['content','public_service'].includes(p.kind)?[{intent:'price' as const,question:`${scope}의 비용 산정 기준과 포함·별도 항목은 무엇인가요?`,fields:['산정 기준과 적용 대상','포함·별도 항목','변경 조건'],match:/비용|요금|견적|수강료|수수료|유료|무료|가격/,explanation:'원문에 비용 관련 표현이 있어도 확정 가격이나 전체 포함 범위가 공개되었다고 단정하지 않습니다. 실제 조건별 산정 기준과 추가 확인 경로를 안내하세요.'}]:[]),
     {intent:'proof' as const,question:`${scope} 안내의 근거와 최신 조건은 어디에서 확인하나요?`,fields:['담당·발행 주체','확인 가능한 원자료','최종 확인일'],match:/담당|작성|원문|출처|공고|경력|이력|사례|수정/,explanation:`${book.proof} 등의 근거를 확인 가능한 링크와 연결합니다. 표현이 관측된 것과 자격·성과가 검증된 것은 구분하며 최신 조건을 담당자가 검수합니다.`},
-    {intent:'choice' as const,question:`${scope} 선택 시 어떤 조건을 같은 기준으로 비교해야 하나요?`,fields:['목적별 선택 기준','적용 조건의 차이','제외·주의사항'],match:/조건|비교|선택|범위|제외|차이/,explanation:`${book.preparation.join('·')}이 같은 경우끼리 비교합니다. ${book.assets.join('·')} 같은 자료를 활용해 선택에 필요한 차이를 설명하고 출처 없는 우열·순위를 만들지 않습니다.`},
+    {intent:'choice' as const,question:`${scope} 선택 시 어떤 조건을 같은 기준으로 비교해야 하나요?`,fields:['목적별 선택 기준','적용 조건의 차이','제외·주의사항'],match:/조건|비교|선택|범위|제외|차이/,explanation:`${koreanParticle(book.preparation.join('·'),'subject')} 같은 경우끼리 비교합니다. ${book.assets.join('·')} 같은 자료를 활용해 선택에 필요한 차이를 설명하고 출처 없는 우열·순위를 만들지 않습니다.`},
     {intent:'care' as const,question:`${scope} 이용 중 변경·중단·추가 확인은 어떻게 안내하나요?`,fields:['변경·중단 적용 조건','담당 확인 경로','안내 갱신 기준'],match:/변경|취소|중단|추가|문의|갱신|수정/,explanation:'최초 안내와 다른 조건이 생겼을 때 이용자가 확인할 경로를 제시합니다. 정정·취소·변경 기준은 실제 운영 자료를 확인한 뒤 작성하며, 적용되지 않는 항목은 제외합니다.'},
   ];
   const locations:Partial<Record<AnswerIntent,string>>={scope:'상세 첫 설명 문단',eligibility:`${book.cta} 버튼 위`,process:'이용 순서 안내',price:'조건별 비용 표',proof:'주장 바로 옆의 원자료 링크',choice:'선택안 비교표',care:'변경·정정 안내'};
