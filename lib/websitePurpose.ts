@@ -87,8 +87,11 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const checkUnits=[...supplemental,...units].filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i);
   const place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
   const rawSector=analyzeNonCommerceSector(units,actions,supplemental);
-  const branchStore=!!place?.branch&&['restaurant','cafe'].includes(place.sector)&&rawSector?.id==='franchise'&&!/가맹\s*(?:모집|문의|상담|개설|계약|본부)|프랜차이즈\s*창업/.test([data.title,data.description,...data.h1].join(' '));
-  const sectorCandidate=(place?.sector==='veterinary'&&rawSector?.id==='medical')||branchStore?undefined:rawSector;
+  const providerIdentity=/광고\s*대행|마케팅\s*(?:대행|에이전시)|홈페이지\s*제작|웹\s*제작|소프트웨어|SaaS|업무\s*솔루션/i.test([data.title,...(data.h1||[])].join(' '));
+  // A provider's clients in its description are not the provider's own industry.
+  const clientSector=providerIdentity&&rawSector?.id!=='medical_consulting';
+  const branchStore=!!place?.branch&&['restaurant','cafe'].includes(place.sector)&&rawSector?.id==='franchise'&&!/가맹\s*(?:모집|문의|상담|개설|계약|본부)|프랜차이즈\s*창업/.test([data.title,data.description,...(data.h1||[])].join(' '));
+  const sectorCandidate=(place?.sector==='veterinary'&&rawSector?.id==='medical')||branchStore||clientSector?undefined:rawSector;
   const sectorPrimary=sectorCandidate?.evidence.reduce((n,u)=>n+primaryWeight(u),0)||0;
   const informative=genericCandidate&&['content','education','public_service'].includes(genericCandidate)&&purposeScore(genericCandidate)>=sectorPrimary;
   const competingPrimary=!sectorPrimary&&genericCandidate&&matched[genericCandidate].some(u=>primaryWeight(u)>0);

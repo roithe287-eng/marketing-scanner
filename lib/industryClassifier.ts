@@ -2,6 +2,26 @@ import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { IndustryCategory } from "./reportSchema";
 import {analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
+import {nonCommercePlaybook} from './nonCommercePlaybook';
+
+// Use the same identity chosen for the report. Client examples and seasonal
+// product mentions must not replace a professional service or commerce model.
+const PLACE_INDUSTRIES:Partial<Record<string,IndustryCategory>>={
+  pharmacy:'medical',finance:'finance',medical:'medical',legal:'legal',professional:'legal',
+  veterinary:'pet',pet_care:'pet',pet_store:'pet',cafe:'food',restaurant:'food',
+  lodging:'travel',travel:'travel',beauty:'beauty',education:'education',fitness:'sports',
+  automotive:'automotive',home_service:'interior',real_estate:'realestate',retail:'commerce',
+};
+const SEASON_INDUSTRIES:Partial<Record<string,IndustryCategory>>={
+  ski:'sports',snow_ice:'sports',water_leisure:'sports',surf_dive:'sports',beach_pool:'sports',
+  camp_picnic:'travel',strawberry:'travel',harvest:'travel',flowers_foliage:'travel',fishing_tidal:'travel',
+  winter_car:'automotive',season_event:'travel',seasonal_food:'food',cooling:'interior',
+};
+const SERVICE_INDUSTRIES:Partial<Record<string,IndustryCategory>>={
+  software:'it_service',agency:'consulting',accounting:'legal',home:'interior',
+  hospitality:'travel',real_estate:'realestate',fitness:'sports',study_abroad:'education',
+  education:'education',content:'media',community:'media',
+};
 
 /**
  * v45-W3: AI 업종 자동 분류기
@@ -65,13 +85,21 @@ const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
 /**
  * 키워드 기반 빠른 예비 분류 (AI 호출 전 힌트)
  */
-function quickClassify(data: ExtractedWebsiteData): IndustryCategory | null {
+export function classifyIndustryFromEvidence(data: ExtractedWebsiteData): IndustryCategory | null {
   const purpose=analyzeWebsitePurpose(data);
   if(purpose.community)return 'media';
   if(purpose.business)return purpose.business.industry;
   if(isNonCommerce(purpose)&&purpose.sector){
     const categories:Record<NonNullable<typeof purpose.sector>['id'],IndustryCategory>={legal:'legal',medical:'medical',medical_consulting:'consulting',property_sales:'realestate',insurance:'finance',rehabilitation:'legal',startup:'consulting',franchise:'consulting'};
     return categories[purpose.sector.id];
+  }
+  if(isNonCommerce(purpose)){
+    const place=data.diagnosticSeed?.page.localPlaceEvidence;
+    const book=nonCommercePlaybook(purpose,[data.title,data.description,...(data.h1||[])].join(' '),place);
+    const season=book.id.startsWith('season_')?SEASON_INDUSTRIES[book.id.slice(7)]:undefined;
+    const local=book.local&&place?PLACE_INDUSTRIES[place.sector]:undefined;
+    const category=season||local||SERVICE_INDUSTRIES[book.id];
+    if(category)return category;
   }
   if(data.productContext?.sources.length&&(data.productContext.commerce===true||data.productContext.discovery==='public_catalog'))return 'ecommerce';
   const text = [
@@ -109,7 +137,7 @@ export async function classifyIndustry(
   data: ExtractedWebsiteData
 ): Promise<IndustryCategory> {
   // 1. 키워드 기반 강한 매칭이면 AI 호출 없이 즉시 반환
-  const quick = quickClassify(data);
+  const quick = classifyIndustryFromEvidence(data);
   if (quick) {
     return quick;
   }
