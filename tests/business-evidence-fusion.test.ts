@@ -7,7 +7,7 @@ import {websiteHttp} from '../lib/security/safeFetch';
 import {captureBusinessDocument,captureBusinessLinks} from '../lib/businessResearch';
 import {captureSiteDiagnosticSeed} from '../lib/siteDiagnostics';
 import {collectSiteDiagnostics} from '../lib/collectSiteDiagnostics';
-import {analyzeWebsitePurpose} from '../lib/websitePurpose';
+import {purposePrompt,analyzeWebsitePurpose} from '../lib/websitePurpose';
 import {buildServiceStrategy} from '../lib/serviceStrategy';
 import {buildServiceStrategyDocument} from '../lib/serviceStrategyDocument';
 import {reportForPresentation} from '../lib/reportPresentation';
@@ -36,6 +36,7 @@ test('public detail crawl reaches doctors, admissions and itemized fees and feed
   data.businessDocuments=diagnostics.pages.flatMap(p=>p.businessDocument?[p.businessDocument]:[]);
   const purpose=analyzeWebsitePurpose(data),plan=buildServiceStrategy(data)!;
   assert.equal(purpose.sector?.id,before.sector?.id);
+  assert.match(purposePrompt(data),/정경훈/);assert.match(purposePrompt(data),/170,000/);
   for(const path of Object.keys(bodies))assert.ok(requests.includes(path),path);
   for(const [id,path,pattern] of [['proof','/doctor',/정경훈|이지훈/],['process','/hospitalization',/주치의 회진/],['price','/nonbenefit',/6,000|170,000/]] as const){
     const check=purpose.checks.find(c=>c.id===id)!;assert.equal(check.status,'observed');assert.ok(check.evidence.some(e=>e.locator===url.slice(0,-1)+path&&pattern.test(e.text)),JSON.stringify(check));

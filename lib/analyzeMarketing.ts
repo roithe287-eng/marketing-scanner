@@ -65,7 +65,7 @@ ${detailed&&analyzeBusinessContext(data)?.id==='international_logistics'?'국제
 [업종별 검토 제안 · 업체 사실이 아님]
 ${detailed?(analyzeBusinessContext(data)?.id==='international_logistics'?'위 국제물류 업종의 고객·견적 기준 적용':JSON.stringify(nonCommercePlaybook(analyzeWebsitePurpose(data),[data.title,data.description,...data.h1].join(' ')))):'기존 목적 기준 적용'}
 [추가 수집 자사 원문 · 고객 후기와 검색 요약 제외]
-${detailed&&!data.communityContext?JSON.stringify((data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt').slice(0,5).map(d=>({url:d.url,sections:d.sections.slice(0,3).map(s=>({...s,text:s.text.slice(0,350),truncated:s.text.length>350}))}))):'해당 없음'}
+${detailed&&!data.communityContext?JSON.stringify((data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt').slice(0,9).map(d=>({url:d.url,sections:d.sections.slice(0,2).map(s=>({...s,text:s.text.slice(0,350),truncated:s.text.length>350}))}))):'해당 없음'}
 
 [사이트 정보]
 URL: ${data.url}
