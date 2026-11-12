@@ -1,3 +1,5 @@
+import {buildCompetitionScope} from '@/lib/competitionScope';
+import {providerBody,isSecondarySection} from '@/lib/websiteIdentity';
 import {parseSmartstoreUrl} from '@/lib/smartstore';
 import {analyzeSmartstore} from '@/lib/analyzeSmartstore';
 import {analyzeOfficialSeo} from '@/lib/analyzeOfficialSeo';
@@ -198,13 +200,14 @@ export async function POST(req: NextRequest) {
         process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET && (principal.kind==='internal'||principal.account.features.competitor)
       ),
       _websiteHints: {
+        scope:buildCompetitionScope(websiteData),
         communityContext: websiteData.communityContext,
         title: websiteData.title,
         ogTitle: websiteData.ogTitle,
         ogDescription: websiteData.ogDescription,
         description: websiteData.description,
         h1: websiteData.h1,
-        h2: websiteData.h2,
+        h2: websiteData.h2.filter(h=>!isSecondarySection(h,'')&&providerBody(websiteData).includes(h)),
         keywords: websiteData.keywords,
         bodyText:competitorOwnText(websiteData),
       },

@@ -1,3 +1,4 @@
+import {CompetitionScopeSchema} from './competitionScope';
 import {OfficialSeoAuditSchema} from './officialSeoSchema';
 import {SiteDiagnosticsSchema} from './siteDiagnosticsSchema';
 import {activeCitation} from './activeCitation';
@@ -539,7 +540,7 @@ export const MarketingReportSchema = z.object({
       research:CompetitorResearchSchema.optional(),
       ourSite:CompetitorOwnSiteSchema.optional(),
       filtering: z.object({
-        policyVersion: z.union([z.literal(1),z.literal(2)]),
+        policyVersion: z.union([z.literal(1),z.literal(2),z.literal(3)]),
         reviewedCount: z.number().int().nonnegative(),
         metadataCheckedCount: z.number().int().nonnegative(),
         excluded: z.array(z.object({domain: z.string(), link: z.string(), title: z.string(), reason: z.string()})),
@@ -551,11 +552,13 @@ export const MarketingReportSchema = z.object({
           link: z.string(),
           description: z.string(),
           domain: z.string(),
+          scope:CompetitionScopeSchema.optional(),
+          finalUrl:z.string().url().optional(),
           searchRank: z.number().int().positive().optional(),
           relevance: z.enum(['keyword_match', 'needs_review']).optional(),
           selectionEvidence: z.string().optional(),
           matchedTerms:z.array(z.string()).optional(),
-          relevanceBasis:z.enum(['page_metadata','search_snippet']).optional(),
+          relevanceBasis:z.enum(['page_metadata','page_content','search_snippet']).optional(),
           metaTitle: z.string().optional(),
           metaDescription: z.string().optional(),
           h1: z.string().optional(),

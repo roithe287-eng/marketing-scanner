@@ -1,3 +1,4 @@
+import {competitionScopeLabel} from './competitionScope';
 import type {MarketingReport} from './reportSchema';
 import type {ReportBlock} from './reportDocument';
 import {buildCompetitorPositioning,POSITION_NOTE,POSITION_METHOD,POSITION_SIZE_NOTE,POSITION_CHECK_SCOPE,POSITION_DRAFT_NOTE,positioningActions,positionCheckReason,positionCheckNextStep,positionFieldFinding,positionCheckDraft} from './competitorPositioning';
@@ -8,9 +9,10 @@ export function buildCompetitorDocument(report:MarketingReport):ReportBlock[] {
   const model=buildCompetitorPositioning(report);if(!model)return [];
   const b:ReportBlock[]=[];const add=(kind:ReportBlock['kind'],text:string,href?:string,emphasis?:string[])=>{b.push({kind,text,href,...(emphasis?.length?{emphasis}:{})});};
   const {analysis,rows,own}=model,r=analysis.research;
+  if(analysis.ourSite?.scope)add('body',`비교 기준: ${competitionScopeLabel(analysis.ourSite.scope)}`);
   if(r?.selectionMessage)add('body',r.selectionMessage);
   if(r?.productContext){const p=r.productContext;add('subheading',`자사 상품 원문 추가 확인 · 표본 ${p.sources.length}개`);add('body',p.note);add('body',`수집 상태: ${p.status} · URL 발견 경로: ${p.discovery} · HTML 수집 시도 ${p.attemptedPages}개. 검색 요약은 AI 입력이나 상품 근거로 사용하지 않습니다.`);for(const s of p.sources){add('body',`${s.name} · ${s.kind==='catalog_product'?'공개 상품 목록':'상품 원문'} · ${s.categories.join(' / ')}`);add('body',s.url,safeHttpUrl(s.url)||undefined);}}
-  if(analysis.filtering?.policyVersion!==2)add('body','이전 선정 기준의 보고서입니다. 채용·기업정보 등 명확히 관련 없는 페이지는 비교에서 제외했으며, 최신 상품·서비스 관련성 검증은 URL 재진단이 필요합니다.');
+  if((analysis.filtering?.policyVersion??0)<3)add('body','이전 선정 기준의 보고서입니다. 채용·기업정보 등 명확히 관련 없는 페이지는 비교에서 제외했으며, 최신 상품·서비스 관련성 검증은 URL 재진단이 필요합니다.');
   add('subheading','검색 메시지 포지셔닝');add('body',POSITION_NOTE);add('body',POSITION_SIZE_NOTE);add('body',COMPETITOR_API_NOTE);add('body',COMPETITOR_KEYWORD_NOTE);
   add('body',`대표 키워드: ${analysis.searchKeyword} · 산정 규칙: ${POSITION_METHOD}`);
   add('body',`원문 비교 가능 ${model.known.length}/${analysis.competitors.length}곳 · 저장된 제목·설명을 모두 확보하고 같은 기준으로 계산 가능한 외부 후보 수입니다.`);
@@ -24,7 +26,7 @@ export function buildCompetitorDocument(report:MarketingReport):ReportBlock[] {
     for(const a of r.alternatives)add('body',`미조회 대체 키워드 후보: ${a.keyword} · 근거 필드 ${a.fields.join(' / ')}`);
   }else add('body','이전 보고서에는 키워드 선정 근거와 검색 시각이 저장되지 않았습니다. 현재 보고서에 저장된 후보만 비교합니다.');
   if(analysis.filtering){add('subheading','후보 선정 기록');add('body',`검토한 검색 응답 ${analysis.filtering.reviewedCount}건 · 제외 ${analysis.filtering.excluded.length}건 · 상세 수집 시도 ${analysis.filtering.metadataCheckedCount}개`);for(const c of analysis.filtering.excluded)add('body',`제외: ${c.domain} · ${c.reason} · ${c.title}`);}
-  add('body','대형몰·포털·SNS 및 채용·연봉·기업정보·기사 페이지를 역할에 따라 제외합니다. 신규 보고서는 후보 페이지 제목·설명·H1에서 상품·서비스 검색어 일치를 확인해야 비교에 포함하며, 수집 실패·관련성 부족으로 5곳 미만이거나 0곳일 수 있습니다. 실제 상품·서비스·지역·고객층·판매 방식은 함께 대조하세요.');
+  add('body','후보 홈페이지의 제목·설명·H1·자사 본문에서 검색어를 확인하고, 제공 업무·판매 방식·분야·지역을 대조합니다. 원문 근거가 부족한 후보는 제외합니다.');
   add('body',POSITION_CHECK_SCOPE);add('body',POSITION_DRAFT_NOTE);
   for(const [i,row] of rows.entries()){
     add('subheading',`${row.own?'자사':`후보 ${i}`} · ${row.name}`);if(row.url)add('body',row.url,row.url);

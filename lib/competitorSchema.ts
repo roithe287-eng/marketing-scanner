@@ -1,3 +1,4 @@
+import {CompetitionScopeSchema} from './competitionScope';
 import {z} from 'zod';
 import {OwnProductContextSchema} from './ownProductSchema';
 export const CompetitorResearchSchema=z.object({
@@ -11,4 +12,4 @@ export const CompetitorResearchSchema=z.object({
   productContext:OwnProductContextSchema.optional(),
   selectionStatus:z.enum(['matched','no_relevant_candidates','insufficient_source']).optional(),selectionMessage:z.string().optional(),
 });
-export const CompetitorOwnSiteSchema=z.object({url:z.string().optional(),domain:z.string(),title:z.string(),metaDescription:z.string(),h1:z.string()});
+export const CompetitorOwnSiteSchema=z.object({scope:CompetitionScopeSchema.optional(),url:z.string().optional(),domain:z.string(),title:z.string(),metaDescription:z.string(),h1:z.string()});
