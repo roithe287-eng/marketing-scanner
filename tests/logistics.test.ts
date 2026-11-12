@@ -114,7 +114,7 @@ test('logistics competitor pipeline skips product collection and keeps provider 
   t.mock.method(websiteHttp,'fetch',mockFetch);t.mock.method(globalThis,'fetch',mockFetch);
   try{
     const result=await analyzeCompetitors({url,title:'범양해운',ogTitle:'범양해운',description:'범양해운',h1:[],h2:[],keywords:'',bodyText:'안전하고 신속한 해외이사 서비스\n편안하고 빠른 귀국이사 서비스\n화물 운송과 견적 상담'});
-    assert.ok(result);assert.equal(result.searchKeyword,'해외이사');assert.equal(result.research.productContext,undefined);
+    assert.ok(result);assert.equal(result.searchKeyword,'해외이사');assert.equal(result.keywordSource,'fallback');assert.equal(result.research.productContext,undefined);
     assert.deepEqual(result.competitors.map(c=>c.domain),['carrier.test']);assert.match(result.filtering.excluded[0].reason,/참고 자료/);
     assert.ok(!requests.some(u=>/sitemap|openapi.naver.com\/v1\/search\/shop/.test(u)),'no product discovery for the service journey');
     const exported=JSON.stringify(buildCompetitorDocument({...fixture,competitorAnalysis:result}));

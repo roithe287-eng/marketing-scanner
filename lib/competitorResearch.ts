@@ -1,17 +1,21 @@
+import {eligibleMetadata,scopeAllowsKeyword,type CompetitionScope} from './competitionScope';
+import {providerBody,isSecondarySection,isOtherBranch,classificationText} from './websiteIdentity';
+import {sameSite} from './siteIdentity';
 /** Page relevance is evidence for a query, never keyword search volume. */
 import type {ExtractedWebsiteData} from './extractWebsite';
 import type {OwnProductSource} from './ownProductSchema';
 import {isEmploymentQuery} from './competitorRoles';
 import type {CommunityContext} from './communityContext';
 import type {BusinessDocument} from './businessContext';
-export type QuerySite = {communityContext?:CommunityContext;title?:string;ogTitle?:string;description?:string;ogDescription?:string;keywords?:string;h1?:string[];h2?:string[];bodyText?:string;productSources?:OwnProductSource[];businessDocuments?:BusinessDocument[];businessKeywords?:string[]};
+export type QuerySite = {url?:string;finalUrl?:string;scope?:CompetitionScope;communityContext?:CommunityContext;title?:string;ogTitle?:string;description?:string;ogDescription?:string;keywords?:string;h1?:string[];h2?:string[];bodyText?:string;productSources?:OwnProductSource[];businessDocuments?:BusinessDocument[];businessKeywords?:string[]};
 /** Reuse the already collected page; omit known navigation, footer and licence-only text. */
-export function competitorOwnText(data:Pick<ExtractedWebsiteData,'bodyText'|'siteEditing'|'businessDocuments'|'communityContext'>):string {
+export function competitorOwnText(data:Pick<ExtractedWebsiteData,'bodyText'|'siteEditing'|'businessDocuments'|'communityContext'>&Partial<Pick<ExtractedWebsiteData,'url'|'finalUrl'|'diagnosticSeed'>>):string {
   if(data.communityContext)return [...data.communityContext.evidence.map(e=>e.text),...data.communityContext.navigation.filter(l=>l.role==='board').map(l=>l.label)].join('\n');
-  const elements=data.siteEditing?.elements||[];
+  const elements=data.siteEditing?.elements||[],url=data.finalUrl||data.url;
   const chrome=elements.filter(e=>['header','footer','nav'].includes(e.region||'')).map(e=>e.text.replace(/\s+/g,' ').trim());
-  const lines=[...(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt').flatMap(d=>[d.title,...d.sections.map(s=>s.text)]),...elements.filter(e=>!e.truncated&&['text','heading'].includes(e.kind)&&!['header','footer','nav'].includes(e.region||'')).map(e=>e.text),...(data.bodyText||'').split(/\n+/)];
-  return [...new Set(lines.map(t=>t.replace(/\s+/g,' ').trim()).filter(t=>t.length>=4&&!chrome.some(c=>c.includes(t))&&!/판매업신고|사업자등록번호|통신판매업신고|copyright|개인정보처리방침|이용약관/i.test(t)))].join('\n').slice(0,8000);
+  const documents=(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&(!url||sameSite(d.url,url))&&!isOtherBranch(d.title,data.diagnosticSeed?.page.localPlaceEvidence?.branch)&&!isSecondarySection(d.title,'',d.url));
+  const lines=[...documents.flatMap(d=>[d.title,...d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url)).map(s=>s.text)]),...providerBody(data).split(/\n+/)];
+  return [...new Set(lines.map(classificationText).map(t=>t.replace(/\s+/g,' ').trim()).filter(t=>t.length>=4&&!isSecondarySection('',t)&&!chrome.some(c=>c.includes(t))&&!/판매업신고|사업자등록번호|통신판매업신고|copyright|개인정보처리방침|이용약관/i.test(t)))].join('\n').slice(0,8000);
 }
 export const normalizeSearchText=(text:string)=>text.normalize('NFKC').toLowerCase().replace(/\s+/g,'');
 export function queryTerms(query:string) {
@@ -22,6 +26,7 @@ export function queryMatches(query:string,text:string) {
   return {terms,matched:terms.filter(t=>normalized.includes(normalizeSearchText(t)))};
 }
 export function queryFields(site:QuerySite) {
+  site={...site,title:eligibleMetadata(site.title),ogTitle:eligibleMetadata(site.ogTitle),description:eligibleMetadata(site.description),ogDescription:eligibleMetadata(site.ogDescription),h1:site.h1?.map(eligibleMetadata),h2:site.h2?.filter(t=>!isSecondarySection(t,'')),bodyText:classificationText(site.bodyText||''),businessDocuments:site.businessDocuments?.filter(d=>d.source!=='search_excerpt'&&(!(site.finalUrl||site.url)||sameSite(d.url,site.finalUrl||site.url!))&&!isSecondarySection(d.title,'',d.url)).map(d=>({...d,sections:d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url))}))};
   if(site.communityContext)site={title:site.title,ogTitle:site.ogTitle,description:site.description,ogDescription:site.ogDescription,h1:site.h1,bodyText:site.communityContext.navigation.filter(l=>l.role==='board').map(l=>l.label).join(' ')};
   return [{label:'페이지 제목',text:site.title||site.ogTitle||'',weight:4},
     {label:'메타 설명',text:site.description||site.ogDescription||'',weight:3},
@@ -58,7 +63,7 @@ export function keywordCandidates(site:QuerySite,limit=5) {
     .filter(v=>{const key=normalizeSearchText(v);if(seen.has(key))return false;seen.add(key);return true;})
     .map(v=>{const evidence=keywordEvidence(v,site);return {...evidence,weightedSupport:evidence.weightedSupport+(keywordSeeds.has(normalizeSearchText(v))?3:0)-(evidence.evidence.length===1&&evidence.evidence[0].field==='페이지 제목'?3:0)};}).sort((a,b)=>b.weightedSupport-a.weightedSupport||a.keyword.length-b.keyword.length).slice(0,limit);
 }
-const marketTerms=['건강기능식품','건강식품','영양제','비타민','유산균','오메가3','구강청결제','칫솔','캔디','사료','세탁세제','단체복','과잠바','유니폼','의류','화장품','스킨케어','생활용품','반려동물용품','반려동물 사료','식품','밀키트','와인','가구','인테리어','마케팅 컨설팅','광고대행','광고 대행','메타광고','기업 교육','온라인 강의','채용 플랫폼','구인구직','소프트웨어','세무 상담','법률 상담'];
+const marketTerms=['한방병원','한의원','치과','피부과','법률 상담','법무법인','미용학원','스키 렌탈','스키 강습','서핑 강습','애견 미용','반려견 호텔','동물병원','식당','카페','물류 소프트웨어','병원 소프트웨어','의료기기 제조','장비 제조','인테리어 시공','청소 서비스','건강기능식품','건강식품','영양제','비타민','유산균','오메가3','구강청결제','칫솔','캔디','사료','세탁세제','단체복','과잠바','유니폼','의류','화장품','스킨케어','생활용품','반려동물용품','반려동물 사료','식품','밀키트','와인','가구','인테리어','마케팅 컨설팅','광고대행','광고 대행','메타광고','기업 교육','온라인 강의','채용 플랫폼','구인구직','소프트웨어','세무 상담','법률 상담'];
 const catalogLabel=/^(?:best(?:items?|products?|sellers?|photoreviews?)?|new(?:arrivals?|items?|products?)?|mds?(?:choice|picks?)|all(?:items?|products?)|featured(?:items?|products?)|photoreviews?|reviews?|shop(?:all|now)?|collections?|home|aboutus|contactus|write|more|view(?:more|all)?)$/i;
 const productStop=/^(?:기본|기획|개발|국내|국산|수입|정품|공식|전문|추천|베스트|인기|신상|신제품|신상품|할인|무료|배송|설치|방문설치|기본설치포함|당일|대용량|소형|대형|고급|프리미엄|세트|추가구성품|상품명|상품|제품|구매|판매|회원가입|적립금|지급|브랜드|증정|증정이벤트|샘플|사은품|이벤트|쿠폰|혜택|체험|선착순|특가|한정|set|new|best|the|and|for|with)$/i;
 function brandAliases(site:QuerySite){
@@ -78,8 +83,11 @@ function productKeywordSeeds(site:QuerySite):string[]{
 /** A company-name lookup is not a market query, even when its title repeats. */
 export function usableMarketKeyword(query:string,site:QuerySite):boolean {
   const q=normalizeSearchText(query),evidence=keywordEvidence(query,site);
+  if(!scopeAllowsKeyword(query,site.scope))return false;
+  if(/(?:하세요|합니다|입니다|드립니다|바로가기|더보기|가입하기|한\s*방울|함께\s*더\s*행복|sign\s*up|where\s+.*meets|add\s+one\s+drop|welcome|learn\s*more)/i.test(query))return false;
   if(!evidence.grounded||query.length>40||queryTerms(query).length>5||/https?:|[<>]|채용공고|연봉|기업리뷰/.test(query))return false;
   if(site.productSources?.length&&productStop.test(q))return false;
+  if(site.scope?.kind==='commerce'&&/^[a-z][a-z ]+$/i.test(query)&&query.trim().includes(' ')&&!site.productSources?.some(p=>queryMatches(query,[p.name,...p.categories].join(' ')).matched.length===queryTerms(query).length)&&!(site.keywords||'').split(/[,;|]/).some(k=>normalizeSearchText(k)===q))return false;
   if(/^(홈|메인|공식|홈페이지|사이트|쇼핑|쇼핑몰|스토어|온라인|인터넷|비즈니스|회사|기업|제품|상품|서비스|플랫폼|브랜드|문의|상담|고객센터|공지사항|로그인|회원가입|이용약관|개인정보|건강|헬스케어|푸드|뷰티|펫|헬스|라이프)$/i.test(q))return false;
   if(/(?:핫딜|pick|매거진|베스트|카테고리|기획전|신상품|추천상품|고객센터)$/i.test(q))return false;
   if(catalogLabel.test(q.replace(/[^\p{L}\p{N}]/gu,'')))return false;

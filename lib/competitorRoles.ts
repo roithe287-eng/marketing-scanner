@@ -6,7 +6,7 @@ const contentHosts=['wikipedia.org','namu.wiki','news.naver.com','brunch.co.kr',
 const legalReferenceHosts=['easylaw.go.kr','law.go.kr'];
 export const isEmploymentQuery=(query:string)=>/채용|구인|구직|취업|헤드헌팅|리크루팅|인재.?추천|인재.?매칭|recruit|job.?search|hr.?solution/i.test(query);
 const isCompanyDataQuery=(query:string)=>/기업.?정보|기업.?분석|투자.?정보|기업.?데이터|스타트업.?데이터|신용.?평가/.test(query);
-export function unrelatedPageReason(page:{domain:string;link:string;title:string;description?:string},query:string):string|undefined {
+export function unrelatedPageReason(page:{domain:string;link:string;title:string;description?:string},query:string,contentComparison=false):string|undefined {
   const host=page.domain.toLowerCase().replace(/^www\./,'').replace(/\.$/,'');
   let path='';try{path=new URL(page.link).pathname;}catch{}
   // These sources explain laws; a matching topic does not make them service providers.
@@ -18,6 +18,6 @@ export function unrelatedPageReason(page:{domain:string;link:string;title:string
       || /\/(?:recruit(?:ment)?|careers?|jobs?|salaries|company-reviews)(?:\/|$)/i.test(path))return '채용·연봉·직장 후기 페이지: 상품·서비스 비교 대상에서 제외';
   }
   if(!isCompanyDataQuery(query)&&(companyHosts.some(h=>within(host,h))||/기업정보|기업개요|기업분석|기업\s*프로필|company\s*(?:profile|overview)/i.test(page.title)))return '기업·투자 정보 조회 페이지: 해당 상품·서비스 제공 업체가 아님';
-  if(contentHosts.some(h=>within(host,h))||/\/(?:news|article|articles|press|blog)(?:\/|$)/i.test(path)
-    || /뉴스룸|(?:^|\s|[|:·])뉴스(?:$|\s|[|:·])|기사\s*[-|:·]|보도자료|언론보도/.test(page.title))return '기사·블로그·정보 콘텐츠: 직접 제공 업체의 상품·서비스 페이지가 아님';
+  if(!contentComparison&&(contentHosts.some(h=>within(host,h))||/\/(?:news|article|articles|press|blog)(?:\/|$)/i.test(path)
+    || /뉴스룸|(?:^|\s|[|:·])뉴스(?:$|\s|[|:·])|기사\s*[-|:·]|보도자료|언론보도/.test(page.title)))return '기사·블로그·정보 콘텐츠: 직접 제공 업체의 상품·서비스 페이지가 아님';
 }

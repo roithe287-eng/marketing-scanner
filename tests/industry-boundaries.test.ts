@@ -35,6 +35,7 @@ const cases=[
  ['legal-site-builder','법률사무소 홈페이지 제작','변호사를 위한 웹 제작 대행','','service','agency','consulting'],
  ['restaurant-payment','새길 식당','한식 메뉴 예약과 포장 주문 안내','<button>결제하기</button>','service','place_restaurant','food'],
  ['textbook-shop','강의 교재 온라인 쇼핑몰','교육 도서를 판매하는 온라인 쇼핑몰','<button>장바구니</button><button>구매하기</button>','commerce',null,'ecommerce'],
+ ['interior-store-no-cart','부산 인테리어 상품 쇼핑몰','인테리어 상품 구매 안내','','commerce',null,'ecommerce'],
  ['interior-products','공간 인테리어 상품','인테리어 상품 안내','<button>구매하기</button>','commerce',null,'ecommerce'],
  ['software-column','소프트웨어 도입 칼럼','업무 도구를 비교하는 기사와 사용자 가이드','','content','content','media'],
  ['hotel-cleaner','호텔 청소 전문 서비스','객실 청소와 위생관리 견적 문의','','service','home','interior'],

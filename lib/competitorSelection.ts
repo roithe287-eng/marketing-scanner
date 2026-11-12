@@ -1,3 +1,5 @@
+import {buildCompetitionScope,competitionMismatch,eligibleMetadata,type CompetitionScope} from './competitionScope';
+import {isContextOnlyEvidence,classificationText} from './websiteIdentity';
 import {queryMatches} from './competitorResearch';
 import {unrelatedPageReason} from './competitorRoles';
 export type SearchItem = { title: string; link: string; description: string };
@@ -8,7 +10,7 @@ export type SearchCandidate = SearchItem & {
   relevance?: 'keyword_match' | 'needs_review';
   selectionEvidence?: string;
   matchedTerms?: string[];
-  relevanceBasis?: 'page_metadata' | 'search_snippet';
+  relevanceBasis?: 'page_metadata' | 'page_content' | 'search_snippet';
 };
 export type ExcludedCandidate = { domain: string; link: string; title: string; reason: string };
 
@@ -46,7 +48,7 @@ export function nonProviderReason(title: string, query: string, description = ''
 }
 
 const commerceText=/쇼핑몰|공식몰|전문몰|온라인몰|스토어|쇼핑|\bshop\b|\bstore\b|장바구니|바로구매|구매하기|주문하기|구매하러|\bcheckout\b|\badd to cart\b|\bbuy now\b/i;
-export function selectSearchCandidates(items: SearchItem[], ourDomain: string, query: string, limit = 8, preferCommerce=false) {
+export function selectSearchCandidates(items: SearchItem[], ourDomain: string, query: string, limit = 8, preferCommerce=false, ownScope?:CompetitionScope) {
   const candidates: SearchCandidate[] = [];
   const excluded: ExcludedCandidate[] = [];
   const seen = new Set<string>();
@@ -59,40 +61,49 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
     const domain = url.hostname.toLowerCase().replace(/^www\./, '');
     const title = stripSearchHtml(item.title);
     let reason = own && (belongsTo(domain, own) || belongsTo(own, domain)) ? '자사 도메인' : undefined;
-    if (!reason && seen.has(domain)) reason = '이미 수집한 도메인의 중복 페이지';
     if (!reason) reason = excludedPlatformReason(domain);
-    if (!reason) reason = unrelatedPageReason({domain,link:item.link,title,description:stripSearchHtml(item.description)},query);
+    if (!reason) reason = unrelatedPageReason({domain,link:item.link,title,description:stripSearchHtml(item.description)},query,ownScope?.kind==='content');
     if (!reason) reason = nonProviderReason(title, query, stripSearchHtml(item.description));
     if (reason) { excluded.push({domain, link: item.link, title, reason}); return; }
-    seen.add(domain);
-    eligibleCount++;
     candidates.push({rank: candidates.length + 1, searchRank: i + 1,
       title, link: item.link, description: stripSearchHtml(item.description), domain});
   });
   const coverage=(c:SearchCandidate)=>queryMatches(query,`${c.title} ${c.description}`).matched.length;
   const seller=(c:SearchCandidate)=>Number(commerceText.test(`${c.title} ${c.description}`)||/\/(?:goods|products?)\//i.test(c.link));
-  const selected=candidates.sort((a,b)=>(preferCommerce?seller(b)-seller(a):0)||coverage(b)-coverage(a)||a.searchRank-b.searchRank).slice(0,limit).map((c,i)=>({...c,rank:i+1}));
+  const fit=(c:SearchCandidate)=>ownScope?Number(!competitionMismatch(ownScope,buildCompetitionScope({url:c.link,title:c.title,description:c.description}),false)):0;
+  const unique=candidates.sort((a,b)=>fit(b)-fit(a)||(preferCommerce?seller(b)-seller(a):0)||coverage(b)-coverage(a)||a.searchRank-b.searchRank).filter(c=>{if(seen.has(c.domain)){excluded.push({...c,reason:'이미 수집한 도메인의 중복 페이지'});return false;}seen.add(c.domain);return true;});
+  eligibleCount=unique.length;
+  const selected=unique.slice(0,limit).map((c,i)=>({...c,rank:i+1}));
   return {candidates:selected, excluded, reviewedCount: items.length,eligibleCount,budgetDeferredCount:Math.max(0,eligibleCount-selected.length)};
 }
 
-export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?: string; metaDescription?: string; h1?: string; fetchError?: string;ctaTexts?:string[]}>(
-  candidates: T[], query: string, excluded: ExcludedCandidate[], limit = 5, requireCommerce=false,
-) {
-  const kept: T[] = [];
-  const normalize = (text: string) => text.toLowerCase().replace(/\s+/g, '');
-  for (const candidate of candidates) {
-    const title = candidate.metaTitle || candidate.title;
-    const reason = unrelatedPageReason({domain:candidate.domain,link:candidate.link,title:`${candidate.title} ${title}`,description:candidate.metaDescription||candidate.description},query)||nonProviderReason(`${candidate.title} ${title}`, query, `${candidate.description} ${candidate.metaDescription || ''}`);
-    if (reason) { excluded.push({domain: candidate.domain, link: candidate.link, title, reason}); continue; }
-    const hasPage=!candidate.fetchError&&!!(candidate.metaTitle||candidate.metaDescription||candidate.h1);
-    const text = normalize((hasPage?[candidate.metaTitle,candidate.metaDescription,candidate.h1]:[candidate.title,candidate.description]).join(' '));
-    const match=queryMatches(query,text),matchedTerms=match.matched;
-    const matches = match.terms.length > 0 && matchedTerms.length===match.terms.length;
-    if(!hasPage||!matches){excluded.push({domain:candidate.domain,link:candidate.link,title,reason:!hasPage?'페이지 수집·원문 근거 부족: 검색 요약만으로 경쟁 관계를 확정하지 않음':'후보 페이지 제목·설명·H1에서 대상 상품·서비스 검색어 일치를 확인하지 못함'});continue;}
-    if(requireCommerce&&!commerceText.test([candidate.metaTitle,candidate.metaDescription,candidate.h1,...candidate.ctaTexts||[]].join(' '))){excluded.push({domain:candidate.domain,link:candidate.link,title,reason:'상품 판매 사이트의 비교에서 쇼핑몰·구매 동작을 원문으로 확인하지 못함'});continue;}
-    kept.push({...candidate, relevance: 'keyword_match',matchedTerms,relevanceBasis:'page_metadata',
-      selectionEvidence:`페이지 제목·설명·H1에서 상품·서비스 검색어 “${query}”의 관련 표현을 확인했습니다.${requireCommerce?' 원문에서 쇼핑몰·구매 동작의 단서도 확인했습니다.':''} 실제 상품·서비스·지역·고객층·판매 방식은 별도로 대조해 주세요.`});
+export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?:string;metaDescription?:string;h1?:string;fetchError?:string;ctaTexts?:string[];bodySnippet?:string;finalUrl?:string;scope?:CompetitionScope}>(
+  candidates:T[],query:string,excluded:ExcludedCandidate[],limit=5,requireCommerce=false,ownScope?:CompetitionScope,ourDomain='',
+){
+  const kept:(T&SearchCandidate)[]=[],seen=new Set<string>();
+  for(const candidate of candidates){
+    const title=candidate.metaTitle||candidate.title;
+    let link=candidate.finalUrl||candidate.link,domain=candidate.domain,reason:string|undefined;
+    try{const u=new URL(link);if(!/^https?:$/.test(u.protocol)||u.username||u.password)throw new Error();domain=u.hostname.toLowerCase().replace(/^www\./,'');}catch{reason='후보 최종 URL이 유효하지 않음';}
+    const own=[ourDomain,ownScope?.sourceUrl?new URL(ownScope.sourceUrl).hostname.replace(/^www\./,''):''].filter(Boolean);
+    if(!reason&&own.some(host=>belongsTo(domain,host)||belongsTo(host,domain)))reason='최종 이동 URL이 자사 도메인';
+    if(!reason)reason=excludedPlatformReason(domain);
+    if(!reason&&seen.has(domain))reason='최종 이동 도메인이 다른 후보와 중복';
+    if(!reason&&isContextOnlyEvidence(title,'',link))reason='고객사 사례·후기 페이지는 해당 업체의 제공 업무로 확정하지 않음';
+    if(!reason)reason=unrelatedPageReason({domain,link,title,description:candidate.metaDescription||''},query,ownScope?.kind==='content')||nonProviderReason(title,query,candidate.metaDescription||'');
+    const hasPage=!candidate.fetchError&&!!(candidate.metaTitle||candidate.metaDescription||candidate.h1||candidate.bodySnippet);
+    const metadata=[candidate.metaTitle,candidate.metaDescription,candidate.h1].map(eligibleMetadata).join(' ');
+    const metaMatch=queryMatches(query,metadata),match=queryMatches(query,metadata+' '+classificationText(candidate.bodySnippet||''));
+    const matches=match.terms.length>0&&match.matched.length===match.terms.length;
+    if(!reason&&(!hasPage||!matches))reason=!hasPage?'페이지 수집·원문 근거 부족: 검색 요약만으로 경쟁 관계를 확정하지 않음':'후보의 자사 설명 원문에서 대상 상품·서비스 검색어 일치를 확인하지 못함';
+    if(!reason&&requireCommerce&&!commerceText.test([metadata,...candidate.ctaTexts||[]].join(' ')))reason='상품 판매 사이트의 비교에서 쇼핑몰·구매 동작을 원문으로 확인하지 못함';
+    const scope=candidate.scope||buildCompetitionScope({url:link,title:candidate.metaTitle||'',description:candidate.metaDescription||'',h1:candidate.h1?[candidate.h1]:[],bodyText:candidate.bodySnippet||'',ctaButtons:candidate.ctaTexts});
+    if(!reason&&ownScope)reason=competitionMismatch(ownScope,scope);
+    if(reason){excluded.push({domain,link,title,reason});continue;}
+    seen.add(domain);
+    const relevanceBasis=metaMatch.matched.length===metaMatch.terms.length?'page_metadata' as const:'page_content' as const;
+    kept.push({...candidate,domain,link,scope,relevance:'keyword_match',matchedTerms:match.matched,relevanceBasis,
+      selectionEvidence:`자사 제공 업무 원문에서 “${query}” 확인${ownScope?` · ${scope.label}${ownScope.area?' · 지역 '+scope.area:''}${ownScope.destinations.length?' · 이용 목적지 일치':''}`:''}`});
   }
-  return kept.sort((a, b) => Number(b.relevance === 'keyword_match') - Number(a.relevance === 'keyword_match') || a.searchRank - b.searchRank)
-    .slice(0, limit).map((candidate, i) => ({...candidate, rank: i + 1}));
+  return kept.sort((a,b)=>a.searchRank-b.searchRank).slice(0,limit).map((c,i)=>({...c,rank:i+1}));
 }

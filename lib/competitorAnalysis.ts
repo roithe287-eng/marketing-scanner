@@ -1,3 +1,11 @@
+import {captureCommunityContext} from './communityContext';
+import {SKI_DESTINATIONS} from './seasonalPlaceCatalog';
+import {buildCompetitionScope,eligibleMetadata,type CompetitionScope} from './competitionScope';
+import {captureSiteEditing} from './captureSiteEditing';
+import {captureLocalPlaceEvidence} from './localPlaceEvidence';
+import {captureProductSeed} from './productDiscovery';
+import {providerBody,isSecondarySection} from './websiteIdentity';
+import {sameSite} from './siteIdentity';
 import type {CommunityContext} from './communityContext';
 import {analyzeBusinessContext} from './businessContext';
 import {collectBusinessDocuments} from './businessResearch';
@@ -14,6 +22,8 @@ import { getOpenAI } from "./openaiClient";
 import {selectSearchCandidates, finalizeSearchCandidates, type SearchCandidate, type ExcludedCandidate} from "./competitorSelection";
 
 export type Competitor = SearchCandidate & {
+  scope?:CompetitionScope;
+  finalUrl?:string;
   rank: number;
   title: string;
   link: string;
@@ -33,8 +43,9 @@ export type CompetitorAnalysisResult = {
   searchKeyword: string;
   keywordSource: "ai" | "fallback";
   competitors: Competitor[];
-  filtering: {policyVersion: 2; reviewedCount: number; metadataCheckedCount: number; excluded: ExcludedCandidate[]};
+  filtering: {policyVersion: 3; reviewedCount: number; metadataCheckedCount: number; excluded: ExcludedCandidate[]};
   ourSite: {
+    scope?:CompetitionScope;
     url:string;
     domain: string;
     title: string;
@@ -103,65 +114,26 @@ async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
       html = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
     }
 
-    const $ = cheerio.load(html);
-    $("script, style, noscript, iframe").remove();
+    Object.assign(competitor,captureCompetitorPage(html,res.url||competitor.link,res.headers));
 
-    competitor.metaTitle = $("title").first().text().trim().slice(0, 600);
-    competitor.metaDescription =
-      $('meta[name="description"]').attr("content")?.trim().slice(0, 1600) || "";
-
-    competitor.h1 = $("h1")
-      .first()
-      .text()
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 200);
-
-    // H2 일부 수집 (경쟁사가 강조하는 메시지 파악)
-    competitor.h2 = $("h2")
-      .map((_, el) => $(el).text().replace(/\s+/g, " ").trim())
-      .get()
-      .filter(Boolean)
-      .slice(0, 8);
-
-    // 본문 일부 (경쟁사의 핵심 메시지 추출용)
-    competitor.bodySnippet = $("body")
-      .text()
-      .replace(/\s+/g, " ")
-      .trim()
-      .slice(0, 1500);
-
-    const ctaKeywords = [
-      "장바구니",
-      "문의",
-      "상담",
-      "신청",
-      "구매",
-      "주문",
-      "예약",
-      "다운로드",
-      "가입",
-      "체험",
-      "견적",
-      "시작",
-      "지금",
-    ];
-    const buttons = $("button, a, [role='button'], input[type='submit']")
-      .map((_, el) => {
-        const $el = $(el);
-        return (
-          $el.text().replace(/\s+/g, " ").trim() ||
-          $el.attr("value")?.trim() ||
-          ""
-        );
-      })
-      .get()
-      .filter((t) => t.length > 0 && t.length < 30)
-      .filter((t) => ctaKeywords.some((k) => t.includes(k)));
-    competitor.ctaTexts = Array.from(new Set(buttons)).slice(0, 8);
   } catch (err: any) {
     competitor.fetchError = err?.message || "fetch failed";
   }
+}
+
+/** Candidate facts are parsed from its own fetched page, never from the search snippet. */
+export function captureCompetitorPage(html:string,url:string,headers=new Headers()){
+  const $=cheerio.load(html);
+  if($('meta[name="robots" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')))return {finalUrl:url,fetchError:'페이지 검색 수집 제한'};
+  const metaTitle=$('title').first().text().trim().slice(0,600),metaDescription=$('meta[name="description" i]').attr('content')?.trim().slice(0,1600)||'';
+  const siteEditing=captureSiteEditing($,url,headers);
+  const place=captureLocalPlaceEvidence(html,url);
+  const h1=$('h1').first().text().replace(/\s+/g,' ').trim().slice(0,200);
+  const ctaTexts=[...new Set(siteEditing.elements.filter(e=>e.kind==='cta'&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)).map(e=>e.text))].slice(0,12);
+  const bodySnippet=providerBody({siteEditing}).slice(0,4000);
+  const data={communityContext:captureCommunityContext($,url),url,finalUrl:url,title:metaTitle,description:metaDescription,h1:h1?[h1]:[],h2:[],bodyText:bodySnippet,siteEditing,ctaButtons:ctaTexts,productDiscovery:captureProductSeed(html,url)};
+  const scope=buildCompetitionScope({...data,localPlaceEvidence:place});
+  return {finalUrl:url,metaTitle,metaDescription,h1,ctaTexts,bodySnippet,scope};
 }
 
 /**
@@ -182,6 +154,7 @@ async function extractKeywordWithAI(siteData: QuerySite /* own source only */ & 
 
 규칙:
 - 회사명, 브랜드명, 사이트명은 제외하라.
+- 고객사·납품처의 업종과 자사 제공 업무를 구분하라. 소프트웨어 업체에는 소프트웨어·솔루션, 제조사에는 제조·생산, 대행사에는 광고·마케팅·제작 등 실제 역할을 나타내는 표현을 포함하라.
 - 그 사이트가 판매하는 "제품 카테고리" 또는 "업종" 키워드만 추출하라.
 - 한국어 2~15자 이내.
 - 검색했을 때 동종업종 경쟁사들이 잘 나올 만한 일반명사 위주.
@@ -200,6 +173,7 @@ async function extractKeywordWithAI(siteData: QuerySite /* own source only */ & 
 - title="진짜마케팅", h1="네이버광고 메타광고" → 출력: "메타광고 대행사"
 
 웹사이트 정보:
+- 자사 제공 유형: ${siteData.scope?JSON.stringify(siteData.scope):"원문 기준"}
 - title: ${siteData.title || ""}
 - og:title: ${siteData.ogTitle || ""}
 - og:description: ${siteData.ogDescription || ""}
@@ -243,6 +217,7 @@ function extractKeywordFallback(siteData:QuerySite):string {
 }
 
 export async function analyzeCompetitors(siteData: {
+  scope?:CompetitionScope;
   communityContext?:CommunityContext;
   url: string;
   title: string;
@@ -255,31 +230,25 @@ export async function analyzeCompetitors(siteData: {
   bodyText?: string;
 }): Promise<CompetitorAnalysisResult | null> {
   try {
+    const rawSite=siteData;
+    siteData={...siteData,title:eligibleMetadata(siteData.title),ogTitle:eligibleMetadata(siteData.ogTitle),description:eligibleMetadata(siteData.description),ogDescription:eligibleMetadata(siteData.ogDescription),h1:siteData.h1.map(eligibleMetadata),h2:siteData.h2?.filter(h=>!isSecondarySection(h,''))};
+    const initialScope=siteData.scope&&sameSite(siteData.scope.sourceUrl,siteData.url)?siteData.scope:buildCompetitionScope(siteData);
     // Known service journeys use service evidence rather than a product collection attempt.
     const base={...siteData,finalUrl:siteData.url,h2:siteData.h2||[],bodyText:siteData.bodyText||''};
     const initialBusiness=analyzeBusinessContext({...base,description:base.description||base.bodyText.slice(0,500)});
-    const skipProductCollection=!!siteData.communityContext||initialBusiness?.kind==='service';
+    const skipProductCollection=!!siteData.communityContext||initialBusiness?.kind==='service'||!['commerce','mixed','unknown'].includes(initialScope.kind);
     const [productContext,businessDocuments]:[OwnProductContext,Awaited<ReturnType<typeof collectBusinessDocuments>>]=await Promise.all([
       skipProductCollection?Promise.resolve({status:'not_observed' as const,discovery:'input_page' as const,attemptedPages:0,sources:[],commerce:false,note:siteData.communityContext?'커뮤니티는 게시글 탐색·회원 참여를 확인합니다.':'서비스의 이용 조건과 상담·예약 경로를 확인합니다.'}):collectOwnProductContext(siteData.url),
       collectBusinessDocuments(siteData.url,{budgetMs:6000}),
     ]);
     const business=analyzeBusinessContext({...base,businessDocuments,productContext})||initialBusiness;
     const businessKeywords=[...new Set([...(initialBusiness?.id===business?.id?initialBusiness?.keywords||[]:[]),...business?.keywords||[]])];
-    const querySite:QuerySite={...siteData,productSources:productContext.sources,businessDocuments,businessKeywords};
-    // 1. AI 키워드 추출 우선
-    let keyword = (siteData.communityContext?marketKeywordCandidates(querySite)[0]?.keyword:undefined)||businessKeywords.find(k=>usableMarketKeyword(k,querySite))||await extractKeywordWithAI({
-      title: siteData.title,
-      ogTitle: siteData.ogTitle,
-      ogDescription: siteData.ogDescription,
-      description: siteData.description,
-      keywords: siteData.keywords,
-      h1: siteData.h1,
-      h2: siteData.h2,
-      bodyText:siteData.bodyText,
-      productSources:productContext?.sources,
-    });
-
-    let keywordSource: "ai" | "fallback" = siteData.communityContext?"fallback":"ai";
+    const scope=initialScope.kind==='unknown'?buildCompetitionScope({...base,productContext,businessDocuments}):initialScope;
+    const querySite:QuerySite={...siteData,scope,productSources:productContext.sources,businessDocuments,businessKeywords};
+    // Source labels describe the path actually used; business rules are not AI output.
+    let keyword:string|null|undefined=(siteData.communityContext?marketKeywordCandidates(querySite)[0]?.keyword:undefined)||businessKeywords.find(k=>usableMarketKeyword(k,querySite));
+    let keywordSource:"ai"|"fallback"='fallback';
+    if(!keyword){keyword=await extractKeywordWithAI(querySite);if(keyword)keywordSource='ai';}
     if(keyword&&!usableMarketKeyword(keyword,querySite))keyword=null;
     if(productContext?.sources.length&&!business){
       const nameSupport=(q:string)=>productContext!.sources.filter(p=>{const m=queryMatches(q,p.name);return m.terms.length>0&&m.matched.length===m.terms.length;}).length;
@@ -298,20 +267,20 @@ export async function analyzeCompetitors(siteData: {
     } catch {}
 
     if (!keyword || keyword.length < 2) {
-      return {searchKeyword:'',keywordSource:'fallback',competitors:[],filtering:{policyVersion:2,reviewedCount:0,metadataCheckedCount:0,excluded:[]},
+      return {searchKeyword:'',keywordSource:'fallback',competitors:[],filtering:{policyVersion:3,reviewedCount:0,metadataCheckedCount:0,excluded:[]},
         research:{version:2,provider:'naver_web',capturedAt:new Date().toISOString(),requestedCount:0,returnedCount:0,apiStart:1,totalDocuments:null,
           ...(!skipProductCollection?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:'회사명 외에 판매 상품·서비스를 확인할 원문 근거가 부족해 경쟁사 검색을 보류했습니다.',keywordEvidence:[],alternatives:[],attemptedKeywords:[],eligibleCount:0,budgetDeferredCount:0,successfulPages:0,selectedCount:0,
           selectionStatus:'insufficient_source',selectionMessage:'메인 HTML과 공개 상품 원문에서 비교할 상품군을 확인하지 못했습니다. 상품이 없거나 사이트에 정보가 부족하다는 판정은 아닙니다. 동적 로딩·접근 제한·검색 API의 수집 범위를 확인해 주세요.'},
-        ourSite:{url:siteData.url,domain:ourDomain,title:siteData.title,metaDescription:siteData.description,h1:siteData.h1[0]||''}};
+        ourSite:{scope,url:siteData.url,domain:ourDomain,title:rawSite.title,metaDescription:rawSite.description,h1:rawSite.h1[0]||''}};
     }
     console.log(`[경쟁사] 키워드: "${keyword}" (${keywordSource})`);
 
     // Inspect more search items without increasing the eight-page collection budget.
     const commerce=productContext.commerce===true&&business?.id!=='duty_free'&&business?.kind!=='service';
-    const searchQuery=(term:string)=>commerce?`${term} 쇼핑몰`:term;
+    const searchQuery=(term:string)=>{const destination=scope.destinations.length?scope.destinations.map(id=>SKI_DESTINATIONS.find(d=>d.id===id)?.label).filter(Boolean)[0]:'';const region=destination||scope.area;const local=region&&!term.includes(region)?`${region} ${term}`:term;return commerce?`${local} 쇼핑몰`:local;};
     const attemptedKeywords=[searchQuery(keyword)];
     let response = await searchNaverWeb(searchQuery(keyword), 30);
-    let selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce);
+    let selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce,scope);
     if (selection.candidates.length === 0 && keywordSource === "ai") {
       const fallbackKeyword = marketKeywordCandidates(querySite).find(k=>k.keyword!==keyword)?.keyword;
       if (fallbackKeyword && fallbackKeyword !== keyword) {
@@ -319,13 +288,13 @@ export async function analyzeCompetitors(siteData: {
         response = await searchNaverWeb(searchQuery(fallbackKeyword), 30);
         keyword = fallbackKeyword;
         keywordSource = "fallback";
-        selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce);
+        selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce,scope);
       }
     }
     const candidates: Competitor[] = selection.candidates.map(c=>({...c,searchRank:c.searchRank+response.start-1}));
     // Each fetch has its own eight-second timeout. Await all before taking a snapshot.
     await Promise.all(candidates.map(candidate => fetchCompetitorMeta(candidate)));
-    const competitors = finalizeSearchCandidates(candidates, keyword, selection.excluded, 5,commerce);
+    const competitors = finalizeSearchCandidates(candidates, keyword, selection.excluded, 5,commerce,scope,ourDomain);
 
     return {
       searchKeyword: keyword,
@@ -336,13 +305,14 @@ export async function analyzeCompetitors(siteData: {
         eligibleCount:selection.eligibleCount,budgetDeferredCount:selection.budgetDeferredCount,successfulPages:candidates.filter(c=>!c.fetchError).length,selectedCount:competitors.length,
         selectionStatus:competitors.length?'matched':'no_relevant_candidates',selectionMessage:competitors.length?'후보 페이지 원문에서 대상 상품·서비스 검색어와 관련 표현을 확인했습니다.':'검색 응답 중 상품·서비스의 관련성을 원문으로 확인한 업체가 없습니다. 관련 없는 업체나 수집 실패 페이지로 비교표를 채우지 않았습니다.'},
       competitors,
-      filtering: {policyVersion: 2, reviewedCount: selection.reviewedCount, metadataCheckedCount: candidates.length, excluded: selection.excluded},
+      filtering: {policyVersion: 3, reviewedCount: selection.reviewedCount, metadataCheckedCount: candidates.length, excluded: selection.excluded},
       ourSite: {
+        scope,
         url:siteData.url,
         domain: ourDomain,
-        title: siteData.title,
-        metaDescription: siteData.description,
-        h1: siteData.h1[0] || "",
+        title: rawSite.title,
+        metaDescription: rawSite.description,
+        h1: rawSite.h1[0] || "",
       },
     };
   } catch (err: any) {

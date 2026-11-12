@@ -1,4 +1,4 @@
-import {ownBusinessRole,isSecondarySection,classificationText,purposeSchemaTypes,isOtherBranch} from './websiteIdentity';
+import {providerIdentity,ownBusinessRole,isSecondarySection,classificationText,purposeSchemaTypes,isOtherBranch} from './websiteIdentity';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
 import {isConsentBoilerplate} from './contentBoilerplate';
 import {sameSite} from './siteIdentity';
@@ -105,7 +105,8 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const purchase=actions.filter(a=>actionPatterns.purchase.test(a.text));
   const localPayment=!!place&&['restaurant','cafe','lodging','fitness','education','culture','rental','medical','veterinary','pet_care'].includes(place.sector)&&purchase.length>0&&purchase.every(a=>/결제하기|checkout/i.test(a.text))&&!data.productDiscovery?.sources.length&&!data.productDiscovery?.productLinks.length&&!data.productContext?.sources.length&&role!=='retail';
   const candidate=sector?(genericCandidate==='public_service'?'public_service':'service'):genericCandidate||(place&&(!purchase.length||localPayment)&&!data.productContext?.commerce&&!data.productDiscovery?.commerce?'service':undefined);
-  const commerce=purchase.length>0&&!localPayment||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
+  const explicitStore=role==='retail'&&/쇼핑몰|공식몰|전문몰|온라인\s*(?:몰|스토어|판매)/.test(providerIdentity(data));
+  const commerce=explicitStore||purchase.length>0&&!localPayment||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
   const kind:PurposeKind=business?.kind||(commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||'unknown');
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
   const provider=sector?.id==='medical_consulting'&&!commerce;

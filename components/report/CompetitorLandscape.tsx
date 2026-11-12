@@ -1,4 +1,5 @@
 'use client';
+import {competitionScopeLabel} from '@/lib/competitionScope';
 import {ReadingToggle} from '../ReadingDisclosure';
 import {CompactText} from './ReportVisualSummary';
 import {Guidebook} from './SiteGuidebook';
@@ -31,18 +32,19 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
   const active=rows.find(r=>r.id===selected)||own,actions=positioningActions(own);
   const choose=(value:string)=>{setSelected(value);setStatus('');setFallback('');};
   async function copy(){const text=positioningBrief(report,own)+'\n\n'+actions.map(a=>guideInstruction(buildSiteGuide(report,{title:a.title,evidence:a.evidence,proposal:a.template}))).join('\n\n');try{await navigator.clipboard.writeText(text);setStatus('자사 개선 작업을 복사했습니다.');setFallback('');}catch{setStatus('아래 내용을 직접 복사하세요.');setFallback(text);}}
-  if(!analysis.competitors.length)return <section className="report-card competitor-landscape" aria-label="검색 메시지 포지셔닝"><p className="report-eyebrow">COMPETITOR RELEVANCE</p><h3>경쟁사 선정을 보류했습니다</h3><p className="report-note">{research?.selectionMessage||'대상 상품·서비스와 관련성을 확인한 비교 후보가 없습니다. 관련 없는 업체로 비교표를 채우지 않았습니다.'}</p><ProductCollection context={research?.productContext}/>{research?.attemptedKeywords.some(q=>q!==analysis.searchKeyword)&&<p className="report-note">후보 검색에 사용한 질의: {research.attemptedKeywords.join(' → ')}</p>}{analysis.searchKeyword&&<p>검토한 검색어: <strong>{analysis.searchKeyword}</strong></p>}{analysis.filtering?.policyVersion!==2&&<p className="report-note">이전 선정 기준의 보고서입니다. 채용·기업정보 등 명확히 관련 없는 페이지를 제외했습니다. 최신 상품·서비스 관련성 검증을 적용하려면 URL을 재진단해 주세요.</p>}{!!analysis.filtering?.excluded.length&&<details className="position-method"><summary>제외한 페이지와 이유<ReadingToggle variant="report"/></summary><ul>{analysis.filtering.excluded.map((c,i)=><li key={`${c.domain}-${i}`}><strong>{c.domain}</strong> · {c.reason}</li>)}</ul></details>}<p className="report-note">추가 수집 기록과 확인한 원문을 먼저 검토하세요. 접근 가능한 상품·서비스 상세 URL로도 재진단할 수 있습니다.</p></section>;
+  if(!analysis.competitors.length)return <section className="report-card competitor-landscape" aria-label="검색 메시지 포지셔닝"><p className="report-eyebrow">COMPETITOR RELEVANCE</p><h3>경쟁사 선정을 보류했습니다</h3><p className="report-note">{research?.selectionMessage||'대상 상품·서비스와 관련성을 확인한 비교 후보가 없습니다. 관련 없는 업체로 비교표를 채우지 않았습니다.'}</p><ProductCollection context={research?.productContext}/>{research?.attemptedKeywords.some(q=>q!==analysis.searchKeyword)&&<p className="report-note">후보 검색에 사용한 질의: {research.attemptedKeywords.join(' → ')}</p>}{analysis.searchKeyword&&<p>검토한 검색어: <strong>{analysis.searchKeyword}</strong></p>}{(analysis.filtering?.policyVersion??0)<3&&<p className="report-note">이전 선정 기준의 보고서입니다. 채용·기업정보 등 명확히 관련 없는 페이지를 제외했습니다. 최신 상품·서비스 관련성 검증을 적용하려면 URL을 재진단해 주세요.</p>}{!!analysis.filtering?.excluded.length&&<details className="position-method"><summary>제외한 페이지와 이유<ReadingToggle variant="report"/></summary><ul>{analysis.filtering.excluded.map((c,i)=><li key={`${c.domain}-${i}`}><strong>{c.domain}</strong> · {c.reason}</li>)}</ul></details>}<p className="report-note">추가 수집 기록과 확인한 원문을 먼저 검토하세요. 접근 가능한 상품·서비스 상세 URL로도 재진단할 수 있습니다.</p></section>;
   return <section className="report-card competitor-landscape" aria-label="검색 메시지 포지셔닝">
     <div className="report-card-heading"><p className="report-eyebrow">SEARCH CONTEXT → MESSAGE → ACTION</p><h3>같은 검색어에서, 고객에게 무엇을 설명하고 있나요?</h3><p className="report-note">검색에서 발견한 후보와 자사의 설명을 비교해 다음 수정 작업을 정합니다.</p></div>
+    {analysis.ourSite?.scope&&<p className="report-note">비교 기준: <strong>{competitionScopeLabel(analysis.ourSite.scope)}</strong></p>}
     <div className="position-query"><div><span>{research?.productContext?.sources.length?'확인한 상품군의 비교 키워드':'이번 비교의 대표 키워드'}</span><strong>{analysis.searchKeyword||'미저장'}</strong></div><span className="position-tag" title="외부 후보 중 제목·메타 설명을 모두 확보하고 동일한 기준으로 계산 가능한 업체 수">원문 비교 가능 {known.length}/{analysis.competitors.length}곳</span></div>
     {research?.attemptedKeywords.some(q=>q!==analysis.searchKeyword)&&<p className="report-note">후보 검색에 사용한 질의: {research.attemptedKeywords.join(' → ')}{(research.productContext?.commerce||research.productContext?.discovery==='public_catalog')?' · 판매처를 찾기 위한 구매 의도를 포함했습니다.':''}</p>}
     <ProductCollection context={research?.productContext}/>
     <CompactText className="position-lead" text={COMPETITOR_API_NOTE} summary="네이버 웹문서 API의 비교 후보입니다. 실제 검색 순위·직접 경쟁 여부는 별도 확인하세요."/>
-    {analysis.filtering?.policyVersion!==2&&<p className="report-note">이전 선정 기준의 보고서입니다. 최신 상품·서비스 관련성 검증을 적용하려면 재진단해 주세요.</p>}
+    {(analysis.filtering?.policyVersion??0)<3&&<p className="report-note">이전 선정 기준의 보고서입니다. 최신 상품·서비스 관련성 검증을 적용하려면 재진단해 주세요.</p>}
     <ol className="position-selection-flow" aria-label="경쟁사 선정 과정">
       <li><span>01 · 키워드 선정</span><strong>페이지의 주제</strong><p>주력 상품·서비스 표현에서 선택</p></li>
       <li><span>02 · 검색 응답</span><strong>{research?`${research.returnedCount}건`:analysis.filtering?`${analysis.filtering.reviewedCount}건`:'기록 미저장'}</strong><p>네이버 웹문서 API 응답</p></li>
-      <li><span>03 · 관련성 검증</span><strong>{analysis.filtering?`${analysis.filtering.excluded.length}건 제외`:'상세 기록 미저장'}</strong><p>채용·기업정보·원문 미확인 등 제외</p></li>
+      <li><span>03 · 관련성 검증</span><strong>{analysis.filtering?`${analysis.filtering.excluded.length}건 제외`:'상세 기록 미저장'}</strong><p>업무·분야·지역과 원문 일치 확인</p></li>
       <li><span>04 · 비교 후보</span><strong>{analysis.competitors.length}개</strong><p>원문으로 좌표 계산 가능 {known.length}개</p></li>
     </ol>
     <details className="position-method"><summary>이 키워드와 후보를 고른 이유<ReadingToggle variant="report"/></summary><div>
@@ -52,7 +54,7 @@ export default function CompetitorLandscape({report}:{report:MarketingReport}) {
         <h4>자사 원문에서 확인한 키워드 근거</h4>{research.keywordEvidence.map((e,i)=><blockquote key={i}><strong>{e.field} · {e.matched.join(' · ')}</strong><p>{e.text}</p></blockquote>)}
         {!!research.alternatives.length&&<><h4>원문에 있는 다른 비교 키워드 후보</h4><ul>{research.alternatives.map(a=><li key={a.keyword}><strong>{a.keyword}</strong> · {a.fields.join(' / ')}</li>)}</ul><p>대체 후보는 아직 조회하지 않았으며 검색량·경쟁 적합성이 검증된 순위가 아닙니다.</p></>}
       </>}
-      <p>채용·연봉·기업정보·기사 페이지를 역할에 따라 제외하고, 신규 보고서는 후보 페이지의 제목·설명·H1에서 상품·서비스 검색어 일치를 확인합니다. 수집 실패·관련성 부족으로 후보가 5곳 미만이거나 0곳일 수 있습니다. 직접 경쟁 관계는 상품·서비스, 지역, 고객층, 판매 방식을 함께 대조하세요.</p>
+      <p>후보 홈페이지의 제목·설명·H1·자사 본문을 확인하고, 제공 업무·판매 방식·분야·지역이 맞는 후보를 남깁니다. 원문 근거가 부족한 후보는 제외합니다.</p>
       {analysis.filtering?.excluded.length?<><h4>제외한 페이지와 이유</h4><ul>{analysis.filtering.excluded.map((c,i)=><li key={`${c.domain}-${i}`}><strong>{c.domain}</strong> · {c.reason}<p>{c.title}</p></li>)}</ul></>:null}
       <div className="position-sources">{COMPETITOR_SOURCES.map(s=><a key={s.url} href={s.url} target="_blank" rel="noopener noreferrer">{s.title}</a>)}</div>
     </div></details>
