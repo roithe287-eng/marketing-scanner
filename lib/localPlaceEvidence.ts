@@ -61,7 +61,7 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   root.find('br').replaceWith('\n');root.find('p,li,h1,h2,h3,h4,div,section,address').append('\n');
   const lines=root.text().slice(0,30000).split(/\n+/u).map(v=>clean(v,700)).filter(Boolean);
   const text=lines.join(' ');
-  const positive=lines.filter(v=>!/(?:불가|미제공|하지\s*않|취급하지|시행하지|운영하지|서비스\s*종료)/u.test(v)).join(' ');
+  const positive=lines.map(classificationText).join('\n');
   const address=addressText(entity?.address)||clean(root.find('address,[itemprop="address"]').first().text(),300)||clean(lines.join('\n').match(/(?:서울(?:특별시)?|부산(?:광역시)?|대구(?:광역시)?|인천(?:광역시)?|광주(?:광역시)?|대전(?:광역시)?|울산(?:광역시)?|세종(?:특별자치시)?|경기(?:도)?|강원(?:특별자치도)?|충청[남북]도|전[라북남특별자치]+도|경상[남북]도|제주(?:특별자치도)?)\s+[가-힣]+(?:시|군|구)\s+[^|\n]{3,65}/u)?.[0],150);
   const physical=!!address||!!links.length||!!entity||/오시는\s*길|매장\s*(?:안내|찾기)|방문\s*상담|주차|찾아오시는/.test(text);
   if(!physical&&/쇼핑몰|온라인\s*(?:전용|전문)|인터넷\s*쇼핑/.test(identity+' '+description))return;
@@ -71,7 +71,7 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   const franchise=/프랜차이즈|가맹\s*(?:점|문의|창업)|전국\s*매장|매장\s*찾기/.test(text);
   const terms:LocalPlaceEvidence['terms']=[];
   const add=(group:LocalPlaceEvidence['terms'][number]['group'],term:string)=>{if(term&&!terms.some(t=>t.group===group&&t.term===term)&&terms.length<32)terms.push({group,term:term.slice(0,80)});};
-  for(const term of sector.services)if(positive.includes(term)||(!/(?:불가|미제공|하지\s*않|서비스\s*종료)/u.test(description)&&description.includes(term)))add('상품·서비스',term);
+  for(const term of sector.services)if(positive.includes(term)||classificationText(description).includes(term))add('상품·서비스',term);
   for(const term of ['주차','예약','영업시간','휴무','브레이크타임','라스트오더','포장','배달','픽업','야간','주말','반려동물 동반','휠체어'])if(positive.includes(term))add('방문·이용 조건',term);
   for(const term of ['어린이','가족','단체','직장인','초보','입문','소형견','대형견','고양이','강아지','기업'])if(positive.includes(term))add('고객·목적',term);
   if(branch)add('지역·지점',branch);

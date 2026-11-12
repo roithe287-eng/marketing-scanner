@@ -29,7 +29,9 @@ export const PLACE_SECTORS:PlaceSector[]=[
   {id:'local',label:'기타 방문·지역 서비스',identity:/$^/,types:['LocalBusiness'],services:['방문','상담','예약','주차','서비스'],fields:['실제 제공 상품·서비스·대상','업체명·업종·지점·주소 일치','가격·시간·휴무·이용 조건','방문·예약·문의 경로'],questions:['어떤 서비스와 방문 방법을 제공하나요?','이용 조건과 예약 절차는 무엇인가요?'],schema:'LocalBusiness'},
 ];
 // Specific animal categories must precede human medical/lodging, and spaces precede generic retail.
-export const PLACE_DETECTION_ORDER=['veterinary','funeral','pet_care','pet_store','legal','professional','pharmacy','finance','medical','real_estate','travel','beauty','education','fitness','automotive','home_service','event','rental','welfare','living','culture','cafe','restaurant','lodging','retail','local'];
+// Concrete provider roles outrank an animal mentioned as their customer;
+// the broad pet-store matcher alone cannot establish retail activity.
+export const PLACE_DETECTION_ORDER=['veterinary','funeral','pet_care','legal','professional','pharmacy','finance','medical','real_estate','travel','beauty','education','fitness','automotive','home_service','event','rental','welfare','living','culture','cafe','restaurant','lodging','pet_store','retail','local'];
 export const placeSector=(id:string)=>PLACE_SECTORS.find(s=>s.id===id)||PLACE_SECTORS[PLACE_SECTORS.length-1];
 
 export const PLACE_POLICY_REVIEWED='2026-11-12';

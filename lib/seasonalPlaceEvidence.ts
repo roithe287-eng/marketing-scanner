@@ -1,5 +1,6 @@
 import {SEASONAL_PROFILES,SKI_DESTINATIONS} from './seasonalPlaceCatalog';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
+import {offeringClauses} from './websiteIdentity';
 export type SeasonalEvidence=NonNullable<LocalPlaceEvidence['seasonal']>;
 const absent=/(?:미제공|제공하지|취급하지|운영하지|하지\s*않|서비스\s*종료|(?:렌탈|대여|강습)\s*불가)/;
 const clean=(v:string,max=220)=>v.replace(/\s+/gu,' ').trim().slice(0,max);
@@ -14,13 +15,14 @@ const specs:[string,string,RegExp,string][]=[
 ];
 export const SEASONAL_CHECKS=specs.map(([key,label,,action])=>({key,label,action}));
 export function captureSeasonalEvidence(input:{sector:string;identity:string;description:string;headings:string[];lines:string[]}):SeasonalEvidence|undefined{
-  const own=[input.identity,input.description].filter(v=>!absent.test(v)).join(' ');
-  const headings=input.headings.filter(v=>!absent.test(v));
+  const offered=(values:string[])=>values.flatMap(offeringClauses).filter(v=>!absent.test(v));
+  const own=offered([input.identity,input.description]).join(' ');
+  const headings=offered(input.headings);
   const profiles=SEASONAL_PROFILES.filter(p=>p.allowed.includes(input.sector)&&(p.identity.test(own)||headings.some(h=>p.identity.test(h)))).slice(0,4);
   if(!profiles.length)return;
   // Paragraphs support facts only after the business's own identity/offer heading establishes the service.
   const lines=[input.identity,input.description,...headings,...input.lines].filter(Boolean);
-  const positive=lines.filter(v=>!absent.test(v));
+  const positive=offered(lines);
   const observations=profiles.map(p=>{
     const source=positive.find(v=>p.identity.test(v))||own;
     const at=source.search(p.identity);
