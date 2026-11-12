@@ -104,3 +104,8 @@ test('classification preserves independent source boundaries and original condit
   assert.deepEqual(offeringClauses('헤어를 시술합니다.\n네일 예약 시 색상을 확인하세요.'),['헤어를 시술합니다.','네일 예약 시 색상을 확인하세요.']);
   assert.match(classificationText('진료 예약 없이 방문할 수 없습니다.'),/진료 예약/);
 });
+for(const description of ['주차 불가. 예약 접수를 제공합니다.','주차 불가하며 예약 접수를 제공합니다.'])test(`unavailable visit conditions stay excluded without losing booking: ${description}`,()=>{
+  const e=captureLocalPlaceEvidence(html('부산 가온 네일샵',description),url)!;
+  assert.ok(!e.terms.some(t=>t.term==='주차'));
+  assert.ok(e.terms.some(t=>t.term==='예약'));
+});
