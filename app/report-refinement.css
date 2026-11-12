@@ -1,7 +1,7 @@
 /* Keep the share tooltip outside the rounded report header. */
 .report-v2.report-focused .report-hero {overflow:visible}
 /* Toolbar notes occupy a popover, never a permanent column below the copy button. */
-.report-share {position:relative;min-width:0;align-self:start;z-index:6}
+.report-share {position:relative;min-width:0;align-self:start;z-index:40}
 .report-share-button {width:100%;display:flex;align-items:center;justify-content:center;min-height:48px;text-align:center;line-height:1.5}
 .report-share-tooltip {position:absolute;right:0;top:100%;width:330px;max-width:min(330px,calc(100vw - 64px));padding:18px;border:1px solid #b9cbe1;border-radius:12px;background:#fff;box-shadow:0 12px 30px #183a6826;color:#274262;font-size:13px;line-height:1.7;z-index:30;text-align:left;overflow-wrap:anywhere}
 .report-share-tooltip[hidden] {display:none!important}

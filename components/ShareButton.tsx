@@ -5,6 +5,7 @@ import {requestJson} from '@/lib/client/request';
 import type { MarketingReport } from '@/lib/reportSchema';
 export default function ShareButton({report,competitorLoading=false,onShareCreated}:{report:MarketingReport;competitorLoading?:boolean;onShareCreated?:(saved:MarketingReport)=>void}) {
   const tooltipId=useId();
+  const wrapper=useRef<HTMLDivElement>(null);
   const [showDetails,setShowDetails]=useState(false);
   const [loading,setLoading] = useState(false);
   const [url,setUrl] = useState('');
@@ -23,6 +24,7 @@ export default function ShareButton({report,competitorLoading=false,onShareCreat
     return()=>active.current?.abort();
   },[report]);
   useEffect(()=>{if(!copied)return;const timer=setTimeout(()=>setCopied(false),2200);return()=>clearTimeout(timer);},[copied]);
+  useEffect(()=>{if(!showDetails)return;const close=(event:PointerEvent)=>{if(event.target instanceof Node&&!wrapper.current?.contains(event.target))setShowDetails(false);};document.addEventListener('pointerdown',close);return()=>document.removeEventListener('pointerdown',close);},[showDetails]);
   async function share() {
     if (busy.current || competitorLoading) return;
     busy.current=true;setLoading(true);setError('');setCopied(false);
@@ -43,11 +45,11 @@ export default function ShareButton({report,competitorLoading=false,onShareCreat
       if(controller.signal.aborted||currentReport.current!==snapshot) return;
       try {await navigator.clipboard.writeText(link);if(!controller.signal.aborted&&currentReport.current===snapshot) setCopied(true);} catch { setShowDetails(true); }
     } catch(error) {if(!controller.signal.aborted&&currentReport.current===snapshot)setError(error instanceof Error?error.message:'공유 링크 생성에 실패했습니다. 잠시 후 다시 시도해주세요.');}
-    finally {if(active.current===controller&&!controller.signal.aborted){active.current=null;busy.current=false;setLoading(false);}}
+    finally {if(active.current===controller&&!controller.signal.aborted){active.current=null;busy.current=false;setLoading(false);setShowDetails(true);}}
   }
-  return <div className="report-share" data-hide-on-export
+  return <div ref={wrapper} className="report-share" data-hide-on-export
     onMouseEnter={()=>setShowDetails(true)} onMouseLeave={e=>{if(!e.currentTarget.contains(document.activeElement))setShowDetails(false);}}
-    onFocus={()=>setShowDetails(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget))setShowDetails(false);}}
+    onFocus={()=>setShowDetails(true)} onBlur={e=>{if(!e.currentTarget.contains(e.relatedTarget)&&!e.currentTarget.matches(':hover'))setShowDetails(false);}}
     onKeyDown={e=>{if(e.key==='Escape')setShowDetails(false);}}>
     <button type="button" className="report-share-button rounded-full border px-5 py-3 text-sm font-bold disabled:opacity-50" aria-describedby={url?tooltipId:undefined} disabled={loading || competitorLoading} onClick={share}>{competitorLoading?'추가 분석 완료 후 공유 가능':loading?'공유 링크 생성 중...':copied?'링크가 복사되었습니다':url?'링크 다시 복사':'결과 보관·링크 복사'}</button>
     {url && <div id={tooltipId} role="note" aria-label="링크 보관 안내" className="report-share-tooltip" hidden={!showDetails}>
