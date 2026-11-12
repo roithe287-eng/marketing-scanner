@@ -8,7 +8,7 @@ import {buildNonCommerceStrategy} from './nonCommerceStrategy';
 
 const text=z.string().min(1).max(1200);
 const source=z.object({url:z.string().url().max(2048),title:z.string().max(300),text:z.string().max(600)});
-const segment=z.object({id:z.string(),label:text,audience:text,evidence:z.array(source).min(1).max(3),
+const segment=z.object({id:z.string(),label:text,audience:text,evidence:z.array(source).max(3),
   landingUrl:z.string().url().optional(),diagnosis:text,questions:z.array(text).max(4),keywords:z.array(text).max(5),
   landingBlocks:z.array(text).max(6),headline:text,message:text,cta:text,metric:text});
 const channel=z.object({id:z.string(),label:text,role:text,setup:text,creative:text,conversion:text,review:text});
@@ -23,7 +23,7 @@ export const ServiceStrategySchema=z.object({
   content:z.array(z.object({title:text,angle:text,outline:z.array(text).max(4),cta:text,sourceUrls:z.array(z.string().url()).max(3)})).max(6),
   briefing:LogisticsBriefingSchema.optional(),
   briefingPlan:NonCommerceBriefingSchema.optional(),
-});
+}).refine(plan=>plan.industry==='noncommerce'||plan.segments.every(s=>s.evidence.length>0),{message:'물류 서비스별 원문 근거가 필요합니다.',path:['segments']});
 export type ServiceStrategy=z.infer<typeof ServiceStrategySchema>;
 type SegmentSpec=Omit<z.infer<typeof segment>,'evidence'|'landingUrl'|'diagnosis'> & {match:RegExp};
 

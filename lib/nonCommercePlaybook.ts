@@ -2,10 +2,15 @@ import type {WebsitePurpose} from './websitePurpose';
 import type {AnswerIntent} from './answerContentSchema';
 import {sectorProfile} from './nonCommerceSectors';
 import {businessProfile} from './businessContext';
+import {PLACE_DETECTION_ORDER,placeSector} from './localPlaceCatalog';
+import {seasonalProfile} from './seasonalPlaceCatalog';
+import {editorialFocus} from './nonCommerceEditorial';
+import type {LocalPlaceEvidence} from './localPlaceSchema';
 
 export type NonCommercePlaybook={
   id:string;label:string;audience:string;preparation:string[];proof:string;assets:string[];
   stages:[string,string,string,string,string];outcome:string;cta:string;caution:string;
+  local?:{fields:string[];questions:string[];regions:string[];seasonal:boolean};
 };
 const make=(id:string,label:string,audience:string,preparation:string[],proof:string,assets:string[],stages:NonCommercePlaybook['stages'],outcome:string,cta:string,caution='공개된 원문과 실제 운영 자료를 대조한 뒤 사용하세요. 수치·비용·기간·실적은 추정하지 않습니다.'):NonCommercePlaybook=>({id,label,audience,preparation,proof,assets,stages,outcome,cta,caution});
 const professional=(id:string,label:string,audience:string,prep:string[],proof:string,assets:string[],outcome='계약 확정',cta='조건 확인·상담 요청')=>make(id,label,audience,prep,proof,assets,['제공 범위 탐색','조건·사례 비교','문의 접수','적합성·업무 범위 확인',outcome],outcome,cta);
@@ -39,16 +44,38 @@ export const NONCOMMERCE_PLAYBOOKS:Record<string,NonCommercePlaybook>={
   public_service:make('public_service','공공·지원 안내','지원 대상과 공식 신청 절차를 확인하려는 이용자',['신청 목적','공고의 적용 대상','접수 일정'],'운영 기관·최신 원공고·대상과 제외 조건·정정 이력',['대상 확인표','신청 준비표','공고 변경 안내'],['지원 정보 탐색','대상·공고 확인','공식 신청 이동','신청 접수 확인','진행 상태 확인'],'진행 상태 확인','공식 공고·신청 경로 확인','접수·선정·지급은 서로 다른 단계입니다. 자격·선정·지원 금액을 추측하지 않으며 외부 기관의 신청 완료를 링크 클릭으로 대체하지 않습니다.'),
 };
 const serviceMatchers:[string,RegExp][]=[['software',/소프트웨어|SaaS|software|업무\s*솔루션/i],['accounting',/세무|회계|기장|tax\s*account/i],['agency',/마케팅|광고\s*대행|브랜딩|웹\s*제작|디자인\s*(?:대행|스튜디오)/i],['home',/인테리어|리모델링|시공|청소/i],['repair',/수리|복원|수선|repair/i],['hospitality',/숙박|호텔|리조트|펜션|캠핑|체험|렌탈|대관/i],['hiring',/채용\s*(?:대행|서비스)|헤드헌팅|인력\s*(?:서비스|파견)/i],['event',/촬영|웨딩|행사\s*(?:대행|기획)|스튜디오/i]];
-export function nonCommercePlaybook(p:WebsitePurpose,identity=''):NonCommercePlaybook{
+export function nonCommercePlaybook(p:WebsitePurpose,identity='',place?:LocalPlaceEvidence):NonCommercePlaybook{
   const special=(p.kind==='service'||p.kind==='education')?(/유학|어학\s*연수/.test(identity)?'study_abroad':p.kind==='service'?(/부동산\s*(?:중개|매물)|공인중개/.test(identity)?'real_estate':/필라테스|피트니스|요가|헬스장/.test(identity)?'fitness':/렌탈|렌털|설치\s*서비스/.test(identity)?'rental':serviceMatchers.find(([,match])=>match.test(identity))?.[0]):undefined):undefined;
   const key=p.community?'community':p.sector?.id||p.business?.id||special||p.kind;
-  const result=NONCOMMERCE_PLAYBOOKS[key]||NONCOMMERCE_PLAYBOOKS.service;
+  let result=NONCOMMERCE_PLAYBOOKS[key]||NONCOMMERCE_PLAYBOOKS.service;
+  // Strong professional/HQ identities win over places mentioned in client examples.
+  const localEligible=!p.community&&(!p.sector||p.sector.id==='medical'&&place?.sector==='veterinary')&&(!p.business||p.business.id==='travel_booking')&&['service','education'].includes(p.kind)&&!['software','agency','accounting','hiring','study_abroad'].includes(key);
+  if(localEligible){
+    const sectorId=place?.sector||PLACE_DETECTION_ORDER.find(id=>placeSector(id).identity.test(identity));
+    if(sectorId){
+      const sector=placeSector(sectorId);
+      const season=place?.seasonal?.profiles.map(s=>seasonalProfile(s.id)).find(s=>s&&s.allowed.includes(sectorId));
+      const fields=season?.fields||sector.fields,questions=season?.questions||sector.questions;
+      const local={fields:[...fields],questions:[...questions],regions:place?.seasonal?.destinations.map(d=>d.label)||[],seasonal:!!season};
+      // Existing detailed playbooks keep their identity; uncovered local businesses get their own workflow.
+      const mismatchedLocal=!!place&&(['veterinary','pet_care','pet_store','living'].includes(sectorId)||sectorId==='rental'&&key!=='rental');
+      if(season||key==='service'||mismatchedLocal){
+        const visit=['restaurant','cafe','retail','pet_store','pharmacy','local'].includes(sectorId);
+        const work=['home_service','automotive','living','professional','legal','finance','funeral','real_estate'].includes(sectorId);
+        const cta=visit?'방문 조건·위치 확인':work?'작업·상담 조건 문의':'날짜·이용 조건 확인';
+        const end=visit?'방문·이용 확인':work?'업무 진행 확인':'실제 이용';
+        result=make(season?'season_'+season.id:'place_'+sector.id,season?.label||sector.label,`${sector.label}의 이용 조건을 확인하는 방문자`,fields.slice(0,3),fields[3],[`${fields[0]} 안내`,`${fields[1]} 비교표`,`${fields[2]} 준비표`],
+          [visit?'메뉴·품목 탐색':'서비스 탐색','이용 조건 비교',visit?'위치·운영정보 확인':'문의·예약 요청',visit?'방문 경로 선택':'가능 여부 확정',end],end,cta);
+      }
+      result={...result,local};
+    }
+  }
   return {...result,caution:p.sector?result.caution+' '+p.sector.caution:result.caution};
 }
 
 /** Templates are editorial tasks, never provider facts or live search observations. */
-export function nonCommerceQuestionGuides(p:WebsitePurpose,identity=''){
-  const book=nonCommercePlaybook(p,identity),scope=p.sector?.label||book.label;
+export function nonCommerceQuestionGuides(p:WebsitePurpose,identity='',place?:LocalPlaceEvidence){
+  const book=nonCommercePlaybook(p,identity,place),focus=editorialFocus(book),scope=p.sector?.label||book.label;
   const base=p.sector?p.sector.questions.map(q=>{const c=sectorProfile(p.sector!.id).checks.find(c=>c.id===q.checkId)!;return {intent:q.intent as AnswerIntent,question:q.question,fields:q.fields,placement:q.placement,match:c.match,explanation:c.guide};}):p.business?businessProfile(p.business.id).questions.map(q=>({...q,explanation:q.explanation||businessProfile(p.business!.id).caution})):p.community?[
     {intent:'scope' as const,question:'커뮤니티에서 어떤 게시판과 공개 정보를 찾아볼 수 있나요?',fields:['게시판별 주제','공개 열람 범위'],placement:'게시판 탐색 안내',match:/게시판|커뮤니티|정보/,explanation:'운영자의 게시판·이용 안내를 기준으로 설명합니다. 회원 글에 등장하는 사업과 성과를 운영사 제공 범위로 합치지 않습니다.'},
     {intent:'process' as const,question:'회원가입·질문 작성·댓글 참여는 어떤 순서로 진행하나요?',fields:['비회원 열람 조건','가입·참여 절차'],placement:'가입·참여 안내 앞',match:/회원|가입|질문|댓글/,explanation:'공개 열람과 회원 참여 경로를 나눠 설명하고 실제 이용 약관·운영 정책과 대조합니다.'},
@@ -63,5 +90,11 @@ export function nonCommerceQuestionGuides(p:WebsitePurpose,identity=''){
     {intent:'choice' as const,question:`${scope} 선택 시 어떤 조건을 같은 기준으로 비교해야 하나요?`,fields:['목적별 선택 기준','적용 조건의 차이','제외·주의사항'],match:/조건|비교|선택|범위|제외|차이/,explanation:`${book.preparation.join('·')}이 같은 경우끼리 비교합니다. ${book.assets.join('·')} 같은 자료를 활용해 선택에 필요한 차이를 설명하고 출처 없는 우열·순위를 만들지 않습니다.`},
     {intent:'care' as const,question:`${scope} 이용 중 변경·중단·추가 확인은 어떻게 안내하나요?`,fields:['변경·중단 적용 조건','담당 확인 경로','안내 갱신 기준'],match:/변경|취소|중단|추가|문의|갱신|수정/,explanation:'최초 안내와 다른 조건이 생겼을 때 이용자가 확인할 경로를 제시합니다. 정정·취소·변경 기준은 실제 운영 자료를 확인한 뒤 작성하며, 적용되지 않는 항목은 제외합니다.'},
   ];
-  return [...base,...extra.filter(q=>!base.some(b=>b.intent===q.intent)).map(q=>({...q,placement:'관련 설명 본문 아래 · 다음 행동 버튼 앞'}))].slice(0,8).map(q=>({...q,template:`${q.fields.map(field=>`${field}: [현재 원문·운영 자료로 확인 후 작성]`).join('\n')}\n위 안내는 [적용 대상과 확인일] 기준입니다. 조건이 다르면 [담당 확인 경로]에서 확인해 주세요.`}));
+  const locations:Partial<Record<AnswerIntent,string>>={scope:'상세 첫 설명 문단',eligibility:`${book.cta} 버튼 위`,process:'이용 순서 안내',price:'조건별 비용 표',proof:'주장 바로 옆의 원자료 링크',choice:'선택안 비교표',care:'변경·정정 안내'};
+  return [...base,...extra.filter(q=>!base.some(b=>b.intent===q.intent)).map(q=>({...q,placement:locations[q.intent]||'관련 설명 문단'}))].slice(0,8).map(q=>{
+    const fields=q.intent==='choice'?[focus.fields[0],focus.fields[2]]:q.intent==='proof'?[focus.fields[1],'원자료·확인일']:q.fields;
+    return {...q,fields,question:book.local&&q.intent==='scope'?focus.questions[0]:book.local&&q.intent==='choice'?focus.questions[1]:q.question,
+      explanation:`${q.placement}에 ${fields.join(' / ')} 항목을 나눠 써야 합니다.`,
+      template:fields.map(field=>`${field}: [현재 원문으로 확인한 ${field}]`).join('\n')};
+  });
 }

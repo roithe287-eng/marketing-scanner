@@ -34,3 +34,8 @@
  .report-v2.report-focused .work-today-grid>li {grid-template-rows:auto}
  .report-v2.report-focused .report-diagram-node-copy {grid-column:1/-1}
 }
+
+.report-v2.report-focused .service-instruction-label {font-weight:800;text-decoration-color:#afc3dd;text-decoration-thickness:2px;text-underline-offset:4px}
+.report-v2.report-focused .service-strategy-grid>article {min-width:0;overflow-wrap:anywhere}
+.report-v2.report-focused .service-stage-heading>u {min-width:0}
+.report-v2.report-focused .briefing-evidence>summary {cursor:pointer;font-weight:750;color:#385f91;padding:8px 0}
