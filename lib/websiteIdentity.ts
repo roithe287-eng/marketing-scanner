@@ -3,14 +3,19 @@ export type OwnBusinessRole='agency'|'software'|'manufacturing'|'home'|'educatio
 type IdentityInput={title?:string;description?:string;h1?:string[]};
 const ownLegal=/법무법인|법률사무소|법무사|변호사|세무사|회계사/;
 export function ownBusinessRole(data:IdentityInput):OwnBusinessRole|undefined{
-  const headings=[data.title,...data.h1||[]].filter(Boolean).join(' ');
+  const headings=[data.title,...data.h1||[]].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ');
+  // A profession named in the goods (exam books, medical equipment) does not
+  // make an explicitly identified shop a professional practice.
+  if(/쇼핑몰|공식몰|전문몰|온라인\s*(?:몰|스토어|판매점)/.test(headings)
+    &&(!/교육(?!용)|강의|수업|강좌|수강|커리큘럼/.test(headings)||/교재|도서|제품|판매/.test(headings))
+    &&!/쇼핑몰\s*(?:구축|제작)|홈페이지\s*제작|웹\s*제작|광고\s*대행|마케팅\s*대행|업무\s*(?:소프트웨어|솔루션)|관리\s*(?:시스템|솔루션)|제조\s*(?:기업|업체|회사)/.test(headings))return 'retail';
   // A legal practice can work on software copyright; that noun is not its role.
   if(ownLegal.test(headings)&&!/광고\s*대행|홈페이지\s*제작|웹\s*제작|소프트웨어\s*(?:개발|제공)/i.test(headings))return;
   for(const [i,text] of [headings,data.description||''].entries()){
     if(isContextOnlyEvidence('',text))continue;
     if(i===1&&/법무법인|법률사무소|병원|의원|클리닉|식당|카페|호텔|펜션|약국/.test(headings))return;
     if(/(?:인테리어|리모델링).{0,8}상품/.test(text)&&!/시공|설계/.test(text))return 'retail';
-    if(i===0&&/교육|강의|수업|학습|커리큘럼/.test(text)&&!/쇼핑몰|교재|도서|판매|교육청|교육원\s*소개/.test(text))return 'education';
+    if(i===0&&/교육(?!용)|강의|수업|학습|커리큘럼/.test(text)&&!/교재|도서|판매|교육청|교육원\s*소개/.test(text))return 'education';
     if(/쇼핑몰\s*(?:구축|제작)|광고\s*대행|마케팅\s*(?:대행|에이전시)|홈페이지\s*제작|웹\s*제작|브랜딩\s*(?:대행|스튜디오)/i.test(text))return 'agency';
     if(/소프트웨어|\bSaaS\b|업무\s*솔루션|(?:예약|보험|물류|병원|쇼핑몰)\s*(?:관리\s*)?(?:솔루션|시스템)\s*(?:개발|제공)/i.test(text))return 'software';
     if(/제조\s*(?:기업|업체|회사|전문)|(?:기기|장비|부품|제품|임플란트|산업재).{0,12}(?:제조|생산)|(?:manufactur(?:er|ing))\b/i.test(text))return 'manufacturing';

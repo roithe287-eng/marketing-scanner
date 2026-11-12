@@ -3,7 +3,7 @@ import type {LocalPlaceEvidence} from './localPlaceSchema';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {analyzeWebsitePurpose} from './websitePurpose';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
-import {classificationText,ownBusinessRole,providerIdentity,isContextOnlyEvidence} from './websiteIdentity';
+import {classificationText,ownBusinessRole,providerIdentity,providerBody,isContextOnlyEvidence} from './websiteIdentity';
 import {SKI_DESTINATIONS,seasonalProfile} from './seasonalPlaceCatalog';
 
 export const CompetitionScopeSchema=z.object({
@@ -28,7 +28,14 @@ const facetRules:Record<string,[string,RegExp][]>={
   fitness:[['필라테스',/필라테스/],['요가',/요가/],['골프',/골프/],['헬스',/헬스|피트니스|\bPT\b/i],['수영',/수영/],['테니스',/테니스/]],
   automotive:[['정비',/정비|수리|카센터/],['세차',/세차|디테일링/],['판매',/중고차|자동차\s*매장/]],
   pet_care:[['미용',/미용|목욕/],['호텔',/호텔|위탁|돌봄/],['훈련',/훈련|유치원/]],
+  pet_store:[['동물 분양·입양',/분양|입양/],['용품 판매',/용품|사료|간식/]],
+  beauty:[['헤어',/미용실|헤어|커트|파마|헤어펌/],['네일',/네일|페디큐어/],['피부관리',/피부관리|에스테틱/],['왁싱',/왁싱/],['메이크업',/메이크업|메이커업/]],
+  restaurant:[['한식',/한식|국밥|설렁탕|곰탕|냉면|백반|한정식|삼겹살|갈비|고깃집|고기집/],['일식',/일식|초밥|스시|이자카야|오마카세/],['중식',/중식|중국집|짜장|짬뽕|마라탕/],['양식',/양식|파스타|스테이크|이탈리안/],['치킨',/치킨/],['피자',/피자/],['분식',/분식|떡볶이|김밥/],['주점',/주점|술집|호프/]],
+  cafe:[['커피',/커피|coffee/i],['베이커리',/베이커리|제과|빵집|bakery/i],['케이크',/케이크|케익/]],
+  rental:[['차량',/렌터카|렌트카|자동차\s*(?:대여|렌탈)|차량\s*(?:대여|렌탈)/],['촬영장비',/카메라|촬영\s*장비/],['행사장비',/행사\s*장비|음향|조명|천막/],['생활가전',/정수기|공기청정기|비데|생활\s*가전/]],
+  event:[['사진촬영',/사진관|스튜디오|사진\s*촬영/],['웨딩',/웨딩|예식|결혼식/],['행사대관',/행사장|공연장|대관/]],
 };
+facetRules.accounting=facetRules.professional;
 const areas:[string,RegExp][]=[['서울',/서울/],['부산',/부산/],['대구',/대구/],['인천',/인천/],['광주',/광주(?:광역시|\s|$)/],['대전',/대전/],['울산',/울산/],['세종',/세종/],['경기',/경기도|(?:^|\s)경기(?=\s)/],['강원',/강원/],['충북',/충북|충청북도/],['충남',/충남|충청남도/],['전북',/전북|전라북도/],['전남',/전남|전라남도/],['경북',/경북|경상북도/],['경남',/경남|경상남도/],['제주',/제주/]];
 function areaOf(text:string):string{
   // Province comes first in a street address; city is retained for regional shops.
@@ -36,6 +43,21 @@ function areaOf(text:string):string{
   if(!found)return '';
   const city=/^(경기|강원|충북|충남|전북|전남|경북|경남)$/.test(found.name)?text.match(/(?:도|자치도)\s+([가-힣]{2,10})[시군](?=\s)/)?.[1]:'';
   return [found.name,city].filter(Boolean).join(' ');
+}
+function providerSpecialties(profile:string,data:Input):string[]{
+  const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
+  const facets=facetRules[profile]||[];
+  const primary=facets.filter(([,re])=>re.test(headings));
+  const metadataFacets=primary.length?primary:facets.filter(([,re])=>re.test(identity));
+  // Brand-only metadata may omit the actual service. Use scoped first-party
+  // body content only as a fallback; customer cases and related posts stay out.
+  const body=classificationText(providerBody(data));
+  const offeringText=classificationText([data.description,body].join('\n')).split(/\n+|(?<=[.!?])\s+/u)
+    .filter(t=>/(?:제공|취급|판매|운영|시술|대행)(?:합니다|하고|하며|됩니다|해드립니다|\s*중입니다)|진료\s*과목\s*[:：]/.test(t)&&!/관련|고객사|참고\s*(?:정보|자료)/.test(t)).join('\n');
+  return [...new Set([
+    ...(metadataFacets.length?metadataFacets:facets.filter(([,re])=>re.test(body))),
+    ...facets.filter(([,re])=>re.test(offeringText)),
+  ].map(([id])=>id))];
 }
 
 /** Uses the same page-purpose and playbook decisions as the report, never search snippets. */
@@ -48,9 +70,7 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   let profile=kind==='commerce'?'commerce':role==='manufacturing'?'manufacturing':book.local&&place?place.sector:purpose.business?.id||book.id;
   if(profile.startsWith('place_'))profile=profile.slice(6);
   if(profile==='organization'&&role==='manufacturing')profile=role;
-  const facets=facetRules[profile]||[];
-  const primary=facets.filter(([,re])=>re.test(headings));
-  const specialties=(primary.length?primary:facets.filter(([,re])=>re.test(identity))).map(([id])=>id);
+  const specialties=providerSpecialties(profile,data);
   const season=place?.seasonal?.profiles.map(p=>p.id)||[];
   if(season.length&&purpose.kind!=='commerce'&&!['agency','software','manufacturing'].includes(profile))specialties.push(...season.map(s=>'season:'+s));
   const headingDestinations=SKI_DESTINATIONS.filter(d=>d.aliases.test(headings));
@@ -58,6 +78,12 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   const nationwide=/(?:전국|온라인|비대면)\s*(?:출장|서비스|상담|수업|교육|진료|지원)/.test(identity);
   const area=localProfiles.has(profile)&&!nationwide?areaOf(place?.address||headings)||areaOf(identity):'';
   return {version:1,sourceUrl:data.finalUrl,kind,profile,label:profiles[profile]||purpose.business?.label||book.label,specialties:[...new Set(specialties)].slice(0,16),area,destinations:destinations.slice(0,6),nationwide};
+}
+
+/** Older scopes may omit specialties; retained original metadata can fill them. */
+export function refineStoredCompetitionScope(saved:CompetitionScope|undefined,input:Input):CompetitionScope{
+  if(!saved)return buildCompetitionScope(input);
+  return saved.specialties.length?saved:{...saved,specialties:providerSpecialties(saved.profile,input).slice(0,16)};
 }
 
 const equivalent=[['home','home_service'],['legal','accounting','professional'],['hospitality','lodging'],['travel','travel_booking'],['medical_consulting','agency']];
@@ -70,7 +96,11 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
     if(known(candidate)&&own.profile!==candidate.profile&&!equivalent.some(g=>g.includes(own.profile)&&g.includes(candidate.profile)))return `실제 제공 업무 불일치: 자사 ${own.label} · 후보 ${candidate.label}`;
     if(strict&&!known(candidate))return '후보 원문에서 자사와 같은 제공 업무를 확인하지 못함';
   }
-  if(own.specialties.length&&!own.specialties.some(s=>candidate.specialties.includes(s))&&(strict||candidate.specialties.length))return '진료·교육·작업 분야 또는 시즌 서비스가 다르거나 원문 근거가 부족함';
+  // A shared seasonal label cannot hide a conflicting service (and vice versa).
+  for(const seasonal of [false,true]){
+    const requested=own.specialties.filter(s=>s.startsWith('season:')===seasonal),offered=candidate.specialties.filter(s=>s.startsWith('season:')===seasonal);
+    if(requested.length&&!requested.some(s=>offered.includes(s))&&(strict||offered.length))return '세부 제공 업무 또는 시즌 서비스가 다르거나 원문 근거가 부족함';
+  }
   if(own.destinations.length&&!own.destinations.some(s=>candidate.destinations.includes(s))&&(strict||candidate.destinations.length))return '스키장·이용 목적지가 다르거나 후보의 해당 지역 운영 근거가 부족함';
   if(own.area&&!candidate.nationwide){
     const sameDestination=own.destinations.some(id=>candidate.destinations.includes(id));

@@ -90,7 +90,8 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
     .filter(k=>matched[k].length>=2||(matched[k].some(u=>primaryWeight(u)>0)&&(k!=='service'||actions.some(a=>Object.values(actionPatterns).some(re=>re.test(a.text))))))
     .sort((a,b)=>purposeScore(b)-purposeScore(a))[0];
   const editorialPrimary=scoredCandidate&&['content','education','public_service'].includes(scoredCandidate)&&matched[scoredCandidate].some(u=>u.locator==='head > title'||u.locator==='h1');
-  const genericCandidate=structuredKind||(editorialPrimary?scoredCandidate:roleKind||scoredCandidate);
+  const petTraining=(data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence)?.sector==='pet_care'&&role!=='education';
+  const genericCandidate=structuredKind||(petTraining&&scoredCandidate==='education'?'service':editorialPrimary?scoredCandidate:roleKind||scoredCandidate);
   const supplemental=(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&sameSite(d.url,data.finalUrl||data.url)&&!isOtherBranch(d.title,data.localPlaceEvidence?.branch||data.diagnosticSeed?.page.localPlaceEvidence?.branch)).flatMap(d=>d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url)).map(s=>({text:short(s.text),locator:d.url}))).filter(u=>u.text.length>=4);
   const checkUnits=[...supplemental,...units.filter(u=>!isSecondarySection(u.locator,u.text))].filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i);
   const place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
