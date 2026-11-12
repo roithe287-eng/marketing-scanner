@@ -1,3 +1,4 @@
+import {providerIdentity,ownBusinessRole,providerBody,classificationText,isExcludedOffering,isContextOnlyEvidence} from './websiteIdentity';
 import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { IndustryCategory } from "./reportSchema";
@@ -89,45 +90,44 @@ export function classifyIndustryFromEvidence(data: ExtractedWebsiteData): Indust
   const purpose=analyzeWebsitePurpose(data);
   if(purpose.community)return 'media';
   if(purpose.business)return purpose.business.industry;
+  if(isNonCommerce(purpose)&&ownBusinessRole(data)==='manufacturing')return 'manufacturing';
   if(isNonCommerce(purpose)&&purpose.sector){
     const categories:Record<NonNullable<typeof purpose.sector>['id'],IndustryCategory>={legal:'legal',medical:'medical',medical_consulting:'consulting',property_sales:'realestate',insurance:'finance',rehabilitation:'legal',startup:'consulting',franchise:'consulting'};
     return categories[purpose.sector.id];
   }
   if(isNonCommerce(purpose)){
     const place=data.diagnosticSeed?.page.localPlaceEvidence;
-    const book=nonCommercePlaybook(purpose,[data.title,data.description,...(data.h1||[])].join(' '),place);
+    const book=nonCommercePlaybook(purpose,providerIdentity(data),place);
     const season=book.id.startsWith('season_')?SEASON_INDUSTRIES[book.id.slice(7)]:undefined;
     const local=book.local&&place?PLACE_INDUSTRIES[place.sector]:undefined;
     const category=season||local||SERVICE_INDUSTRIES[book.id];
     if(category)return category;
   }
   if(data.productContext?.sources.length&&(data.productContext.commerce===true||data.productContext.discovery==='public_catalog'))return 'ecommerce';
-  const text = [
-    data.title,
-    data.description,
-    data.ogTitle,
-    data.ogDescription,
-    ...(data.h1 || []),
-    ...(data.h2 || []).slice(0, 5),
-    data.bodyText?.slice(0, 1500) || "",
-  ]
-    .join(" ")
-    .toLowerCase();
-
-  const scores: Record<string, number> = {};
-  for (const [cat, hints] of Object.entries(CATEGORY_HINTS)) {
-    let s = 0;
-    for (const h of hints) {
-      if (text.includes(h.toLowerCase())) s++;
-    }
-    if (s > 0) scores[cat] = s;
-  }
-
-  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
-  if (sorted.length > 0 && sorted[0][1] >= 3) {
-    return sorted[0][0] as IndustryCategory;
-  }
+  if(purpose.kind==='commerce'&&ownBusinessRole(data)==='retail')return 'ecommerce';
+  const primary=classificationText([data.title,data.description,data.ogTitle,data.ogDescription,...data.h1||[]].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ')).toLowerCase();
+  const body=classificationText(providerBody(data).slice(0,2500)).toLowerCase();
+  const contains=(text:string,hint:string)=>/^[a-z ]+$/i.test(hint)?new RegExp('\\b'+hint.replace(/ /g,'\\s+')+'\\b','i').test(text):text.includes(hint.toLowerCase());
+  const generic=new Set(['브랜드','제품','매장','상담','앱','플랫폼','콘텐츠','설계','app','store','shop','content']);
+  const scores=Object.entries(CATEGORY_HINTS).map(([category,hints])=>{
+    const concrete=hints.filter(h=>!generic.has(h));
+    const primaryHits=concrete.filter(h=>contains(primary,h)).length;
+    const bodyHits=concrete.filter(h=>contains(body,h)).length;
+    return {category,primaryHits,score:primaryHits*4+Math.min(3,bodyHits),eligible:primaryHits>=2||primaryHits>=1&&bodyHits>=1||bodyHits>=3};
+  }).filter(s=>s.eligible).sort((a,b)=>b.score-a.score);
+  if(scores[0]&&scores[0].score>(scores[1]?.score||0))return scores[0].category as IndustryCategory;
   return null;
+}
+
+/** A model suggestion must cite literal eligible page text, never invent a basis. */
+export function groundedIndustrySuggestion(value:unknown,data:ExtractedWebsiteData):IndustryCategory{
+  if(!value||typeof value!=='object')return 'etc';
+  const result=value as Record<string,unknown>,category=String(result.category||'etc').toLowerCase();
+  if(!Object.hasOwn(INDUSTRY_LABELS,category)||category==='etc')return 'etc';
+  const evidence=typeof result.evidence==='string'?result.evidence.replace(/\s+/g,' ').trim():'';
+  if(evidence.length<4||evidence.length>200||isExcludedOffering(evidence))return 'etc';
+  const source=classificationText([data.title,data.description,...data.h1||[],providerBody(data)].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ')).replace(/\s+/g,' ');
+  return source.includes(evidence)?category as IndustryCategory:'etc';
 }
 
 /**
@@ -147,14 +147,15 @@ export async function classifyIndustry(
     return "etc";
   }
 
-  const bodyPreview = (data.bodyText || "").slice(0, 1500);
+  const bodyPreview = providerBody(data).slice(0, 1500);
+  if(![data.title,data.description,...data.h1||[],bodyPreview].some(v=>v?.trim()))return 'etc';
   const prompt = `다음 사이트의 업종을 20개 카테고리 중 하나로 정확히 분류하라.
 
 [사이트]
+페이지 목적: ${analyzeWebsitePurpose(data).label}
 타이틀: ${data.title}
 설명: ${data.description || data.ogDescription || ""}
 H1: ${(data.h1 || []).slice(0, 3).join(" | ")}
-H2: ${(data.h2 || []).slice(0, 5).join(" | ")}
 본문 발췌: ${bodyPreview}
 
 [20개 카테고리]
@@ -163,7 +164,8 @@ travel / logistics / it_service / manufacturing / finance / consulting / media /
 sports / pet / automotive / parenting / interior / ecommerce / etc
 
 JSON만 응답:
-{"category":"education"}`;
+{"category":"education","evidence":"업종 판단에 사용한 원문의 짧은 문구"}
+evidence는 위 제목·설명·H1·본문에서 그대로 인용한다. 자사 제공 업무를 확인할 근거가 부족하면 category를 etc로 반환한다.`;
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
@@ -175,7 +177,7 @@ JSON만 응답:
         messages: [
           {
             role: "system",
-            content: "업종 분류 도우미. JSON만 응답.",
+            content: "업종 분류 도우미. 자사가 제공하는 업무로 분류한다. 고객사 업종·관련 글·제공하지 않는 업무는 제외한다. 제목·대표 제목·소개와 본문이 충돌하거나 근거가 부족하면 etc를 반환한다. JSON만 응답.",
           },
           { role: "user", content: prompt },
         ],
@@ -188,13 +190,7 @@ JSON만 응답:
 
     const content = resp.choices[0]?.message?.content?.trim() || "";
     const parsed = JSON.parse(content);
-    const cat = String(parsed.category || "etc").toLowerCase();
-
-    // 유효성 검사
-    if (Object.keys(INDUSTRY_LABELS).includes(cat)) {
-      return cat as IndustryCategory;
-    }
-    return "etc";
+    return groundedIndustrySuggestion(parsed,data);
   } catch (e: any) {
     clearTimeout(timer);
     console.warn("[industry] AI 분류 실패:", e?.message || e);

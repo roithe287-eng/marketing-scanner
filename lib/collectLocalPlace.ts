@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import {budgetFetch,withBudget} from './runtime/budget';
 import {sameSite} from './siteIdentity';
+import {PLACE_DETECTION_ORDER,placeSector} from './localPlaceCatalog';
 import type {LocalPlaceEvidence,LocalPlaceItem,LocalPlaceLookup} from './localPlaceSchema';
 const clean=(v:unknown,max:number)=>typeof v==='string'?cheerio.load(v).text().replace(/\s+/gu,' ').trim().slice(0,max):'';
 const key=(v:string)=>v.normalize('NFKC').toLowerCase().replace(/\(주\)|주식회사|[\s\p{P}\p{S}]/gu,'');
@@ -22,9 +23,13 @@ export function localPlaceItem(raw:unknown,evidence:LocalPlaceEvidence,url:strin
   const nameMatch=key(name)===key(evidence.name)||(domainMatch&&addressMatch&&key(name).length>=4&&key(evidence.name).endsWith(key(name)));
   const branchMatch=!evidence.branch||key(name).includes(key(evidence.branch));
   const headquarters=evidence.franchise&&!evidence.branch;
-  const consistent=nameMatch&&branchMatch&&!headquarters&&(domainMatch||addressMatch);
-  const reasons=[...(nameMatch?['홈페이지 업체명과 일치']:['업체명·지점 직접 확인']),...(domainMatch?['홈페이지 도메인 일치']:[]),...(addressMatch?['홈페이지 주소 일치']:[]),...(headquarters?['브랜드 본사·지점 구분 필요']:[])].slice(0,4);
-  return {name,category:clean(item.category,200),description:clean(item.description,700),address,roadAddress,link,
+  const category=clean(item.category,200);
+  const categorySector=PLACE_DETECTION_ORDER.find(id=>id!=='local'&&placeSector(id).identity.test(category));
+  const related=[['restaurant','cafe'],['home_service','living'],['rental','retail','fitness']];
+  const categoryConflict=!!categorySector&&evidence.sector!=='local'&&categorySector!==evidence.sector&&!related.some(group=>group.includes(categorySector)&&group.includes(evidence.sector));
+  const consistent=nameMatch&&branchMatch&&!headquarters&&!categoryConflict&&(domainMatch||addressMatch);
+  const reasons=[...(categoryConflict?['홈페이지 업종과 API 업종이 달라 확인 필요']:[]),...(nameMatch?['홈페이지 업체명과 일치']:['업체명·지점 직접 확인']),...(domainMatch?['홈페이지 도메인 일치']:[]),...(addressMatch?['홈페이지 주소 일치']:[]),...(headquarters?['브랜드 본사·지점 구분 필요']:[])].slice(0,4);
+  return {name,category,description:clean(item.description,700),address,roadAddress,link,
     mapUrl:'https://map.naver.com/p/search/'+encodeURIComponent([name,roadAddress||address].filter(Boolean).join(' ').slice(0,170)),match:consistent?'consistent':'candidate',reasons};
 }
 export async function collectLocalPlace(evidence:LocalPlaceEvidence|undefined,url:string,limited=false):Promise<LocalPlaceLookup|undefined>{

@@ -1,3 +1,4 @@
+import {providerIdentity,isContextOnlyEvidence,isSecondarySection,isOtherBranch} from './websiteIdentity';
 import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {marketKeywordCandidates} from './competitorResearch';
@@ -41,7 +42,7 @@ export const ANSWER_GUIDES:Record<AnswerIntent,IntentGuide>={
 export function answerSources(data:AnswerPageData):AnswerSource[]{
   const sources:AnswerSource[]=[];const seen=new Set<string>();
   const add=(text:string,kind:AnswerSource['kind'],location:string,selector?:string,url?:string)=>{
-    const value=clean(text);if(value.length<2||value.length>700||isConsentBoilerplate(value)||seen.has(value)||sources.length>=100)return;
+    const value=clean(text);if(isContextOnlyEvidence(location,value,url)||value.length<2||value.length>700||isConsentBoilerplate(value)||seen.has(value)||sources.length>=100)return;
     seen.add(value);sources.push({id:`p${sources.length+1}`,text:value,kind,location:location.slice(0,300),...(selector?{selector}: {}),...(url?{url}: {})});
   };
   add(data.title||'','title','페이지 제목','title');
@@ -53,27 +54,29 @@ export function answerSources(data:AnswerPageData):AnswerSource[]{
     return sources;
   }
   for(const doc of data.businessDocuments||[]){
+    if(isOtherBranch(doc.title,data.diagnosticSeed?.page.localPlaceEvidence?.branch)||isSecondarySection(doc.title,'',doc.url))continue;
     try{if(new URL(doc.url).hostname.replace(/^www\./,'')!==new URL(data.finalUrl||data.url).hostname.replace(/^www\./,''))continue;}catch{continue;}
     add(doc.title,'heading',doc.source==='search_excerpt'?'검색 요약 제목 · 원문 미검증':'보완 원문 제목',undefined,doc.url);
     if(doc.source==='search_excerpt')continue;
-    for(const section of doc.sections)add(section.text,'body',`보완 원문 · ${section.heading||doc.title}`,undefined,doc.url);
+    for(const section of doc.sections)if(!isSecondarySection(section.heading,section.text,doc.url))add(section.text,'body',`보완 원문 · ${section.heading||doc.title}`,undefined,doc.url);
   }
   if(data.businessDocuments?.some(d=>d.source!=='search_excerpt')&&isNonCommerce(analyzeWebsitePurpose(data)))return sources;
   if(data.productContext?.status==='observed')for(const p of data.productContext.sources){
     add([p.name,...p.categories].join(' · '),'product','확인한 자사 상품',undefined,p.url);
   }
-  for(const section of data.siteEditing?.contentSections||[])if(!section.truncated){
+  for(const section of data.siteEditing?.contentSections||[])if(!section.truncated&&!isSecondarySection(section.heading,section.text,section.url)){
     for(const line of section.text.split(/(?<=[.!?。])\s+/u))add(line,'body',section.heading||'서비스 본문',undefined,section.url);
   }
   const elements=data.siteEditing?.elements||[];
-  const usable=elements.filter(e=>!e.truncated&&!['nav','header','footer'].includes(e.region||'')&&['text','heading'].includes(e.kind));
+  const contextTexts=(data.siteEditing?.contentSections||[]).filter(s=>isSecondarySection(s.heading,s.text,s.url)).map(s=>s.text);
+  const usable=elements.filter(e=>!isSecondarySection(e.section?.label||e.heading,e.text,e.href)&&!contextTexts.some(t=>t.includes(e.text))&&!e.truncated&&!['nav','header','footer'].includes(e.region||'')&&['text','heading'].includes(e.kind));
   for(const e of usable)add(e.text,e.kind==='heading'?'heading':'body',e.section?.label||e.heading||'본문',e.selector);
   if(!usable.some(e=>e.kind==='heading'))for(const h of (data.h2||[]).slice(0,10))add(h,'heading','소제목');
   // Exclude known navigation/footer copies from the fallback body pool as well.
   const chrome=elements.filter(e=>['nav','header','footer'].includes(e.region||'')).map(e=>clean(e.text));
-  for(const line of (data.bodyText||'').split(/\n+/)){
+  for(const line of (data.siteEditing?.contentSections?'':data.bodyText||'').split(/\n+/)){
     const value=clean(line);
-    if(value.length<12||chrome.some(t=>t.includes(value)))continue;
+    if(value.length<12||contextTexts.some(t=>t.includes(value)||value.includes(t))||chrome.some(t=>t.includes(value)))continue;
     add(value,'body','본문 발췌');
   }
   return sources;
@@ -167,7 +170,7 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
   const assisted=!!(ai&&primary&&compact(primary.term)===compact(ai.primaryKeyword));
   const secondaries=(assisted?ai!.secondaryKeywords.map(k=>keyword(k,pool)).filter((k):k is AnswerKeyword=>!!k):fallback.slice(1)).filter((k,i,a)=>(!products.length||k.evidence.some(e=>e.kind==='product'))&&compact(k.term)!==compact(primary?.term||'')&&a.findIndex(v=>compact(v.term)===compact(k.term))===i).slice(0,2);
   const limited=(data.bodyText||'').trim().length<80||data.isJsHeavy===true;
-  const expanded=isNonCommerce(purpose)&&purpose.business?.id!=='international_logistics'?nonCommerceQuestionGuides(purpose,[data.title,data.description,...data.h1].join(' '),data.diagnosticSeed?.page.localPlaceEvidence):undefined;
+  const expanded=isNonCommerce(purpose)&&purpose.business?.id!=='international_logistics'?nonCommerceQuestionGuides(purpose,providerIdentity(data),data.diagnosticSeed?.page.localPlaceEvidence):undefined;
   const guideFor=(intent:AnswerIntent):IntentGuide=>{const q=expanded?.find(q=>q.intent===intent);return q?{...q,question:()=>q.question,template:()=>q.template}:purposeGuide(intent,purpose);};
   const intents=expanded?.map(q=>q.intent)||defaultIntents(primary?.term||'',pool,purpose);
   const fallbackRows=intents.map(intent=>({question:guideFor(intent).question(primary?.term||'이 페이지'),intent,evidenceIds:[] as string[],missingFacts:guideFor(intent).fields}));

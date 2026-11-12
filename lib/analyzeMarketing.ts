@@ -1,3 +1,5 @@
+import {providerIdentity,isOtherBranch,providerBody,isSecondarySection} from './websiteIdentity';
+import {sameSite} from './siteIdentity';
 import {verifyReportEvidence} from './reportIntegrity';
 import {AccessError} from './security/request';
 import {budgetSignal,remainingBudget} from './runtime/budget';
@@ -46,7 +48,7 @@ export const buildPrompt = (
   const l = limits[mode];
   const detailed=isNonCommerce(analyzeWebsitePurpose(data))&&mode==='lean';
 
-  const body = compressText(data.communityContext?communityAnalysisText(data.communityContext):data.bodyText, l.body);
+  const body = compressText(data.communityContext?communityAnalysisText(data.communityContext):providerBody(data), l.body);
   const title = compressText(data.title || "(없음)", 80);
   const desc = compressText(data.description || "(없음)", 130);
   const ogTitle = compressText(data.ogTitle || "", 80);
@@ -56,16 +58,16 @@ export const buildPrompt = (
   const buttonTexts=communityLinks?.map(link=>link.label)||data.buttons;
   const ctaTexts=communityLinks?.filter(link=>['join','participate','subscribe'].includes(link.role)).map(link=>link.label)||data.ctaButtons;
 
-  const elements=(data.siteEditing?.elements||[]).filter(e=>!['header','nav','footer'].includes(e.region||'')&&['heading','text','cta'].includes(e.kind)).slice(0,mode==='lean'?20:10).map(e=>({tag:e.tag,section:e.section?.label||'',text:e.text.slice(0,400),truncated:e.truncated||e.text.length>400}));
+  const elements=(data.siteEditing?.elements||[]).filter(e=>!['header','nav','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)&&['heading','text','cta'].includes(e.kind)).slice(0,mode==='lean'?20:10).map(e=>({tag:e.tag,section:e.section?.label||'',text:e.text.slice(0,400),truncated:e.truncated||e.text.length>400}));
   return `[페이지 목적과 적용 기준 · 원문 기반 후보]
 ${purposePrompt(data)}
-페이지 목적에 맞는 제공 가치·설명·실제 다음 행동을 검토하라. 정보형은 작성자·출처·최신성·본문 답변, 교육형은 대상·커리큘럼·일정·신청, 기업형은 사업 분야·담당 주체·사례, 서비스형은 제공 범위·절차·상담/예약을 우선한다. 구매 전환을 모든 사이트의 목표로 가정하지 마라. 관련 없는 가격·배송·재고·상품 후기 개선은 생성하지 마라.
+페이지 목적에 맞는 제공 가치·설명·실제 다음 행동을 검토하라. 고객사 사례·포트폴리오·관련 글·다른 지점의 설명을 자사의 제공 서비스·의료진·가격으로 옮기지 마라. 제공하지 않는다는 문구는 제외 조건 그대로 보존하라. 정보형은 작성자·출처·최신성·본문 답변, 교육형은 대상·커리큘럼·일정·신청, 기업형은 사업 분야·담당 주체·사례, 서비스형은 제공 범위·절차·상담/예약을 우선한다. 구매 전환을 모든 사이트의 목표로 가정하지 마라. 관련 없는 가격·배송·재고·상품 후기 개선은 생성하지 마라.
 
 ${detailed&&analyzeBusinessContext(data)?.id==='international_logistics'?'국제물류 상세 진단: 개인 해외이사·귀국이사와 기업 해상·항공 운송의 고객과 견적 조건을 구분합니다.':''}
 [업종별 검토 제안 · 업체 사실이 아님]
-${detailed?(analyzeBusinessContext(data)?.id==='international_logistics'?'위 국제물류 업종의 고객·견적 기준 적용':JSON.stringify(nonCommercePlaybook(analyzeWebsitePurpose(data),[data.title,data.description,...data.h1].join(' ')))):'기존 목적 기준 적용'}
+${detailed?(analyzeBusinessContext(data)?.id==='international_logistics'?'위 국제물류 업종의 고객·견적 기준 적용':JSON.stringify(nonCommercePlaybook(analyzeWebsitePurpose(data),providerIdentity(data)))):'기존 목적 기준 적용'}
 [추가 수집 자사 원문 · 고객 후기와 검색 요약 제외]
-${detailed&&!data.communityContext?JSON.stringify((data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt').slice(0,9).map(d=>({url:d.url,sections:d.sections.slice(0,2).map(s=>({...s,text:s.text.slice(0,350),truncated:s.text.length>350}))}))):'해당 없음'}
+${detailed&&!data.communityContext?JSON.stringify((data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&sameSite(d.url,data.finalUrl||data.url)&&!isOtherBranch(d.title,data.diagnosticSeed?.page.localPlaceEvidence?.branch)&&!isSecondarySection(d.title,'',d.url)).slice(0,9).map(d=>({url:d.url,sections:d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url)).slice(0,2).map(s=>({...s,text:s.text.slice(0,350),truncated:s.text.length>350}))}))):'해당 없음'}
 
 [사이트 정보]
 URL: ${data.url}

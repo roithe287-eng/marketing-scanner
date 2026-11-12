@@ -1,3 +1,4 @@
+import {ownBusinessRole,isSecondarySection,classificationText,purposeSchemaTypes,isOtherBranch} from './websiteIdentity';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
 import {isConsentBoilerplate} from './contentBoilerplate';
 import {sameSite} from './siteIdentity';
@@ -22,7 +23,7 @@ export const WebsitePurposeSchema=z.object({
 });
 export type WebsitePurpose=z.infer<typeof WebsitePurposeSchema>;
 export type PurposeKind=WebsitePurpose['kind'];
-type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'communityContext'|'medicalAudit'|'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'productContext'|'productDiscovery'|'seoEvidence'|'schemaTypes'|'businessDocuments'|'diagnosticSeed'>> & {localPlaceEvidence?:LocalPlaceEvidence};
+type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'communityContext'|'medicalAudit'|'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'productContext'|'productDiscovery'|'seoEvidence'|'schemaTypes'|'jsonLdSchemas'|'businessDocuments'|'diagnosticSeed'>> & {localPlaceEvidence?:LocalPlaceEvidence};
 const labels:Record<PurposeKind,string>={commerce:'상품 판매형',service:'서비스·상담형',organization:'기업·기관 소개형',education:'교육·프로그램형',content:'정보·콘텐츠형',public_service:'공공·지원 안내형',mixed:'판매·비커머스 혼합형',unknown:'목적 확인 필요'};
 const patterns={
   public_service:/지원사업|공공\s*서비스|행정\s*민원|복지\s*(?:서비스|사업|지원|급여|시설)|보조금|(?:정부|지자체|공공).{0,12}지원|public service/i,
@@ -44,15 +45,17 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
     return WebsitePurposeSchema.parse({version:1,kind:'content',label:c.pageType==='discussion'?'커뮤니티·게시글형':'커뮤니티·정보 포털형',sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence:c.evidence,community:c,goal:{key:'read',label:'게시글 탐색·회원 참여',observed:goal.status==='observed',evidence:goal.evidence},pricingObserved:false,checks,note:c.note});
   }
   const business=analyzeBusinessContext(data);
-  const elements=(data.siteEditing?.elements||[]).filter(e=>!['nav','header','footer'].includes(e.region||''));
+  const elements=(data.siteEditing?.elements||[]).filter(e=>!['nav','header','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href));
   const units:{text:string;locator:string}[]=[];
   const add=(text:string,locator:string)=>{const value=short(text);if(value&&!units.some(u=>u.text===value))units.push({text:value,locator});};
   add(data.title,'head > title');add(data.description||data.ogDescription||'','meta[name="description"]');
   (data.h1||[]).slice(0,4).forEach(h=>add(h,'h1'));(data.h2||[]).slice(0,8).forEach(h=>add(h,'h2'));
-  for(const section of data.siteEditing?.contentSections||[])add(section.text,section.heading||'service-content');
+  const sections=data.siteEditing?.contentSections||[];
+  const contextTexts=sections.filter(s=>isSecondarySection(s.heading,s.text,s.url)).map(s=>s.text);
+  for(const section of sections)if(!isSecondarySection(section.heading,section.text,section.url))add(section.text,section.heading||'service-content');
   const body=elements.filter(e=>['heading','text'].includes(e.kind));
-  if(body.length)body.slice(0,20).forEach(e=>add(e.text,e.selector));
-  else (data.bodyText||'').split(/\n+/).slice(0,20).forEach(t=>add(t,'body · 수집 텍스트'));
+  if(body.length)body.filter(e=>!contextTexts.some(t=>t===e.text||t.includes(e.text))).slice(0,20).forEach(e=>add(e.text,e.selector));
+  else if(!sections.length) (data.bodyText||'').split(/\n+/).slice(0,20).forEach(t=>add(t,'body · 수집 텍스트'));
   for(const element of elements.filter(e=>e.kind==='form'))for(const field of element.fields||[])add(field.label,field.selector+' · 입력 항목 라벨');
   const actions:{text:string;locator:string}[]=[];
   const ctaElements=elements.filter(e=>e.kind==='cta');
@@ -66,40 +69,44 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   if(actionSector)for(const e of data.siteEditing?.elements||[]){
     if(e.kind==='cta'&&['nav','header','footer'].includes(e.region||'')&&sectorActionPattern(actionSector.id).test(e.text)&&!actions.some(a=>a.text===short(e.text)))actions.push({text:short(e.text),locator:e.selector});
   }
-  const matched=Object.fromEntries(Object.entries(patterns).map(([key,re])=>[key,units.filter(u=>re.test(u.text))]));
+  const identityUnits=units.filter(u=>!isSecondarySection(u.locator,u.text)).map(u=>({...u,text:classificationText(u.text)})).filter(u=>u.text);
+  const role=ownBusinessRole(data);
+  const matched=Object.fromEntries(Object.entries(patterns).map(([key,re])=>[key,identityUnits.filter(u=>re.test(u.text))]));
   // A clear inquiry/booking page can identify a service without the literal word "서비스".
   // Never reinterpret a purchase path or a secondary body mention as a provider.
   if(!actions.some(a=>actionPatterns.purchase.test(a.text))&&actions.some(a=>actionPatterns.contact.test(a.text)||actionPatterns.booking.test(a.text))){
-    const additional=units.filter(u=>['head > title','h1','meta[name="description"]'].includes(u.locator)&&/인테리어|리모델링|청소|이사\s*(?:견적|전문)|수리|복원|수선|숙박|호텔|펜션|캠핑|대관|촬영|웨딩|공인중개|부동산\s*중개|필라테스|피트니스|요가|헬스장|렌탈|렌털|세무|회계|SaaS/i.test(u.text));
+    const additional=identityUnits.filter(u=>['head > title','h1','meta[name="description"]'].includes(u.locator)&&/인테리어|리모델링|청소|이사\s*(?:견적|전문)|수리|복원|수선|숙박|호텔|펜션|캠핑|대관|촬영|웨딩|공인중개|부동산\s*중개|필라테스|피트니스|요가|헬스장|렌탈|렌털|세무|회계|SaaS/i.test(u.text));
     for(const unit of additional)if(!matched.service.some(u=>u.text===unit.text))matched.service.push(unit);
   }
-  const articleTypes=(data.schemaTypes||[]).filter(t=>/^(?:Article|BlogPosting|NewsArticle|TechArticle|ScholarlyArticle)$/i.test(t));
-  const courseTypes=(data.schemaTypes||[]).filter(t=>/^(?:Course|EducationalOccupationalProgram)$/i.test(t));
+  const articleTypes=purposeSchemaTypes(data).filter(t=>/^(?:Article|BlogPosting|NewsArticle|TechArticle|ScholarlyArticle)$/i.test(t));
+  const courseTypes=purposeSchemaTypes(data).filter(t=>/^(?:Course|EducationalOccupationalProgram)$/i.test(t));
   const structuredKind=articleTypes.length?'content':courseTypes.length?'education':undefined;
   const primaryWeight=(u:{locator:string})=>u.locator==='head > title'?16:u.locator==='h1'?12:u.locator==='meta[name="description"]'?10:0;
   const purposeScore=(key:keyof typeof patterns)=>matched[key].reduce((n,u)=>n+primaryWeight(u),0)+Math.min(6,matched[key].filter(u=>u.locator==='h2').length*2)+Math.min(3,matched[key].filter(u=>!primaryWeight(u)&&u.locator!=='h2').length);
   // A secondary training/blog section must not outrank the page's own title,
   // description and main heading. Explicit Article/Course types stay authoritative.
-  const genericCandidate=structuredKind||(['public_service','content','education','organization','service'] as const)
+  const roleKind=role==='manufacturing'?'organization':role==='education'?'education':role&&role!=='retail'?'service':undefined;
+  const scoredCandidate=(['public_service','content','education','organization','service'] as const)
     .filter(k=>matched[k].length>=2||(matched[k].some(u=>primaryWeight(u)>0)&&(k!=='service'||actions.some(a=>Object.values(actionPatterns).some(re=>re.test(a.text))))))
     .sort((a,b)=>purposeScore(b)-purposeScore(a))[0];
-  const supplemental=(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&sameSite(d.url,data.finalUrl||data.url)).flatMap(d=>d.sections.map(s=>({text:short(s.text),locator:d.url}))).filter(u=>u.text.length>=4);
-  const checkUnits=[...supplemental,...units].filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i);
+  const editorialPrimary=scoredCandidate&&['content','education','public_service'].includes(scoredCandidate)&&matched[scoredCandidate].some(u=>u.locator==='head > title'||u.locator==='h1');
+  const genericCandidate=structuredKind||(editorialPrimary?scoredCandidate:roleKind||scoredCandidate);
+  const supplemental=(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&sameSite(d.url,data.finalUrl||data.url)&&!isOtherBranch(d.title,data.localPlaceEvidence?.branch||data.diagnosticSeed?.page.localPlaceEvidence?.branch)).flatMap(d=>d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url)).map(s=>({text:short(s.text),locator:d.url}))).filter(u=>u.text.length>=4);
+  const checkUnits=[...supplemental,...units.filter(u=>!isSecondarySection(u.locator,u.text))].filter((u,i,a)=>a.findIndex(v=>v.text===u.text)===i);
   const place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
-  const rawSector=analyzeNonCommerceSector(units,actions,supplemental);
-  const providerIdentity=/광고\s*대행|마케팅\s*(?:대행|에이전시)|홈페이지\s*제작|웹\s*제작|소프트웨어|SaaS|업무\s*솔루션/i.test([data.title,...(data.h1||[])].join(' '));
-  // A provider's clients in its description are not the provider's own industry.
-  const clientSector=providerIdentity&&rawSector?.id!=='medical_consulting';
+  const rawSector=analyzeNonCommerceSector(identityUnits,actions,supplemental);
+  const clientSector=!!role&&role!=='education'&&rawSector?.id!=='medical_consulting';
   const branchStore=!!place?.branch&&['restaurant','cafe'].includes(place.sector)&&rawSector?.id==='franchise'&&!/가맹\s*(?:모집|문의|상담|개설|계약|본부)|프랜차이즈\s*창업/.test([data.title,data.description,...(data.h1||[])].join(' '));
   const sectorCandidate=(place?.sector==='veterinary'&&rawSector?.id==='medical')||branchStore||clientSector?undefined:rawSector;
   const sectorPrimary=sectorCandidate?.evidence.reduce((n,u)=>n+primaryWeight(u),0)||0;
   const informative=genericCandidate&&['content','education','public_service'].includes(genericCandidate)&&purposeScore(genericCandidate)>=sectorPrimary;
   const competingPrimary=!sectorPrimary&&genericCandidate&&matched[genericCandidate].some(u=>primaryWeight(u)>0);
   const sector=structuredKind||competingPrimary||(informative&&!(genericCandidate==='public_service'&&sectorCandidate?.id==='startup'))?undefined:sectorCandidate;
-  const candidate=sector?(genericCandidate==='public_service'?'public_service':'service'):genericCandidate||(place&&!actions.some(a=>actionPatterns.purchase.test(a.text))&&!data.productContext?.commerce&&!data.productDiscovery?.commerce?'service':undefined);
   const purchase=actions.filter(a=>actionPatterns.purchase.test(a.text));
-  const commerce=purchase.length>0||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
-  const kind:PurposeKind=business?.kind||(commerce?(candidate&&candidate!=='content'?'mixed':'commerce'):candidate||'unknown');
+  const localPayment=!!place&&['restaurant','cafe','lodging','fitness','education','culture','rental','medical','veterinary','pet_care'].includes(place.sector)&&purchase.length>0&&purchase.every(a=>/결제하기|checkout/i.test(a.text))&&!data.productDiscovery?.sources.length&&!data.productDiscovery?.productLinks.length&&!data.productContext?.sources.length&&role!=='retail';
+  const candidate=sector?(genericCandidate==='public_service'?'public_service':'service'):genericCandidate||(place&&(!purchase.length||localPayment)&&!data.productContext?.commerce&&!data.productDiscovery?.commerce?'service':undefined);
+  const commerce=purchase.length>0&&!localPayment||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
+  const kind:PurposeKind=business?.kind||(commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||'unknown');
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
   const provider=sector?.id==='medical_consulting'&&!commerce;
   const action=business?(actions.some(a=>actionPatterns[business.goalKey].test(a.text))?business.goalKey:undefined):provider?(actions.some(a=>actionPatterns.contact.test(a.text))?'contact':undefined):preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
