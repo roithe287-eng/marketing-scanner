@@ -8,7 +8,7 @@ export type ContentSection={id:string;heading:string;text:string;truncated:boole
 const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
 /** Excerpts from the fetched public document, excluding menus, hidden widgets and forms. */
 export function captureContentSections($:CheerioAPI,baseUrl?:string):ContentSection[]{
- const fortune=fortuneTopic.test($('head > title').text()+' '+($('meta[name="description"]').attr('content')||''));
+ const fortune=fortuneTopic.test($('head > title, main h1').text()+' '+($('meta[name="description"]').attr('content')||''));
  const textContentIsControl=(item:ReturnType<CheerioAPI>)=>item.is('a')&&clean(item.text()).length<60;
  const candidates:{heading:string;text:string;order:number;score:number;url?:string}[]=[];
  const seen=new Set<string>();let heading='',order=0;

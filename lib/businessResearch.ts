@@ -85,7 +85,7 @@ export function captureBusinessDocument(html:string,url:string,capturedAt=new Da
     return lines.filter(text=>text.trim().length>=12&&text.trim().length<=600).map(text=>({heading:s.heading,text:clean(text)}));
   })];
   // Keep multiple decision conditions, rather than the first ten generic introduction lines.
-  const fortune=fortuneTopic.test(title)||fortuneTopic.test($('meta[name="description"]').attr('content')||'');
+  const fortune=fortuneTopic.test(title+' '+$('main h1').text())||fortuneTopic.test($('meta[name="description"]').attr('content')||'');
   const useful=(s:{text:string;heading:string})=>{
     const text=s.heading+' '+s.text;
     return (fortune&&fortunePersonalData.test(s.text)?24:0)+(fortune&&/무료 티저|리포트|열람|만세력|상담료|예약/.test(text)?10:0)+(/혈압측정|주치의 회진|협진 경과|반납.*(?:절차|확인)|픽업.*(?:시간|장소)|접수.*(?:순서|서류)|적용\(|분기 적용|진찰료 별도/.test(s.text)?25:0)+(/병원장|대표원장|원장|변호사|담당자|대표강사/.test(s.text)&&s.text.length<100&&!/^(?:전|현)\)/.test(s.text)?20:0)+(/금액|가격|요금|비용|진료비|비급여|운영시간|진료시간|입원치료|준비물|절차|정형외과전문의|상담료/.test(text)?8:0)+(/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label|해외이사|귀국이사|견적|포장|보험|보상|freight|cargo|customs/i.test(text)?5:0);
