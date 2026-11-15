@@ -1,3 +1,4 @@
+import {restoreStreamedHtml} from './streamedHtml';
 import * as cheerio from 'cheerio';
 import {evaluateRobots,type RobotsAgent,type RobotsObservation} from './robotsRules';
 import type {DiagnosticPage,DiagnosticFinding,SiteDiagnostics} from './siteDiagnosticsSchema';
@@ -14,6 +15,7 @@ export type SiteDiagnosticSeed={page:DiagnosticPage;links:string[];medicalLinks?
 /** Parse declarations only. No script execution, external CSS/JS requests, or inferred tracking delivery. */
 export function captureSiteDiagnosticSeed(html:string,url:string,hospitalContext=false):SiteDiagnosticSeed{
   const $=cheerio.load(html);
+  restoreStreamedHtml($);
   const headTitle=$('head > title').first().text().replace(/\s+/g,' ').trim();
   const headDescription=($('head meta[name="description" i]').first().attr('content')||'').replace(/\s+/g,' ').trim();
   // Next.js can stream metadata after </head>. SVG accessibility titles are never page titles.

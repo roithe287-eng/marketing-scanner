@@ -22,7 +22,7 @@ async function generateKeywords(
   data: ExtractedWebsiteData
 ): Promise<string[]> {
   const business=analyzeBusinessContext(data);
-  if(business?.id==='international_logistics'){
+  if(business?.id==='international_logistics'||business?.industry==='fortune'){
     const brand=data.ogSiteName||data.title.split(/[|–·]/)[0].split(' - ')[0].trim();
     return [...new Set([brand,...business.keywords].filter(k=>k.length>=2&&k.length<=30))].slice(0,MAX_KEYWORDS);
   }

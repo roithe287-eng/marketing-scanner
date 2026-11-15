@@ -1,3 +1,4 @@
+import {fortuneStart} from './fortuneService';
 import {captureContentSections} from './contentSections';
 import {pageRegion} from './pageRegions';
 import {CONSENT_WIDGET_SELECTOR} from './contentBoilerplate';
@@ -44,7 +45,7 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
   // bounded sample for useful main-page actions before restoring document order.
   const controlPriority=(el:Element)=>{
     const item=$(el),text=clean(item.text()||item.attr('value')||item.attr('aria-label')||'');
-    const actionable=/문의|상담|견적|예약|신청|수강|접수|다운로드|구독|구매|결제|장바구니|contact|consult|book|apply|enroll|download|subscribe|buy|checkout|add to cart/i.test(text);
+    const actionable=fortuneStart.test(text)||/문의|상담|견적|예약|신청|수강|접수|다운로드|구독|구매|결제|장바구니|contact|consult|book|apply|enroll|download|subscribe|buy|checkout|add to cart/i.test(text);
     const region=pageRegion($,el),main=region==='main',chrome=['header','nav','footer'].includes(region);
     return main&&actionable?0:main?1:!chrome&&actionable?2:chrome&&actionable?3:chrome?5:4;
   };

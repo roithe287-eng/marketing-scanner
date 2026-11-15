@@ -6,6 +6,7 @@ import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {NonCommerceSectorSchema,analyzeNonCommerceSector,sectorActionPattern} from './nonCommerceSectors';
 import {BusinessContextSchema,analyzeBusinessContext,businessPrompt} from './businessContext';
+import {fortuneStart,fortunePricing} from './fortuneService';
 import {medicalPrompt} from './medicalAudit';
 import {CommunityContextSchema,communityChecks} from './communityContext';
 
@@ -14,7 +15,7 @@ const source=z.object({text:z.string().max(600),locator:z.string().max(1000)});
 export const WebsitePurposeSchema=z.object({
   version:z.literal(1),kind:PurposeKindSchema,label:z.string().max(100),sourceUrl:z.string().max(4000).url().refine(value=>{try{const u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;}catch{return false;}}),
   capturedAt:z.string().datetime().optional(),evidence:z.array(source).max(8),
-  goal:z.object({key:z.enum(['purchase','contact','booking','application','download','subscribe','read','unknown']),label:z.string().max(100),observed:z.boolean(),evidence:z.array(source).max(4)}),
+  goal:z.object({key:z.enum(['purchase','contact','booking','application','download','subscribe','start','read','unknown']),label:z.string().max(100),observed:z.boolean(),evidence:z.array(source).max(4)}),
   pricingObserved:z.boolean(),note:z.string().max(1000),
   checks:z.array(z.object({id:z.string().max(80),label:z.string().max(150),status:z.enum(['observed','review','not_applicable']),evidence:z.array(source).max(3),guide:z.string().max(1200)})).max(8),
   sector:NonCommerceSectorSchema.optional(),
@@ -32,8 +33,8 @@ const patterns={
   organization:/회사\s*소개|기업\s*소개|기관\s*소개|사업\s*분야|기업\s*연혁|제조|생산|연구개발|manufactur|about us/i,
   service:/컨설팅|대행|세무|법률|설계|진료|의원|클리닉|서비스|소프트웨어|솔루션|consulting|agency|clinic|software|saas/i,
 } as const;
-const actionPatterns={purchase:/장바구니|구매하기|바로\s*구매|결제하기|add to cart|buy now|checkout/i,booking:/예약|진료\s*접수|book (?:a|an)|appointment/i,application:/신청|수강|접수|지원하기|apply|enroll|register/i,download:/다운로드|자료\s*받기|안내서\s*받기|download/i,subscribe:/구독|뉴스레터\s*신청|subscribe/i,contact:/문의|상담|견적|contact|consult|demo/i} as const;
-const actionLabels={purchase:'구매·결제',contact:'상담·문의',booking:'예약·접수',application:'신청·등록',download:'자료 다운로드',subscribe:'구독',read:'본문·자료 읽기',unknown:'다음 행동 확인'};
+const actionPatterns={start:fortuneStart,purchase:/장바구니|구매하기|바로\s*구매|결제하기|add to cart|buy now|checkout/i,booking:/예약|진료\s*접수|book (?:a|an)|appointment/i,application:/신청|수강|접수|지원하기|apply|enroll|register/i,download:/다운로드|자료\s*받기|안내서\s*받기|download/i,subscribe:/구독|뉴스레터\s*신청|subscribe/i,contact:/문의|상담|견적|contact|consult|demo/i} as const;
+const actionLabels={start:'풀이 시작',purchase:'구매·결제',contact:'상담·문의',booking:'예약·접수',application:'신청·등록',download:'자료 다운로드',subscribe:'구독',read:'본문·자료 읽기',unknown:'다음 행동 확인'};
 const sectorPlaces:Partial<Record<NonNullable<WebsitePurpose['sector']>['id'],string[]>>={medical:['medical'],legal:['legal'],rehabilitation:['legal'],insurance:['finance'],property_sales:['real_estate']};
 const short=(s:string,max=600)=>s.replace(/\s+/g,' ').trim().slice(0,max);
 export const isNonCommerce=(p:WebsitePurpose|undefined)=>!!p&&!['commerce','mixed','unknown'].includes(p.kind);
@@ -88,7 +89,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   // description and main heading. Explicit Article/Course types stay authoritative.
   const roleKind=role==='manufacturing'?'organization':role==='education'?'education':role&&role!=='retail'?'service':undefined;
   const scoredCandidate=(['public_service','content','education','organization','service'] as const)
-    .filter(k=>matched[k].length>=2||(matched[k].some(u=>primaryWeight(u)>0)&&(k!=='service'||actions.some(a=>Object.values(actionPatterns).some(re=>re.test(a.text))))))
+    .filter(k=>matched[k].length>=2||(matched[k].some(u=>primaryWeight(u)>0)&&(k!=='service'||actions.some(a=>Object.entries(actionPatterns).some(([key,re])=>key!=='start'&&re.test(a.text))))))
     .sort((a,b)=>purposeScore(b)-purposeScore(a))[0];
   const editorialPrimary=scoredCandidate&&['content','education','public_service'].includes(scoredCandidate)&&matched[scoredCandidate].some(u=>u.locator==='head > title'||u.locator==='h1');
   const petTraining=(data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence)?.sector==='pet_care'&&role!=='education';
@@ -115,12 +116,13 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const kind:PurposeKind=business?.kind||(commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||'unknown');
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
   const provider=sector?.id==='medical_consulting'&&!commerce;
-  const action=business?(actions.some(a=>actionPatterns[business.goalKey].test(a.text))?business.goalKey:undefined):provider?(actions.some(a=>actionPatterns.contact.test(a.text))?'contact':undefined):preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
+  const goalPattern=business?.id==='fortune_consultation'?/예약|(?:상담|전화|카톡|카카오톡|채팅)\s*(?:문의|신청|하기)|^상담$/u:business? actionPatterns[business.goalKey]:undefined;
+  const action=business?(goalPattern&&actions.some(a=>goalPattern.test(a.text))?business.goalKey:undefined):provider?(actions.some(a=>actionPatterns.contact.test(a.text))?'contact':undefined):preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
   const goalKey=business?.goalKey||(provider?'contact':action)||(['content','organization','education','public_service'].includes(kind)?'read':'unknown');
   const goalLabel=business?.goalLabel||actionLabels[goalKey];
   const evidence=(business?business.evidence:structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?(matched[candidate].length?matched[candidate]:place?[{text:short(place.identity),locator:'입력 페이지 업체 정보'}]:units):units).slice(0,commerce?6:8);
   if(commerce&&evidence.length<8)evidence.push(...purchase.slice(0,8-evidence.length));
-  const pricingPattern=/가격|비용|요금|견적|유료|무료|수강료|구독료|수수료|참가비|pricing|fees|\bcost\b/i;
+  const pricingPattern=business?.industry==='fortune'?fortunePricing:/가격|비용|요금|견적|유료|무료|수강료|구독료|수수료|참가비|pricing|fees|\bcost\b/i;
   const pricingObserved=checkUnits.some(u=>pricingPattern.test(u.text));
   const pricingApplies=commerce||['service','education','unknown'].includes(kind)||(kind==='organization'&&pricingObserved)||(kind==='content'&&units.some(u=>/구독료|유료\s*구독/.test(u.text)))||(kind==='public_service'&&units.some(u=>/신청\s*수수료|참가비/.test(u.text)));
   const checks:WebsitePurpose['checks']=[];
@@ -148,13 +150,15 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   }
   if(business){
     checks.splice(0,checks.length,...business.checks);
-    const costEvidence=business.checks.flatMap(c=>c.evidence).filter(e=>pricingPattern.test(e.text)).slice(0,3);
+    const priceSources=business.industry==='fortune'?checkUnits:business.checks.flatMap(c=>c.evidence);
+    const costEvidence=priceSources.filter(e=>pricingPattern.test(e.text))
+      .sort((a,b)=>business.industry==='fortune'?Number(/\d\s*원/.test(b.text))-Number(/\d\s*원/.test(a.text)):0).slice(0,3);
     checks.push({id:'price',label:'가격·거래·이용 조건',status:costEvidence.length?'observed':'review',evidence:costEvidence,guide:'상품·서비스별 현재 금액·통화·포함·별도 비용과 취소·이용 조건을 해당 상세 및 최종 선택 화면에서 대조하세요. 검색 요약이나 다른 상품의 조건을 합쳐 가격·무료 혜택을 확정하지 않습니다.'});
   }
   else if(sector&&!commerce){checks.splice(0,checks.length,...sector.checks);}
   else check('price','가격·거래 조건 적용 범위',pricingPattern,pricingApplies&&pricingObserved?'관측한 비용 표현의 적용 대상·포함 범위·추가 협의 조건을 확인하세요.':'이 페이지에는 판매 가격을 필수로 요구하지 않습니다. 별도 유료 신청·거래가 있다면 해당 경로에서 조건을 확인하세요.',pricingApplies);
-  checks.push({id:'goal',label:`다음 행동 · ${goalLabel}`,status:action?'observed':'review',evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,3):[],guide:goalKey==='read'?'본문·출처·관련 자료를 실제로 읽고 이동하는 경로를 확인하세요. 버튼 개수·문의 폼 유무를 성과로 평가하지 않습니다.':`${goalLabel} 경로를 실제로 실행해 연결 대상·준비사항·완료 기준을 확인하세요. 입력 폼이나 완료 화면은 정적 HTML만으로 검증하지 않습니다.`});
-  return WebsitePurposeSchema.parse({version:1,kind,label:business?.label||labels[kind],sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,...(sector&&!commerce&&!business?{sector}:{}),...(business?{business}:{}),goal:{key:goalKey,label:goalLabel,observed:!!action,evidence:action?actions.filter(a=>actionPatterns[action].test(a.text)).slice(0,4):[]},pricingObserved,checks,note:business?.note||'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});
+  checks.push({id:'goal',label:`다음 행동 · ${goalLabel}`,status:action?'observed':'review',evidence:action?actions.filter(a=>(goalPattern||actionPatterns[action]).test(a.text)).slice(0,3):[],guide:goalKey==='read'?'본문·출처·관련 자료를 실제로 읽고 이동하는 경로를 확인하세요. 버튼 개수·문의 폼 유무를 성과로 평가하지 않습니다.':`${goalLabel} 경로를 실제로 실행해 연결 대상·준비사항·완료 기준을 확인하세요. 입력 폼이나 완료 화면은 정적 HTML만으로 검증하지 않습니다.`});
+  return WebsitePurposeSchema.parse({version:1,kind,label:business?.label||labels[kind],sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,...(sector&&!commerce&&!business?{sector}:{}),...(business?{business}:{}),goal:{key:goalKey,label:goalLabel,observed:!!action,evidence:action?actions.filter(a=>(goalPattern||actionPatterns[action]).test(a.text)).slice(0,4):[]},pricingObserved,checks,note:business?.note||'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});
 }
 
 export function purposePrompt(data:PurposeInput){const p=analyzeWebsitePurpose(data);return JSON.stringify({kind:p.kind,label:p.label,note:p.note,goal:p.goal,evidence:p.evidence,community:p.community,sector:p.sector,business:p.business?JSON.parse(businessPrompt(p.business)):undefined,medical:medicalPrompt(data.medicalAudit),checks:p.checks.map(c=>({label:c.label,applicable:c.status!=='not_applicable',status:c.status,evidence:c.evidence.slice(0,2)})),rule:'community가 있을 때 커뮤니티는 게시판 탐색·글 열람·회원가입·질문과 댓글 참여·재방문을 주된 흐름으로 평가한다. 교육·광고·대행 의뢰는 별도 목적이다. 게시글 제목과 입점업체의 금액·주장을 운영사의 CTA·가격·서비스·실적으로 해석하지 않는다. 공개 글 표본의 근거는 원문 URL과 구분하고 홈페이지에 합산하지 않는다. 페이지 목적과 업종별 기준에 맞춰 분석한다. sector가 있으면 해당 업종의 실제 제공 범위·담당 주체·조건·상담 행동을 우선하며 각 evidence를 현재 원문으로만 취급한다. 기준 항목과 추천 질문은 업체가 제공한다고 확인된 사실이 아니다. 정보형·기업형·공공형과 비커머스 서비스에 상품 배송·재고·장바구니·후기·별점을 필수로 요구하지 않는다. 업종의 caution을 지키며 미확인 목적·수치·운영 조건은 추측하지 않는다.'});}
@@ -162,6 +166,7 @@ export function outOfPurpose(text:string,p:WebsitePurpose){
   if(!isNonCommerce(p))return false;
   const retail='(?:장바구니|재고|배송비|배송.?정책|반품.?정책|최소.?주문|구매.?버튼|결제.?버튼|상품.?가격|판매.?상품)';
   const change='(?:추가|등록|구현|설치|부재|없|누락|부족|노출|개선)';
+  if(p.business?.industry==='fortune')return /장바구니|재고|배송비|실물\s*배송|반품\s*배송|출고/.test(text);
   if(p.sector?.id==='medical_consulting'&&/초진|내원\s*(?:준비|예약)|진료\s*(?:시간|과목|예약|접수)|비급여|의료진\s*(?:면허|자격|소개)/.test(text))return true;
   return new RegExp(`${retail}.{0,20}${change}|${change}.{0,12}${retail}|상품.?등록`).test(text)||(['content','public_service'].includes(p.kind)&&/후기.?부재|후기.?추가|가격표.?추가|고객.?리뷰.?추가|비용과 계약|제공 업체/.test(text));
 }

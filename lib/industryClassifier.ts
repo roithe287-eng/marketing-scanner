@@ -45,6 +45,7 @@ export const INDUSTRY_LABELS: Record<IndustryCategory, string> = {
   food: "식음료·외식",
   travel: "여행·숙박",
   logistics: "해외이사·국제물류",
+  fortune: "사주·운세",
   it_service: "IT·서비스",
   manufacturing: "제조·산업",
   finance: "금융·투자",
@@ -80,13 +81,14 @@ const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
   parenting: ["육아", "유아", "아동", "베이비", "장난감", "kids", "baby"],
   interior: ["인테리어", "리모델링", "건축", "설계", "가구", "interior", "design"],
   ecommerce: ["온라인 쇼핑몰", "이커머스", "장바구니", "결제", "cart", "checkout"],
+  fortune: [],
   etc: [],
 };
 
 /**
  * 키워드 기반 빠른 예비 분류 (AI 호출 전 힌트)
  */
-export function classifyIndustryFromEvidence(data: ExtractedWebsiteData): IndustryCategory | null {
+export function classifyIndustryFromEvidence(data: Parameters<typeof analyzeWebsitePurpose>[0] & Partial<Pick<ExtractedWebsiteData,'ogTitle'>>): IndustryCategory | null {
   const purpose=analyzeWebsitePurpose(data);
   if(purpose.community)return 'media';
   if(purpose.business)return purpose.business.industry;

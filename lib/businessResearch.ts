@@ -1,3 +1,4 @@
+import {restoreStreamedHtml} from './streamedHtml';
 import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
 import {BusinessDocumentSchema,type BusinessDocument} from './businessContext';
@@ -11,6 +12,7 @@ import {getScannerContactUrl} from './siteConfig';
 import {searchNaverWeb} from './naverWebSearch';
 import {isConsentBoilerplate} from './contentBoilerplate';
 import {publicBusinessSections} from './publicBusinessSections';
+import {fortunePersonalData,fortuneTopic} from './fortuneService';
 import {pageRegion} from './pageRegions';
 
 // Researched public URLs are discovery hints, never pre-written findings or score overrides.
@@ -29,13 +31,22 @@ export const hasBusinessResearch=(url:string)=>{try{return !!researchPaths[host(
 /** Follow observed explanatory links only; never invent a site's service paths. */
 export function captureBusinessLinks(html:string,url:string):string[]{
   const $=cheerio.load(html),groups=new Map<number,string[]>();
+  restoreStreamedHtml($);
+  const fortune=fortuneTopic.test($('title,h1').text()+' '+($('meta[name="description"]').attr('content')||''));
   $('a[href]').slice(0,500).each((_,el)=>{
     const a=$(el),raw=a.attr('href')||'',target=ownPublicUrl(raw,url);
     if(!target||raw.startsWith('#')||target.href===new URL(url).href||a.closest('[hidden],[aria-hidden="true"]').length)return;
-    if(/(?:logout|delete|remove|unsubscribe|write|modify|edit|submit|download|privacy|policy|review|testimonial)/i.test(target.pathname)||/\.(?:pdf|zip|png|jpe?g|mp4)$/i.test(target.pathname))return;
+    const refundPath=fortune&&/\brefund\b/i.test(target.pathname);
+    if((!refundPath&&/policy/i.test(target.pathname))||/(?:logout|delete|remove|unsubscribe|write|modify|edit|submit|download|privacy|review|testimonial|account|\/my(?:\/|$)|\/results?(?:\/|$)|checkout|payment|login)/i.test(target.pathname)||/\.(?:pdf|zip|png|jpe?g|mp4)$/i.test(target.pathname))return;
     if([...target.searchParams.keys()].some(k=>/token|auth|session|email|phone|password|action|mode/i.test(k)))return;
     const label=clean(a.text()||a.find('img[alt]').attr('alt'),100),text=label+' '+target.pathname;
-    const group=/절차|과정|준비|입원|입퇴원|이용방법|대여방법|process|guide|procedure|hospitalization|admission/i.test(text)?1:/비용|요금|견적|비급여|진료비|메뉴|이용\s*조건|faq|price|pricing|nonbenefit|menu/i.test(text)?2:/서비스|업무\s*분야|진료\s*(?:과목|분야)|교육\s*과정|커리큘럼|사업\s*분야|service|curriculum|capabilit/i.test(text)?0:/담당|의료진|변호사|전문가|강사|구성원|사례|portfolio|case|team|about|doctor/i.test(text)?3:/이용\s*안내|문의\s*안내|상담\s*안내|진료\s*안내|운영\s*시간|영업\s*시간|오시는\s*길|주차|contact|location|hours|map/i.test(text)?4:null;
+    const fortuneGroup=fortune&&(
+      /서비스\s*상세정보|service-info/i.test(text)?0:
+      /환불\s*(?:정책|안내)|(?:^|[\/_-])refund(?:[\/_-]|$)/i.test(text)?2:
+      /만세력|manseoryeok/i.test(text)?1:
+      fortuneTopic.test(label)&&!/(?:blog|articles?|posts?)\//i.test(target.pathname)?3:null
+    );
+    const group=typeof fortuneGroup==='number'?fortuneGroup:/절차|과정|준비|입원|입퇴원|이용방법|대여방법|process|guide|procedure|hospitalization|admission/i.test(text)?1:/비용|요금|견적|비급여|진료비|메뉴|이용\s*조건|faq|price|pricing|nonbenefit|menu/i.test(text)?2:/서비스|업무\s*분야|진료\s*(?:과목|분야)|교육\s*과정|커리큘럼|사업\s*분야|service|curriculum|capabilit/i.test(text)?0:/담당|의료진|변호사|전문가|강사|구성원|사례|portfolio|case|team|about|doctor/i.test(text)?3:/이용\s*안내|문의\s*안내|상담\s*안내|진료\s*안내|운영\s*시간|영업\s*시간|오시는\s*길|주차|contact|location|hours|map/i.test(text)?4:null;
     if(group!==null&&label.length<=70)groups.set(group,[...new Set([...groups.get(group)||[],target.href])]);
   });
   const ordered=[0,1,2].flatMap(i=>[0,1,2,3,4].flatMap(key=>(groups.get(key)||[]).slice(i,i+1)));
@@ -45,6 +56,7 @@ export function captureBusinessLinks(html:string,url:string):string[]{
 /** Only public catalogue fields from a known declarative payload; no general state walk or execution. */
 export function captureBusinessDocument(html:string,url:string,capturedAt=new Date().toISOString()):BusinessDocument{
   const $=cheerio.load(html),title=clean($('head > title').first().text(),300);
+  restoreStreamedHtml($);
   if(/(?:privacy|policy|terms|agreement)(?:[./_-]|$)/i.test(new URL(url).pathname)&&/개인정보\s*(?:처리|취급)\s*방침|이용\s*약관|privacy\s*policy|terms\s*(?:of|and)/i.test(title+' '+$('h1,h2').text()))return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[]});
   const catalog:{heading:string;text:string}[]=[];
   // Public form labels describe the inquiry journey; never capture entered values.
@@ -73,9 +85,10 @@ export function captureBusinessDocument(html:string,url:string,capturedAt=new Da
     return lines.filter(text=>text.trim().length>=12&&text.trim().length<=600).map(text=>({heading:s.heading,text:clean(text)}));
   })];
   // Keep multiple decision conditions, rather than the first ten generic introduction lines.
+  const fortune=fortuneTopic.test(title)||fortuneTopic.test($('meta[name="description"]').attr('content')||'');
   const useful=(s:{text:string;heading:string})=>{
     const text=s.heading+' '+s.text;
-    return (/혈압측정|주치의 회진|협진 경과|반납.*(?:절차|확인)|픽업.*(?:시간|장소)|접수.*(?:순서|서류)|적용\(|분기 적용|진찰료 별도/.test(s.text)?25:0)+(/병원장|대표원장|원장|변호사|담당자|대표강사/.test(s.text)&&s.text.length<100&&!/^(?:전|현)\)/.test(s.text)?20:0)+(/금액|가격|요금|비용|진료비|비급여|운영시간|진료시간|입원치료|준비물|절차|정형외과전문의|상담료/.test(text)?8:0)+(/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label|해외이사|귀국이사|견적|포장|보험|보상|freight|cargo|customs/i.test(text)?5:0);
+    return (fortune&&fortunePersonalData.test(s.text)?24:0)+(fortune&&/무료 티저|리포트|열람|만세력|상담료|예약/.test(text)?10:0)+(/혈압측정|주치의 회진|협진 경과|반납.*(?:절차|확인)|픽업.*(?:시간|장소)|접수.*(?:순서|서류)|적용\(|분기 적용|진찰료 별도/.test(s.text)?25:0)+(/병원장|대표원장|원장|변호사|담당자|대표강사/.test(s.text)&&s.text.length<100&&!/^(?:전|현)\)/.test(s.text)?20:0)+(/금액|가격|요금|비용|진료비|비급여|운영시간|진료시간|입원치료|준비물|절차|정형외과전문의|상담료/.test(text)?8:0)+(/한국배송|호주배송|개인 통관|통관 가능|배송\s*비용|배송비/i.test(text)?10:0)+(/(?:한국배송|호주배송|통관|배송\s*비용|배송비|집결|취소|환불|여권|항공권|출국|봉인|AUST\s*L|ARTG)/i.test(text)?10:0)+(/포함|불포함|예약|확정|짐보관|수하물|영업시간|Liverpool|Mon\s*-\s*Sun|ingredients|caution|label|해외이사|귀국이사|견적|포장|보험|보상|freight|cargo|customs/i.test(text)?5:0);
   };
   const seen=new Set<string>();
   return BusinessDocumentSchema.parse({url,title,capturedAt,source:'merchant_html',sections:[...formSections.slice(0,2),...catalog.slice(0,6),...sections.sort((a,b)=>useful(b)-useful(a))].filter(s=>{if(isConsentBoilerplate(s.text)||seen.has(s.text)||/^[A-Z\s]{4,20}$/.test(s.text))return false;seen.add(s.text);return true;}).slice(0,16)});
