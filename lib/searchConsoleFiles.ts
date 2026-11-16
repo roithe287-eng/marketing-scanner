@@ -1,8 +1,11 @@
-import {comparableUrl} from './mobileEvidence';
-
 export const maxSearchFileBytes=1_000_000;
 export type QueryRow={query:string;impressions:number;clicks:number;position:number};
 export type SearchConsoleSample={rows:QueryRow[];page:string;device:string;scopeKey:string;periodLabel:string};
+
+export function comparableUrl(value:string):string{
+  try{const u=new URL(value);if(!/^https?:$/.test(u.protocol)||u.username||u.password)return '';u.hash='';return u.href;}
+  catch{return '';}
+}
 
 function key(input:string){return input.normalize('NFKC').trim().toLowerCase().replace(/[\s_\-]/g,'');}
 export function readCsv(text:string):string[][]{

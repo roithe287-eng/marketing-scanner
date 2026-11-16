@@ -5,8 +5,6 @@ import {collectSiteDiagnostics} from '../lib/collectSiteDiagnostics';
 import {auditBacklinks} from '../lib/backlinkAudit';
 import {websiteHttp} from '../lib/security/safeFetch';
 import {parseSearchConsoleFiles,sourceUrlsFromFile,comparablePeriods,searchOpportunities,sampleTotals} from '../lib/searchConsoleFiles';
-import {collectMobileEvidence} from '../lib/collectMobileEvidence';
-import {readLighthouse} from '../lib/mobileEvidence';
 import {naverReportSearchAllowed} from '../lib/naverReportPolicy';
 import {searchNaverWeb} from '../lib/naverWebSearch';
 
@@ -78,28 +76,6 @@ test('Search Console imports require a same-page filter and compare equal dates 
   assert.deepEqual(sourceUrlsFromFile('Linking page,Last crawled\nhttps://press.example.com/article,2026-10-01'),['https://press.example.com/article']);
 });
 
-test('mobile official API keeps origin fallback and lab measures separate, and never substitutes TBT for INP',async t=>{
-  const lab={requestedUrl:product,configSettings:{formFactor:'mobile'},audits:{
-    'largest-contentful-paint':{numericValue:2800},'total-blocking-time':{numericValue:230},'cumulative-layout-shift':{numericValue:0.12},
-    'render-blocking-insight':{score:0.3,displayValue:'100 ms'},unrelated:{numericValue:-1},
-  }};
-  t.mock.method(globalThis,'fetch',async(input:URL)=>{
-    assert.equal(input.hostname,'www.googleapis.com');
-    assert.equal(input.searchParams.get('strategy'),'mobile');
-    return Response.json({lighthouseResult:lab,loadingExperience:{id:site,origin_fallback:true,metrics:{LARGEST_CONTENTFUL_PAINT_MS:{percentile:3200}}},
-      originLoadingExperience:{id:site,metrics:{LARGEST_CONTENTFUL_PAINT_MS:{percentile:3200},CUMULATIVE_LAYOUT_SHIFT_SCORE:{percentile:12}}}});
-  });
-  const saved=process.env.GOOGLE_CRUX_API_KEY;delete process.env.GOOGLE_CRUX_API_KEY;
-  try{
-    const result=await collectMobileEvidence(product);
-    assert.equal(result.field?.scope,'origin');assert.equal(result.field?.values.cls,0.12);
-    assert.equal(result.field?.values.inp,undefined);
-    assert.equal(result.lab?.tbt,230);assert.equal(result.lab?.issues[0].id,'render-blocking-insight');
-    assert.equal(readLighthouse(lab,site+'/other','Lighthouse JSON'),undefined);
-    assert.equal(readLighthouse({...lab,configSettings:{formFactor:'desktop'}},product,'Lighthouse JSON'),undefined);
-  }finally{if(saved!==undefined)process.env.GOOGLE_CRUX_API_KEY=saved;}
-});
-
 test('ordinary Naver Search API credentials cannot enable a paid report adapter',async t=>{
   const keys=['NAVER_CLIENT_ID','NAVER_CLIENT_SECRET','NAVER_REPORT_SEARCH_AUTHORIZED'] as const;
   const original=keys.map(k=>process.env[k]);
@@ -109,29 +85,4 @@ test('ordinary Naver Search API credentials cannot enable a paid report adapter'
   t.mock.method(globalThis,'fetch',()=>assert.fail('report with ordinary credentials attempted a request'));
   assert.equal(naverReportSearchAllowed(),false);
   await assert.rejects(()=>searchNaverWeb('검색'));
-});
-
-test('CrUX uses its own authorized endpoint and retains field metrics when the PageSpeed API quota is exhausted',async t=>{
-  const prior=process.env.GOOGLE_CRUX_API_KEY;
-  process.env.GOOGLE_CRUX_API_KEY='isolated-fixture';
-  t.after(()=>{if(prior===undefined)delete process.env.GOOGLE_CRUX_API_KEY;else process.env.GOOGLE_CRUX_API_KEY=prior;});
-  const calls:unknown[]=[];
-  t.mock.method(globalThis,'fetch',async(input:URL,init:RequestInit)=>{
-    if(input.hostname==='www.googleapis.com')return new Response(null,{status:429});
-    assert.equal(input.hostname,'chromeuxreport.googleapis.com');
-    assert.equal(init.method,'POST');
-    const request=JSON.parse(String(init.body));
-    calls.push(request.url||request.origin);
-    if(request.url)return new Response(null,{status:404});
-    return Response.json({record:{key:{origin:site,formFactor:'PHONE'},metrics:{
-      cumulative_layout_shift:{percentiles:{p75:'0.05'}},
-      interaction_to_next_paint:{percentiles:{p75:170}},
-    },collectionPeriod:{firstDate:{year:2026,month:10,day:1},lastDate:{year:2026,month:10,day:28}}}});
-  });
-  const result=await collectMobileEvidence(product);
-  assert.deepEqual(calls,[product,site]);
-  assert.equal(result.field?.scope,'origin');
-  assert.equal(result.field?.values.inp,170);
-  assert.equal(result.field?.values.cls,0.05);
-  assert.match(result.notice||'',/요청 한도/);
 });
