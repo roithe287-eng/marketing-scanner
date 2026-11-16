@@ -1,12 +1,11 @@
 import {presentBenchmark} from './benchmarkPresentation';
 import {reviewStoredCitation} from './storedCitation';
-import { randomInt } from "node:crypto";
 import { getRedisClient } from "./redisClient";
 import { MarketingReport, MarketingReportSchema } from "./reportSchema";
-import { Principal, canReadOwner } from "./saas/types";
+import { Principal, canReadOwner, canShareReports } from "./saas/types";
 import { db, key, decode } from "./saas/store";
 import {REPORT_RETENTION_SECONDS as TTL_SECONDS} from './reportRetention';
-import {reportKey,READ_REPORT_LUA,RETENTION_LUA,retentionArgs} from './reportRetentionStore';
+import {reportKey,generateReportId,READ_REPORT_LUA,RETENTION_LUA,retentionArgs} from './reportRetentionStore';
 import {AccessError} from './security/request';
 const validId = (id: string) => /^[A-Za-z0-9]{4,12}$/.test(id);
 type Stored = {
@@ -14,21 +13,16 @@ type Stored = {
   ownerId: string;
   createdAt: number;
   expiresAt: number;
+  visibility?: 'private';
   report: MarketingReport;
 };
-function generateId() {
-  const chars = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  return Array.from({ length: 12 }, () => chars[randomInt(chars.length)]).join(
-    "",
-  );
-}
 export async function saveSharedReport(
   report: MarketingReport,
   principal: Principal,
 ): Promise<string | null> {
   const ownerId =
     principal.kind === "internal" ? "internal" : principal.account.id;
-  if (!canReadOwner(ownerId, principal)) return null;
+  if (!canShareReports(principal)) return null;
   const createdAt=Date.now();
   let expiresAt=createdAt+TTL_SECONDS*1000;
   const references=[report.sharedRetention?.reportId,report.diagnosisBaseline?.reportId,report.geoBaseline?.reportId].filter((id):id is string=>!!id);
@@ -40,7 +34,7 @@ export async function saveSharedReport(
   if(expiresAt<=Date.now())throw new AccessError(410,'보고서의 보관 기간이 만료되었습니다. 새로 진단해 주세요.');
   const {sharedRetention:_retention,...snapshot}=report;
   for (let i = 0; i < 5; i++) {
-    const id = generateId();
+    const id = generateReportId();
     const stored: Stored = {
       version: 2,
       ownerId,
@@ -78,6 +72,7 @@ async function readSharedReport(id: string, principal: Principal | null): Promis
   const stored=await db().eval<unknown[],[unknown,number,number,string]|null>(READ_REPORT_LUA,[reportKey(id)],retentionArgs());
   if(!stored||!Array.isArray(stored)||(principal&&!canReadOwner(stored[3],principal)))return null;
   const record=decode<Stored>(stored[0]);if(!record)return null;
+  if(!principal&&record.visibility==='private')return null;
   const parsed=MarketingReportSchema.safeParse(record.report);
   if(!parsed.success)return null;
   const report=parsed.data;
@@ -92,11 +87,11 @@ export async function updateSharedReportCompetitor(
 ): Promise<boolean> {
   if (!validId(id)) return false;
   const privileged = principal.kind === 'account' && principal.account.role === 'admin';
-  if (principal.kind === 'account' && !privileged && !principal.account.features.reports) return false;
+  if (!canShareReports(principal)) return false;
   const owner = principal.kind === 'internal' ? 'internal' : principal.account.id;
   for(let attempt=0;attempt<3;attempt++) {
     const raw=await db().get<string|Stored>(reportKey(id));
-    const record=decode<Stored>(raw);if(!record||record.version!==2)return false;
+    const record=decode<Stored>(raw);if(!record||record.version!==2||record.visibility==='private')return false;
     // Keep JSON arrays intact: Lua cjson turns empty arrays into objects on re-encoding.
     const replacement=JSON.stringify({...record,report:{...record.report,competitorAnalysis}});
     const result=await db().eval<unknown[],number>(
@@ -121,6 +116,7 @@ export async function listOwnReports(principal: Principal) {
 export async function listReportsForOwner(owner:string,principal:Principal) {
   if(principal.kind==='internal'&&owner!=='internal')throw new AccessError(403,'보고서 목록 접근 권한이 없습니다.');
   if(principal.kind==='account'&&principal.account.role!=='admin'&&principal.account.id!==owner)throw new AccessError(403,'보고서 목록 접근 권한이 없습니다.');
+  if(!canReadOwner(owner,principal))return [];
   await db().zremrangebyscore(
     key("reports:" + owner),
     0,

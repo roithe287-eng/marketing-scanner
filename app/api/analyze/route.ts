@@ -7,7 +7,8 @@ import {withBudget,optionalStage,remainingBudget} from '@/lib/runtime/budget';
 import {collectSiteDiagnostics} from '@/lib/collectSiteDiagnostics';
 import {withMedicalCitation} from '@/lib/medicalAudit';
 import {requirePrincipal} from '@/lib/saas/auth';
-import {reserve} from '@/lib/saas/store';
+import {reserve,type FinishUsage} from '@/lib/saas/store';
+import {accountPlan,planFeatures} from '@/lib/saas/types';
 import {readJson,failure,AccessError} from '@/lib/security/request';
 import {publicUrl} from '@/lib/security/safeFetch';
 import {getSharedReport} from "@/lib/shareStore";
@@ -61,10 +62,11 @@ function isValidUrl(url: string) {
 
 export async function POST(req: NextRequest) {
   const startedAt=Date.now();
-  let finish:((refund?:boolean,limited?:boolean)=>Promise<void>)|undefined;
+  let finish:FinishUsage|undefined;
   let collectionUrl:string|undefined;
   try {
     const principal=await requirePrincipal(req,true);
+    const single=principal.kind==='account'&&accountPlan(principal.account)!=='monthly';
     const body = await readJson(req);
     const rawUrl = body?.url;
     const geoQuestions = body?.geoQuestions;
@@ -91,6 +93,7 @@ export async function POST(req: NextRequest) {
     let store;
     try {store=parseSmartstoreUrl(url);}catch(error){return NextResponse.json({message:error instanceof Error?error.message:'스토어 주소를 확인해 주세요.'},{status:400});}
     if(store){
+      if(single)throw new AccessError(422,'스마트스토어·브랜드스토어는 공개 정보만 확인할 수 있습니다. 1회 진단권은 종합 진단이 가능한 URL에 사용해 주세요.');
       if(body.baselineId!==undefined)return NextResponse.json({message:'스마트스토어·브랜드스토어 제한 분석은 일반 웹사이트 보고서와 점수를 비교하지 않습니다. 비교를 해제하고 다시 입력해 주세요.'},{status:400});
       finish=await reserve(principal,'analyze',{headers:req.headers,url:store.url});
       const result=await analyzeSmartstore(store.url);
@@ -103,6 +106,7 @@ export async function POST(req: NextRequest) {
     let diagnosisBaseline:DiagnosisBaseline|undefined;
     let fixedQuestions: ReturnType<typeof baselineQuestions> | undefined;
     if (body.baselineId !== undefined) {
+      if(single)throw new AccessError(403,'1회 진단권은 새 URL의 종합 진단에 사용할 수 있습니다.');
       if (typeof body.baselineId !== 'string' || !/^[A-Za-z0-9]{4,12}$/.test(body.baselineId)) return NextResponse.json({message:'기준 보고서 ID가 올바르지 않습니다.'},{status:400});
       const previous = await getSharedReport(body.baselineId,principal);
       if (!previous) return NextResponse.json({message:'기준 보고서를 찾을 수 없거나 접근 권한이 없습니다. 보관된 기준 보고서를 선택해 주세요.'},{status:422});
@@ -198,7 +202,7 @@ export async function POST(req: NextRequest) {
     return {
       ...reviewedReport,
       _hasCompetitor: !!(
-        process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET && (principal.kind==='internal'||principal.account.features.competitor)
+        process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET && (principal.kind==='internal'||planFeatures(principal.account).competitor)
       ),
       _websiteHints: {
         scope:buildCompetitionScope(websiteData),
@@ -214,8 +218,9 @@ export async function POST(req: NextRequest) {
       },
     };
     },req.signal);
-    await finish();
-    return NextResponse.json(payload,{headers:{'Cache-Control':'private, no-store'}});
+    const {_hasCompetitor,_websiteHints,...report}=payload;
+    const sharedRetention=await finish(false,false,report);
+    return NextResponse.json({...report,_hasCompetitor,_websiteHints,...(sharedRetention?{sharedRetention}:{})},{headers:{'Cache-Control':'private, no-store'}});
   } catch (error: unknown) {
     if(error instanceof WebsiteCollectionError&&collectionUrl&&finish){
       try{

@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
       kind: "account",
       admin: principal.account.role === 'admin',
       account: safeAccount(principal.account),
-      usage: await usage(principal.account.id),
+      usage: await usage(principal.account.id,principal.account),
       ...(req.nextUrl.searchParams.get("reports") === "1"
         ? { reports: await listOwnReports(principal) }
         : {}),

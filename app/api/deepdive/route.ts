@@ -40,7 +40,7 @@ function isValidUrl(url: string) {
 
 export async function POST(req: NextRequest) {
   const startedAt=Date.now();
-  let finish:((refund?:boolean)=>Promise<void>)|undefined;
+  let finish:Awaited<ReturnType<typeof reserve>>|undefined;
   try {
     const principal=await requirePrincipal(req,true);
     const body = z.object({targetUrl:z.string().min(1).max(2048),ourDomain:z.string().max(253).optional(),ourTitle:z.string().max(600).optional()}).parse(await readJson(req));

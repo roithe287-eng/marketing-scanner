@@ -14,7 +14,7 @@ export const maxDuration = 60;
 
 export async function POST(req: NextRequest) {
   const startedAt=Date.now();
-  let finish:((refund?:boolean)=>Promise<void>)|undefined;
+  let finish:Awaited<ReturnType<typeof reserve>>|undefined;
   try {
     const principal=await requirePrincipal(req,true);
     const hint=z.string().max(2000);

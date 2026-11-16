@@ -1,9 +1,9 @@
 import {z} from 'zod';
-import type {Account} from './saas/types';
+import {planFeatures} from './saas/types';
 import {placeTermKey,type PlaceTerm} from './hospitalPlace';
 
-export function canReadClinicWebsite(access:{kind:string;account?:Pick<Account,'role'|'features'>}|null) {
-  return access?.kind==='internal'||(access?.kind==='account'&&(access.account?.role==='admin'||access.account?.features.competitor===true));
+export function canReadClinicWebsite(access:{kind:string;account?:Parameters<typeof planFeatures>[0]}|null) {
+  return access?.kind==='internal'||(access?.kind==='account'&&!!access.account&&(access.account.role==='admin'||planFeatures(access.account).competitor));
 }
 
 export const clinicMediaSchema=z.object({

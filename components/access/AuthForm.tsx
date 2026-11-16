@@ -11,7 +11,8 @@ export default function AuthForm({
   const [error, setError] = useState("");
   useEffect(() => {
     if (mode === "activate") {
-      setInvite(window.location.hash.slice(1));
+      const token=window.location.hash.slice(1);
+      setInvite(/^[\w-]{43}$/.test(token)?token:'');
       window.history.replaceState(null, "", window.location.pathname);
     }
   }, [mode]);
@@ -142,6 +143,7 @@ export default function AuthForm({
           {error}
         </p>
       )}
+      {mode==='activate'&&<p className="access-muted">비밀번호를 이미 설정했다면 <a href="/login">로그인</a>해 주세요.</p>}
       <button
         className="jm-button"
         disabled={busy || (mode === "activate" && !invite)}

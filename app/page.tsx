@@ -15,10 +15,13 @@ import DownloadReportButton from "@/components/DownloadReportButton";
 import ShareButton from "@/components/ShareButton";
 import {requestJson,RequestError} from '@/lib/client/request';
 import { MarketingReport, MarketingReportSchema } from "@/lib/reportSchema";
+import {accountPlan} from '@/lib/saas/types';
 
 export default function HomePage() {
   const {access,refresh}=useAccess();
   const allowed=access.kind==='internal'||access.kind==='account';
+  const plan=accountPlan(access.account);
+  const singleUsed=plan!=='monthly'&&!!access.usage?.analyze;
   const [report, setReport] = useState<MarketingReport | null>(null);
   const [storeReport,setStoreReport]=useState<SmartstoreReport|null>(null);
   const [restrictedReport,setRestrictedReport]=useState<RestrictedWebsiteReport|null>(null);
@@ -71,6 +74,7 @@ export default function HomePage() {
 
   async function handleAnalyze(url:string,geoQuestions?:string[],baselineId?:string) {
     if(!allowed){window.location.assign('/inquiry');return;}
+    if(singleUsed){window.location.assign('/account');return;}
     if(mainRequest.current)return;
     const run=++analysisRun.current;
     const controller=new AbortController();mainRequest.current=controller;
@@ -124,7 +128,7 @@ export default function HomePage() {
       <BrandHeader landing={!hasReport || loading} accountMenu={<AccessBar access={access} compact />} />
       {hasReport && !loading && <AccessBar access={access}/>}
 
-      {hasReport && !loading ? <details className="scanner-retry">
+      {singleUsed&&!loading?<div className="jm-container access-notice"><p>1회 진단권을 사용했습니다.</p>{plan==='single-pdf'&&<a href="/account">보관한 진단 결과 보기</a>}</div>:hasReport && !loading ? <details className="scanner-retry">
         <summary className="jm-container"><span>진단 결과가 준비됐습니다</span><strong>다른 URL 진단하기 <b aria-hidden="true">＋</b></strong></summary>
         <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'} compact/>
       </details> : <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'} compact={loading}/>}
@@ -167,10 +171,10 @@ export default function HomePage() {
           <div
             className="report-page-content"
           >
-            <ReportLayout report={report} clinicWebAllowed={canReadClinicWebsite(access)} onComparisonChange={baseline=>setReport(prev=>prev?{...prev,diagnosisBaseline:baseline}:prev)} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
+            <ReportLayout report={report} clinicWebAllowed={canReadClinicWebsite(access)} onComparisonChange={plan==='monthly'?baseline=>setReport(prev=>prev?{...prev,diagnosisBaseline:baseline}:prev):undefined} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
               const request=competitorRequest.current;
               if(request && !competitorLoading) void fetchCompetitor(request.url,request.hints,request.run);
-            }:undefined} actions={<><DownloadReportButton targetId="report-area" report={report} pending={competitorLoading} direct/>{(access.kind==='internal'||access.account?.features.reports)&&<ShareButton report={report} competitorLoading={competitorLoading} onShareCreated={setReport}/>}</>}/>
+            }:undefined} actions={<>{allowed&&plan!=='single'&&<DownloadReportButton targetId="report-area" report={report} pending={competitorLoading} direct/>}{(access.kind==='internal'||(plan==='monthly'&&access.account?.features.reports))&&<ShareButton report={report} competitorLoading={competitorLoading} onShareCreated={setReport}/>}</>}/>
 
           </div>
         </section>

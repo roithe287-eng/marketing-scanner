@@ -1,7 +1,8 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requirePrincipal } from '@/lib/saas/auth';
-import { rateLimit } from '@/lib/saas/store';
+import { rateLimit, singleUseRecord } from '@/lib/saas/store';
+import { accountPlan } from '@/lib/saas/types';
 import { startPdf, finishPdf, targetHost, captureActivity } from '@/lib/saas/activity';
 import {NETWORK_ACTIVITY_ID} from '@/lib/saas/activityTypes';
 import { AccessError, failure, privateJson, readJson } from '@/lib/security/request';
@@ -17,6 +18,8 @@ export async function POST(req:NextRequest){
   try{
     const principal=await requirePrincipal(req,true);
     const body=schema.parse(await readJson(req,4096));
+    const plan=principal.kind==='account'?accountPlan(principal.account):'monthly';
+    if(plan==='single')throw new AccessError(403,'이 이용권은 화면 열람만 제공하며 PDF·문서 저장은 포함하지 않습니다.');
     if(body.action==='document_export'){
       const accountId=principal.kind==='internal'?NETWORK_ACTIVITY_ID:principal.account.id;
       await rateLimit('document-export:'+accountId,30,60);
@@ -35,8 +38,14 @@ export async function POST(req:NextRequest){
     const account=principal.account;
     await rateLimit('activity:'+account.id,100,60);
     if(body.action==='pdf_start'){
-      if(body.reportId&&!(await getSharedReport(body.reportId,principal)))throw new AccessError(404,'보고서가 만료되었거나 열람 권한이 없습니다.');
-      const ticket=await startPdf(account.id,account.version,req.headers,{scope:body.scope,reportId:body.reportId,target:targetHost(body.url)},body.eventId);
+      if(plan==='single-pdf'){
+        const used=await singleUseRecord(account);
+        if(!body.reportId||!used||(used!=='legacy'&&used!==`report:${body.reportId}`))throw new AccessError(403,'1회 진단권으로 완료한 보고서만 PDF로 받을 수 있습니다.');
+      }
+      const report=body.reportId?await getSharedReport(body.reportId,principal):null;
+      if(body.reportId&&!report)throw new AccessError(404,'보고서가 만료되었거나 열람 권한이 없습니다.');
+      if(plan==='single-pdf'&&report?.url!==body.url)throw new AccessError(403,'보고서에 저장된 진단 URL로 다시 요청해 주세요.');
+      const ticket=await startPdf(account.id,account.version,req.headers,{scope:body.scope,reportId:body.reportId,target:targetHost(report?.url??body.url)},body.eventId);
       return privateJson({ticket});
     }
     await finishPdf(account.id,account.version,req.headers,body.ticket,body.phase,body.eventId,body.metrics);
