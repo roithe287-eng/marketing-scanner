@@ -229,8 +229,8 @@ body { color:var(--scanner-ink); background:var(--scanner-ivory); }
 .access-shell>h1 { color:var(--scanner-indigo); }
 .access-intro,.access-muted,.access-back { color:var(--scanner-muted); }
 .access-form { background:#fff; padding:28px; border:1px solid #c7d4ec; border-top:5px solid var(--scanner-cobalt); border-radius:20px; }
-.access-form input:not([type=checkbox]),.access-form textarea,.access-form select,.access-invite input { border-color:#bccbe1; }
-.access-form input:focus,.access-form textarea:focus,.access-form select:focus,.access-invite input:focus { outline-color:#98b7ff; border-color:var(--scanner-cobalt); }
+.access-form input:not([type=checkbox]),.access-form textarea,.access-form select,.access-invite input,.access-invite textarea { border-color:#bccbe1; }
+.access-form input:focus,.access-form textarea:focus,.access-form select:focus,.access-invite input:focus,.access-invite textarea:focus { outline-color:#98b7ff; border-color:var(--scanner-cobalt); }
 .access-form input[type=checkbox] { accent-color:var(--scanner-cobalt); }
 .access-consent { background:#edf2fc; color:#485976; }
 .access-form .jm-button { border-radius:12px; }

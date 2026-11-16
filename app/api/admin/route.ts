@@ -125,11 +125,12 @@ export async function POST(req: NextRequest) {
       });
     }
     if (body.action === "reissue") {
-      const {invite,activationExpiresAt} = await reissueInvite(body.id, admin.id);
+      const {invite,activationExpiresAt,plan} = await reissueInvite(body.id, admin.id);
       await captureActivity(admin.id,'invite_reissued',req.headers,{subjectId:body.id});
       return privateJson({
         activationPath: "/activate#" + invite,
         activationExpiresAt,
+        activationPlan: plan,
       });
     }
     if (body.action === "delete") {
