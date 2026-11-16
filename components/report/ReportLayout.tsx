@@ -51,7 +51,6 @@ import OfficialSeoPanel from './OfficialSeoPanel';
 import SiteDiagnosticsPanel from './SiteDiagnosticsPanel';
 import {ProductOfferAuditCard} from './SearchAuditCards';
 import BacklinkEvidencePanel from './BacklinkEvidencePanel';
-import MobileEvidencePanel from './MobileEvidencePanel';
 import SearchConsoleEvidencePanel from './SearchConsoleEvidencePanel';
 import MedicalAuditPanel from './MedicalAuditPanel';
 import KeywordRankCard from '@/components/KeywordRankCard';
@@ -124,7 +123,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         ...(report.serviceStrategy?[{id:'search-intents',label:'검색 의도·랜딩',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="search"/>}]:[]),
         {id:'search-naver',label:'네이버 점검',children:<NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>},
         {id:'search-official',label:'공통 검색 점검',children:<><OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>{productPages.map(page=><ProductOfferAuditCard key={page.url} audit={page.productOffer} url={page.url}/>)}</>},
-        {id:'search-technical',label:'페이지·기술 점검',children:<><SiteDiagnosticsPanel audit={report.siteDiagnostics}/>{searchEvidenceAllowed&&<MobileEvidencePanel target={searchTarget}/>}</>},
+        {id:'search-technical',label:'페이지·기술 점검',children:<SiteDiagnosticsPanel audit={report.siteDiagnostics}/>},
         {id:'search-scope',label:'수집·분석 범위',children:scope},
         ...(report.checklist?.length?[{id:'search-checklist',label:'기본 체크리스트',children:<DiagnosisChecklist checklist={report.checklist}/>}]:[]),
       ]}/>

@@ -222,7 +222,7 @@ export default function AdminView() {
                   <strong>{item.name}</strong> {item.company}
                   {!!item.services?.length && <span className="admin-inquiry-services">{inquiryServiceLabels(item.services).map(label => <span key={label}>{label}</span>)}</span>}
                 </span>
-                <span>
+                <span className="admin-inquiry-status" data-status={item.status}>
                   {
                     {
                       pending: "검토 대기",

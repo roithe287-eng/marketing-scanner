@@ -2,8 +2,7 @@
 import {useRef,useState} from 'react';
 import type {BacklinkRow} from '@/lib/backlinkAudit';
 import {requestJson} from '@/lib/client/request';
-import {maxSearchFileBytes,sourceUrlsFromFile} from '@/lib/searchConsoleFiles';
-import {comparableUrl} from '@/lib/mobileEvidence';
+import {comparableUrl,maxSearchFileBytes,sourceUrlsFromFile} from '@/lib/searchConsoleFiles';
 import {RoleBox} from './ReportRole';
 
 const status={linked:'연결 확인',mentioned:'브랜드 언급 확인',broken:'대상 오류',review:'확인 불가',no_evidence:'근거 미감지'};
