@@ -34,7 +34,12 @@ export function buildNonCommerceSegments(p:WebsitePurpose,sources:StrategySource
   const book=selectedBook||nonCommercePlaybook(p,topic),f=editorialFocus(book),[scope,proof,terms,operation]=f.fields;
   const placePrefix=book.local?.regions.length?book.local.regions[0]+' ':book.local?'[실제 지역] ':'';
   const priceRelevant=!f.information;
-  const actions=f.information?[
+  const actions=f.mode==='self_serve'?[
+    '풀이마다 실제 시작 화면을 연결하고, 입력 전에 필수·선택 항목과 출생 시간을 모를 때의 안내를 표시해야 합니다.',
+    '무료로 먼저 볼 수 있는 결과 범위를 설명해야 합니다. 유료 리포트 운영 시 결제 전에 실제 가격과 추가로 열리는 내용을 표시해야 합니다.',
+    '결과 열람·재열람 경로를 안내하고 유료 결제 시 환불 또는 장애 문의 조건을 연결해야 합니다.',
+    '시작, 입력 완료, 실제 결과 열람을 구분하고 출생 정보와 상대방 정보는 측정 항목에서 제외해야 합니다.',
+  ]:f.information?[
     `준비 체크리스트: ${book.preparation.join('·')} 항목을 본문 끝의 관련 자료와 연결해야 합니다.`,
     `행동 경로: 「${book.cta}」 버튼에 [공식·관련 문서 URL]을 넣고 이동할 문서명을 표시해야 합니다.`,
     `이용 안내: ${operation}의 실제 이용 방법과 변경 확인 경로를 써야 합니다.`,
@@ -55,7 +60,7 @@ export function buildNonCommerceSegments(p:WebsitePurpose,sources:StrategySource
       landingBlocks:[`첫 화면: ${scope}에 해당하는 실제 항목과 이용 대상을 제목·첫 문단에 써야 합니다.`,`${book.assets[0]}: [원문에서 확인한 내용]을 항목별 소제목 아래에 설명해야 합니다.`,'상세 연결: 소개한 각 항목을 해당 상세 URL에 연결해야 합니다.','다음 버튼: 「제공 범위 자세히 보기」를 소개 문단 아래에 배치해야 합니다.'],headline:`${book.label}, ${book.preparation[0]}부터 확인하세요`,message:`[실제 제공 항목]과 [이용 대상]을 안내합니다. 자세한 조건은 항목별 상세 설명에서 확인하세요.`,cta:'제공 범위 자세히 보기',metric:'상세 이동 이용자 ÷ 소개 방문 이용자 × 100'},
     {id:'compare',label:'비교 · 조건과 근거',audience:`${koreanParticle(terms,'object')} 비교하는 이용자`,questions:[f.questions[1],`${proof}의 원자료는 무엇인가요?`],keywords:[`${book.label} ${priceRelevant?'구성·비용':'적용 범위'}`,`${book.label} ${proof}`],
       landingBlocks:[`비교표: ${scope}의 선택안을 행으로, ${koreanParticle(terms,'object')} 열로 나눠야 합니다.`,priceRelevant?`포함·별도 비용: ${terms}의 기준과 제외 항목을 같은 표에 써야 합니다.`:`해석 기준: ${proof}의 원자료와 적용 예외를 비교표 옆에 써야 합니다.`,`근거 연결: ${koreanParticle(proof,'object')} 확인할 [원자료 URL·작성 주체·확인일]을 표시해야 합니다.`,`다음 버튼: 「${f.information?'관련 근거 자세히 보기':'선택 조건 확인하기'}」를 비교표 아래에 배치해야 합니다.`],headline:`${koreanParticle(terms,'object')} 같은 기준으로 비교하세요`,message:`[선택안 A]와 [선택안 B]의 ${koreanParticle(terms,'object')} 비교합니다. 각 조건의 근거는 [원자료 URL]에서 확인하세요.`,cta:f.information?'관련 근거 자세히 보기':'선택 조건 확인하기',metric:'조건 열람 후 다음 행동 이용자 ÷ 비교 페이지 방문 이용자 × 100'},
-    {id:'act',label:f.information?'이용 · 공식 경로와 후속 자료':f.mode==='visit'?'방문 · 위치와 운영 안내':'신청 · 준비와 진행 상태',audience:`${koreanParticle(book.cta,'object')} 진행하려는 이용자`,questions:[`${koreanParticle(operation,'topic')} 어떻게 확인하나요?`],keywords:[`${placePrefix}${book.label} ${f.information?'이용 안내':f.mode==='visit'?'위치·운영시간':'예약·문의'}`,`${book.label} ${book.preparation[2]}`],landingBlocks:actions,headline:book.cta,message:f.information?'[관련 문서 제목]에서 추가 안내를 확인하세요. 변경된 내용은 [정정·갱신 안내]에 표시합니다.':f.mode==='visit'?'방문 전 [영업시간·휴무일]을 확인하세요. [매장 입구·주차 위치]로 이동하시면 됩니다.':`[필요한 준비 항목]을 정리하고 [접수 경로]로 요청해 주세요. [다음 안내 시점]에 진행 상태를 알려드립니다.`,cta:book.cta,metric:`${book.outcome} 확인 이용자 ÷ 앞 단계 이용자 × 100`},
+    {id:'act',label:f.information?'이용 · 공식 경로와 후속 자료':f.mode==='visit'?'방문 · 위치와 운영 안내':f.mode==='self_serve'?'풀이 · 입력과 결과 열람':'신청 · 준비와 진행 상태',audience:`${koreanParticle(book.cta,'object')} 진행하려는 이용자`,questions:[`${koreanParticle(operation,'topic')} 어떻게 확인하나요?`],keywords:[`${placePrefix}${book.label} ${f.information?'이용 안내':f.mode==='visit'?'위치·운영시간':f.mode==='self_serve'?'풀이 시작·결과 열람':'예약·문의'}`,`${book.label} ${book.preparation[2]}`],landingBlocks:actions,headline:book.cta,message:f.mode==='self_serve'?'[풀이명]을 시작하기 전에 [필수 입력 안내]와 [결과를 확인하는 방법]을 확인하세요.':f.information?'[관련 문서 제목]에서 추가 안내를 확인하세요. 변경된 내용은 [정정·갱신 안내]에 표시합니다.':f.mode==='visit'?'방문 전 [영업시간·휴무일]을 확인하세요. [매장 입구·주차 위치]로 이동하시면 됩니다.':`[필요한 준비 항목]을 정리하고 [접수 경로]로 요청해 주세요. [다음 안내 시점]에 진행 상태를 알려드립니다.`,cta:book.cta,metric:`${book.outcome} 확인 이용자 ÷ 앞 단계 이용자 × 100`},
   ];
   const evidence=allocateSources(sources,STAGE_MATCHERS);
   return specs.map((s,i)=>({...s,evidence:evidence[i],...(evidence[i].find(e=>e.url!==url)?{landingUrl:evidence[i].find(e=>e.url!==url)!.url}:{}),diagnosis:evidence[i].length?`관련 원문 ${evidence[i].length}개`:'작성 제안'}));

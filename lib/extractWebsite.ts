@@ -1,3 +1,4 @@
+import {restoreStreamedHtml} from './streamedHtml';
 import {websiteHttp} from './security/safeFetch';
 import { blocksAllCrawling, evaluateRobots, type RobotsObservation } from "./robotsRules";
 import {collectOfficialSeoEvidence,type OfficialSeoEvidence} from './officialSeoEvidence';
@@ -119,6 +120,7 @@ export type ExtractedWebsiteData = {
 };
 
 const CTA_KEYWORDS = [
+  '시작하기', '바로 입력', '무료로 보기', '만세력 보기',
   "문의",
   "상담",
   "신청",
@@ -425,6 +427,7 @@ export async function extractWebsite(
   const businessLinks=captureBusinessLinks(html,finalUrl);
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
   const $ = cheerio.load(html);
+  restoreStreamedHtml($);
   const communityContext=captureCommunityContext($,finalUrl);
   const officialSeoEvidence=collectOfficialSeoEvidence($,finalUrl,res.headers);
   const titleCount = $("head > title").length;

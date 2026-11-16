@@ -4,6 +4,7 @@ import type {ExtractedWebsiteData} from './extractWebsite';
 import {analyzeWebsitePurpose} from './websitePurpose';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
 import {classificationText,offeringClauses,ownBusinessRole,providerIdentity,providerBody,isContextOnlyEvidence} from './websiteIdentity';
+import {fortuneTopic,fortuneRemote,fortuneVisit} from './fortuneService';
 import {SKI_DESTINATIONS,seasonalProfile} from './seasonalPlaceCatalog';
 
 export const CompetitionScopeSchema=z.object({
@@ -19,6 +20,8 @@ type Input=Partial<ExtractedWebsiteData>&{url:string;localPlaceEvidence?:LocalPl
 const profiles:Record<string,string>={agency:'광고·제작 대행',software:'소프트웨어',manufacturing:'제조',home:'시공·생활 서비스',medical:'병의원',legal:'법률',education:'교육',commerce:'상품 판매',restaurant:'식당',cafe:'카페',lodging:'숙박',rental:'대여',veterinary:'동물병원',pet_care:'반려동물 돌봄',pet_store:'반려동물 매장'};
 const localProfiles=new Set(['medical','legal','professional','accounting','home','home_service','restaurant','cafe','lodging','rental','veterinary','pet_care','pet_store','beauty','education','fitness','automotive','real_estate','retail','culture','event','welfare','living','funeral','pharmacy']);
 const facetRules:Record<string,[string,RegExp][]>={
+  fortune_digital:[['사주·만세력',/사주|만세력|명리학/],['운세',/운세/],['궁합',/궁합/],['타로',/타로/],['점성술',/점성술/]],
+  fortune_consultation:[['사주·명리',/사주|철학관|명리|역술/],['타로',/타로/],['신점',/신점/],['점성술',/점성술/]],
   medical:[['한방',/한방|한의원/],['치과',/치과|치아|임플란트/],['피부과',/피부과/],['안과',/안과|라식|라섹/],['정형외과',/정형외과/],['성형외과',/성형외과/],['내과',/내과/],['소아',/소아청소년과|소아과/],['산부인과',/산부인과/],['이비인후과',/이비인후과/]],
   legal:[['변호사',/법무법인|법률사무소|변호사/],['세무',/세무/],['회계',/회계/],['노무',/노무/],['법무사',/법무사/]],
   professional:[['세무',/세무/],['회계',/회계/],['노무',/노무/],['변리',/변리/]],
@@ -48,7 +51,7 @@ function providerSpecialties(profile:string,data:Input):string[]{
   const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
   const facets=facetRules[profile]||[];
   const primary=facets.filter(([,re])=>re.test(headings));
-  const metadataFacets=primary.length?primary:facets.filter(([,re])=>re.test(identity));
+  const metadataFacets=primary.length&&!profile.startsWith('fortune_')?primary:facets.filter(([,re])=>re.test(identity));
   // Brand-only metadata may omit the actual service. Use scoped first-party
   // body content only as a fallback; customer cases and related posts stay out.
   const body=classificationText(providerBody(data));
@@ -75,8 +78,10 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   if(season.length&&purpose.kind!=='commerce'&&!['agency','software','manufacturing'].includes(profile))specialties.push(...season.map(s=>'season:'+s));
   const headingDestinations=SKI_DESTINATIONS.filter(d=>d.aliases.test(headings));
   const destinations=specialties.includes('season:ski')?(headingDestinations.length?headingDestinations.map(d=>d.id):place?.seasonal?.destinations.map(d=>d.id)||[]):[];
-  const nationwide=/(?:전국|온라인|비대면)\s*(?:출장|서비스|상담|수업|교육|진료|지원)/.test(identity);
-  const area=localProfiles.has(profile)&&!nationwide?areaOf(place?.address||headings)||areaOf(identity):'';
+  const fortuneConsult=profile==='fortune_consultation';
+  const fortuneText=fortuneConsult?classificationText([identity,providerBody(data)].join('\n')):'';
+  const nationwide=profile==='fortune_digital'||(fortuneConsult?fortuneRemote.test(fortuneText):/(?:전국|온라인|비대면)\s*(?:출장|서비스|상담|수업|교육|진료|지원)/.test(identity));
+  const area=((localProfiles.has(profile)&&!nationwide)||(fortuneConsult&&fortuneVisit.test(fortuneText)))?areaOf(place?.address||headings)||areaOf(identity):'';
   return {version:1,sourceUrl:data.finalUrl,kind,profile,label:profiles[profile]||purpose.business?.label||book.label,specialties:[...new Set(specialties)].slice(0,16),area,destinations:destinations.slice(0,6),nationwide};
 }
 
@@ -102,7 +107,11 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
     if(requested.length&&!requested.some(s=>offered.includes(s))&&(strict||offered.length))return '세부 제공 업무 또는 시즌 서비스가 다르거나 원문 근거가 부족함';
   }
   if(own.destinations.length&&!own.destinations.some(s=>candidate.destinations.includes(s))&&(strict||candidate.destinations.length))return '스키장·이용 목적지가 다르거나 후보의 해당 지역 운영 근거가 부족함';
-  if(own.area&&!candidate.nationwide){
+  if(own.profile==='fortune_consultation'&&candidate.profile===own.profile){
+    if(own.nationwide&&!candidate.nationwide&&(strict||candidate.area))return '전화·채팅 등 자사와 같은 원격 상담 방식을 확인하지 못함';
+    if(!own.nationwide&&own.area&&!candidate.area&&(strict||candidate.nationwide))return '방문 상담 후보의 지역을 확인하지 못함';
+  }
+  if(own.area&&(own.profile==='fortune_consultation'?!(own.nationwide&&candidate.nationwide):!candidate.nationwide)){
     const sameDestination=own.destinations.some(id=>candidate.destinations.includes(id));
     const overlap=candidate.area?(own.area===candidate.area||own.area.startsWith(candidate.area+' ')||candidate.area.startsWith(own.area+' ')):sameDestination;
     if(!overlap&&(strict||candidate.area))return '지역 서비스의 운영 지역이 다르거나 후보 원문에서 해당 지역을 확인하지 못함';
@@ -112,6 +121,7 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
 /** A client noun cannot be the whole query for a provider with a clear role. */
 export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean{
   if(!scope)return true;
+  if(scope.profile.startsWith('fortune_'))return (fortuneTopic.test(query)||/^궁합$/.test(query.trim()))&&!(scope.profile==='fortune_digital'&&/상담|점집|철학관/.test(query));
   if(!['insurance','finance','unknown','service','mixed'].includes(scope.profile)&&/^(?:(?:자동차|차량|여행|배상책임)\s*)?보험(?:\s*(?:가입|상담|보장|보장\s*분석))?$/.test(query.trim()))return false;
   if(scope.profile==='medical'&&/^(?:호주산?\s*)?(?:영양제|건강식품|건강기능식품)$/.test(query.trim()))return false;
   if(scope.profile==='rental'&&!/렌탈|렌털|렌터카|렌트|대여|강습|rental/i.test(query))return false;

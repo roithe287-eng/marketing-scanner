@@ -13,6 +13,8 @@ export const INDUSTRY_AXES:Record<string,[string,string,string,string]>={
  insurance:['보장 대상·가입 검토 조건','약관·보험금 지급 제외 조건','보험료 산정·납입·갱신 기준','상담 주체·청약 및 해지 안내'],
  startup:['창업 단계·해결 과제','검토 범위·사업계획 산출물','자문료·추가 업무·지원 종료 조건','담당자·자료 전달·회의 일정'],
  franchise:['개설 지역·점포 조건','본부 지원·점주 담당 업무','가맹비·설비비·별도 운영비','정보공개서·개설 절차·계약 조건'],
+ fortune_digital:['사주·운세·만세력 주제','공개 결과 예시와 입력 항목','무료 범위·유료 가격과 환불','결과 열람·재열람과 문의'],
+ fortune_consultation:['사주·타로 상담 주제','상담사와 상담 방식','상담료·시간·변경 조건','예약·변경·방문 또는 접속'],
  travel_booking:['코스·여행일·최소 출발 인원','교통·숙박·식사 포함/불포함','인원별 요금·추가 선택 비용','집결·픽업·기상 변경·취소'],
  education:['수강 대상·선수 지식','차시·실습·강사 역할','수강료·교재비·수료 기준','시간표·신청·환불 조건'],
  organization:['제공 기술·제품 규격·적용 환경','생산·수행 범위·인증 적용 대상','납기·검수·견적 산정 조건','기술자료·담당 조직·협업 절차'],
@@ -35,7 +37,7 @@ export const INDUSTRY_AXES:Record<string,[string,string,string,string]>={
 };
 export function editorialFocus(book:NonCommercePlaybook){
  const fields=book.local?.fields||INDUSTRY_AXES[book.id]||INDUSTRY_AXES.service;
- const mode=book.id==='public_service'?'public':book.id==='content'?'read':book.id==='community'?'community':/^방문·/.test(book.outcome)?'visit':'request';
+ const mode=book.id==='fortune_digital'?'self_serve':book.id==='public_service'?'public':book.id==='content'?'read':book.id==='community'?'community':/^방문·/.test(book.outcome)?'visit':'request';
  return {fields,mode,information:['public','read','community'].includes(mode),questions:[`${koreanParticle(fields[0],'topic')} 어떻게 구분하나요?`,`${koreanParticle(fields[2],'topic')} 어디에서 확인하나요?`]};
 }
 /** Local catalog fields do not have a shared question order. Match their own topic. */
@@ -59,6 +61,7 @@ export function editorialChannels(book:NonCommercePlaybook):ServiceStrategy['cha
   {id:'search',label:'검색 · 질문별 유입',role:`${koreanParticle(scope,'object')} 찾는 방문자 연결`,setup:`「${book.label}」와 「${book.preparation[0]}」 검색어를 서로 다른 상세 주제에 연결해야 합니다.`,creative:`제목은 [실제 서비스명] + [${book.preparation[0]}] + [업체명] 순서로 작성해야 합니다.`,conversion:`검색 유입의 ${book.stages[1]} 도달률을 집계해야 합니다.`,review:'실제 검색어 보고서에서 동명 업체·무관한 업무를 제외해야 합니다.'},
   {id:'content',label:book.local?'플레이스 · 지점 정보':'검색·AI 답변 · 원문 설명',role:book.local?'매장 선택에 필요한 등록정보 정리':`${cost} 질문의 답변 문서 작성`,setup:book.local?`스마트플레이스의 업체명·지점·주소와 홈페이지를 맞추고 「${operation}」 항목을 담당자가 갱신해야 합니다.`:`「${cost}」 질문에 대한 답을 첫 문단에 쓰고 상세 조건을 표로 정리해야 합니다.`,creative:book.local?`「${proof}」에 맞는 현재 매장 자료를 등록하고 사진의 촬영 시점과 설명을 써야 합니다.`:`「${proof}」의 원문 링크·작성자·확인일을 주장 옆에 표시해야 합니다.`,conversion:book.local?'공개 플레이스에서 홈페이지·길찾기·예약의 실제 연결 주소를 각각 확인해야 합니다.':'질문 문서에서 관련 상세 설명으로 이동한 이용자를 집계해야 합니다.',review:book.local?'API에서 확인한 업체 기본정보와 사업주가 직접 확인할 운영정보를 구분해야 합니다.':'게시 URL의 검색 수집 여부와 실제 AI 답변의 인용 URL을 각각 기록해야 합니다.'},
   {id:'visual',label:'사진·영상 · 과정 설명',role:`${koreanParticle(book.assets[0],'object')} 시각 자료로 설명`,setup:`전체 홍보 영상 대신 「${book.preparation[1]}」 한 가지를 설명하는 사진·영상 묶음을 만들어야 합니다.`,creative:`첫 장면에 질문, 중간에 실제 자료, 마지막에 「${book.assets[1]}」 원문 이동을 넣어야 합니다.`,conversion:'소재별 상세 페이지 이동 수와 도착 후 이탈을 나눠 확인해야 합니다.',review:'화면 속 자료와 본문 조건이 같은지 확인하고 공개 권한이 없는 정보는 가려야 합니다.'},
+  f.mode==='self_serve'?{id:'followup',label:'온라인 풀이 · 입력과 결과',role:'입력에서 결과 열람까지 이어지는 화면 점검',setup:'풀이 시작, 입력 완료, 결과 열람을 서로 다른 이벤트로 기록하세요. 유료 리포트가 있으면 결제 성공과 유료 결과 열람도 구분하세요.',creative:'입력값을 가린 풀이 예시와 무료 범위를 시작 전 보여주고, 결과를 다시 보는 방법을 바로 연결하세요.',conversion:'같은 풀이 유형을 기준으로 시작 대비 입력 완료율과 결과 열람률을 확인하세요.',review:'생년월일시·궁합 상대 정보와 상담 사연은 분석 이벤트나 URL로 전송하지 않도록 확인하세요.'}:
   {id:'followup',label:f.information?'이용 동선 · 후속 자료':f.mode==='visit'?'방문 동선 · 현장 안내':'접수 운영 · 담당 처리',role:`${book.stages[2]} 이후 다음 상태 안내`,setup:f.information?`「${operation}」 링크를 본문 끝에 배치하고 이동한 문서의 제목과 기관을 표시해야 합니다.`:f.mode==='visit'?'지도 핀·출입구·주차장 위치를 구분하고 휴무일 안내를 길찾기 버튼 옆에 표시해야 합니다.':`${book.stages[2]} 기록에 담당자·접수시각·처리상태를 연결해야 합니다.`,creative:f.information?'본문 끝에는 이미 읽은 설명 대신 추가로 확인할 문서 제목을 써야 합니다.':f.mode==='visit'?'도착 후 입장·대기·수령 위치를 사진 한 장과 짧은 캡션으로 설명해야 합니다.':'접수 완료 화면에는 요청 내용의 구분·다음 안내 시점·변경 방법을 써야 합니다.',conversion:`${book.outcome} 기록을 클릭 기록과 분리해야 합니다.`,review:f.information?'끊어진 출처·종료된 공고·이동된 게시판 링크를 수정해야 합니다.':f.mode==='visit'?'현장 이용 기록이 연결되지 않으면 길찾기 클릭을 방문 수로 표시하지 않아야 합니다.':'미배정·중복·진행 불가 상태를 나눠 담당자가 처리해야 합니다.'},
  ];
 }
@@ -77,12 +80,20 @@ export function editorialContent(book:NonCommercePlaybook,sources:StrategySource
 }
 export function editorialMeasurement(book:NonCommercePlaybook):Pick<ServiceStrategy,'funnel'|'metrics'|'experiments'>{
  const f=editorialFocus(book),[scope,proof,terms,operation]=f.fields;
- const event=f.mode==='public'?['program_view','eligibility_view','official_apply_click','receipt_confirmed','status_checked']:f.mode==='read'?['article_view','body_read','related_link_click','source_open','return_visit']:f.mode==='community'?['board_view','post_read','participation_guide_view','participation_complete','return_visit']:f.mode==='visit'?['offering_view','visit_conditions_view','location_view','directions_click','visit_confirmed']:['detail_view','criteria_view','request_submit','request_confirmed','outcome_confirmed'];
- const definition=[`「${scope}」 상세 페이지 방문을 기록해야 합니다.`,`「${proof}」 설명 영역을 실제 열었을 때 기록해야 합니다.`,f.information?'표시된 공식·관련 경로로 이동했을 때 기록해야 합니다.':f.mode==='visit'?'지도·영업시간 안내를 열었을 때 기록해야 합니다.':'서버가 접수 성공을 반환했을 때만 기록해야 합니다.',f.mode==='public'?'공식 시스템의 접수번호 또는 연동된 접수 상태가 있을 때 기록해야 합니다.':f.mode==='read'?'원출처 링크를 열었을 때 기록해야 합니다.':f.mode==='community'?'실제 글·댓글 등록 성공을 확인했을 때 기록해야 합니다.':f.mode==='visit'?'길찾기 경로를 실행했을 때 기록해야 합니다.':`담당자가 「${book.stages[3]}」 상태를 확정했을 때 기록해야 합니다.`,`「${book.outcome}」을 확인할 수 있는 운영·이용 기록으로 집계해야 합니다.`];
- const checks=['다른 주제의 페이지 방문을 같은 분모에 합치지 않아야 합니다.','영역이 존재한다는 이유만으로 열람을 기록하지 않아야 합니다.',f.information?'링크 클릭을 외부 시스템의 완료로 바꾸지 않아야 합니다.':f.mode==='visit'?'주소 복사와 지도 열기를 각각 기록해야 합니다.':'오류·연속 클릭·중복 접수를 제거해야 합니다.',f.mode==='read'?'출처 이동을 내용 이해로 해석하지 않아야 합니다.':f.mode==='visit'?'길찾기 실행을 매장 방문으로 집계하지 않아야 합니다.':'확인 기록이 없으면 미측정으로 남겨야 합니다.','동일한 이용 집단과 관찰 기간으로 앞 단계와 연결해야 합니다.'];
+ const event=f.mode==='self_serve'?['reading_detail_view','reading_start','reading_input_complete','initial_result_view','final_result_view']:f.mode==='public'?['program_view','eligibility_view','official_apply_click','receipt_confirmed','status_checked']:f.mode==='read'?['article_view','body_read','related_link_click','source_open','return_visit']:f.mode==='community'?['board_view','post_read','participation_guide_view','participation_complete','return_visit']:f.mode==='visit'?['offering_view','visit_conditions_view','location_view','directions_click','visit_confirmed']:['detail_view','criteria_view','request_submit','request_confirmed','outcome_confirmed'];
+ const definition=f.mode==='self_serve'?[
+  '풀이 상세 페이지를 열었을 때 기록합니다.','실제로 입력 화면으로 이동했을 때 기록합니다.','필수 입력 검증이 끝났을 때 기록합니다.','무료 미리보기 또는 최초 결과가 실제로 표시될 때 기록합니다.','최종 결과가 실제로 표시될 때 기록합니다. 미리보기만 있는 서비스는 확인 가능한 마지막 단계를 사용합니다.',
+ ]:[`「${scope}」 상세 페이지 방문을 기록해야 합니다.`,`「${proof}」 설명 영역을 실제 열었을 때 기록해야 합니다.`,f.information?'표시된 공식·관련 경로로 이동했을 때 기록해야 합니다.':f.mode==='visit'?'지도·영업시간 안내를 열었을 때 기록해야 합니다.':'서버가 접수 성공을 반환했을 때만 기록해야 합니다.',f.mode==='public'?'공식 시스템의 접수번호 또는 연동된 접수 상태가 있을 때 기록해야 합니다.':f.mode==='read'?'원출처 링크를 열었을 때 기록해야 합니다.':f.mode==='community'?'실제 글·댓글 등록 성공을 확인했을 때 기록해야 합니다.':f.mode==='visit'?'길찾기 경로를 실행했을 때 기록해야 합니다.':`담당자가 「${book.stages[3]}」 상태를 확정했을 때 기록해야 합니다.`,`「${book.outcome}」을 확인할 수 있는 운영·이용 기록으로 집계해야 합니다.`];
+ const checks=f.mode==='self_serve'?[
+  '실제 제공하는 풀이 유형별로 나눕니다.','단순 클릭과 입력 화면 진입을 구분합니다.','입력한 개인 정보는 이벤트에 싣지 않습니다.','결제 유도 클릭을 결과 열람으로 기록하지 않습니다.','유료 경로가 있을 때만 결제 성공과 유료 열람을 별도 집계합니다.',
+ ]:['다른 주제의 페이지 방문을 같은 분모에 합치지 않아야 합니다.','영역이 존재한다는 이유만으로 열람을 기록하지 않아야 합니다.',f.information?'링크 클릭을 외부 시스템의 완료로 바꾸지 않아야 합니다.':f.mode==='visit'?'주소 복사와 지도 열기를 각각 기록해야 합니다.':'오류·연속 클릭·중복 접수를 제거해야 합니다.',f.mode==='read'?'출처 이동을 내용 이해로 해석하지 않아야 합니다.':f.mode==='visit'?'길찾기 실행을 매장 방문으로 집계하지 않아야 합니다.':'확인 기록이 없으면 미측정으로 남겨야 합니다.','동일한 이용 집단과 관찰 기간으로 앞 단계와 연결해야 합니다.'];
  return {
   funnel:book.stages.map((stage,i)=>({stage,event:event[i],definition:definition[i],check:checks[i]})),
-  metrics:[
+  metrics:f.mode==='self_serve'?[
+   {name:'풀이 시작률',formula:'입력 화면 진입 이용자 ÷ 풀이 상세 방문 이용자 × 100',required:'풀이별 고유 상세 방문과 시작',interpretation:'모바일과 PC의 첫 진입 차이를 확인합니다.'},
+   {name:'입력 완료율',formula:'입력 검증 완료 이용자 ÷ 입력 화면 진입 이용자 × 100',required:'비식별 단계별 이벤트',interpretation:'개인정보는 수집하지 않고 오류 유형과 이탈 단계를 비교합니다.'},
+   {name:'결과 열람률',formula:'결과를 실제 본 이용자 ÷ 입력을 완료한 이용자 × 100',required:'동일 흐름의 입력 완료와 결과 표시 이벤트',interpretation:'유료 리포트 운영 시 유료 결제율과 결제 후 결과 열람률도 구분합니다.'},
+  ]:[
    {name:'상세 정보 연결률',formula:'관련 상세 이동 이용자 ÷ 소개 페이지 방문 이용자 × 100',required:'소개·상세 페이지별 고유 이용자',interpretation:`${scope}별로 나눠 확인해야 합니다.`},
    {name:'조건 열람률',formula:'조건 영역 열람 이용자 ÷ 상세 페이지 방문 이용자 × 100',required:'조건 영역 열람 이벤트·상세 방문',interpretation:`${koreanParticle(terms,'object')} 읽기 전에 이탈하는지 확인해야 합니다.`},
    {name:f.information?'후속 자료 이동률':f.mode==='visit'?'길찾기 실행률':'정상 접수율',formula:f.information?'공식·관련 문서 이동 이용자 ÷ 본문 열람 이용자 × 100':f.mode==='visit'?'길찾기 실행 이용자 ÷ 위치 안내 열람 이용자 × 100':'정상 접수 건 ÷ 접수 화면 진입 이용자 × 100',required:f.information?'본문 열람·외부 이동 기록':f.mode==='visit'?'위치 열람·길찾기 실행 기록':'접수 화면 방문·서버 성공·중복 제거 기록',interpretation:'같은 기간과 유입 집단으로 계산해야 합니다.'},
@@ -92,7 +103,7 @@ export function editorialMeasurement(book:NonCommercePlaybook):Pick<ServiceStrat
   experiments:[
    {title:'01 · 첫 화면 정리',hypothesis:`${koreanParticle(scope,'subject')} 첫 화면에서 바로 구분되는가`,change:`첫 제목과 설명에 ${koreanParticle(scope,'object')} 쓰고 상세 연결 버튼을 배치해야 합니다.`,metric:'소개 → 상세 이동률',decision:'수정 전후 같은 유입 경로에서 상세 이동과 다음 단계 이탈을 비교해야 합니다.'},
    {title:'02 · 선택 조건 구체화',hypothesis:`${terms} 관련 질문에 본문이 답하는가`,change:`실제 문의에서 반복된 질문 하나를 골라 ${terms} 표를 보완해야 합니다.`,metric:'조건 열람률·동일 질문 재문의 건',decision:'조건 열람이 늘고 같은 질문이 줄었는지 대조해야 합니다.'},
-   {title:'03 · 다음 행동 연결',hypothesis:`${book.cta} 경로가 중간에 끊기지 않는가`,change:`버튼 → ${book.stages[2]} → ${book.stages[3]} 화면을 PC·모바일에서 각각 실행해야 합니다.`,metric:f.information?'연결 오류·후속 자료 이동률':f.mode==='visit'?'지도 오류·길찾기 실행률':'접수 오류·중복·완료율',decision:'연결 오류를 해결한 뒤 정상 완료 기록으로 비교해야 합니다.'},
+   {title:'03 · 다음 행동 연결',hypothesis:`${book.cta} 경로가 중간에 끊기지 않는가`,change:`버튼 → ${book.stages[2]} → ${book.stages[3]} 화면을 PC·모바일에서 각각 실행해야 합니다.`,metric:f.information?'연결 오류·후속 자료 이동률':f.mode==='visit'?'지도 오류·길찾기 실행률':f.mode==='self_serve'?'입력 오류·결과 열람률':'접수 오류·중복·완료율',decision:'연결 오류를 해결한 뒤 정상 완료 기록으로 비교해야 합니다.'},
    {title:'04 · 운영 결과 대조',hypothesis:`${operation} 안내와 실제 처리가 일치하는가`,change:`변경한 안내의 적용일을 남기고 ${book.outcome} 기록과 연결해야 합니다.`,metric:`${book.outcome} 연결률·갱신 누락`,decision:'관찰 기간을 채운 같은 집단의 결과로 유지·재수정을 결정해야 합니다.'},
   ],
  };

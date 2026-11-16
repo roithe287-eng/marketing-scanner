@@ -1,3 +1,4 @@
+import {restoreStreamedHtml} from './streamedHtml';
 import {captureCommunityContext} from './communityContext';
 import {SKI_DESTINATIONS} from './seasonalPlaceCatalog';
 import {buildCompetitionScope,eligibleMetadata,type CompetitionScope} from './competitionScope';
@@ -124,6 +125,7 @@ async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
 /** Candidate facts are parsed from its own fetched page, never from the search snippet. */
 export function captureCompetitorPage(html:string,url:string,headers=new Headers()){
   const $=cheerio.load(html);
+  restoreStreamedHtml($);
   if($('meta[name="robots" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')))return {finalUrl:url,fetchError:'페이지 검색 수집 제한'};
   const metaTitle=$('title').first().text().trim().slice(0,600),metaDescription=$('meta[name="description" i]').attr('content')?.trim().slice(0,1600)||'';
   const siteEditing=captureSiteEditing($,url,headers);
@@ -244,6 +246,9 @@ export async function analyzeCompetitors(siteData: {
     const business=analyzeBusinessContext({...base,businessDocuments,productContext})||initialBusiness;
     const businessKeywords=[...new Set([...(initialBusiness?.id===business?.id?initialBusiness?.keywords||[]:[]),...business?.keywords||[]])];
     const scope=initialScope.kind==='unknown'?buildCompetitionScope({...base,productContext,businessDocuments}):initialScope;
+    if(scope.profile==='fortune_consultation'&&scope.area&&!scope.nationwide){
+      businessKeywords.unshift(...businessKeywords.map(k=>scope.area+' '+k));
+    }
     const querySite:QuerySite={...siteData,scope,productSources:productContext.sources,businessDocuments,businessKeywords};
     // Source labels describe the path actually used; business rules are not AI output.
     let keyword:string|null|undefined=(siteData.communityContext?marketKeywordCandidates(querySite)[0]?.keyword:undefined)||businessKeywords.find(k=>usableMarketKeyword(k,querySite));
