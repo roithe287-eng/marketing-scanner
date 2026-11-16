@@ -8,6 +8,9 @@ import {WebsiteCollectionError,RestrictedWebsiteReportSchema} from '../lib/restr
 import {collectRestrictedWebsite} from '../lib/collectRestrictedWebsite';
 import RestrictedWebsiteReportView from '../components/report/RestrictedWebsiteReport';
 
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
+
 const url='https://www.forum.example.com/';
 test('HTTP denial stops public extraction without host or protocol retries',async t=>{
   for(const status of [403,406,429]){

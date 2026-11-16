@@ -514,7 +514,7 @@ test('one-time PDF entitlement is atomic and bound to the customer and collected
   const inquiryId=await saveInquiry({
     name:'1회권 테스트',company:'',email,contact:'test',url:'',message:'',planId:'single-pdf',consent:true,
   });
-  const approval={action:'approve',inquiryId,contactVerified:true,...terms};
+  const approval={paid:true,action:'approve',inquiryId,contactVerified:true,...terms};
   const issued=await adminPost(ownerRequest(approval));
   assert.equal(issued.status,200);
   const info=await issued.json(),token=tokenFrom(info);
@@ -586,12 +586,16 @@ test('one-time PDF entitlement is atomic and bound to the customer and collected
   const other=await createCustomer({...terms,email:'other-pdf@example.com',name:'Other',company:''},owner.id);
   const otherSession=await createSession(await activate(other.invite,password));
   assert.equal((await pdf(otherSession,id)).status,404);
+  const freePdf=await pdf(otherSession);
+  assert.equal(freePdf.status,200);
+  assert.equal((await freePdf.json()).showWatermark,true);
   assert.equal((await sharePost(request('/api/share',{report},sessionA))).status,403);
   assert.equal((await pdf(sessionB,'notours123',site.url,ipB)).status,403);
   assert.equal((await pdf(sessionB,id,'https://different.example.com',ipB)).status,403);
   const paidPdf=await pdf(sessionB,id,site.url,ipB);
   assert.equal(paidPdf.status,200);
-  const {ticket}=await paidPdf.json();
+  const {ticket,showWatermark}=await paidPdf.json();
+  assert.equal(showWatermark,false);
   assert.equal((await activityPost(request('/api/activity',{action:'pdf_event',eventId:crypto.randomUUID(),ticket,phase:'ready'},sessionA))).status,200);
   assert.equal((await pdf(sessionA,id)).status,200);
   assert.equal((await scan(sessionB,ipB)).status,429);

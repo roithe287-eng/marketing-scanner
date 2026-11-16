@@ -13,6 +13,9 @@ import {MarketingReportSchema} from '../lib/reportSchema';
 import {fixture} from './fixtures/report';
 import {marketKeywordCandidates,usableMarketKeyword} from '../lib/competitorResearch';
 
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
+
 beforeEach(t=>{(t as TestContext).mock.method(websiteHttp,'fetch',(u:string|URL,init?:RequestInit)=>globalThis.fetch(u,init));});
 const root='https://general-shop.example.com';
 const html=(value:string)=>new Response(value,{headers:{'content-type':'text/html;charset=utf-8'}});

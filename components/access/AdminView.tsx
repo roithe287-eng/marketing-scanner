@@ -48,6 +48,7 @@ function GrantFields({ account, planId }: { account?: SafeAccount; planId?:strin
           />
         </label>}
       </div>
+      <label className="access-checkbox"><input name="paid" type="checkbox" defaultChecked={account?.paid === true}/>유료 결제 확인 · PDF 포함 이용권의 워터마크 제거</label>
       {plan==='monthly'?<><fieldset className="access-features">
         <legend>허용 기능</legend>
         {(
@@ -73,6 +74,7 @@ function GrantFields({ account, planId }: { account?: SafeAccount; planId?:strin
 function grant(form: FormData) {
   return {
     plan: form.get('plan'),
+    paid: form.has('paid'),
     expiresAt: new Date(String(form.get("date")) + "T23:59:59+09:00").getTime(),
     monthlyLimit: Number(form.get("monthlyLimit") ?? 1),
     features: {

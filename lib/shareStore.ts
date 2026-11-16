@@ -7,6 +7,7 @@ import { db, key, decode } from "./saas/store";
 import {REPORT_RETENTION_SECONDS as TTL_SECONDS} from './reportRetention';
 import {reportKey,generateReportId,READ_REPORT_LUA,RETENTION_LUA,retentionArgs} from './reportRetentionStore';
 import {AccessError} from './security/request';
+import {commercialSearchSnapshot} from './naverReportPolicy';
 const validId = (id: string) => /^[A-Za-z0-9]{4,12}$/.test(id);
 type Stored = {
   version: 2;
@@ -32,7 +33,7 @@ export async function saveSharedReport(
     expiresAt=Math.min(expiresAt,source.sharedRetention.expiresAt);
   }
   if(expiresAt<=Date.now())throw new AccessError(410,'보고서의 보관 기간이 만료되었습니다. 새로 진단해 주세요.');
-  const {sharedRetention:_retention,...snapshot}=report;
+  const {sharedRetention:_retention,...snapshot}=commercialSearchSnapshot(report);
   for (let i = 0; i < 5; i++) {
     const id = generateReportId();
     const stored: Stored = {
@@ -75,7 +76,7 @@ async function readSharedReport(id: string, principal: Principal | null): Promis
   if(!principal&&record.visibility==='private')return null;
   const parsed=MarketingReportSchema.safeParse(record.report);
   if(!parsed.success)return null;
-  const report=parsed.data;
+  const report=commercialSearchSnapshot(parsed.data);
   return {...report,sharedRetention:{reportId:id,createdAt:stored[1],expiresAt:stored[2]},adWasteSimulation:null,industryBenchmark:presentBenchmark(report.industryBenchmark),
     llmCitationTest:reviewStoredCitation(report.llmCitationTest,report.url),
     geoBaseline:report.geoBaseline?{...report.geoBaseline,citation:reviewStoredCitation(report.geoBaseline.citation,report.geoBaseline.url)!}:undefined};

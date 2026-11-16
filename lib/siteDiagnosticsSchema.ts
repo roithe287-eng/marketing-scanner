@@ -2,6 +2,7 @@ import {BusinessDocumentSchema} from './businessContext';
 import {z} from 'zod';
 import {MedicalPageEvidenceSchema,MedicalAuditSchema} from './medicalAuditSchema';
 import {LocalPlaceEvidenceSchema,LocalPlaceLookupSchema} from './localPlaceSchema';
+import {InternalLinkAuditSchema,ProductOfferAuditSchema} from './searchEvidenceSchema';
 const HttpUrl=z.string().url().max(2048).refine(value=>{try{const u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;}catch{return false;}},'공개 HTTP URL이 필요합니다.');
 
 export const DiagnosticFindingSchema=z.object({
@@ -9,6 +10,7 @@ export const DiagnosticFindingSchema=z.object({
   evidence:z.string().max(2500),action:z.string().max(1500),urls:z.array(HttpUrl).max(8),
 });
 export const DiagnosticPageSchema=z.object({
+  productOffer:ProductOfferAuditSchema.optional(),
   businessDocument:BusinessDocumentSchema.optional(),
   localPlaceEvidence:LocalPlaceEvidenceSchema.optional(),
   medicalEvidence:MedicalPageEvidenceSchema.optional(),
@@ -25,6 +27,7 @@ export const DiagnosticPageSchema=z.object({
 });
 export const DiagnosticResourceSchema=z.object({url:HttpUrl,status:z.enum(['observed','missing','blocked','unavailable','unsupported']),note:z.string().max(1000)});
 export const SiteDiagnosticsSchema=z.object({
+  internalLinks:InternalLinkAuditSchema.optional(),
   localPlaceLookup:LocalPlaceLookupSchema.optional(),
   medicalAudit:MedicalAuditSchema.optional(),
   version:z.literal(1),observedAt:z.string(),targetUrl:HttpUrl,limited:z.boolean(),

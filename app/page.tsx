@@ -171,7 +171,7 @@ export default function HomePage() {
           <div
             className="report-page-content"
           >
-            <ReportLayout report={report} clinicWebAllowed={canReadClinicWebsite(access)} onComparisonChange={plan==='monthly'?baseline=>setReport(prev=>prev?{...prev,diagnosisBaseline:baseline}:prev):undefined} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
+            <ReportLayout report={report} searchEvidenceAllowed={allowed} clinicWebAllowed={canReadClinicWebsite(access)} onComparisonChange={plan==='monthly'?baseline=>setReport(prev=>prev?{...prev,diagnosisBaseline:baseline}:prev):undefined} competitorLoading={competitorLoading} onRetry={competitorRequest.current?()=>{
               const request=competitorRequest.current;
               if(request && !competitorLoading) void fetchCompetitor(request.url,request.hints,request.run);
             }:undefined} actions={<>{allowed&&plan!=='single'&&<DownloadReportButton targetId="report-area" report={report} pending={competitorLoading} direct/>}{(access.kind==='internal'||(plan==='monthly'&&access.account?.features.reports))&&<ShareButton report={report} competitorLoading={competitorLoading} onShareCreated={setReport}/>}</>}/>

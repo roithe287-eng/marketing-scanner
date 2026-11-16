@@ -12,6 +12,8 @@ import {MarketingReportSchema} from '../lib/reportSchema';
 import {reportForPresentation} from '../lib/reportPresentation';
 import {startRedisBridge} from './helpers/redisBridge';
 import {fixture} from './fixtures/report';
+import {captureSiteDiagnosticSeed} from '../lib/siteDiagnostics';
+import {diagnosticPageUrl} from '../lib/collectSiteDiagnostics';
 import {generalEvidenceCases,generalPageResponse} from './fixtures/general-evidence';
 import {noncommerceCases,noncommerceResponse} from './fixtures/noncommerce';
 import {sectorIntegrationCases,sectorResponse} from './fixtures/noncommerce-sectors';
@@ -55,7 +57,13 @@ for(const site of cases)test(`general API returns and stores shared evidence for
   assert.ok(report.checklist?.every(c=>c.sourceUrl===report.evidenceReview?.sourceUrl));
   if('kind' in site){
     assert.equal(report.sitePurpose?.kind,site.kind);assert.equal(report.sitePurpose?.goal.key,site.goal);
-    if(!['mixed','unknown'].includes(site.kind))assert.ok(fetched.every(u=>new URL(u).pathname==='/robots.txt'||new URL(u).pathname===new URL(site.url).pathname),'clear non-commerce pages do not trigger product recovery crawls');
+    if(!['mixed','unknown'].includes(site.kind)){
+      const seed=captureSiteDiagnosticSeed(site.html,site.url);
+      const publicLinks=seed.links.map(href=>diagnosticPageUrl(href,site.url)).filter((url):url is string=>!!url);
+      const diagnostics=['/robots.txt','/sitemap.xml','/llms.txt'].map(path=>new URL(path,site.url).href);
+      const expected=new Set([site.url,...publicLinks,...diagnostics]);
+      assert.ok(fetched.every(url=>expected.has(new URL(url).href)),'clear non-commerce pages use public diagnostic paths and their own navigation links');
+    }
     if(site.kind==='content'||site.kind==='public_service')assert.equal(report.checklist?.find(c=>c.id==='price_info')?.status,'not_applicable');
   }
   if('sector' in site){assert.equal(report.sitePurpose?.sector?.id,site.sector);assert.equal(report.sitePurpose?.kind,'service');assert.equal(report.sitePurpose.sector.checks.length,6);}

@@ -1,3 +1,4 @@
+import {naverReportSearchAllowed} from '@/lib/naverReportPolicy';
 import {CompetitionScopeSchema} from '@/lib/competitionScope';
 import {CommunityContextSchema} from '@/lib/communityContext';
 import {withBudget} from '@/lib/runtime/budget';
@@ -28,10 +29,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!process.env.NAVER_CLIENT_ID || !process.env.NAVER_CLIENT_SECRET) {
+    if (!naverReportSearchAllowed()) {
       return NextResponse.json(
         {
-          message: "네이버 검색 API가 설정되지 않았습니다.",
+          message: "이 보고서에서는 외부 검색 API를 이용한 자동 경쟁사 조회를 제공하지 않습니다.",
           competitorAnalysis: null,
         },
         { status: 200 }

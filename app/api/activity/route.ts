@@ -46,7 +46,7 @@ export async function POST(req:NextRequest){
       if(body.reportId&&!report)throw new AccessError(404,'보고서가 만료되었거나 열람 권한이 없습니다.');
       if(plan==='single-pdf'&&report?.url!==body.url)throw new AccessError(403,'보고서에 저장된 진단 URL로 다시 요청해 주세요.');
       const ticket=await startPdf(account.id,account.version,req.headers,{scope:body.scope,reportId:body.reportId,target:targetHost(report?.url??body.url)},body.eventId);
-      return privateJson({ticket});
+      return privateJson({ticket,showWatermark:account.paid!==true});
     }
     await finishPdf(account.id,account.version,req.headers,body.ticket,body.phase,body.eventId,body.metrics);
     return privateJson({ok:true});

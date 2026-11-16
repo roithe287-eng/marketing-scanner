@@ -55,17 +55,18 @@ export default function DownloadReportButton({report,direct=false,pending=false,
     busy.current=true;setDownloading(true);setError('');setProgress('PDF 준비 중...');
     const started=Date.now();
     const controller=new AbortController();task.current=controller;
-    let ticket='';
+    let ticket='',showWatermark=true;
     try {
       // Public recipients export the report already delivered to their browser.
       // Account activity endpoints remain authenticated and are never a public gate.
       if(recordActivity){
         const permit=await event({action:'pdf_start',eventId:crypto.randomUUID(),scope,url:report.url,...(report.sharedRetention?.reportId?{reportId:report.sharedRetention.reportId}:{})},controller.signal);
         ticket=permit.ticket;
+        showWatermark=permit.showWatermark!==false;
         if(typeof ticket!=='string')throw new Error('PDF 이용 권한을 확인하지 못했습니다.');
       }
       const {exportReportPdf}=await import('@/lib/exportReportPdf');
-      const result=await exportReportPdf(report,text=>{if(!controller.signal.aborted)setProgress(text);},controller.signal,scope);
+      const result=await exportReportPdf(report,text=>{if(!controller.signal.aborted)setProgress(text);},controller.signal,scope,showWatermark);
       controller.signal.throwIfAborted();
       await pdfEvent(ticket,'ready',controller.signal,{pages:result.pages,bytes:result.blob.size,durationMs:Date.now()-started});
       controller.signal.throwIfAborted();

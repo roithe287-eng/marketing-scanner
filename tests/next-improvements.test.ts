@@ -13,6 +13,9 @@ import {MarketingReportSchema, type LlmCitationQuestionResult} from '../lib/repo
 import CompetitorComparison from '../components/CompetitorComparison';
 import {fixture} from './fixtures/report';
 
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
+
 const query = '광고대행';
 const item = (domain: string, title = '광고대행 전문 업체') => ({title, link: `https://${domain}/`, description: '광고 대행 서비스를 제공합니다.'});
 const row = (extra: Partial<LlmCitationQuestionResult> = {}): LlmCitationQuestionResult => ({engine:'chatgpt',question:'어떤 광고 업체를 선택해야 하나요?',questionType:'industry',cited:false,status:'ok',searchUsed:true,citationVerified:true,brandMentioned:false,...extra});

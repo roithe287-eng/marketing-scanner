@@ -17,6 +17,7 @@ export type Account = {
   expiresAt: number;
   monthlyLimit: number;
   plan?: AccountPlan;
+  paid?: boolean;
   features: Features;
   passwordHash: string | null;
   version: number;
@@ -24,7 +25,7 @@ export type Account = {
   approvedAt?: number;
   approvedBy?: string;
 };
-export type Grant = Pick<Account, 'expiresAt' | 'monthlyLimit' | 'features' | 'plan'>;
+export type Grant = Pick<Account, 'expiresAt' | 'monthlyLimit' | 'features' | 'plan' | 'paid'>;
 export type Principal =
   | { kind: "internal" }
   | { kind: "account"; account: Account };

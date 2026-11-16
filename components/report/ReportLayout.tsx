@@ -49,6 +49,10 @@ import AdWasteCalculator from '@/components/AdWasteCalculator';
 import NaverOptimizationPanel from './NaverOptimizationPanel';
 import OfficialSeoPanel from './OfficialSeoPanel';
 import SiteDiagnosticsPanel from './SiteDiagnosticsPanel';
+import {ProductOfferAuditCard} from './SearchAuditCards';
+import BacklinkEvidencePanel from './BacklinkEvidencePanel';
+import MobileEvidencePanel from './MobileEvidencePanel';
+import SearchConsoleEvidencePanel from './SearchConsoleEvidencePanel';
 import MedicalAuditPanel from './MedicalAuditPanel';
 import KeywordRankCard from '@/components/KeywordRankCard';
 import IndustryBenchmarkCard from '@/components/IndustryBenchmarkCard';
@@ -57,7 +61,7 @@ import GrowthPlanPanel from './GrowthPlanPanel';
 import GrowthKpiPanel from './GrowthKpiPanel';
 import {REPORT_CHAPTERS as chapters,ReportChapter as Chapter} from './ReportChapter';
 function Disclosure({title,note,children}:{title:string;note:string;children:React.ReactNode}) {return <details open className="report-disclosure"><summary><span><strong>{title}</strong><small>{note}</small></span><b aria-hidden="true">+</b></summary><div className="report-legacy">{children}</div></details>;}
-export default function ReportLayout({report:storedReport,actions,clinicWebAllowed=true,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;clinicWebAllowed?:boolean;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
+export default function ReportLayout({report:storedReport,actions,clinicWebAllowed=true,searchEvidenceAllowed=false,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;clinicWebAllowed?:boolean;searchEvidenceAllowed?:boolean;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
   const report=useMemo(()=>reportForPresentation(storedReport),[storedReport]);
   const expiry=Math.min(...[report.sharedRetention?.expiresAt,report.diagnosisBaseline?.expiresAt,report.geoBaseline?.expiresAt].filter((v):v is number=>typeof v==='number'));
   const [expired,setExpired]=useState(false);
@@ -75,6 +79,8 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
   const diagrams=useMemo(()=>buildReportDiagrams(report,data,sources),[report,data,sources]);
   const briefs=useMemo(()=>buildSectionBriefs(report,data,sources),[report,data,sources]);
   const execution=useMemo(()=>buildExecutionPlan(report,data),[report,data]);
+  const searchTarget=report.pageEvidence?.finalUrl||report.url;
+  const productPages=report.siteDiagnostics?.pages.filter(page=>page.productOffer).slice(0,3)||[];
   if(expired)return <section className="report-card" role="status"><h2 className="text-xl font-bold">보고서 보관 기간이 만료되었습니다</h2><p className="mt-3">이 결과에 포함된 보관·비교 자료는 더 이상 열람할 수 없습니다. 새 진단으로 현재 상태를 확인해 주세요.</p><a className="jm-button mt-4" href="/">새로 진단하기</a></section>;
   const scope=<>
     {report.sitePurpose&&<Disclosure title="페이지 목적별 상세 점검" note="대상·제공 범위·다음 행동의 근거"><WebsitePurposePanel purpose={report.sitePurpose}/></Disclosure>}
@@ -113,12 +119,12 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
       <ReportSections chapter="search" diagrams={diagrams} briefs={briefs} items={[
         {id:'search-platforms',label:'플랫폼별 적용',children:<PlatformApplicationPanel report={report}/>},
         {id:'search-edits',label:'문구 개선',children:<PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
-        {id:'search-sources',label:'원문·링크',children:<SiteGuidebookOverview report={report}/>},
-        {id:'search-keywords',label:'키워드',children:<><KeywordWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} data={data}/>{report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}</>},
+        {id:'search-sources',label:'원문·링크',children:<><SiteGuidebookOverview report={report}/>{searchEvidenceAllowed&&<BacklinkEvidencePanel target={searchTarget} brand={report.meta?.siteName||''}/>}</>},
+        {id:'search-keywords',label:'키워드',children:<><KeywordWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} data={data}/>{report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}<SearchConsoleEvidencePanel target={searchTarget}/></>},
         ...(report.serviceStrategy?[{id:'search-intents',label:'검색 의도·랜딩',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="search"/>}]:[]),
         {id:'search-naver',label:'네이버 점검',children:<NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>},
-        {id:'search-official',label:'공통 검색 점검',children:<OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>},
-        {id:'search-technical',label:'페이지·기술 점검',children:<SiteDiagnosticsPanel audit={report.siteDiagnostics}/>},
+        {id:'search-official',label:'공통 검색 점검',children:<><OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>{productPages.map(page=><ProductOfferAuditCard key={page.url} audit={page.productOffer} url={page.url}/>)}</>},
+        {id:'search-technical',label:'페이지·기술 점검',children:<><SiteDiagnosticsPanel audit={report.siteDiagnostics}/>{searchEvidenceAllowed&&<MobileEvidencePanel target={searchTarget}/>}</>},
         {id:'search-scope',label:'수집·분석 범위',children:scope},
         ...(report.checklist?.length?[{id:'search-checklist',label:'기본 체크리스트',children:<DiagnosisChecklist checklist={report.checklist}/>}]:[]),
       ]}/>

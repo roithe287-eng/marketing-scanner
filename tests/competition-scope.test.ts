@@ -11,6 +11,9 @@ import {websiteHttp} from '../lib/security/safeFetch';
 import {competitorDisplay} from '../lib/competitorDisplay';
 import {MarketingReportSchema} from '../lib/reportSchema';
 import {fixture} from './fixtures/report';
+
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
 const url='https://own.example/';
 function html(title:string,description=title,body=''){
  return `<html><head><title>${title}</title><meta name="description" content="${description}"></head><body><main><h1>${title}</h1><section><h2>제공 업무</h2><p>${description}</p></section>${body}<a href="/contact">상담 문의</a></main></body></html>`;

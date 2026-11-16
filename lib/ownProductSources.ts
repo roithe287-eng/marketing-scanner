@@ -1,3 +1,4 @@
+import {naverReportSearchAllowed} from './naverReportPolicy';
 import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
 import {websiteHttp,publicUrl} from './security/safeFetch';
@@ -85,7 +86,7 @@ export async function collectOwnProductContext(url:string,options:{seed?:OwnProd
       }
       if(candidates.length)context.discovery='public_sitemap';
     }
-    if(!candidates.length&&!context.sources.length&&(input.sparse||input.commerce)){
+    if(naverReportSearchAllowed()&&!candidates.length&&!context.sources.length&&(input.sparse||input.commerce)){
       context.discovery='naver_web';
       const discover=async(provider:'naver_web'|'naver_shop',query:string)=>{
         budgetSignal()?.throwIfAborted();

@@ -17,6 +17,9 @@ import {buildReportInsights} from '../lib/reportInsights';
 import NaverOptimizationPanel from '../components/report/NaverOptimizationPanel';
 import KeywordRankCard from '../components/KeywordRankCard';
 import {fixture} from './fixtures/report';
+
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
 const html=(head='',body='')=>`<!doctype html><html lang="ko"><head><title>ACME</title><meta name="description" content="정확한 서비스 설명입니다.">${head}</head><body><h1>서비스 안내</h1><p>이 페이지는 실제로 제공하는 서비스 범위와 이용 조건을 안내합니다. 사용자가 서비스와 적용 조건을 충분히 이해할 수 있도록 설명합니다.</p>${body}</body></html>`;
 async function extract(t:TestContext,head='',body='',headers:Record<string,string>={}) {
   t.mock.method(globalThis,'fetch',async(input:string|URL|Request)=>String(input).endsWith('/robots.txt')?new Response('User-agent: *\nAllow: /'):new Response(html(head,body),{headers:{'content-type':'text/html',...headers}}));

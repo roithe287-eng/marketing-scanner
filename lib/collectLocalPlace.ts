@@ -1,3 +1,4 @@
+import {naverReportSearchAllowed} from './naverReportPolicy';
 import * as cheerio from 'cheerio';
 import {budgetFetch,withBudget} from './runtime/budget';
 import {sameSite} from './siteIdentity';
@@ -37,7 +38,7 @@ export async function collectLocalPlace(evidence:LocalPlaceEvidence|undefined,ur
   const base={observedAt:new Date().toISOString(),queries:[] as string[],items:[] as LocalPlaceItem[]};
   if(limited)return {...base,status:'limited',note:'홈페이지 수집 제한으로 업체 식별과 API 조회를 보류했습니다.'};
   const id=process.env.NAVER_CLIENT_ID,secret=process.env.NAVER_CLIENT_SECRET;
-  if(!id||!secret)return {...base,status:'unavailable',note:'지역 검색 API 인증정보 미설정'};
+  if(!naverReportSearchAllowed()||!id||!secret)return {...base,status:'unavailable',note:'공개 홈페이지 근거를 사용합니다. 업체 등록 상태는 네이버에서 직접 확인해 주세요.'};
   const queries=localPlaceQueries(evidence);
   const requests=queries.map(async query=>{
     const endpoint=new URL('https://openapi.naver.com/v1/search/local.json');

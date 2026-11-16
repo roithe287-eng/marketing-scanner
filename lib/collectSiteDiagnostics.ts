@@ -11,9 +11,10 @@ import type {DiagnosticResource,SiteDiagnostics} from './siteDiagnosticsSchema';
 import {buildMedicalAudit} from './medicalAudit';
 import {medicalSensitiveUrl} from './medicalEvidence';
 import {collectLocalPlace} from './collectLocalPlace';
+import type {InternalLinkAudit} from './searchEvidenceSchema';
 
 const UA=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
-const privateRoute=/\/(?:login|logout|signout|sign[-_]?in|sign[-_]?up|register|write|delete|remove|unsubscribe|payment|pay|download|attachment)(?:[\/._-]|$)/i;
+const privateRoute=/\/(?:admin|api|account|member|cart|checkout|login|logout|signout|sign[-_]?in|sign[-_]?up|register|write|delete|remove|unsubscribe|payment|pay|download|attachment)(?:[\/._-]|$)/i;
 /** Public HTML navigation only: no state-changing routes, tracking parameters, assets or credentials. */
 export function diagnosticPageUrl(value:string,base:string):string|null{
   if(!value.trim()||value.startsWith('#'))return null;
@@ -53,6 +54,7 @@ export async function collectSiteDiagnostics(url:string,options:{seed?:SiteDiagn
   const placeLookup=collectLocalPlace(options.seed?.page.localPlaceEvidence,url,!!options.limited);
   const medical=!!options.seed?.page.medicalEvidence?.facilityCandidate,pageLimit=medical||options.seed?.page.localPlaceEvidence?7:3;
   const observedAt=new Date().toISOString(),pages=options.seed?[options.seed.page]:[],attempts:DiagnosticResource[]=[];
+  const seeds=options.seed?[options.seed]:[];
   const base=new URL(url),robots=options.robots;
   const declared=(robots?.status==='ok'?robots.text||'':'').split(/\r?\n/).flatMap(line=>{const m=line.match(/^\s*sitemap\s*:\s*(https?:\/\/[^\s#]+)/i);return m?[m[1]]:[];});
   const mapUrl=declared.map(v=>ownPublicUrl(v,url)?.href).find(Boolean)||new URL('/sitemap.xml',url).href;
@@ -60,32 +62,43 @@ export async function collectSiteDiagnostics(url:string,options:{seed?:SiteDiagn
   let llms:DiagnosticResource={url:new URL('/llms.txt',url).href,status:'unavailable',note:'미수집 · 선택 파일'};
   const visited=new Set([url]),rules=new Map<string,Promise<RobotsObservation>>();
   if(robots)rules.set(base.origin,Promise.resolve(robots));
-  const read=async(value:string,kind:'html'|'xml'|'text'):Promise<{resource:DiagnosticResource;text?:string;headers?:Headers}>=>{
+  type ReadResult={resource:DiagnosticResource;text?:string;headers?:Headers;http?:number;redirects?:number[]};
+  const linkChecks=new Map<string,ReadResult>();
+  let internalLinks:InternalLinkAudit|undefined;
+  const read=async(value:string,kind:'html'|'xml'|'text'|'link'):Promise<ReadResult>=>{
     let target=ownPublicUrl(value,url);if(!target)return {resource:{url:value,status:'unsupported',note:'동일 사이트의 공개 URL만 수집합니다.'}};
+    const redirects:number[]=[];
     try{for(let hop=0;hop<3;hop++){
       budgetSignal()?.throwIfAborted();
-      if(!rules.has(target.origin))rules.set(target.origin,observeRobots(target.href,UA));
+      if(!rules.has(target.origin))rules.set(target.origin,observeRobots(target.href,UA,'manual'));
       const policy=await rules.get(target.origin)!;
-      if(policy.status!=='missing'&&(policy.status!=='ok'||evaluateRobots(policy.text||'','JinjjaScanner',target.pathname+target.search).allowed!==true))return {resource:{url:target.href,status:'blocked',note:'스캐너 수집 정책상 접근하지 않았습니다. robots.txt 차단 또는 규칙 미확인.'}};
-      const res=await websiteHttp.fetch(target.href,{headers:{'User-Agent':UA,Accept:kind==='html'?'text/html,application/xhtml+xml':kind==='xml'?'application/xml,text/xml,text/plain':'text/plain,text/markdown'},signal:AbortSignal.timeout(2300),redirect:'manual',cache:'no-store'});
+      if((policy.status!=='missing'||[401,403].includes(policy.httpStatus??0))&&(policy.status!=='ok'||evaluateRobots(policy.text||'','JinjjaScanner',target.pathname+target.search).allowed!==true))return {resource:{url:target.href,status:'blocked',note:'스캐너 수집 정책상 접근하지 않았습니다. robots.txt 차단 또는 규칙 미확인.'}};
+      const res=await websiteHttp.fetch(target.href,{headers:{'User-Agent':UA,Accept:kind==='html'||kind==='link'?'text/html,application/xhtml+xml':kind==='xml'?'application/xml,text/xml,text/plain':'text/plain,text/markdown'},signal:AbortSignal.timeout(2300),redirect:'manual',cache:'no-store'});
       const loc=res.headers.get('location');
-      if(res.status>=300&&res.status<400&&loc){await res.body?.cancel();const next=ownPublicUrl(loc,target.href);if(!next||(kind==='html'&&!diagnosticPageUrl(next.href,url)))return {resource:{url:target.href,status:'unsupported',note:'외부·비공개·검사 대상 외 경로로 이동하여 중단했습니다.'}};target=next;continue;}
+      if(res.status>=300&&res.status<400&&loc){await res.body?.cancel();redirects.push(res.status);const next=ownPublicUrl(loc,target.href);if(!next||((kind==='html'||kind==='link')&&!diagnosticPageUrl(next.href,url)))return {resource:{url:target.href,status:'unsupported',note:'외부·비공개·검사 대상 외 경로로 이동하여 중단했습니다.'},redirects,http:res.status};target=next;continue;}
       const resource:DiagnosticResource={url:target.href,status:res.ok?'observed':[404,410].includes(res.status)?'missing':'unavailable',note:`HTTP ${res.status}`};
-      if(!res.ok){await res.body?.cancel();return {resource};}
+      if(!res.ok||kind==='link'){await res.body?.cancel();return {resource,redirects,http:res.status};}
       const ct=res.headers.get('content-type')||'';
       if(kind==='html'&&!/text\/html|application\/xhtml/i.test(ct)||kind!=='html'&&/html/i.test(ct)){await res.body?.cancel();return {resource:{...resource,status:'unsupported',note:'요청한 문서 형식이 아닙니다.'}};}
       const bytes=Buffer.from(await res.arrayBuffer());if(bytes.length>1_000_000)return {resource:{...resource,status:'unsupported',note:'보조 문서 검사 크기 제한을 초과했습니다.'}};
       const charset=(ct.match(/charset\s*=\s*["']?([^;"'\s]+)/i)?.[1]||'utf-8').replace(/^(ks_c_5601-1987|ksc5601)$/i,'cp949');
       const text=iconv.decode(bytes,iconv.encodingExists(charset)?charset:'utf-8');
       if(kind==='text'&&(!text.trim()||/^\s*<(?:!doctype|html)/i.test(text)))return {resource:{...resource,status:'unsupported',note:'비어 있거나 HTML을 반환해 텍스트 파일로 확인하지 못했습니다.'}};
-      return {resource,text,headers:res.headers};
+      return {resource,text,headers:res.headers,redirects,http:res.status};
     }}catch{/* A failed sample is never called an absent tag or a zero score. */}
     return {resource:{url:target.href,status:'unavailable',note:'응답·시간 제한으로 확인하지 못했습니다.'}};
   };
   const collectPages=async(candidates:string[],limit:number)=>{
     const selected=candidates.map(v=>diagnosticPageUrl(v,url)).filter((v):v is string=>!!v&&!visited.has(v)).filter((v,i,a)=>a.indexOf(v)===i).slice(0,limit);
     selected.forEach(v=>visited.add(v));
-    await Promise.allSettled(selected.map(async v=>{const result=await read(v,'html');attempts.push(result.resource);if(result.text!==undefined){const page=captureSiteDiagnosticSeed(result.text,result.resource.url,!!options.seed?.page.medicalEvidence?.place?.facility).page;if(/(?:^|[\s,:])(?:noindex|none)(?:$|[\s,])/i.test(result.headers?.get('x-robots-tag')||''))page.noindex=true;if(!pages.some(p=>p.url===page.url))pages.push(page);}}));
+    await Promise.allSettled(selected.map(async target=>{
+      const result=await read(target,'html');
+      linkChecks.set(target,result);attempts.push(result.resource);
+      if(result.text===undefined)return;
+      const seed=captureSiteDiagnosticSeed(result.text,result.resource.url,!!options.seed?.page.medicalEvidence?.place?.facility);
+      if(/(?:^|[\s,:])(?:noindex|none)(?:$|[\s,])/i.test(result.headers?.get('x-robots-tag')||''))seed.page.noindex=true;
+      if(!pages.some(p=>p.url===seed.page.url)){pages.push(seed.page);seeds.push(seed);}
+    }));
   };
   if(!options.limited)try{await withBudget(options.budgetMs??6000,async()=>{
     await Promise.allSettled([
@@ -102,13 +115,41 @@ export async function collectSiteDiagnostics(url:string,options:{seed?:SiteDiagn
       })(),
       (async()=>{const result=await read(llms.url,'text');llms={...result.resource,note:result.resource.status==='observed'?'텍스트 응답 관측 · 내용 품질·표준 준수는 미검증. Google 검색 필수 파일이 아닙니다.':result.resource.note+' · 선택 파일이며 미감지에 감점하지 않습니다.'};})(),
     ]);
+    const edges=new Map<string,{source:string;target:string;anchor:string}>();
+    for(const seed of seeds)for(const a of seed.anchors||[]){
+      const target=diagnosticPageUrl(a.href,seed.page.url);
+      if(!target||target===seed.page.url||!ownPublicUrl(target,url))continue;
+      edges.set([seed.page.url,target,a.label].join('\n'),{source:seed.page.url,target,anchor:a.label});
+    }
+    const samples=[...new Set([...edges.values()].map(a=>a.target))];
+    const remaining=samples.filter(target=>!linkChecks.has(target)).slice(0,6);
+    await Promise.allSettled(remaining.map(async target=>{linkChecks.set(target,await read(target,'link'));}));
+    const rows:InternalLinkAudit['rows']=[];
+    for(const edge of edges.values()){
+      const observation=linkChecks.get(edge.target);if(!observation)continue;
+      const final=observation.resource.url,redirects=observation.redirects||[];
+      const finalPage=pages.find(p=>p.url===final);
+      const canonical=finalPage?.canonicals.length===1?diagnosticPageUrl(finalPage.canonicals[0],final):null;
+      const status=observation.resource.status==='missing'?'broken':observation.resource.status!=='observed'?'review':redirects.length?'redirect':'ok';
+      rows.push({...edge,final,redirects,status,...(observation.http===undefined?{}:{http:observation.http}),...(canonical&&canonical!==final?{canonical}:{})});
+    }
+    const order={broken:0,redirect:1,review:2,ok:3};
+    internalLinks={checked:samples.filter(v=>linkChecks.has(v)).length,rows:rows.sort((a,b)=>order[a.status]-order[b.status]).slice(0,32)};
   });}catch{/* Keep completed observations; the deadline cancels downstream sockets. */}
   const limited=!!options.limited;
   if(limited){sitemap={...sitemap,status:'blocked',note:'원문 수집 제한으로 추가 요청을 하지 않았습니다.'};llms={...llms,status:'blocked',note:'원문 수집 제한으로 추가 요청을 하지 않았습니다.'};}
   const snapshot=pages.slice(0,pageLimit+1).sort((a,b)=>a.url===url?-1:b.url===url?1:a.url.localeCompare(b.url));
   const findings=buildSiteDiagnosticFindings(snapshot);
+  const broken=internalLinks?.rows.find(row=>row.status==='broken');
+  if(broken)findings.unshift({id:'broken-internal-link',title:'내부 링크가 없는 페이지로 연결됨',status:'action',
+    evidence:[broken.source,broken.anchor||'문구 미감지',broken.target,'HTTP '+broken.http].join(' · ').slice(0,2500),
+    action:'원문에서 클릭 문구를 찾아 링크를 수정합니다. 같은 내용을 제공하는 최종 URL을 지정한 뒤 실제 버튼 이동을 재확인합니다.',urls:[broken.source,broken.target]});
+  const product=snapshot.find(p=>p.url===url&&p.productOffer?.fields.some(f=>f.state==='mismatch'));
+  if(product?.productOffer)findings.unshift({id:'product-offer-mismatch',title:'상품 표시값과 구조화 데이터 불일치',status:'action',
+    evidence:product.productOffer.fields.filter(f=>f.state==='mismatch').map(f=>f.label+' · 화면 '+f.page+' / Offer '+f.markup).join(' · '),
+    action:'해당 상품의 운영값을 확정하고 상품 관리 화면과 JSON-LD를 같은 값으로 맞춘 뒤 다시 검사합니다.',urls:[product.url]});
   const medicalAudit=buildMedicalAudit(snapshot,limited,url);
   const localPlaceLookup=await placeLookup;
   if(sitemap.invalidDates||sitemap.futureDates)findings.push({id:'sitemap-dates',title:'사이트맵 변경일 확인',status:'review',evidence:`검사 표본 ${sitemap.entries}개 · lastmod ${sitemap.lastmod}개 · 형식·날짜 이상 ${sitemap.invalidDates}개 · 미래 날짜 ${sitemap.futureDates}개`,action:'실제 주요 콘텐츠가 변경된 날짜만 반영합니다. 모든 페이지를 오늘 날짜로 바꾸거나 오래되었다는 이유만으로 갱신하지 않습니다.',urls:[sitemap.url]});
-  return {version:1,observedAt,targetUrl:url,limited,...(localPlaceLookup?{localPlaceLookup}:{}),scopeNote:limited?'원문 수집이 제한되어 추가 페이지 검사를 수행하지 않았습니다. 미측정을 결함·0점으로 표시하지 않습니다.':`입력 페이지와 내부 링크·사이트맵에서 선택한 최대 ${pageLimit}개 HTML을 비교합니다. 현재 ${snapshot.length}개 수집. 전체 사이트, 브라우저 렌더링, 외부 CSS, 실제 태그 전송·보안 취약점·면허는 검사하지 않습니다. 사이트맵은 최대 2개 문서·URL 1,500개 표본입니다.`,pages:snapshot,attempts:attempts.slice(0,pageLimit===7?14:8),sitemap:{...sitemap},llms:{...llms},crawlers:inspectCrawlerPolicies(robots,url),findings:findings.slice(0,50),...(medicalAudit?{medicalAudit}:{})};
+  return {version:1,observedAt,targetUrl:url,limited,internalLinks,...(localPlaceLookup?{localPlaceLookup}:{}),scopeNote:limited?'원문 수집이 제한되어 추가 페이지 검사를 수행하지 않았습니다. 미측정을 결함·0점으로 표시하지 않습니다.':`입력 페이지와 내부 링크·사이트맵에서 선택한 최대 ${pageLimit}개 HTML을 비교합니다. 현재 ${snapshot.length}개 수집. 전체 사이트, 브라우저 렌더링, 외부 CSS, 실제 태그 전송·보안 취약점·면허는 검사하지 않습니다. 사이트맵은 최대 2개 문서·URL 1,500개 표본입니다.`,pages:snapshot,attempts:attempts.slice(0,pageLimit===7?14:8),sitemap:{...sitemap},llms:{...llms},crawlers:inspectCrawlerPolicies(robots,url),findings:findings.slice(0,50),...(medicalAudit?{medicalAudit}:{})};
 }

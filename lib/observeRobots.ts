@@ -3,6 +3,7 @@ import type { RobotsObservation } from "./robotsRules";
 export async function observeRobots(
   url: string,
   userAgent: string,
+  redirect: RequestRedirect = 'follow',
 ): Promise<RobotsObservation> {
   const target = new URL("/robots.txt", url).href;
   const base = { url: target, observedAt: new Date().toISOString() };
@@ -11,6 +12,7 @@ export async function observeRobots(
       headers: { "User-Agent": userAgent },
       signal: AbortSignal.timeout(5000),
       cache: "no-store",
+      redirect,
     });
     const httpStatus = response.status;
     if (httpStatus >= 400 && httpStatus < 500 && httpStatus !== 429)

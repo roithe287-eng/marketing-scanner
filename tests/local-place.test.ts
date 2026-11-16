@@ -16,6 +16,9 @@ import {buildAnswerContentDocument} from '../lib/answerContentDocument';
 import LocalPlacePanel from '../components/report/LocalPlacePanel';
 import {hospitalPlaceReport} from './fixtures/hospital-place-report';
 
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
+
 const url='https://business.example.com/';
 const html=(name:string,body='',type='',desc='')=>`<html><head><title>${name}</title><meta name="description" content="${desc}"></head><body><h1>${name}</h1><address>부산광역시 해운대구 센텀로 12</address>${type?`<script type="application/ld+json">${JSON.stringify({'@type':type,name,url,address:{streetAddress:'부산광역시 해운대구 센텀로 12'}})}</script>`:''}<main>${body}</main></body></html>`;
 const sectors:[string,string][]=[['pharmacy','새길 약국'],['finance','새길 은행'],['medical','새길 내과의원'],['legal','새길 법률사무소'],['professional','새길 세무사 사무소'],['veterinary','새길 동물병원'],['pet_care','새길 애견호텔'],['pet_store','새길 강아지고양이매장'],['cafe','새길 베이커리 카페'],['restaurant','새길 국밥 식당'],['lodging','새길 호텔'],['travel','새길 여행사'],['beauty','새길 미용실'],['education','새길 학원'],['fitness','새길 필라테스'],['automotive','새길 카센터'],['home_service','새길 인테리어'],['real_estate','새길 공인중개사'],['retail','새길 꽃집'],['culture','새길 박물관'],['event','새길 사진관'],['rental','새길 렌터카'],['welfare','새길 요양원'],['living','새길 세탁소'],['funeral','새길 장례식장']];
