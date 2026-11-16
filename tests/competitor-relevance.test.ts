@@ -15,6 +15,9 @@ import {buildCompetitorVisualPage} from '../lib/competitorVisualPdf';
 import {buildReportDocument} from '../lib/reportDocument';
 import CompetitorLandscape from '../components/report/CompetitorLandscape';
 import {fixture} from './fixtures/report';
+
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
 beforeEach(t=>{(t as TestContext).mock.method(websiteHttp,'fetch',(input:string|URL,init?:RequestInit)=>globalThis.fetch(input,init));});
 
 const own={url:'https://onnuristore.com',title:'온누리스토어',ogTitle:'온누리스토어',description:'',h1:[],h2:[],keywords:''};

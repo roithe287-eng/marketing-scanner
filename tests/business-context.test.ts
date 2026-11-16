@@ -21,6 +21,9 @@ import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import ScoreRadar from '../components/ScoreRadar';
 
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
+
 const urls={sydney:'https://sydneydutyfree.com.au/ko',sdf:'https://sdfkorea.com/index.html',pure:'https://pure-australia.com/',trip:'https://www.tripozzy.com/'};
 const doc=(url:string,title:string,text:string,source:BusinessDocument['source']='merchant_html'):BusinessDocument=>({url,title,source,capturedAt:'2026-11-03T06:00:00.000Z',sections:[{heading:title,text}]});
 const data=(url:string,title:string,description:string,documents:BusinessDocument[]=[]):ExtractedWebsiteData=>({url,finalUrl:url,title,description,ogDescription:'',h1:[],h2:[],bodyText:'',buttons:[],ctaButtons:[],schemaTypes:[],businessDocuments:documents,isJsHeavy:false,siteEditing:undefined,...{ogTitle:'',imageAlts:[],imageCount:0,imageWithoutAlt:0,hasForm:false,hasReviewKeyword:false,hasPriceKeyword:false,hasTrustKeyword:false,hasContactInfo:false,viewportMeta:'',hasFavicon:false,links:[],h3:[],anchorHrefs:[],bodyTextLength:0,trackingScripts:[],redirectChain:[]}} as unknown as ExtractedWebsiteData);

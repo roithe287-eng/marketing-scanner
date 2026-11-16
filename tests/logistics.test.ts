@@ -16,6 +16,9 @@ import {competitorDisplay} from '../lib/competitorDisplay';
 import {buildCompetitorDocument} from '../lib/competitorDocument';
 import {fixture} from './fixtures/report';
 
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
+
 const url='https://www.pumyang.com/';
 // Reduced public markup reproducing the site's generic title, navigation CTA,
 // separate consent modal, service paragraphs and customer testimonial region.

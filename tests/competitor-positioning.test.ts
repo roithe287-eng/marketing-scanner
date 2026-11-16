@@ -15,6 +15,9 @@ import {buildCompetitorVisualPage} from '../lib/competitorVisualPdf';
 import {analyzeCompetitors} from '../lib/competitorAnalysis';
 import CompetitorLandscape from '../components/report/CompetitorLandscape';
 import {fixture} from './fixtures/report';
+
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
 const input={id:'own',name:'자사',url:fixture.url,own:true,title:'메타 광고 대행',description:'기업 대상 광고 상담과 운영 사례 · 비용은 견적 후 안내'};
 const competitor={rank:1,searchRank:3,title:'검색 결과 제목',description:'검색 요약',domain:'agency.test',link:'https://agency.test',metaTitle:input.title,metaDescription:input.description};
 const report=MarketingReportSchema.parse({...fixture,competitorAnalysis:{searchKeyword:'메타 광고 대행',competitors:[competitor],ourSite:{url:fixture.url,domain:'example.com',title:input.title,metaDescription:input.description,h1:''}}});

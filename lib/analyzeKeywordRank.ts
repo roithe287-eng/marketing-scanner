@@ -1,3 +1,4 @@
+import {naverReportSearchAllowed} from './naverReportPolicy';
 import {siteIdentity} from './siteIdentity';
 import {budgetFetch} from './runtime/budget';
 import { getOpenAI } from "./openaiClient";
@@ -91,7 +92,7 @@ export type NaverSearchResponse={status:'ok';items:{title:string;link:string;des
 export async function searchNaverWeb(query:string):Promise<NaverSearchResponse> {
   const requestedCount=15,observedAt=new Date().toISOString();
   const clientId=process.env.NAVER_CLIENT_ID,clientSecret=process.env.NAVER_CLIENT_SECRET;
-  if(!clientId||!clientSecret)return {status:'unavailable',message:'검색 API 자격 정보 미설정',requestedCount,observedAt};
+  if(!naverReportSearchAllowed()||!clientId||!clientSecret)return {status:'unavailable',message:'검색 API 자격 정보 미설정',requestedCount,observedAt};
   const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),NAVER_TIMEOUT_MS);
   try {
     const res=await budgetFetch(`https://openapi.naver.com/v1/search/webkr.json?query=${encodeURIComponent(query)}&display=${requestedCount}&start=1`,{headers:{'X-Naver-Client-Id':clientId,'X-Naver-Client-Secret':clientSecret},signal:controller.signal,cache:'no-store'});
@@ -123,7 +124,7 @@ export function aggregateKeywordObservations(keywords:KeywordRankItem[]):Keyword
   return {measurementVersion:2,totalKeywords:keywords.length,validCount:valid.length,failedCount,visibleCount:found.length,hiddenCount:notFound.length,topFiveCount:found.filter(k=>k.naverWebRank!<=5).length,averageRank:found.length?Math.round(found.reduce((sum,k)=>sum+k.naverWebRank!,0)/found.length*10)/10:null,summary:`웹문서 API 정상 ${valid.length}건 중 대상 ${found.length}건 발견 · 응답 범위 내 미발견 ${notFound.length}건 · 오류/미설정 ${failedCount}건. 실제 통합검색 순위·방문 유입을 측정한 값이 아닙니다.`,keywords,priorityActions:[...(failedCount?['오류·미설정 건은 인증·권한·호출 한도·네트워크를 확인한 뒤 재관측합니다.']:[]),...(notFound.length?['미발견 검색어의 의도와 대상 페이지를 대조하고 실제 검색 화면·서치어드바이저 결과를 함께 확인합니다.']:[])]};
 }
 export async function analyzeKeywordRank(data:ExtractedWebsiteData):Promise<KeywordRankTracking|null> {
-  if(!process.env.NAVER_CLIENT_ID||!process.env.NAVER_CLIENT_SECRET)return null;
+  if(!naverReportSearchAllowed())return null;
   const keywords=await generateKeywords(data);if(!keywords.length)return null;
   const results=await Promise.all(keywords.map(async keyword=>keywordObservation(keyword,data.finalUrl||data.url,await searchNaverWeb(keyword))));
   return aggregateKeywordObservations(results);

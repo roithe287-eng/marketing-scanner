@@ -6,11 +6,12 @@ import {analyzeNonCommerceSector} from './nonCommerceSectors';
 import {captureMedicalEvidence} from './medicalEvidence';
 import {captureBusinessDocument,captureBusinessLinks} from './businessResearch';
 import {captureLocalPlaceEvidence} from './localPlaceEvidence';
+import {auditProductOffer} from './productOfferAudit';
 
 const clean=(v:unknown,max=500)=>typeof v==='string'?v.replace(/\s+/g,' ').trim().slice(0,max):'';
 const types=(v:unknown):string[]=>Array.isArray(v)?v.flatMap(types):typeof v==='string'?[v.replace(/^https?:\/\/schema.org\//,'')]:[];
 const MEDICAL=new Set(['MedicalClinic','Hospital','Dentist','Physician','PhysiciansOffice','IndividualPhysician']);
-export type SiteDiagnosticSeed={page:DiagnosticPage;links:string[];medicalLinks?:string[];localLinks?:string[]};
+export type SiteDiagnosticSeed={page:DiagnosticPage;links:string[];anchors?:{href:string;label:string}[];medicalLinks?:string[];localLinks?:string[]};
 
 /** Parse declarations only. No script execution, external CSS/JS requests, or inferred tracking delivery. */
 export function captureSiteDiagnosticSeed(html:string,url:string,hospitalContext=false):SiteDiagnosticSeed{
@@ -60,6 +61,8 @@ export function captureSiteDiagnosticSeed(html:string,url:string,hospitalContext
   const heading=clean($('h1').map((_,e)=>$(e).text()).get().join(' '),1000);
   const provider=analyzeNonCommerceSector([{text:title,locator:'head > title'},{text:clean(rawDescription,600),locator:'meta[name="description"]'},...$('h1').slice(0,4).toArray().map(el=>({text:clean($(el).text(),600),locator:'h1'}))],[])?.id==='medical_consulting';
   const page:DiagnosticPage={url,title,description:clean(rawDescription,1500),canonicals:$('head link[rel~="canonical" i]').slice(0,5).map((_,e)=>clean($(e).attr('href'),2048)).get(),noindex:$('meta[name="robots" i],meta[name="googlebot" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')),twitterCard:!!$('meta[name="twitter:card" i]').attr('content'),jquery:[...jquery].slice(0,5),analytics:[...analytics],backgroundCandidates,medicalRelevant:medical.length>0||(!provider&&/병원|의원|한의원|치과|\b(?:hospital|clinic|dentist)\b/i.test(title+' '+heading)),medical};
+  const productOffer=auditProductOffer($,objects,url);
+  if(productOffer)page.productOffer=productOffer;
   page.titleTruncated=rawTitle.length>500;page.descriptionTruncated=rawDescription.length>1500;
   const localPlaceEvidence=captureLocalPlaceEvidence(html,url);
   if(localPlaceEvidence)page.localPlaceEvidence=localPlaceEvidence;
@@ -69,6 +72,15 @@ export function captureSiteDiagnosticSeed(html:string,url:string,hospitalContext
   const medicalEvidence=captureMedicalEvidence(html,url,provider,hospitalContext);
   if(page.medicalRelevant||medicalEvidence.facilityCandidate||medicalEvidence.place){page.medicalEvidence=medicalEvidence;page.medicalRelevant=true;}
   const links=$('a[href]').slice(0,400).map((_,e)=>$(e).attr('href')||'').get();
+  let linkBase=url;
+  try{linkBase=new URL($('head base[href]').first().attr('href')||url,url).href;}catch{/* Fall back to the fetched URL. */}
+  const anchors=$('a[href]').slice(0,400).map((_,el)=>{
+    const a=$(el);
+    if(a.closest('template,noscript,[hidden],[aria-hidden="true"]').length)return;
+    const raw=a.attr('href')?.trim();if(!raw||raw.startsWith('#'))return;
+    try{return {href:new URL(raw,linkBase).href,label:clean(a.attr('aria-label')||a.text()||a.find('img').first().attr('alt')||a.attr('title'),160)};}
+    catch{return;}
+  }).get();
   const groups=new Map<string,string[]>();
   if(medicalEvidence.facilityCandidate)$('a[href]').slice(0,400).each((_,e)=>{
     const a=$(e),text=clean(a.text())+' '+(a.attr('href')||'');
@@ -77,7 +89,7 @@ export function captureSiteDiagnosticSeed(html:string,url:string,hospitalContext
   });
   const medicalLinks=[...groups.values()].flatMap(g=>g.slice(0,1)).concat([...groups.values()].flatMap(g=>g.slice(1,3)));
   const localLinks=localPlaceEvidence?$('a[href]').slice(0,400).toArray().filter(e=>/시즌|렌탈|대여|강습|체험|픽업|반납|패키지|메뉴|가격|요금|서비스|취급|오시는\s*길|주차|매장|지점|이용\s*안내|menu|price|service|location|contact/i.test($(e).text()+' '+($(e).attr('href')||''))).map(e=>$(e).attr('href')||'').slice(0,12):[];
-  return {page,links,...(medicalLinks.length?{medicalLinks}: {}),localLinks:[...new Set([...captureBusinessLinks(html,url),...localLinks])]};
+  return {page,links,anchors,...(medicalLinks.length?{medicalLinks}: {}),localLinks:[...new Set([...captureBusinessLinks(html,url),...localLinks])]};
 }
 
 const BOT_SOURCES={google:'https://developers.google.com/crawling/docs/crawlers-fetchers/google-common-crawlers',openai:'https://developers.openai.com/api/docs/bots',anthropic:'https://privacy.anthropic.com/en/articles/8896518-does-anthropic-crawl-data-from-the-web-and-how-can-site-owners-block-the-crawler',perplexity:'https://docs.perplexity.ai/docs/resources/perplexity-crawlers'};

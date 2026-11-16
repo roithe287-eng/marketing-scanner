@@ -1,3 +1,4 @@
+import {naverReportSearchAllowed} from './naverReportPolicy';
 import {restoreStreamedHtml} from './streamedHtml';
 import * as cheerio from 'cheerio';
 import iconv from 'iconv-lite';
@@ -96,7 +97,7 @@ export function captureBusinessDocument(html:string,url:string,capturedAt=new Da
 
 /** Search snippets are topic hints only. No request is made to a robots-blocked merchant page. */
 export async function collectRestrictedBusinessEvidence(url:string):Promise<BusinessDocument[]>{
-  if(!hasBusinessResearch(url)||!process.env.NAVER_CLIENT_ID||!process.env.NAVER_CLIENT_SECRET)return [];
+  if(!hasBusinessResearch(url)||!naverReportSearchAllowed())return [];
   try{
     const result=await searchNaverWeb(`site:${host(publicUrl(url))}`,30);
     const seen=new Set<string>();

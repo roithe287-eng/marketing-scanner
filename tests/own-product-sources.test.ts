@@ -16,6 +16,9 @@ import {buildPrompt} from '../lib/analyzeMarketing';
 import {classifyIndustry} from '../lib/industryClassifier';
 import {selectSearchCandidates,finalizeSearchCandidates} from '../lib/competitorSelection';
 
+// This isolated test suite simulates separately authorized Naver API responses.
+process.env.NAVER_REPORT_SEARCH_AUTHORIZED='true';
+
 beforeEach(t=>{(t as TestContext).mock.method(websiteHttp,'fetch',(u:string|URL,init?:RequestInit)=>globalThis.fetch(u,init));});
 const html=(body:string)=>new Response(body,{headers:{'content-type':'text/html;charset=utf-8'}});
 const product=(name:string,category:string)=>`<title>온누리스토어 - ${name}</title><script type="application/ld+json">${JSON.stringify({'@context':'https://schema.org','@type':'Product',name,description:name,category,offers:{price:999,url:'https://unrelated.example/fake-offer'}})}</script>`;

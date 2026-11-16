@@ -1,3 +1,4 @@
+import {naverReportSearchAllowed} from '@/lib/naverReportPolicy';
 import {buildCompetitionScope} from '@/lib/competitionScope';
 import {providerBody,isSecondarySection} from '@/lib/websiteIdentity';
 import {parseSmartstoreUrl} from '@/lib/smartstore';
@@ -202,7 +203,7 @@ export async function POST(req: NextRequest) {
     return {
       ...reviewedReport,
       _hasCompetitor: !!(
-        process.env.NAVER_CLIENT_ID && process.env.NAVER_CLIENT_SECRET && (principal.kind==='internal'||planFeatures(principal.account).competitor)
+        naverReportSearchAllowed() && (principal.kind==='internal'||planFeatures(principal.account).competitor)
       ),
       _websiteHints: {
         scope:buildCompetitionScope(websiteData),

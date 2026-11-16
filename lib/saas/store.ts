@@ -352,7 +352,7 @@ export async function listAccounts(offset = 0, limit = 50) {
 /** No public signup endpoint: only the authenticated owner calls this operation. */
 function grantTerms(grant: Grant, previous?: Account): Grant {
   const plan=grant.plan ?? (previous ? accountPlan(previous) : grant.monthlyLimit===1?'single-pdf':'monthly');
-  return {expiresAt:grant.expiresAt,plan,monthlyLimit:plan==='monthly'?grant.monthlyLimit:1,
+  return {expiresAt:grant.expiresAt,plan,paid:grant.paid??previous?.paid??false,monthlyLimit:plan==='monthly'?grant.monthlyLimit:1,
     features:plan==='monthly'?grant.features:{competitor:false,deepdive:false,reports:plan==='single-pdf'}};
 }
 export async function createCustomer(
@@ -513,7 +513,7 @@ export async function updateAccount(
 local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end
 local u=cjson.decode(raw);if u.role~='customer' or u.version~=tonumber(ARGV[1]) then return 0 end
 if not u.plan and u.monthlyLimit==1 and legacyUsed(3,#KEYS) then redis.call('SET',KEYS[2],'legacy','NX') end
-local p=cjson.decode(ARGV[2]);u.status=p.status;u.expiresAt=p.expiresAt;u.monthlyLimit=p.monthlyLimit;u.features=p.features;u.plan=p.plan;u.version=u.version+1;redis.call('SET',KEYS[1],cjson.encode(u));return 1`,
+local p=cjson.decode(ARGV[2]);u.status=p.status;u.expiresAt=p.expiresAt;u.monthlyLimit=p.monthlyLimit;u.features=p.features;u.plan=p.plan;u.paid=p.paid;u.version=u.version+1;redis.call('SET',KEYS[1],cjson.encode(u));return 1`,
     [key("account:" + id),...singleUsageKeys(id)],
     [version, JSON.stringify({...grantTerms(patch,previous ?? undefined),status:patch.status})],
   );

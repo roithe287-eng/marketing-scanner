@@ -13,6 +13,7 @@ export const featuresSchema = z
   .strict();
 export const grantSchema = z.object({
   plan: z.enum(ACCOUNT_PLANS).optional(),
+  paid: z.boolean().optional(),
   expiresAt: z
     .number()
     .int()

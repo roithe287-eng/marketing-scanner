@@ -4,6 +4,7 @@ import type {SiteDiagnostics} from '@/lib/siteDiagnosticsSchema';
 import ReportItemPanels from './ReportItemPanels';
 import EvidenceFlow from './EvidenceFlow';
 import {RoleBox} from './ReportRole';
+import {InternalLinkAuditCard} from './SearchAuditCards';
 
 const status={observed:'관측 확인',review:'직접 확인',action:'보완 필요'};
 const resourceStatus={observed:'응답 관측',missing:'해당 경로 없음',blocked:'수집 제한',unavailable:'확인 불가',unsupported:'형식·범위 확인'};
@@ -15,6 +16,7 @@ export default function SiteDiagnosticsPanel({audit}:{audit?:SiteDiagnostics}){
     <div className="report-card-heading"><div><p className="report-eyebrow">PAGE · ENTITY · CRAWLER</p><h3 id="site-diagnostics-title">페이지·기술 정밀 점검</h3></div><div className="naver-reviewed"><span>관측 시각</span><time dateTime={audit.observedAt}>{audit.observedAt.replace('T',' ').slice(0,19)} UTC</time></div></div>
     <p className="report-note">{audit.scopeNote}</p>
     <div className="naver-counts"><div data-state="observed"><span>수집한 HTML</span><strong>{audit.pages.length}<small>페이지</small></strong></div><div data-state="action"><span>보완 필요</span><strong>{audit.findings.filter(f=>f.status==='action').length}<small>항목</small></strong></div><div data-state="manual"><span>직접 확인</span><strong>{audit.findings.filter(f=>f.status==='review').length}<small>항목</small></strong></div></div>
+    <InternalLinkAuditCard audit={audit.internalLinks}/>
     <details className="naver-check" open><summary><strong>수집한 페이지와 검사 범위</strong><span aria-hidden="true">+</span></summary><div className="naver-check-body">
       {audit.pages.length?<div className="site-diagnostics-pages">{audit.pages.map(p=><div key={p.url}><a href={p.url} target="_blank" rel="noopener noreferrer">{p.title||'제목 미감지'} ↗</a><small>{p.url}</small><p>{p.description||'메타 설명 미감지'}</p><small>대표 URL: {p.canonicals.join(' · ')||'미감지'}{p.noindex?' · noindex 선언':''}</small></div>)}</div>:<p>비교 가능한 원문 페이지를 수집하지 못했습니다.</p>}
       {audit.attempts.length>0&&<details><summary>추가 요청 결과 {audit.attempts.length}건</summary>{audit.attempts.map((a,i)=><p className="report-note" key={i}>{resourceStatus[a.status]} · {a.url}<br/>{a.note}</p>)}</details>}

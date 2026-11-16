@@ -9,7 +9,7 @@ import { PDF_FONT, PDF_PAGE, type PdfTextStyle } from './pdfLayout';
 const yieldToBrowser=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 
 /** Prepare a browser-independent PDF result; saving is an explicit user action. */
-export async function renderReportPdf(report:MarketingReport,onProgress:(text:string)=>void,canvas:HTMLCanvasElement,fontFamily=PDF_FONT,signal?:AbortSignal,scope:PdfScope='full') {
+export async function renderReportPdf(report:MarketingReport,onProgress:(text:string)=>void,canvas:HTMLCanvasElement,fontFamily=PDF_FONT,signal?:AbortSignal,scope:PdfScope='full',showWatermark=true) {
   report=reportForPresentation(report);
   signal?.throwIfAborted();
   onProgress(scope==='summary'?'한 장 요약을 정리 중...':'결과 차트·비교 카드·상세 안내를 정리 중...');
@@ -62,7 +62,7 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
       const footerTop=PDF_PAGE.height-49;
       ctx.strokeStyle='#e5e7eb';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(PDF_PAGE.padding,footerTop);ctx.lineTo(PDF_PAGE.width-PDF_PAGE.padding,footerTop);ctx.stroke();
       setFont({size:11,weight:400,color:'#6b7280',lineHeight:18});ctx.fillStyle='#6b7280';
-      ctx.fillText(`진짜마케팅 · 마케팅스캐너     ${i+1} / ${pages.length}`,PDF_PAGE.padding,footerTop+9);
+      ctx.fillText(`${showWatermark?'진짜마케팅 · 마케팅스캐너     ':''}${i+1} / ${pages.length}`,PDF_PAGE.padding,footerTop+9);
       if(detail&&i>0){ctx.fillStyle='#2442b5';ctx.fillText('목차로 이동',PDF_PAGE.width-PDF_PAGE.padding-64,footerTop+9);}
       if(i>0) pdf.addPage();
       pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,210,297,undefined,'FAST');
@@ -80,11 +80,11 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
 }
 
 /** Draw the complete snapshot directly, without cloning or capturing the app DOM. */
-export async function exportReportPdf(report:MarketingReport,onProgress:(text:string)=>void,signal?:AbortSignal,scope:PdfScope='full') {
+export async function exportReportPdf(report:MarketingReport,onProgress:(text:string)=>void,signal?:AbortSignal,scope:PdfScope='full',showWatermark=true) {
   signal?.throwIfAborted();
   // Load every exported weight before measuring Korean text or drawing the PDF.
   onProgress('PDF 글꼴을 준비 중...');
   await Promise.all([400,500,600,700,800,900].map(weight=>document.fonts.load(`${weight} 16px "Pretendard Variable"`,'가나다 ABC 0123')));
   signal?.throwIfAborted();
-  return renderReportPdf(report,onProgress,document.createElement('canvas'),PDF_FONT,signal,scope);
+  return renderReportPdf(report,onProgress,document.createElement('canvas'),PDF_FONT,signal,scope,showWatermark);
 }
