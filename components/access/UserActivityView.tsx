@@ -42,7 +42,7 @@ export function UserActivityPanel({data}:{data:ActivityDetailData}){
     <p className="access-muted">누적 횟수는 {koreanTime(totals.firstTrackedAt)}부터 집계합니다. 도입 이전 활동은 소급 집계하지 않습니다.</p>
     <ActivityMetrics stats={totals}/>
     <p className="access-muted">로그인 성공 {number('login')} · 실패 {number('login_failed')} · 공유 생성 {number('share_created')} · 공유 열람 {number('report_view')}</p>
-    <p className="access-muted">경쟁사 비교 완료 {number('competitor_success')}회 · 상세 분석 완료 {number('deepdive_success')}회 · 이번 달 진단 차감 {Number(data.usage.analyze||0)}회{account.role==='admin'?' (관리자는 한도 차감 없음)':''}</p>
+    <p className="access-muted">경쟁사 비교 완료 {number('competitor_success')}회 · 상세 분석 완료 {number('deepdive_success')}회 · {account.plan&&account.plan!=='monthly'?'1회권 사용':'이번 달 진단 차감'} {Number(data.usage.analyze||0)}회{account.role==='admin'?' (관리자는 한도 차감 없음)':''}</p>
     <section className="admin-detail-section">
       <h3>최근 30일 사이트 진단</h3>
       <div className="admin-daily" role="img" aria-label="한국시간 기준 최근 30일의 일별 사이트 진단 완료 횟수">
@@ -56,7 +56,7 @@ export function UserActivityPanel({data}:{data:ActivityDetailData}){
       <p className="access-muted">아래 최근 기록에서 확인된 IP입니다. IP는 여러 사용자가 공유하거나 변경될 수 있으며, 사람·기기를 고유하게 식별하지 않습니다.</p>
     </section>
     <section className="admin-detail-section">
-      <h3>공유 링크 상태</h3>
+      <h3>{account.plan==='single-pdf'?'보관한 진단 결과':'공유 링크 상태'}</h3>
       {reports.length?<ul className="admin-links">{reports.map(r=><li key={r.id}><div><a href={'/r/'+r.id} target="_blank" rel="noopener noreferrer">{r.title} ↗</a><p>{r.id} · {koreanTime(r.expiresAt)} 만료</p></div><span className="admin-badge">{customerCanRead?'활성':'고객 열람 중지'}</span></li>)}</ul>:<p className="access-empty">현재 보관된 공유 링크가 없습니다.</p>}
       <p className="access-muted">최신 50개까지 표시합니다. 계정 중지·기간 종료·보관 권한 해제 시 고객 열람이 차단됩니다. 만료된 보고서 내용은 삭제되며, 링크 생성·열람 이력만 상세 기록 보관기간 내 표시됩니다.</p>
     </section>

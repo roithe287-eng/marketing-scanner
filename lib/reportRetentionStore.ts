@@ -1,7 +1,12 @@
 import {db,key} from './saas/store';
 import {REPORT_RETENTION_SECONDS} from './reportRetention';
+import {randomInt} from 'node:crypto';
 export const reportPrefix=()=>process.env.VERCEL_ENV==='preview'?'ms:preview:report:':'ms:report:';
 export const reportKey=(id:string)=>reportPrefix()+id;
+export function generateReportId() {
+ const alphabet='abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+ return Array.from({length:12},()=>alphabet[randomInt(alphabet.length)]).join('');
+}
 
 // Enforce original creation time and earlier Redis TTL. Follow saved comparison references
 // so embedded snapshots cannot outlive their original report. All checks/expiry are atomic.

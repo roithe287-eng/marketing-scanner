@@ -3,14 +3,20 @@ import { getRedisClient } from "../redisClient";
 import { AccessError, digest, clientIp } from "../security/request";
 import { NETWORK_ACTIVITY_ID } from './activityTypes';
 import { captureActivity, targetHost, activityStorageKeys } from './activity';
+import { generateReportId, reportKey } from '../reportRetentionStore';
+import { REPORT_RETENTION_SECONDS } from '../reportRetention';
+import type { MarketingReport } from '../reportSchema';
 import {
   Account,
+  Grant,
   Inquiry,
   InquiryNotification,
   Principal,
   UsageAction,
   MULTIPLIER,
   isActive,
+  accountPlan,
+  planFeatures,
 } from "./types";
 export const SESSION_SECONDS = 7 * 24 * 3600;
 export const INVITE_SECONDS = 48 * 3600;
@@ -19,6 +25,7 @@ export function prefix() {
   return `ms:saas:v1:${process.env.VERCEL_ENV === "preview" ? "preview" : "production"}:`;
 }
 export const key = (suffix: string) => prefix() + suffix;
+export const inviteExpiry = (account: Pick<Account,'expiresAt'>) => Math.min(account.expiresAt,Date.now()+INVITE_SECONDS*1000);
 export function db() {
   const r = getRedisClient();
   if (!r)
@@ -126,7 +133,36 @@ export async function deleteSession(value: string | undefined) {
 export function monthBucket(now = Date.now()) {
   return new Date(now).toISOString().slice(0, 7);
 }
-export async function usage(id: string) {
+function singleUsageKeys(id: string) {
+  const recent = Array.from({length:4},(_,i)=>{
+    const date = new Date();
+    date.setUTCDate(1);
+    date.setUTCMonth(date.getUTCMonth()-i);
+    return key(`usage:${id}:${monthBucket(date.getTime())}`);
+  });
+  return [key('single-analysis:'+id),key('activity-total:'+id),...recent];
+}
+const LEGACY_SINGLE_USED = `
+local function legacyUsed(first,last)
+  if tonumber(redis.call('HGET',KEYS[first],'analyze_success') or '0')>0 then return true end
+  for i=first+1,last do
+    if tonumber(redis.call('HGET',KEYS[i],'analyze') or '0')>0 then return true end
+  end
+  return false
+end`;
+export async function singleUseRecord(account: Account) {
+  const keys = singleUsageKeys(account.id);
+  if (account.plan) return db().get<string>(keys[0]);
+  return db().eval<unknown[],string|null>(`${LEGACY_SINGLE_USED}
+local used=redis.call('GET',KEYS[1]);if used then return used end
+if legacyUsed(2,#KEYS) then return 'legacy' end
+return nil`,keys,[]);
+}
+export async function usage(id: string, account?: Account) {
+  const current = account ?? await getAccount(id);
+  if (current && accountPlan(current) !== 'monthly') {
+    return {analyze:(await singleUseRecord(current)) ? 1 : 0, competitor:0, deepdive:0};
+  }
   return (
     (await db().hgetall<Record<UsageAction, number>>(
       key(`usage:${id}:${monthBucket()}`),
@@ -145,7 +181,60 @@ if not redis.call('SET',KEYS[3],ARGV[5],'NX','EX',120) then return -4 end
 redis.call('HINCRBY',KEYS[2],action,1);redis.call('EXPIRE',KEYS[2],6048000);return count+1`;
 export const FINISH_SCRIPT = `if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
 redis.call('DEL',KEYS[1]);if ARGV[2]=='refund' then local n=tonumber(redis.call('HGET',KEYS[2],ARGV[3]) or '0');if n>0 then redis.call('HINCRBY',KEYS[2],ARGV[3],-1) end end;return 1`;
-export async function reserve(principal: Principal, action: UsageAction, context?: { headers: Headers; url: string }) {
+type ReportRetention = NonNullable<MarketingReport['sharedRetention']>;
+export type FinishUsage = (refund?: boolean, limited?: boolean, report?: MarketingReport) => Promise<ReportRetention | void>;
+const SINGLE_RESERVE = `${LEGACY_SINGLE_USED}
+local raw=redis.call('GET',KEYS[1]);if not raw then return -1 end
+local u=cjson.decode(raw)
+if u.status~='approved' or u.version~=tonumber(ARGV[1]) or u.expiresAt<=tonumber(ARGV[2]) then return -1 end
+if redis.call('EXISTS',KEYS[3])==1 or (not u.plan and legacyUsed(4,#KEYS)) then return -3 end
+if not redis.call('SET',KEYS[2],ARGV[3],'NX','EX',120) then return -4 end
+return 1`;
+const SINGLE_FINISH = `
+if redis.call('GET',KEYS[2])~=ARGV[1] then return 0 end
+if ARGV[2]=='refund' then redis.call('DEL',KEYS[2]);return 1 end
+local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end
+local u=cjson.decode(raw)
+if u.version~=tonumber(ARGV[3]) or u.status~='approved' or u.expiresAt<=tonumber(ARGV[4]) or redis.call('EXISTS',KEYS[3])==1 then return 0 end
+if ARGV[5]~='' then
+  if not redis.call('SET',KEYS[4],ARGV[6],'NX','PXAT',ARGV[8]) then return -1 end
+  redis.call('ZADD',KEYS[5],ARGV[4],ARGV[5]);redis.call('ZREMRANGEBYSCORE',KEYS[5],'-inf',ARGV[7]);redis.call('EXPIRE',KEYS[5],ARGV[9])
+end
+redis.call('SET',KEYS[3],ARGV[5]~='' and 'report:'..ARGV[5] or 'used');redis.call('DEL',KEYS[2]);return 1`;
+function quotaError(result: number, single = false) {
+  const messages: Record<number,string> = {
+    [-1]:'계정의 승인 상태 또는 이용 기간을 확인해 주세요.',
+    [-2]:'승인되지 않은 기능입니다.',
+    [-3]:single?'1회 진단권을 이미 사용했습니다. PDF 포함 결과는 내 계정에서 확인해 주세요.':'이번 달의 이용 한도를 모두 사용했습니다. 관리자에게 문의해 주세요.',
+    [-4]:'같은 분석이 진행 중입니다. 완료 후 다시 시도해 주세요.',
+  };
+  return new AccessError(result === -1 || result === -2 ? 403 : 429,messages[result]);
+}
+async function reserveSingle(account: Account, action: UsageAction, lock: string, reservation: string): Promise<FinishUsage> {
+  if(action!=='analyze')throw quotaError(-2,true);
+  const accountKey=key('account:'+account.id);
+  const usageKeys=singleUsageKeys(account.id);
+  const result=await db().eval<unknown[],number>(SINGLE_RESERVE,[accountKey,lock,...usageKeys],[account.version,Date.now(),reservation]);
+  if(result<0)throw quotaError(result,true);
+  return async (refund=false,_limited=false,report)=>{
+    const createdAt=Date.now();
+    const expiresAt=createdAt+REPORT_RETENTION_SECONDS*1000;
+    const wantsReport=!refund&&accountPlan(account)==='single-pdf';
+    if(wantsReport&&!report)throw new AccessError(503,'진단 결과를 보관하지 못했습니다. 다시 시도해 주세요.');
+    const stored=wantsReport?JSON.stringify({version:2,visibility:'private',ownerId:account.id,createdAt,expiresAt,report}):'';
+    for(let attempt=0;attempt<5;attempt++){
+      const reportId=wantsReport?generateReportId():'';
+      const outcome=await db().eval<unknown[],number>(SINGLE_FINISH,
+        [accountKey,lock,usageKeys[0],reportKey(reportId),key('reports:'+account.id)],
+        [reservation,refund?'refund':'complete',account.version,createdAt,reportId,stored,createdAt-REPORT_RETENTION_SECONDS*1000,expiresAt,REPORT_RETENTION_SECONDS]);
+      if(outcome===-1)continue;
+      if(!outcome&&!refund)throw new AccessError(409,'진단 이용 상태가 변경되었습니다. 내 계정을 확인해 주세요.');
+      return wantsReport?{reportId,createdAt,expiresAt}:undefined;
+    }
+    throw new AccessError(503,'진단 결과를 보관하지 못했습니다. 다시 시도해 주세요.');
+  };
+}
+export async function reserve(principal: Principal, action: UsageAction, context?: { headers: Headers; url: string }): Promise<FinishUsage> {
   const requestId=randomUUID(),startedAt=Date.now();
   const activityId=principal.kind==='internal'?NETWORK_ACTIVITY_ID:principal.account.id;
   const track=async(phase:'started'|'success'|'failed',limited=false)=>{
@@ -158,25 +247,26 @@ export async function reserve(principal: Principal, action: UsageAction, context
   }
   const user = principal.account;
   const reservation = token();
-  const bucket = key(`usage:${user.id}:${monthBucket()}`);
   const lock = key(`active:${user.id}:${action}`);
+  if(accountPlan(user)!=='monthly'){
+    const finalize=await reserveSingle(user,action,lock,reservation);
+    let finished=false;
+    await track('started');
+    return async (refund=false,limited=false,report)=>{
+      if(finished)return;
+      const retention=await finalize(refund,limited,report);
+      finished=true;
+      await track(refund?'failed':'success',limited);
+      return retention;
+    };
+  }
+  const bucket = key(`usage:${user.id}:${monthBucket()}`);
   const result = await db().eval<unknown[], number>(
     RESERVE_SCRIPT,
     [key("account:" + user.id), bucket, lock],
     [user.version, Date.now(), action, MULTIPLIER[action], reservation],
   );
-  if (result < 0)
-    throw new AccessError(
-      result === -1 || result === -2 ? 403 : 429,
-      (
-        {
-          [-1]: "계정의 승인 상태 또는 이용 기간을 확인해 주세요.",
-          [-2]: "승인되지 않은 기능입니다.",
-          [-3]: "이번 달의 이용 한도를 모두 사용했습니다. 관리자에게 문의해 주세요.",
-          [-4]: "같은 분석이 진행 중입니다. 완료 후 다시 시도해 주세요.",
-        } as Record<number, string>
-      )[result],
-    );
+  if (result < 0) throw quotaError(result);
   let finished = false;
   await track('started');
   return async (refund = false, limited = false) => {
@@ -196,6 +286,10 @@ export async function audit(actor: string, action: string, target: string) {
   const auditKey=key('audit-day:'+day);
   await db().eval(`redis.call('LPUSH',KEYS[1],ARGV[1]);redis.call('LTRIM',KEYS[1],0,1999);redis.call('EXPIREAT',KEYS[1],ARGV[2]);return 1`,
     [auditKey],[JSON.stringify({actor,action,target,at}),(day+180)*86400]);
+}
+async function auditIssuedInvite(actor: string, action: string, target: string) {
+  // An auxiliary log failure must not hide a link that Redis already issued.
+  await audit(actor,action,target).catch(()=>console.error('[audit] invite log unavailable'));
 }
 /** Move the former sliding-TTL audit list to bounded, absolute day buckets. */
 export async function migrateLegacyAudit() {
@@ -256,26 +350,31 @@ export async function listAccounts(offset = 0, limit = 50) {
   );
 }
 /** No public signup endpoint: only the authenticated owner calls this operation. */
+function grantTerms(grant: Grant, previous?: Account): Grant {
+  const plan=grant.plan ?? (previous ? accountPlan(previous) : grant.monthlyLimit===1?'single-pdf':'monthly');
+  return {expiresAt:grant.expiresAt,plan,monthlyLimit:plan==='monthly'?grant.monthlyLimit:1,
+    features:plan==='monthly'?grant.features:{competitor:false,deepdive:false,reports:plan==='single-pdf'}};
+}
 export async function createCustomer(
-  data: Pick<Account, "email" | "name" | "company" | "expiresAt" | "monthlyLimit" | "features">,
+  data: Pick<Account, "email" | "name" | "company"> & Grant,
   actor: string,
 ) {
   const account: Account = { email:data.email,name:data.name,company:data.company,
-    expiresAt:data.expiresAt,monthlyLimit:data.monthlyLimit,features:data.features,
+    ...grantTerms(data),
     id: randomUUID(), role: "customer", status: "approved",
     passwordHash: null, version: 1, createdAt: Date.now(), approvedAt: Date.now(), approvedBy: actor };
-  const invite = token();
+  const invite = token(), activationExpiresAt=inviteExpiry(account);
   const ok = await db().eval<unknown[], number>(`
 if redis.call('GET',KEYS[5])~=ARGV[5] then return -1 end
 if redis.call('EXISTS',KEYS[1])==1 then return 0 end
 redis.call('SET',KEYS[1],ARGV[1]);redis.call('SET',KEYS[2],ARGV[2]);
-redis.call('SET',KEYS[3],ARGV[3],'EX',ARGV[4]);redis.call('ZADD',KEYS[4],ARGV[6],ARGV[1]);return 1`,
+redis.call('SET',KEYS[3],ARGV[3],'PXAT',ARGV[4]);redis.call('ZADD',KEYS[4],ARGV[6],ARGV[1]);return 1`,
     [emailKey(account.email),key("account:"+account.id),key("invite:"+digest(invite)),key("accounts"),key("admin-initialized")],
-    [account.id,JSON.stringify(account),JSON.stringify({userId:account.id,version:1}),INVITE_SECONDS,actor,account.createdAt]);
+    [account.id,JSON.stringify(account),JSON.stringify({userId:account.id,version:1}),activationExpiresAt,actor,account.createdAt]);
   if (ok === -1) throw new AccessError(403, "소유자만 계정을 생성할 수 있습니다.");
   if (ok !== 1) throw new AccessError(409, "이미 등록된 이메일입니다. 기존 계정의 이용 조건을 변경해 주세요.");
-  await audit(actor,"create-account",account.id);
-  return {account,invite};
+  await auditIssuedInvite(actor,"create-account",account.id);
+  return {account,invite,activationExpiresAt};
 }
 export async function createAdmin(data: {
   email: string;
@@ -315,12 +414,13 @@ export async function createAdmin(data: {
 }
 export async function issueAccount(
   inquiryId: string,
-  grant: Pick<Account, "expiresAt" | "monthlyLimit" | "features">,
+  grant: Grant,
   actor: string,
 ) {
   const inquiry = decode<Inquiry>(await db().get(key("inquiry:" + inquiryId)));
   if (!inquiry || inquiry.status === "closed")
     throw new AccessError(404, "문의를 찾을 수 없습니다.");
+  if (inquiry.status !== 'pending') throw new AccessError(409,'이미 승인한 문의입니다. 고객 계정에서 링크를 재발급해 주세요.');
   const existingId = await db().get<string>(emailKey(inquiry.email));
   const previous = existingId ? await getAccount(existingId) : null;
   if (previous?.role === "admin")
@@ -335,29 +435,31 @@ export async function issueAccount(
     company: inquiry.company,
     role: "customer",
     status: "approved",
-    expiresAt: grant.expiresAt,
-    monthlyLimit: grant.monthlyLimit,
-    features: grant.features,
+    ...grantTerms({...grant,plan:grant.plan ?? (inquiry.planId==='single'||inquiry.planId==='single-pdf'?inquiry.planId:undefined)},previous ?? undefined),
     passwordHash: previous?.passwordHash || null,
     version: (previous?.version || 0) + 1,
     createdAt: previous?.createdAt || Date.now(),
     approvedAt: Date.now(),
     approvedBy: actor,
   };
-  const invite = token();
+  const invite = token(), activationExpiresAt=inviteExpiry(account);
   const updated = { ...inquiry, status: "approved", accountId: account.id };
   const ok = await db().eval<unknown[], number>(
-    `
-local inquiry=redis.call('GET',KEYS[4]);if not inquiry or cjson.decode(inquiry).status=='closed' then return 0 end
+    `${LEGACY_SINGLE_USED}
+local inquiry=redis.call('GET',KEYS[4]);if not inquiry or cjson.decode(inquiry).status~='pending' then return 0 end
 local id=redis.call('GET',KEYS[1]);if (id or '')~=ARGV[1] then return 0 end
-local raw=redis.call('GET',KEYS[2]);if raw and cjson.decode(raw).version~=tonumber(ARGV[2]) then return 0 end
-redis.call('SET',KEYS[1],ARGV[3]);redis.call('SET',KEYS[2],ARGV[4]);redis.call('SET',KEYS[3],ARGV[5],'EX',ARGV[6]);redis.call('SET',KEYS[4],ARGV[7],'KEEPTTL');redis.call('ZADD',KEYS[5],ARGV[8],ARGV[3]);return 1`,
+local raw=redis.call('GET',KEYS[2]);if raw then
+  local u=cjson.decode(raw);if u.version~=tonumber(ARGV[2]) then return 0 end
+  if not u.plan and u.monthlyLimit==1 and legacyUsed(7,#KEYS) then redis.call('SET',KEYS[6],'legacy','NX') end
+end
+redis.call('SET',KEYS[1],ARGV[3]);redis.call('SET',KEYS[2],ARGV[4]);redis.call('SET',KEYS[3],ARGV[5],'PXAT',ARGV[6]);redis.call('SET',KEYS[4],ARGV[7],'KEEPTTL');redis.call('ZADD',KEYS[5],ARGV[8],ARGV[3]);return 1`,
     [
       emailKey(account.email),
       key("account:" + account.id),
       key("invite:" + digest(invite)),
       key("inquiry:" + inquiryId),
       key("accounts"),
+      ...singleUsageKeys(account.id),
     ],
     [
       previous?.id || "",
@@ -365,7 +467,7 @@ redis.call('SET',KEYS[1],ARGV[3]);redis.call('SET',KEYS[2],ARGV[4]);redis.call('
       account.id,
       JSON.stringify(account),
       JSON.stringify({ userId: account.id, version: account.version }),
-      INVITE_SECONDS,
+      activationExpiresAt,
       JSON.stringify(updated),
       account.createdAt,
     ],
@@ -375,10 +477,10 @@ redis.call('SET',KEYS[1],ARGV[3]);redis.call('SET',KEYS[2],ARGV[4]);redis.call('
       409,
       "다른 변경이 있었습니다. 목록을 새로고침해 주세요.",
     );
-  await audit(actor, "approve", account.id);
-  return { account, invite };
+  await auditIssuedInvite(actor, "approve", account.id);
+  return { account, invite, activationExpiresAt };
 }
-export async function activate(invite: string, password: string) {
+export async function activate(invite: string, password: string, session?: string) {
   const k = key("invite:" + digest(invite));
   const record = decode<{ userId: string; version: number }>(await db().get(k));
   if (!record)
@@ -391,9 +493,9 @@ export async function activate(invite: string, password: string) {
     throw new AccessError(403, "현재 사용할 수 없는 링크입니다.");
   const hash = await hashPassword(password);
   const ok = await db().eval<unknown[], number>(
-    `local raw=redis.call('GET',KEYS[1]);local user=redis.call('GET',KEYS[2]);if not raw or not user then return 0 end;local u=cjson.decode(user);local i=cjson.decode(raw);if u.version~=i.version or u.version~=tonumber(ARGV[1]) or u.status~='approved' or u.expiresAt<=tonumber(ARGV[3]) then return 0 end;u.passwordHash=ARGV[2];u.version=u.version+1;redis.call('SET',KEYS[2],cjson.encode(u));redis.call('DEL',KEYS[1]);return 1`,
-    [k, key("account:" + account.id)],
-    [record.version, hash, Date.now()],
+    `local raw=redis.call('GET',KEYS[1]);local user=redis.call('GET',KEYS[2]);if not raw or not user then return 0 end;local u=cjson.decode(user);local i=cjson.decode(raw);if i.userId~=u.id or u.role~='customer' or u.version~=i.version or u.version~=tonumber(ARGV[1]) or u.status~='approved' or u.expiresAt<=tonumber(ARGV[3]) then return 0 end;u.passwordHash=ARGV[2];u.version=u.version+1;redis.call('SET',KEYS[2],cjson.encode(u));redis.call('DEL',KEYS[1]);if KEYS[3] then redis.call('SET',KEYS[3],cjson.encode({userId=u.id,version=u.version}),'EX',ARGV[4]) end;return 1`,
+    [k, key("account:" + account.id), ...(session?[key('session:'+digest(session))]:[])],
+    [record.version, hash, Date.now(), SESSION_SECONDS],
   );
   if (ok !== 1)
     throw new AccessError(409, "링크가 만료되었거나 이미 사용되었습니다.");
@@ -402,13 +504,18 @@ export async function activate(invite: string, password: string) {
 export async function updateAccount(
   id: string,
   version: number,
-  patch: Pick<Account, "status" | "expiresAt" | "monthlyLimit" | "features">,
+  patch: Grant & Pick<Account,'status'>,
   actor: string,
 ) {
+  const previous=await getAccount(id);
   const ok = await db().eval<unknown[], number>(
-    `local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end;local u=cjson.decode(raw);if u.role~='customer' or u.version~=tonumber(ARGV[1]) then return 0 end;local p=cjson.decode(ARGV[2]);u.status=p.status;u.expiresAt=p.expiresAt;u.monthlyLimit=p.monthlyLimit;u.features=p.features;u.version=u.version+1;redis.call('SET',KEYS[1],cjson.encode(u));return 1`,
-    [key("account:" + id)],
-    [version, JSON.stringify(patch)],
+    `${LEGACY_SINGLE_USED}
+local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end
+local u=cjson.decode(raw);if u.role~='customer' or u.version~=tonumber(ARGV[1]) then return 0 end
+if not u.plan and u.monthlyLimit==1 and legacyUsed(3,#KEYS) then redis.call('SET',KEYS[2],'legacy','NX') end
+local p=cjson.decode(ARGV[2]);u.status=p.status;u.expiresAt=p.expiresAt;u.monthlyLimit=p.monthlyLimit;u.features=p.features;u.plan=p.plan;u.version=u.version+1;redis.call('SET',KEYS[1],cjson.encode(u));return 1`,
+    [key("account:" + id),...singleUsageKeys(id)],
+    [version, JSON.stringify({...grantTerms(patch,previous ?? undefined),status:patch.status})],
   );
   if (ok !== 1)
     throw new AccessError(
@@ -421,22 +528,22 @@ export async function reissueInvite(id: string, actor: string) {
   const account = await getAccount(id);
   if (!account || account.role !== "customer" || !isActive(account))
     throw new AccessError(400, "이용 기간과 승인 상태를 먼저 확인해 주세요.");
-  const invite = token();
+  const invite = token(), activationExpiresAt=inviteExpiry(account);
   const updated = { ...account, version: account.version + 1 };
   const ok = await db().eval<unknown[], number>(
-    `local raw=redis.call('GET',KEYS[1]);if not raw or cjson.decode(raw).version~=tonumber(ARGV[1]) then return 0 end;redis.call('SET',KEYS[1],ARGV[2]);redis.call('SET',KEYS[2],ARGV[3],'EX',ARGV[4]);return 1`,
+    `local raw=redis.call('GET',KEYS[1]);if not raw or cjson.decode(raw).version~=tonumber(ARGV[1]) then return 0 end;redis.call('SET',KEYS[1],ARGV[2]);redis.call('SET',KEYS[2],ARGV[3],'PXAT',ARGV[4]);return 1`,
     [key("account:" + id), key("invite:" + digest(invite))],
     [
       account.version,
       JSON.stringify(updated),
       JSON.stringify({ userId: id, version: updated.version }),
-      INVITE_SECONDS,
+      activationExpiresAt,
     ],
   );
   if (!ok)
     throw new AccessError(409, "다른 변경이 있었습니다. 새로고침해 주세요.");
-  await audit(actor, "reissue-invite", id);
-  return invite;
+  await auditIssuedInvite(actor, "reissue-invite", id);
+  return {invite,activationExpiresAt};
 }
 export async function deleteAccount(
   id: string,
@@ -448,8 +555,7 @@ export async function deleteAccount(
     throw new AccessError(404, "고객 계정을 찾을 수 없습니다.");
   const ok = await db().eval<unknown[], number>(
     `local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end;local u=cjson.decode(raw);if u.role~='customer' or u.version~=tonumber(ARGV[1]) then return 0 end;redis.call('DEL',KEYS[1],KEYS[2]);redis.call('ZREM',KEYS[3],ARGV[2]);for i=4,#KEYS do redis.call('DEL',KEYS[i]) end;return 1`,
-    [key("account:" + id), emailKey(account.email), key("accounts"),...activityStorageKeys(id),
-      ...Array.from({length:4},(_,i)=>{const d=new Date();d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()-i);return key(`usage:${id}:${monthBucket(d.getTime())}`);})],
+    [key("account:" + id), emailKey(account.email), key("accounts"),...activityStorageKeys(id),...singleUsageKeys(id)],
     [version, id],
   );
   if (!ok)

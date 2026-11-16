@@ -2,7 +2,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import {requestJson} from '@/lib/client/request';
 import {z} from 'zod';
-import type { Account } from "@/lib/saas/types";
+import { ACCOUNT_PLANS, type Account } from "@/lib/saas/types";
 export type AccessState = {
   kind: "loading" | "guest" | "internal" | "account" | "error";
   admin?: boolean;
@@ -15,6 +15,7 @@ const AccountSchema=z.object({
   id:z.string(),email:z.string(),name:z.string(),company:z.string(),
   role:z.enum(['admin','customer']),status:z.enum(['approved','suspended']),
   expiresAt:z.number(),monthlyLimit:z.number(),version:z.number(),createdAt:z.number(),
+  plan:z.enum(ACCOUNT_PLANS).optional(),
   features:z.object({competitor:z.boolean(),deepdive:z.boolean(),reports:z.boolean()}),
 });
 const AccessSchema=z.object({

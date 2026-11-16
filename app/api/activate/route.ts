@@ -9,7 +9,7 @@ import {
 import { passwordSchema } from "@/lib/saas/validation";
 import {
   activate,
-  createSession,
+  token,
   limitRequest,
   deleteSession,
 } from "@/lib/saas/store";
@@ -27,10 +27,11 @@ export async function POST(req: NextRequest) {
         consent: z.literal(true),
       })
       .parse(await readJson(req));
-    const account = await activate(body.token, body.password);
+    const session=token();
+    const account = await activate(body.token, body.password, session);
     await captureActivity(account.id,'activated',req.headers);
-    await deleteSession(req.cookies.get(SESSION_COOKIE)?.value);
-    return setSession(privateJson({ ok: true }), await createSession(account));
+    await deleteSession(req.cookies.get(SESSION_COOKIE)?.value).catch(()=>{});
+    return setSession(privateJson({ ok: true }), session);
   } catch (error) {
     return failure(error);
   }

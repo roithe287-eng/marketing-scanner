@@ -1,6 +1,7 @@
 "use client";
 import { useAccess } from "./useAccess";
 import AccessBar from "./AccessBar";
+import { accountPlan } from '@/lib/saas/types';
 export default function AccountView() {
   const { access } = useAccess(true);
   if (access.kind === "loading")
@@ -16,6 +17,9 @@ export default function AccountView() {
       </div>
     );
   const account = access.account;
+  const plan=accountPlan(account);
+  const single=plan!=='monthly';
+  const used=access.usage?.analyze||0;
   return (
     <>
       <AccessBar access={access} />
@@ -23,9 +27,9 @@ export default function AccountView() {
         <h2>
           {account ? `${account.name}님의 이용 현황` : "등록 네트워크 이용 중"}
         </h2>
-        <a href="/" className="jm-button">
+        {(!single||!used)&&<a href="/" className="jm-button">
           새 진단 시작
-        </a>
+        </a>}
       </div>
       {account ? (
         <>
@@ -34,9 +38,9 @@ export default function AccountView() {
             {account.role==='admin'?'관리자 · 기간 제한 없음':new Date(account.expiresAt).toLocaleDateString("ko-KR", {
               timeZone: "Asia/Seoul",
             })}{" "}
-            · 사용량은 매월 1일 00:00 UTC(한국 09:00)에 초기화됩니다.
+            · {single?(plan==='single-pdf'?'1회 진단권 (PDF 포함)':'1회 진단권 (PDF 미포함)'):'사용량은 매월 1일 00:00 UTC(한국 09:00)에 초기화됩니다.'}
           </p>
-          <div className="access-usage">
+          {single?<div className="access-usage"><article><h3>사이트 진단</h3><p><strong>{used}</strong><span> / 1회</span></p><span>{used?'사용 완료':'1회 이용 가능'}</span></article></div>:<div className="access-usage">
             {[
               {
                 key: "analyze",
@@ -69,10 +73,9 @@ export default function AccountView() {
                 <span>{row.enabled ? "이번 달 사용량" : "현재 미승인"}</span>
               </article>
             ))}
-          </div>
+          </div>}
           <p className="access-muted">
-            요청이 시작되면 1회가 차감됩니다. 서버에서 실패가 확인되면 복원되며,
-            연결 중단·시간 초과로 확인하지 못한 요청은 차감될 수 있습니다.
+            {single?'종합 진단이 완료되면 1회가 차감됩니다. 월이 바뀌어도 사용 횟수는 초기화되지 않습니다.':'요청이 시작되면 1회가 차감됩니다. 서버에서 실패가 확인되면 복원되며, 연결 중단·시간 초과로 확인하지 못한 요청은 차감될 수 있습니다.'}
           </p>
         </>
       ) : (
@@ -81,11 +84,10 @@ export default function AccountView() {
           보관함은 같은 네트워크에서 공동으로 사용합니다. 개인 계정에 이용 기록을 남기려면 로그인해 주세요.
         </p>
       )}
-      <section className="access-reports">
+      {plan!=='single'&&<section className="access-reports">
         <h2>보관한 진단 결과</h2>
         <p>
-          결과 화면의 ‘결과 보관·링크 복사’를 누른 보고서입니다. 보관 기간은
-          최대 7일이며, {account?'해당 계정과 관리자':'등록 네트워크와 관리자'}만 열람할 수 있습니다.
+          {single?'완료한 결과는 내 계정에 최대 7일간 보관되며, 이용 기간 내에 열어 PDF를 다시 받을 수 있습니다.':'결과 화면에서 보관한 보고서입니다. 공유 링크는 최대 7일 동안 열람할 수 있습니다.'}
         </p>
         {access.reports?.length ? (
           <ul>
@@ -104,7 +106,7 @@ export default function AccountView() {
             아직 보관한 보고서가 없습니다. 진단 후 결과를 보관해 주세요.
           </div>
         )}
-      </section>
+      </section>}
     </>
   );
 }

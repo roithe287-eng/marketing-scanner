@@ -1,4 +1,5 @@
 import {requirePrincipal} from '@/lib/saas/auth';
+import {canShareReports} from '@/lib/saas/types';
 import {readJson,privateJson,failure,AccessError} from '@/lib/security/request';
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const principal=await requirePrincipal(req,true);
-    if(principal.kind==='account'&&!principal.account.features.reports)throw new AccessError(403,'보고서 보관 권한이 없습니다.');
+    if(!canShareReports(principal))throw new AccessError(403,'이 이용권에는 외부 공유 링크 발급이 포함되지 않습니다.');
     if (!isShareStoreAvailable()) {
       return NextResponse.json(
         {
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const principal=await requirePrincipal(req,true);
-    if(principal.kind==='account'&&!principal.account.features.reports)throw new AccessError(403,'보고서 보관 권한이 없습니다.');
+    if(!canShareReports(principal))throw new AccessError(403,'이 이용권에는 외부 공유 링크 발급이 포함되지 않습니다.');
     if (!isShareStoreAvailable()) {
       return NextResponse.json(
         { message: "공유 기능을 사용할 수 없습니다." },

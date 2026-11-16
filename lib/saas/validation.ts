@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { inquiryServiceIds } from '../inquiry';
 import { inquiryPlanLabel } from '../pricing';
+import { ACCOUNT_PLANS } from './types';
 export const emailSchema = z.string().trim().toLowerCase().email().max(254);
 export const passwordSchema = z.string().min(12).max(128);
 export const featuresSchema = z
@@ -11,6 +12,7 @@ export const featuresSchema = z
   })
   .strict();
 export const grantSchema = z.object({
+  plan: z.enum(ACCOUNT_PLANS).optional(),
   expiresAt: z
     .number()
     .int()

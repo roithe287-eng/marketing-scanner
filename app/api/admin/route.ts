@@ -47,7 +47,7 @@ export async function GET(req: NextRequest) {
       const account=await getAccount(id);
       if(!account)throw new AccessError(404,'계정을 찾을 수 없습니다.');
       const [activity, totals, monthlyUsage, reports]=await Promise.all([
-        activityDetail(id),activityTotals([id]),usage(id),listReportsForOwner(id,{kind:'account',account:admin})
+        activityDetail(id),activityTotals([id]),usage(id,account),listReportsForOwner(id,{kind:'account',account:admin})
       ]);
       await captureActivity(admin.id,'admin_view',req.headers,{subjectId:id});
       return privateJson({account:safeAccount(account),activity,totals:totals[0],usage:monthlyUsage,reports});
@@ -104,14 +104,14 @@ export async function POST(req: NextRequest) {
     }
     if(body.action==='create'){
       if(body.expiresAt<=Date.now())throw new AccessError(400,'이용 종료일을 미래 날짜로 지정해 주세요.');
-      const {account,invite}=await createCustomer(body,admin.id);
+      const {account,invite,activationExpiresAt}=await createCustomer(body,admin.id);
       await captureActivity(admin.id,'account_created',req.headers,{subjectId:account.id});
-      return privateJson({account:safeAccount(account),activationPath:'/activate#'+invite,expiresInHours:48});
+      return privateJson({account:safeAccount(account),activationPath:'/activate#'+invite,activationExpiresAt});
     }
     if (body.action === "approve") {
       if (body.expiresAt <= Date.now())
         throw new AccessError(400, "이용 종료일을 미래 날짜로 지정해 주세요.");
-      const { account, invite } = await issueAccount(
+      const { account, invite, activationExpiresAt } = await issueAccount(
         body.inquiryId,
         body,
         admin.id,
@@ -121,15 +121,15 @@ export async function POST(req: NextRequest) {
       return privateJson({
         account: safeAccount(account),
         activationPath: "/activate#" + invite,
-        expiresInHours: 48,
+        activationExpiresAt,
       });
     }
     if (body.action === "reissue") {
-      const invite = await reissueInvite(body.id, admin.id);
+      const {invite,activationExpiresAt} = await reissueInvite(body.id, admin.id);
       await captureActivity(admin.id,'invite_reissued',req.headers,{subjectId:body.id});
       return privateJson({
         activationPath: "/activate#" + invite,
-        expiresInHours: 48,
+        activationExpiresAt,
       });
     }
     if (body.action === "delete") {

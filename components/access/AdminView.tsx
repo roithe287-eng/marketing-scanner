@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState, useRef } from "react";
-import type { Account, Inquiry, Features } from "@/lib/saas/types";
-import { DEFAULT_FEATURES } from "@/lib/saas/types";
+import type { Account, AccountPlan, Inquiry, Features } from "@/lib/saas/types";
+import { DEFAULT_FEATURES, accountPlan } from "@/lib/saas/types";
 import { inquiryServiceLabels } from '@/lib/inquiry';
 import { inquiryPlanLabel } from '@/lib/pricing';
 import AdminActivityDashboard from './AdminActivityDashboard';
@@ -11,11 +11,19 @@ import type {ActivityStats} from '@/lib/saas/activityTypes';
 type SafeAccount = Omit<Account, "passwordHash"> & {activity?:ActivityStats};
 const formatDate = (value: number) =>
   new Date(value+9*3600000).toISOString().slice(0, 10);
-function GrantFields({ account }: { account?: SafeAccount }) {
+const planLabels: Record<AccountPlan,string>={monthly:'월간 이용권',single:'1회 진단권 (PDF 미포함)','single-pdf':'1회 진단권 (PDF 포함)'};
+function GrantFields({ account, planId }: { account?: SafeAccount; planId?:string }) {
+  const [plan,setPlan]=useState<AccountPlan>(()=>account?accountPlan(account):planId==='single'||planId==='single-pdf'?planId:'monthly');
   const features = account?.features || DEFAULT_FEATURES;
   return (
     <>
       <div className="access-form-grid">
+        <label>
+          이용권
+          <select name="plan" value={plan} onChange={e=>setPlan(e.target.value as AccountPlan)}>
+            {Object.entries(planLabels).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
         <label>
           이용 종료일
           <input
@@ -27,7 +35,7 @@ function GrantFields({ account }: { account?: SafeAccount }) {
             )}
           />
         </label>
-        <label>
+        {plan==='monthly'&&<label>
           월 사이트 진단 한도
           <input
             name="monthlyLimit"
@@ -37,9 +45,9 @@ function GrantFields({ account }: { account?: SafeAccount }) {
             required
             defaultValue={account?.monthlyLimit || 10}
           />
-        </label>
+        </label>}
       </div>
-      <fieldset className="access-features">
+      {plan==='monthly'?<><fieldset className="access-features">
         <legend>허용 기능</legend>
         {(
           [
@@ -57,14 +65,15 @@ function GrantFields({ account }: { account?: SafeAccount }) {
       <p className="access-muted">
         경쟁사 비교 한도 = 사이트 진단 한도 / 상세 분석 한도 = 사이트 진단
         한도의 5배. PDF는 열람 가능한 결과에서 생성합니다.
-      </p>
+      </p></>:<p className="access-muted">종합 진단 1회가 제공됩니다. 이용 기간 변경이나 활성화 링크 재발급 후에도 사용 횟수는 유지됩니다. {plan==='single-pdf'&&'완료한 결과는 내 계정에 자동 보관되며 최대 7일 안에 PDF로 다시 받을 수 있습니다.'}</p>}
     </>
   );
 }
 function grant(form: FormData) {
   return {
+    plan: form.get('plan'),
     expiresAt: new Date(String(form.get("date")) + "T23:59:59+09:00").getTime(),
-    monthlyLimit: Number(form.get("monthlyLimit")),
+    monthlyLimit: Number(form.get("monthlyLimit") ?? 1),
     features: {
       competitor: form.has("competitor"),
       deepdive: form.has("deepdive"),
@@ -81,6 +90,7 @@ export default function AdminView() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [link, setLink] = useState("");
+  const [linkExpiry,setLinkExpiry]=useState(0);
   const [owner,setOwner]=useState<SafeAccount|null>(null);
   const [offset,setOffset]=useState(0),[total,setTotal]=useState(0);
   const [search,setSearch]=useState(''),[selected,setSelected]=useState(''),[revision,setRevision]=useState(0);
@@ -133,8 +143,10 @@ export default function AdminView() {
       });
       const data = await r.json();
       if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setLink('');window.location.replace('/login');}throw new Error(data.message);}
-      if (data.activationPath)
+      if (data.activationPath) {
         setLink(window.location.origin + data.activationPath);
+        setLinkExpiry(data.activationExpiresAt);
+      }
       else if (data.ok !== false) setNotice(data.message || "변경 사항을 저장했습니다.");
       await load();
       if (data.ok === false) setError(data.message);
@@ -171,8 +183,7 @@ export default function AdminView() {
         <section className="access-invite" role="status">
           <h2>활성화 링크가 준비되었습니다</h2>
           <p>
-            본인 확인을 마친 고객에게 별도로 전달해 주세요. 48시간·1회 사용
-            가능하며, 재발급 시 이전 링크와 로그인 세션은 무효화됩니다. 이
+            본인 확인을 마친 고객에게 별도로 전달해 주세요. {koreanTime(linkExpiry)}까지 한 번 사용할 수 있습니다. 재발급 시 이전 링크와 로그인 세션은 무효화됩니다. 이
             화면을 닫으면 다시 표시되지 않습니다.
           </p>
           <label>
@@ -282,7 +293,7 @@ export default function AdminView() {
                       });
                     }}
                   >
-                    <GrantFields />
+                    <GrantFields planId={item.planId}/>
                     <label className="access-checkbox">
                       <input type="checkbox" name="contactVerified" required />{" "}
                       연락처·이메일의 본인 확인과 이용 조건 협의를 마쳤습니다.
@@ -325,7 +336,7 @@ export default function AdminView() {
             >
               <summary>
                 <span>
-                  <strong>{account.name}</strong> {account.email}<small className="admin-customer-account-id">고객 ID · {account.id}</small><small className="admin-account-summary">진단 완료 {account.activity?.analyze_success||0} · PDF 생성 {account.activity?.pdf_ready||0} · 다운로드 요청 {account.activity?.pdf_save||0} · 저장 완료 {account.activity?.pdf_saved||0} · 링크 생성 {account.activity?.share_created||0}<br/>최근 기록 {koreanTime(account.activity?.lastSeenAt)}</small>
+                  <strong>{account.name}</strong> {account.email}<small className="admin-customer-account-id">{planLabels[accountPlan(account)]} · 고객 ID {account.id}</small><small className="admin-account-summary">진단 완료 {account.activity?.analyze_success||0} · PDF 생성 {account.activity?.pdf_ready||0} · 다운로드 요청 {account.activity?.pdf_save||0} · 저장 완료 {account.activity?.pdf_saved||0} · 링크 생성 {account.activity?.share_created||0}<br/>최근 기록 {koreanTime(account.activity?.lastSeenAt)}</small>
                 </span>
                 <span>
                   {account.status === "suspended"
