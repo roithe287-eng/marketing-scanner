@@ -86,7 +86,8 @@
 .access-form input:not([type="checkbox"]),
 .access-form textarea,
 .access-form select,
-.access-invite input {
+.access-invite input,
+.access-invite textarea {
   width: 100%;
   min-width: 0;
   border: 1px solid #ddd5d1;
@@ -98,13 +99,15 @@
   color: #262220;
   font-weight: 450;
 }
-.access-form textarea {
+.access-form textarea,
+.access-invite textarea {
   resize: vertical;
 }
 .access-form input:focus,
 .access-form textarea:focus,
 .access-form select:focus,
-.access-invite input:focus {
+.access-invite input:focus,
+.access-invite textarea:focus {
   outline: 3px solid #f8d4ca;
   outline-offset: 2px;
   border-color: #c23d31;
@@ -375,6 +378,14 @@
 }
 .access-admin > section {
   margin-top: 40px;
+}
+.access-invite-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.access-invite-feedback {
+  font-weight: 700;
 }
 .access-admin section > h2 {
   margin-bottom: 10px;

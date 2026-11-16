@@ -5,6 +5,7 @@ import { DEFAULT_FEATURES, accountPlan } from "@/lib/saas/types";
 import { inquiryServiceLabels } from '@/lib/inquiry';
 import { inquiryPlanLabel } from '@/lib/pricing';
 import AdminActivityDashboard from './AdminActivityDashboard';
+import ActivationInvite, { type Activation } from './ActivationInvite';
 import { NETWORK_ACTIVITY_ID } from '@/lib/saas/activityTypes';
 import UserActivityView, {koreanTime} from './UserActivityView';
 import type {ActivityStats} from '@/lib/saas/activityTypes';
@@ -89,8 +90,7 @@ export default function AdminView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [link, setLink] = useState("");
-  const [linkExpiry,setLinkExpiry]=useState(0);
+  const [activation, setActivation] = useState<Activation|null>(null);
   const [owner,setOwner]=useState<SafeAccount|null>(null);
   const [offset,setOffset]=useState(0),[total,setTotal]=useState(0);
   const [search,setSearch]=useState(''),[selected,setSelected]=useState(''),[revision,setRevision]=useState(0);
@@ -104,7 +104,7 @@ export default function AdminView() {
       setLoading(true);setError('');
       const r = await fetch("/api/admin?offset="+offset, { cache: "no-store",signal:controller.signal });
       const data = await r.json();
-      if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setLink('');window.location.replace('/login');}throw new Error(data.message);}
+      if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setActivation(null);window.location.replace('/login');}throw new Error(data.message);}
       if(controller.signal.aborted)return;
       setInquiries(data.inquiries);
       setInquiryEmail(data.inquiryEmail);
@@ -134,7 +134,7 @@ export default function AdminView() {
     setBusy(true);
     setError("");
     setNotice("");
-    setLink("");
+    setActivation(null);
     try {
       const r = await fetch("/api/admin", {
         method: "POST",
@@ -142,10 +142,13 @@ export default function AdminView() {
         body: JSON.stringify(body),
       });
       const data = await r.json();
-      if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setLink('');window.location.replace('/login');}throw new Error(data.message);}
+      if (!r.ok) {if(r.status===401||r.status===403){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setActivation(null);window.location.replace('/login');}throw new Error(data.message);}
       if (data.activationPath) {
-        setLink(window.location.origin + data.activationPath);
-        setLinkExpiry(data.activationExpiresAt);
+        setActivation({
+          link: window.location.origin + data.activationPath,
+          expiresAt: data.activationExpiresAt,
+          plan: data.account?.plan ?? data.activationPlan ?? 'monthly',
+        });
       }
       else if (data.ok !== false) setNotice(data.message || "변경 사항을 저장했습니다.");
       await load();
@@ -168,7 +171,7 @@ export default function AdminView() {
           목록 새로고침
         </button>
       </div>
-      <nav className="admin-jump-nav" aria-label="관리자 메뉴"><a href="#admin-dashboard">이용 현황</a><a href="#admin-users">사용자·활동 기록</a><a href="#admin-create">계정 직접 생성</a><a href="#admin-inquiries">이용 문의·승인</a><button onClick={async()=>{const r=await fetch('/api/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(r.ok){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setLink('');window.location.replace('/login');}}}>로그아웃</button></nav>
+      <nav className="admin-jump-nav" aria-label="관리자 메뉴"><a href="#admin-dashboard">이용 현황</a><a href="#admin-users">사용자·활동 기록</a><a href="#admin-create">계정 직접 생성</a><a href="#admin-inquiries">이용 문의·승인</a><button onClick={async()=>{const r=await fetch('/api/logout',{method:'POST',headers:{'Content-Type':'application/json'},body:'{}'});if(r.ok){setAccounts([]);setInquiries([]);setOwner(null);setSelected('');setOverviewSelected('');setActivation(null);window.location.replace('/login');}}}>로그아웃</button></nav>
       {error && (
         <p role="alert" className="access-error">
           {error}
@@ -179,36 +182,7 @@ export default function AdminView() {
           {notice}
         </p>
       )}
-      {link && (
-        <section className="access-invite" role="status">
-          <h2>활성화 링크가 준비되었습니다</h2>
-          <p>
-            본인 확인을 마친 고객에게 별도로 전달해 주세요. {koreanTime(linkExpiry)}까지 한 번 사용할 수 있습니다. 재발급 시 이전 링크와 로그인 세션은 무효화됩니다. 이
-            화면을 닫으면 다시 표시되지 않습니다.
-          </p>
-          <label>
-            고객 전달용 링크
-            <input
-              readOnly
-              value={link}
-              onFocus={(e) => e.currentTarget.select()}
-            />
-          </label>
-          <button
-            className="access-secondary"
-            onClick={async () => {
-              try {
-                await navigator.clipboard.writeText(link);
-                setNotice("활성화 링크를 복사했습니다.");
-              } catch {
-                setNotice("링크를 선택해 직접 복사해 주세요.");
-              }
-            }}
-          >
-            링크 복사
-          </button>
-        </section>
-      )}
+      {activation && <ActivationInvite key={activation.link} {...activation}/>}
       {owner&&<AdminActivityDashboard revision={revision} pending={inquiries.filter(i=>i.status==='pending').length} onSelect={setOverviewSelected}/>}
       {owner&&overviewSelected&&<section ref={overviewDetailRef} className="admin-overview-detail"><div className="admin-section-head"><h2>{overviewSelected===NETWORK_ACTIVITY_ID?'허용 네트워크 이용 상세':'고객별 이용 상세'}</h2><button className="access-secondary" onClick={()=>setOverviewSelected('')}>닫기</button></div><UserActivityView id={overviewSelected} revision={revision}/></section>}
       <section id="admin-create">

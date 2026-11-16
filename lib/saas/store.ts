@@ -543,7 +543,7 @@ export async function reissueInvite(id: string, actor: string) {
   if (!ok)
     throw new AccessError(409, "다른 변경이 있었습니다. 새로고침해 주세요.");
   await auditIssuedInvite(actor, "reissue-invite", id);
-  return {invite,activationExpiresAt};
+  return {invite,activationExpiresAt,plan:accountPlan(updated)};
 }
 export async function deleteAccount(
   id: string,
