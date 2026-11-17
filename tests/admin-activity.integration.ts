@@ -3,7 +3,7 @@ import { test, before, after } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { startRedisBridge } from './helpers/redisBridge';
-import { db,key,token,createSession,createCustomer,activate,getAccount,reserve,usage,updateAccount,deleteAccount,migrateLegacyAudit } from '../lib/saas/store';
+import { db,key,token,createSession,createCustomer,activate,getAccount,reserve,usage,updateAccount,deleteAccount,migrateLegacyAudit,saveInquiry } from '../lib/saas/store';
 import { SESSION_COOKIE,getPrincipal,requireAdmin } from '../lib/saas/auth';
 import { digest } from '../lib/security/request';
 import { DEFAULT_FEATURES,type Account } from '../lib/saas/types';
@@ -12,6 +12,7 @@ import * as setup from '../app/api/setup/route';
 import * as admin from '../app/api/admin/route';
 import * as telemetry from '../app/api/activity/route';
 import * as login from '../app/api/login/route';
+import * as activation from '../app/api/activate/route';
 import * as access from '../app/api/access/route';
 import * as share from '../app/api/share/route';
 import {saveSharedReport,listOwnReports} from '../lib/shareStore';
@@ -37,6 +38,78 @@ test('owner setup requires the secret and registered network; creation is exactl
   assert.equal((await setup.POST(request('/api/setup',{...body,email:'attacker@example.com'},'','203.0.113.10'))).status,409);
   assert.equal(await getPrincipal(request('/api/access',undefined,'','203.0.113.10')),null);
   assert.equal((await getPrincipal(request('/api/access',undefined,ownerToken,'203.0.113.10')))?.kind,'account');
+});
+test('editing unused grants atomically replaces the link and applies the new terms to activation', async () => {
+  const manage = (body: unknown) => admin.POST(request('/api/admin', body, ownerToken, '203.0.113.10'));
+  const activateLink = (path: string) => activation.POST(request('/api/activate', {
+    token: path.split('#')[1], password, consent: true,
+  }, '', '203.0.113.51'));
+  const created = await (await manage({
+    ...grant, action: 'create', email: 'pending-update@example.com', name: 'Pending', contactVerified: true,
+  })).json();
+  const edit = { ...grant, action: 'update', id: created.account.id, version: created.account.version, status: 'approved', monthlyLimit: 30 };
+  assert.equal((await manage({ ...edit, expiresAt: Date.now() - 60_000 })).status, 400);
+  assert.equal((await getAccount(edit.id))?.version, edit.version);
+  const updated = await manage(edit);
+  assert.equal(updated.status, 200);
+  const changed = await updated.json();
+  assert.match(changed.activationPath, /^\/activate#[\w-]{43}$/);
+  assert.equal(changed.activationExpiresAt, edit.expiresAt);
+  assert.equal(changed.account.monthlyLimit, 30);
+  assert.equal((await manage(edit)).status, 409);
+  assert.equal((await manage({action:'reissue', id:edit.id, version:edit.version, contactVerified:true})).status, 409);
+  assert.equal((await activateLink(created.activationPath)).status, 403);
+  const activated = await activateLink(changed.activationPath);
+  assert.equal(activated.status, 200);
+  const principal = await getPrincipal(request('/api/access', undefined, activated.cookies.get(SESSION_COOKIE)!.value));
+  assert.equal(principal?.kind === 'account' && principal.account.monthlyLimit, 30);
+  assert.equal((await activateLink(changed.activationPath)).status, 400);
+});
+
+test('audit and sign-in activity storage errors do not conceal a saved grant or deny a valid login', async () => {
+  const email = 'audit-failure@example.com';
+  const created = await createCustomer({ ...grant, email, name: 'Audit resilience', company: '' }, owner.id);
+  const customer = await activate(created.invite, password);
+  const auditKey = key('audit');
+  const activityKey = key('activity:' + customer.id + ':' + activityDay());
+  await db().set(auditKey, 'incorrect audit key type');
+  await db().set(activityKey, 'incorrect activity key type');
+  try {
+    const updated = await admin.POST(request('/api/admin', {
+      ...grant, action:'update', id:customer.id, version:customer.version, status:'approved', monthlyLimit:15,
+    }, ownerToken, '203.0.113.10'));
+    assert.equal(updated.status, 200);
+    const signedIn = await login.POST(request('/api/login', {email, password}, '', '203.0.113.53'));
+    assert.equal(signedIn.status, 200);
+    const principal = await getPrincipal(request('/api/access', undefined, signedIn.cookies.get(SESSION_COOKIE)!.value));
+    assert.equal(principal?.kind === 'account' && principal.account.monthlyLimit, 15);
+  } finally {
+    await db().del(auditKey, activityKey);
+  }
+});
+
+test('renewal for an activated customer updates access without creating a password reset link', async () => {
+  const manage = (body: unknown) => admin.POST(request('/api/admin', body, ownerToken, '203.0.113.10'));
+  const email = 'renewal@example.com';
+  const created = await createCustomer({ ...grant, email, name: 'Renewal', company: '' }, owner.id);
+  const current = await activate(created.invite, password);
+  const session = await createSession(current);
+  const inquiryId = await saveInquiry({
+    email, name: 'Renewal', company: '', contact: 'Test', message: '', url: '', consent: true, planId: 'monthly-100',
+  });
+  const approved = await manage({ ...grant, action: 'approve', inquiryId, contactVerified: true, monthlyLimit: 100 });
+  assert.equal(approved.status, 200);
+  const result = await approved.json();
+  assert.equal(result.activationPath, undefined);
+  assert.equal(result.account.id, current.id);
+  assert.equal(result.account.monthlyLimit, 100);
+  assert.equal(await getPrincipal(request('/api/access', undefined, session)), null);
+  const loggedIn = await login.POST(request('/api/login', { email, password }, '', '203.0.113.52'));
+  assert.equal(loggedIn.status, 200);
+  const principal = await getPrincipal(request('/api/access', undefined, loggedIn.cookies.get(SESSION_COOKIE)!.value));
+  assert.equal(principal?.kind === 'account' && principal.account.monthlyLimit, 100);
+  assert.equal((await manage({ action: 'close', inquiryId })).status, 409);
+  assert.equal((await db().get<{status: string}>(key('inquiry:' + inquiryId)))?.status, 'approved');
 });
 test('owner creates customers, customers cannot create or promote accounts, and duplicate email is rejected',async()=>{
   const input={action:'create',email:'customer@example.com',name:'고객',company:'회사',contactVerified:true,...grant};

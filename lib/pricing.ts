@@ -12,10 +12,11 @@ export const agencyBenefit = '네이버/메타 광고 대행 시 무료 제공';
 export const agencyPlanId = 'agency';
 export const formatWon = (amount: number) => amount.toLocaleString('ko-KR');
 export const planInquiryHref = (id: string) => `/inquiry?plan=${encodeURIComponent(id)}`;
+export const getScannerPlan = (id?: string) => scannerPlans.find(plan => plan.id === id);
 
 export function inquiryPlanLabel(id?: string): string | undefined {
   if (id === agencyPlanId) return agencyBenefit;
-  const plan = scannerPlans.find(candidate => candidate.id === id);
+  const plan = getScannerPlan(id);
   if (!plan) return undefined;
   return `${plan.name}${plan.id.startsWith('single') ? ` (${plan.label})` : ''} · ${plan.price === null ? '별도 협의' : `${formatWon(plan.price)}원${plan.monthly ? '/월' : ''}`}`;
 }
