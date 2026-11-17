@@ -225,10 +225,13 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     if(error instanceof WebsiteCollectionError&&collectionUrl&&finish){
       try{
-        await finish(true,true);
         const limited=await collectRestrictedWebsite(collectionUrl,error);
+        await finish(true,true);
         return NextResponse.json(limited,{headers:{'Cache-Control':'private, no-store'}});
-      }catch(fallbackError){return failure(fallbackError);}
+      }catch(fallbackError){
+        await finish(true).catch(()=>{});
+        return failure(fallbackError);
+      }
     }
     if(finish)await finish(true).catch(()=>{});
     return failure(error);

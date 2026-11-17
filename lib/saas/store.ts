@@ -179,33 +179,46 @@ export async function usage(id: string, account?: Account) {
     )) || { analyze: 0, competitor: 0, deepdive: 0 }
   );
 }
-export const RESERVE_SCRIPT = `
-local raw=redis.call('GET',KEYS[1]);if not raw then return -1 end
-local u=cjson.decode(raw)
-if u.status~='approved' or u.version~=tonumber(ARGV[1]) or u.expiresAt<=tonumber(ARGV[2]) then return -1 end
+const ACTIVE_GRANT = `
+local function activeGrant(accountKey, version, now)
+  local raw=redis.call('GET',accountKey)
+  if not raw then return nil end
+  local u=cjson.decode(raw)
+  if u.status~='approved' or u.version~=tonumber(version) or u.expiresAt<=tonumber(now) then return nil end
+  return u
+end`;
+export const RESERVE_SCRIPT = `${ACTIVE_GRANT}
+local u=activeGrant(KEYS[1],ARGV[1],ARGV[2]);if not u then return -1 end
 local action=ARGV[3]
 if action~='analyze' and not u.features[action] then return -2 end
 local cap=u.monthlyLimit*tonumber(ARGV[4]);local count=tonumber(redis.call('HGET',KEYS[2],action) or '0')
 if count>=cap then return -3 end
 if not redis.call('SET',KEYS[3],ARGV[5],'NX','EX',120) then return -4 end
 redis.call('HINCRBY',KEYS[2],action,1);redis.call('EXPIRE',KEYS[2],6048000);return count+1`;
-export const FINISH_SCRIPT = `if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
-redis.call('DEL',KEYS[1]);if ARGV[2]=='refund' then local n=tonumber(redis.call('HGET',KEYS[2],ARGV[3]) or '0');if n>0 then redis.call('HINCRBY',KEYS[2],ARGV[3],-1) end end;return 1`;
+export const FINISH_SCRIPT = `${ACTIVE_GRANT}
+if redis.call('GET',KEYS[1])~=ARGV[1] then return 0 end
+local mode=ARGV[2]
+local allowed=mode=='refund' or activeGrant(KEYS[3],ARGV[4],ARGV[5])
+redis.call('DEL',KEYS[1])
+if mode~='complete' or not allowed then
+  local count=tonumber(redis.call('HGET',KEYS[2],ARGV[3]) or '0')
+  if count>0 then redis.call('HINCRBY',KEYS[2],ARGV[3],-1) end
+end
+return allowed and 1 or 0`;
 type ReportRetention = NonNullable<MarketingReport['sharedRetention']>;
 export type FinishUsage = (refund?: boolean, limited?: boolean, report?: MarketingReport) => Promise<ReportRetention | void>;
-const SINGLE_RESERVE = `${LEGACY_SINGLE_USED}
-local raw=redis.call('GET',KEYS[1]);if not raw then return -1 end
-local u=cjson.decode(raw)
-if u.status~='approved' or u.version~=tonumber(ARGV[1]) or u.expiresAt<=tonumber(ARGV[2]) then return -1 end
+const SINGLE_RESERVE = `${LEGACY_SINGLE_USED}${ACTIVE_GRANT}
+local u=activeGrant(KEYS[1],ARGV[1],ARGV[2]);if not u then return -1 end
 if redis.call('EXISTS',KEYS[3])==1 or (not u.plan and legacyUsed(4,#KEYS)) then return -3 end
 if not redis.call('SET',KEYS[2],ARGV[3],'NX','EX',120) then return -4 end
 return 1`;
-const SINGLE_FINISH = `
+const SINGLE_FINISH = `${ACTIVE_GRANT}
 if redis.call('GET',KEYS[2])~=ARGV[1] then return 0 end
-if ARGV[2]=='refund' then redis.call('DEL',KEYS[2]);return 1 end
-local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end
-local u=cjson.decode(raw)
-if u.version~=tonumber(ARGV[3]) or u.status~='approved' or u.expiresAt<=tonumber(ARGV[4]) or redis.call('EXISTS',KEYS[3])==1 then return 0 end
+local mode=ARGV[2]
+if mode=='refund' then redis.call('DEL',KEYS[2]);return 1 end
+if not activeGrant(KEYS[1],ARGV[3],ARGV[4]) then redis.call('DEL',KEYS[2]);return 0 end
+if mode=='limited' then redis.call('DEL',KEYS[2]);return 1 end
+if redis.call('EXISTS',KEYS[3])==1 then return 0 end
 if ARGV[5]~='' then
   if not redis.call('SET',KEYS[4],ARGV[6],'NX','PXAT',ARGV[8]) then return -1 end
   redis.call('ZADD',KEYS[5],ARGV[4],ARGV[5]);redis.call('ZREMRANGEBYSCORE',KEYS[5],'-inf',ARGV[7]);redis.call('EXPIRE',KEYS[5],ARGV[9])
@@ -220,13 +233,20 @@ function quotaError(result: number, single = false) {
   };
   return new AccessError(result === -1 || result === -2 ? 403 : 429,messages[result]);
 }
+function finishMode(refund: boolean, limited: boolean) {
+  if (!refund) return 'complete';
+  return limited ? 'limited' : 'refund';
+}
+function unavailableResult() {
+  return new AccessError(409,'진단 이용 상태가 변경되었습니다. 내 계정을 확인해 주세요.');
+}
 async function reserveSingle(account: Account, action: UsageAction, lock: string, reservation: string): Promise<FinishUsage> {
   if(action!=='analyze')throw quotaError(-2,true);
   const accountKey=key('account:'+account.id);
   const usageKeys=singleUsageKeys(account.id);
   const result=await db().eval<unknown[],number>(SINGLE_RESERVE,[accountKey,lock,...usageKeys],[account.version,Date.now(),reservation]);
   if(result<0)throw quotaError(result,true);
-  return async (refund=false,_limited=false,report)=>{
+  return async (refund=false,limited=false,report)=>{
     const createdAt=Date.now();
     const expiresAt=createdAt+REPORT_RETENTION_SECONDS*1000;
     const wantsReport=!refund&&accountPlan(account)==='single-pdf';
@@ -236,9 +256,9 @@ async function reserveSingle(account: Account, action: UsageAction, lock: string
       const reportId=wantsReport?generateReportId():'';
       const outcome=await db().eval<unknown[],number>(SINGLE_FINISH,
         [accountKey,lock,usageKeys[0],reportKey(reportId),key('reports:'+account.id)],
-        [reservation,refund?'refund':'complete',account.version,createdAt,reportId,stored,createdAt-REPORT_RETENTION_SECONDS*1000,expiresAt,REPORT_RETENTION_SECONDS]);
+        [reservation,finishMode(refund,limited),account.version,createdAt,reportId,stored,createdAt-REPORT_RETENTION_SECONDS*1000,expiresAt,REPORT_RETENTION_SECONDS]);
       if(outcome===-1)continue;
-      if(!outcome&&!refund)throw new AccessError(409,'진단 이용 상태가 변경되었습니다. 내 계정을 확인해 주세요.');
+      if(!outcome&&(!refund||limited))throw unavailableResult();
       return wantsReport?{reportId,createdAt,expiresAt}:undefined;
     }
     throw new AccessError(503,'진단 결과를 보관하지 못했습니다. 다시 시도해 주세요.');
@@ -270,10 +290,11 @@ export async function reserve(principal: Principal, action: UsageAction, context
       return retention;
     };
   }
+  const accountKey = key("account:" + user.id);
   const bucket = key(`usage:${user.id}:${monthBucket()}`);
   const result = await db().eval<unknown[], number>(
     RESERVE_SCRIPT,
-    [key("account:" + user.id), bucket, lock],
+    [accountKey, bucket, lock],
     [user.version, Date.now(), action, MULTIPLIER[action], reservation],
   );
   if (result < 0) throw quotaError(result);
@@ -281,13 +302,15 @@ export async function reserve(principal: Principal, action: UsageAction, context
   await track('started');
   return async (refund = false, limited = false) => {
     if (finished) return;
-    await db().eval(
+    const outcome = await db().eval<unknown[], number>(
       FINISH_SCRIPT,
-      [lock, bucket],
-      [reservation, refund ? "refund" : "complete", action],
+      [lock, bucket, accountKey],
+      [reservation, finishMode(refund, limited), action, user.version, Date.now()],
     );
     finished = true;
-    await track(refund?'failed':'success',limited);
+    const blocked = !outcome && (!refund || limited);
+    await track(refund || blocked ? 'failed' : 'success', limited && !blocked);
+    if (blocked) throw unavailableResult();
   };
 }
 export async function audit(actor: string, action: string, target: string) {

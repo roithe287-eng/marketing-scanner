@@ -128,7 +128,7 @@ test('no-content quota refund records one limited event, distinct from failures 
   const account:Account={id:'00000000-0000-4000-8000-000000000001',role:'customer',status:'approved',passwordHash:null,email:'test@example.com',name:'Test',company:'',version:1,createdAt:Date.now(),expiresAt:Date.now()+86400000,monthlyLimit:10,features:DEFAULT_FEATURES};
   const finish=await reserve({kind:'account',account},'analyze',{headers:new Headers(),url:base.url+'?token=never-log'});
   await finish(true,true);await finish(true,true);
-  assert.equal(calls.filter(c=>c.args[1]==='refund').length,1);
+  assert.equal(calls.filter(c=>c.args[1]==='limited').length,1);
   const events=calls.filter(c=>typeof c.args[1]==='string'&&String(c.args[1]).includes('"action"')).map(c=>JSON.parse(String(c.args[1])));
   assert.deepEqual(events.map(e=>e.action),['analyze_started','analyze_limited']);assert.ok(events.every(e=>e.target==='smartstore.naver.com/wodkq'));
 });
