@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {ACTIVITY_POLICY} from '@/lib/saas/activityTypes';
 export default function AuthForm({
   mode,
@@ -7,15 +7,20 @@ export default function AuthForm({
   mode: "login" | "activate" | "setup";
 }) {
   const [invite, setInvite] = useState("");
-  const inviteRead = useRef(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   useEffect(() => {
-    if (mode !== "activate" || inviteRead.current) return;
-    inviteRead.current = true;
-    const token = window.location.hash.slice(1);
-    if (/^[\w-]{43}$/.test(token)) setInvite(token);
-    if (token) window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    if (mode !== "activate") return;
+    function readInvite() {
+      const token = window.location.hash.slice(1);
+      if (!token) return;
+      setInvite(/^[\w-]{43}$/.test(token) ? token : "");
+      setError("");
+      window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
+    }
+    readInvite();
+    window.addEventListener("hashchange", readInvite);
+    return () => window.removeEventListener("hashchange", readInvite);
   }, [mode]);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
