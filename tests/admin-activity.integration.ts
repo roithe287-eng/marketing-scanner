@@ -88,6 +88,114 @@ test('audit and sign-in activity storage errors do not conceal a saved grant or 
   }
 });
 
+test('suspending a monthly grant stops in-flight results and returns their reserved uses', async () => {
+  const email = 'suspended-in-flight@example.com';
+  const created = await createCustomer({ ...grant, email, name: 'Monthly customer', company: '' }, owner.id);
+  const customer = await activate(created.invite, password);
+  const session = await createSession(customer);
+  const principal = {kind:'account' as const, account:customer};
+  const [analyze, competitor, deepdive] = await Promise.all([
+    reserve(principal, 'analyze'),
+    reserve(principal, 'competitor'),
+    reserve(principal, 'deepdive'),
+  ]);
+  const update = (version: number, status: 'approved' | 'suspended') => admin.POST(request('/api/admin', {
+    ...grant, action:'update', id:customer.id, version, status,
+  }, ownerToken, '203.0.113.10'));
+  const suspended = await update(customer.version, 'suspended');
+  assert.equal(suspended.status, 200);
+  assert.equal(await getPrincipal(request('/api/access', undefined, session)), null);
+  await assert.rejects(() => analyze(), {status:409});
+  await assert.rejects(() => competitor(), {status:409});
+  await deepdive(true);
+  assert.deepEqual(await usage(customer.id), {analyze:0, competitor:0, deepdive:0});
+
+  const resumed = await update((await suspended.json()).account.version, 'approved');
+  assert.equal(resumed.status, 200);
+  assert.equal((await resumed.json()).activationPath, undefined);
+  const loggedIn = await login.POST(request('/api/login', {email, password}, '', '203.0.113.54'));
+  assert.equal(loggedIn.status, 200);
+  const refreshed = await getPrincipal(request('/api/access', undefined, loggedIn.cookies.get(SESSION_COOKIE)!.value));
+  assert.ok(refreshed);
+  await (await reserve(refreshed,'analyze'))();
+  assert.equal((await usage(customer.id)).analyze, 1);
+});
+
+test('an expired grant does not release in-flight results, including a free limited diagnosis', async t => {
+  const activated = await Promise.all([
+    createCustomer({ ...grant, email:'expired-monthly@example.com', name:'Monthly', company:'' }, owner.id),
+    createCustomer({ ...grant, email:'expired-single@example.com', name:'Single', company:'', plan:'single' }, owner.id),
+  ].map(async pending => activate((await pending).invite, password)));
+  const [monthly, single] = activated;
+  const monthlyResult = await reserve({kind:'account',account:monthly}, 'analyze');
+  const limitedResult = await reserve({kind:'account',account:single}, 'analyze');
+  const clock = t.mock.method(Date, 'now', () => Math.max(monthly.expiresAt, single.expiresAt));
+  try {
+    const outcomes = await Promise.allSettled([monthlyResult(), limitedResult(true,true)]);
+    for (const result of outcomes) {
+      assert.equal(result.status, 'rejected');
+      assert.equal(result.status === 'rejected' && result.reason.status, 409);
+    }
+  } finally {
+    clock.mock.restore();
+  }
+  assert.equal((await usage(monthly.id)).analyze, 0);
+  assert.equal((await usage(single.id)).analyze, 0);
+});
+
+test('the analysis API suppresses a limited report when the grant is suspended during fallback', async t => {
+  const {POST: analyze} = await import('../app/api/analyze/route');
+  const {websiteHttp} = await import('../lib/security/safeFetch');
+  const created = await createCustomer({
+    ...grant, email:'limited-after-suspend@example.com', name:'Monthly', company:'',
+  }, owner.id);
+  const customer = await activate(created.invite, password);
+  const session = await createSession(customer);
+  const providerEnv = {
+    OPENAI_API_KEY:'synthetic', NAVER_REPORT_SEARCH_AUTHORIZED:'true',
+    NAVER_CLIENT_ID:'synthetic', NAVER_CLIENT_SECRET:'synthetic',
+  };
+  const previous = Object.fromEntries(Object.keys(providerEnv).map(key => [key, process.env[key]]));
+  Object.assign(process.env, providerEnv);
+  t.after(() => {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  });
+  t.mock.method(websiteHttp,'fetch',async (input: string | URL) =>
+    new URL(input).pathname === '/robots.txt'
+      ? new Response('User-agent: *\nAllow: /')
+      : new Response(null,{status:403}));
+  let started!: () => void, release!: () => void;
+  const fallbackStarted = new Promise<void>(resolve => {started = resolve;});
+  const resumeFallback = new Promise<void>(resolve => {release = resolve;});
+  const nativeFetch = globalThis.fetch;
+  t.mock.method(globalThis,'fetch',async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+    const url = new URL(input instanceof Request ? input.url : input);
+    if (url.origin === bridge.url) return nativeFetch(input,init);
+    assert.equal(url.hostname,'openapi.naver.com');
+    started();
+    await resumeFallback;
+    return Response.json({items:[]});
+  });
+  const result = analyze(request('/api/analyze', {url:'https://example.com'}, session));
+  try {
+    await Promise.race([fallbackStarted, result.then(response => assert.fail('Fallback did not start: ' + response.status))]);
+    const suspended = await admin.POST(request('/api/admin', {
+      ...grant, action:'update', id:customer.id, version:customer.version, status:'suspended',
+    }, ownerToken, '203.0.113.10'));
+    assert.equal(suspended.status,200);
+  } finally {
+    release();
+  }
+  const response = await result;
+  assert.equal(response.status,409);
+  const body = await response.json();
+  assert.deepEqual(Object.keys(body),['message']);
+  assert.equal((await usage(customer.id)).analyze,0);
+});
+
 test('renewal for an activated customer updates access without creating a password reset link', async () => {
   const manage = (body: unknown) => admin.POST(request('/api/admin', body, ownerToken, '203.0.113.10'));
   const email = 'renewal@example.com';
