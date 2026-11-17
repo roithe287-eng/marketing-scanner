@@ -84,14 +84,16 @@ test("inquiry, approval, single-use activation, login, ownership, concurrency an
     },
     admin.id,
   );
+  assert.ok(issued.invite);
+  const firstInvite = issued.invite;
   assert.equal(
     await sessionAccount(await createSession(issued.account)),
     null,
     "no session before activation",
   );
   const outcomes = await Promise.allSettled([
-    activate(issued.invite, password),
-    activate(issued.invite, password),
+    activate(firstInvite, password),
+    activate(firstInvite, password),
   ]);
   assert.equal(
     outcomes.filter((r) => r.status === "fulfilled").length,
@@ -105,7 +107,7 @@ test("inquiry, approval, single-use activation, login, ownership, concurrency an
   ).value;
   assert.equal(await verifyPassword(password, account.passwordHash), true);
   assert.equal(await verifyPassword("wrong", account.passwordHash), false);
-  await assert.rejects(() => activate(issued.invite, password), {
+  await assert.rejects(() => activate(firstInvite, password), {
     status: 400,
   });
   const session = await createSession(account);

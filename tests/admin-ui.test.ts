@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { UserActivityPanel, type ActivityDetailData } from '../components/access/UserActivityView';
+import { GrantFields } from '../components/access/AdminView';
 import { DEFAULT_FEATURES } from '../lib/saas/types';
 const now=Date.UTC(2026,9,6,2);
 const data:ActivityDetailData={
@@ -24,4 +25,15 @@ test('admin empty states remain explicit instead of inventing IP, activity or ol
 test('suspended users do not have their stored reports labelled as active links',()=>{
   const html=renderToStaticMarkup(React.createElement(UserActivityPanel,{data:{...data,account:{...data.account,status:'suspended'}}}));
   assert.ok(html.includes('고객 열람 중지'));assert.ok(!html.includes('class="admin-badge">활성'));
+});
+test('the inquiry approval form preselects the purchased monthly quota and distinguishes both single-use plans', () => {
+  for (const count of [15, 30, 100]) {
+    const html = renderToStaticMarkup(React.createElement(GrantFields, {planId: 'monthly-' + count}));
+    assert.match(html, new RegExp('name="monthlyLimit" value="' + count + '"'));
+  }
+  for (const planId of ['single', 'single-pdf']) {
+    const html = renderToStaticMarkup(React.createElement(GrantFields, {planId}));
+    assert.ok(html.includes('value="' + planId + '" selected=""'));
+    assert.doesNotMatch(html, /name="monthlyLimit"/);
+  }
 });

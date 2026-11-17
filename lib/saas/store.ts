@@ -6,6 +6,7 @@ import { captureActivity, targetHost, activityStorageKeys } from './activity';
 import { generateReportId, reportKey } from '../reportRetentionStore';
 import { REPORT_RETENTION_SECONDS } from '../reportRetention';
 import type { MarketingReport } from '../reportSchema';
+import { getScannerPlan } from '../pricing';
 import {
   Account,
   Grant,
@@ -26,6 +27,15 @@ export function prefix() {
 }
 export const key = (suffix: string) => prefix() + suffix;
 export const inviteExpiry = (account: Pick<Account,'expiresAt'>) => Math.min(account.expiresAt,Date.now()+INVITE_SECONDS*1000);
+function activationFor(account: Account) {
+  const invite = token();
+  return {
+    invite,
+    activationExpiresAt: inviteExpiry(account),
+    inviteKey: key('invite:' + digest(invite)),
+    inviteRecord: JSON.stringify({userId: account.id, version: account.version}),
+  };
+}
 export function db() {
   const r = getRedisClient();
   if (!r)
@@ -287,9 +297,9 @@ export async function audit(actor: string, action: string, target: string) {
   await db().eval(`redis.call('LPUSH',KEYS[1],ARGV[1]);redis.call('LTRIM',KEYS[1],0,1999);redis.call('EXPIREAT',KEYS[1],ARGV[2]);return 1`,
     [auditKey],[JSON.stringify({actor,action,target,at}),(day+180)*86400]);
 }
-async function auditIssuedInvite(actor: string, action: string, target: string) {
-  // An auxiliary log failure must not hide a link that Redis already issued.
-  await audit(actor,action,target).catch(()=>console.error('[audit] invite log unavailable'));
+export async function auditAdminAction(actor: string, action: string, target: string) {
+  // Report the committed outcome even if the auxiliary audit store is unavailable.
+  await audit(actor,action,target).catch(()=>console.error('[audit] admin log unavailable'));
 }
 /** Move the former sliding-TTL audit list to bounded, absolute day buckets. */
 export async function migrateLegacyAudit() {
@@ -363,17 +373,17 @@ export async function createCustomer(
     ...grantTerms(data),
     id: randomUUID(), role: "customer", status: "approved",
     passwordHash: null, version: 1, createdAt: Date.now(), approvedAt: Date.now(), approvedBy: actor };
-  const invite = token(), activationExpiresAt=inviteExpiry(account);
+  const { invite, activationExpiresAt, inviteKey, inviteRecord } = activationFor(account);
   const ok = await db().eval<unknown[], number>(`
 if redis.call('GET',KEYS[5])~=ARGV[5] then return -1 end
 if redis.call('EXISTS',KEYS[1])==1 then return 0 end
 redis.call('SET',KEYS[1],ARGV[1]);redis.call('SET',KEYS[2],ARGV[2]);
 redis.call('SET',KEYS[3],ARGV[3],'PXAT',ARGV[4]);redis.call('ZADD',KEYS[4],ARGV[6],ARGV[1]);return 1`,
-    [emailKey(account.email),key("account:"+account.id),key("invite:"+digest(invite)),key("accounts"),key("admin-initialized")],
-    [account.id,JSON.stringify(account),JSON.stringify({userId:account.id,version:1}),activationExpiresAt,actor,account.createdAt]);
+    [emailKey(account.email),key("account:"+account.id),inviteKey,key("accounts"),key("admin-initialized")],
+    [account.id,JSON.stringify(account),inviteRecord,activationExpiresAt,actor,account.createdAt]);
   if (ok === -1) throw new AccessError(403, "소유자만 계정을 생성할 수 있습니다.");
   if (ok !== 1) throw new AccessError(409, "이미 등록된 이메일입니다. 기존 계정의 이용 조건을 변경해 주세요.");
-  await auditIssuedInvite(actor,"create-account",account.id);
+  await auditAdminAction(actor,"create-account",account.id);
   return {account,invite,activationExpiresAt};
 }
 export async function createAdmin(data: {
@@ -428,6 +438,9 @@ export async function issueAccount(
       409,
       "관리자 이메일은 고객 계정으로 승인할 수 없습니다.",
     );
+  const requested = getScannerPlan(inquiry.planId);
+  const requestedPlan = requested?.id === 'single' || requested?.id === 'single-pdf'
+    ? requested.id : requested?.monthly ? 'monthly' : undefined;
   const account: Account = {
     id: previous?.id || randomUUID(),
     email: inquiry.email,
@@ -435,14 +448,14 @@ export async function issueAccount(
     company: inquiry.company,
     role: "customer",
     status: "approved",
-    ...grantTerms({...grant,plan:grant.plan ?? (inquiry.planId==='single'||inquiry.planId==='single-pdf'?inquiry.planId:undefined)},previous ?? undefined),
+    ...grantTerms({...grant,plan:grant.plan ?? requestedPlan},previous ?? undefined),
     passwordHash: previous?.passwordHash || null,
     version: (previous?.version || 0) + 1,
     createdAt: previous?.createdAt || Date.now(),
     approvedAt: Date.now(),
     approvedBy: actor,
   };
-  const invite = token(), activationExpiresAt=inviteExpiry(account);
+  const activation = account.passwordHash ? null : activationFor(account);
   const updated = { ...inquiry, status: "approved", accountId: account.id };
   const ok = await db().eval<unknown[], number>(
     `${LEGACY_SINGLE_USED}
@@ -452,11 +465,13 @@ local raw=redis.call('GET',KEYS[2]);if raw then
   local u=cjson.decode(raw);if u.version~=tonumber(ARGV[2]) then return 0 end
   if not u.plan and u.monthlyLimit==1 and legacyUsed(7,#KEYS) then redis.call('SET',KEYS[6],'legacy','NX') end
 end
-redis.call('SET',KEYS[1],ARGV[3]);redis.call('SET',KEYS[2],ARGV[4]);redis.call('SET',KEYS[3],ARGV[5],'PXAT',ARGV[6]);redis.call('SET',KEYS[4],ARGV[7],'KEEPTTL');redis.call('ZADD',KEYS[5],ARGV[8],ARGV[3]);return 1`,
+redis.call('SET',KEYS[1],ARGV[3]);redis.call('SET',KEYS[2],ARGV[4]);
+if ARGV[5]~='' then redis.call('SET',KEYS[3],ARGV[5],'PXAT',ARGV[6]) end
+redis.call('SET',KEYS[4],ARGV[7],'KEEPTTL');redis.call('ZADD',KEYS[5],ARGV[8],ARGV[3]);return 1`,
     [
       emailKey(account.email),
       key("account:" + account.id),
-      key("invite:" + digest(invite)),
+      activation?.inviteKey ?? '',
       key("inquiry:" + inquiryId),
       key("accounts"),
       ...singleUsageKeys(account.id),
@@ -466,8 +481,8 @@ redis.call('SET',KEYS[1],ARGV[3]);redis.call('SET',KEYS[2],ARGV[4]);redis.call('
       previous?.version || 0,
       account.id,
       JSON.stringify(account),
-      JSON.stringify({ userId: account.id, version: account.version }),
-      activationExpiresAt,
+      activation?.inviteRecord ?? '',
+      activation?.activationExpiresAt ?? 0,
       JSON.stringify(updated),
       account.createdAt,
     ],
@@ -477,8 +492,8 @@ redis.call('SET',KEYS[1],ARGV[3]);redis.call('SET',KEYS[2],ARGV[4]);redis.call('
       409,
       "다른 변경이 있었습니다. 목록을 새로고침해 주세요.",
     );
-  await auditIssuedInvite(actor, "approve", account.id);
-  return { account, invite, activationExpiresAt };
+  await auditAdminAction(actor, "approve", account.id);
+  return { account, invite: activation?.invite, activationExpiresAt: activation?.activationExpiresAt };
 }
 export async function activate(invite: string, password: string, session?: string) {
   const k = key("invite:" + digest(invite));
@@ -507,42 +522,47 @@ export async function updateAccount(
   patch: Grant & Pick<Account,'status'>,
   actor: string,
 ) {
-  const previous=await getAccount(id);
+  const previous = await getAccount(id);
+  const conflict = new AccessError(409, "계정이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");
+  if (!previous || previous.role !== 'customer' || previous.version !== version) throw conflict;
+  const account = {...previous, ...grantTerms(patch, previous), status:patch.status, version:version + 1};
+  const activation = isActive(account) && !account.passwordHash ? activationFor(account) : null;
   const ok = await db().eval<unknown[], number>(
     `${LEGACY_SINGLE_USED}
 local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end
 local u=cjson.decode(raw);if u.role~='customer' or u.version~=tonumber(ARGV[1]) then return 0 end
-if not u.plan and u.monthlyLimit==1 and legacyUsed(3,#KEYS) then redis.call('SET',KEYS[2],'legacy','NX') end
-local p=cjson.decode(ARGV[2]);u.status=p.status;u.expiresAt=p.expiresAt;u.monthlyLimit=p.monthlyLimit;u.features=p.features;u.plan=p.plan;u.paid=p.paid;u.version=u.version+1;redis.call('SET',KEYS[1],cjson.encode(u));return 1`,
-    [key("account:" + id),...singleUsageKeys(id)],
-    [version, JSON.stringify({...grantTerms(patch,previous ?? undefined),status:patch.status})],
+if not u.plan and u.monthlyLimit==1 and legacyUsed(4,#KEYS) then redis.call('SET',KEYS[3],'legacy','NX') end
+redis.call('SET',KEYS[1],ARGV[2]);
+if ARGV[3]~='' then redis.call('SET',KEYS[2],ARGV[3],'PXAT',ARGV[4]) end
+return 1`,
+    [key("account:" + id),activation?.inviteKey ?? '',...singleUsageKeys(id)],
+    [version, JSON.stringify(account),activation?.inviteRecord ?? '',activation?.activationExpiresAt ?? 0],
   );
-  if (ok !== 1)
-    throw new AccessError(
-      409,
-      "계정이 변경되었습니다. 새로고침 후 다시 시도해 주세요.",
-    );
-  await audit(actor, "update-account", id);
+  if (ok !== 1) throw conflict;
+  await auditAdminAction(actor, "update-account", id);
+  return {account, invite:activation?.invite, activationExpiresAt:activation?.activationExpiresAt};
 }
-export async function reissueInvite(id: string, actor: string) {
+export async function reissueInvite(id: string, actor: string, version?: number) {
   const account = await getAccount(id);
+  if (version !== undefined && account?.version !== version)
+    throw new AccessError(409, "계정이 변경되었습니다. 새로고침 후 다시 시도해 주세요.");
   if (!account || account.role !== "customer" || !isActive(account))
     throw new AccessError(400, "이용 기간과 승인 상태를 먼저 확인해 주세요.");
-  const invite = token(), activationExpiresAt=inviteExpiry(account);
   const updated = { ...account, version: account.version + 1 };
+  const { invite, activationExpiresAt, inviteKey, inviteRecord } = activationFor(updated);
   const ok = await db().eval<unknown[], number>(
     `local raw=redis.call('GET',KEYS[1]);if not raw or cjson.decode(raw).version~=tonumber(ARGV[1]) then return 0 end;redis.call('SET',KEYS[1],ARGV[2]);redis.call('SET',KEYS[2],ARGV[3],'PXAT',ARGV[4]);return 1`,
-    [key("account:" + id), key("invite:" + digest(invite))],
+    [key("account:" + id), inviteKey],
     [
       account.version,
       JSON.stringify(updated),
-      JSON.stringify({ userId: id, version: updated.version }),
+      inviteRecord,
       activationExpiresAt,
     ],
   );
   if (!ok)
     throw new AccessError(409, "다른 변경이 있었습니다. 새로고침해 주세요.");
-  await auditIssuedInvite(actor, "reissue-invite", id);
+  await auditAdminAction(actor, "reissue-invite", id);
   return {invite,activationExpiresAt,plan:accountPlan(updated)};
 }
 export async function deleteAccount(
@@ -560,5 +580,5 @@ export async function deleteAccount(
   );
   if (!ok)
     throw new AccessError(409, "계정이 변경되었습니다. 새로고침해 주세요.");
-  await audit(actor, "delete-account", id);
+  await auditAdminAction(actor, "delete-account", id);
 }

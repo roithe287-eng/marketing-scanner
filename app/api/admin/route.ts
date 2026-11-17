@@ -20,7 +20,7 @@ import {
   listInquiries,
   limitRequest,
   rateLimit,
-  audit,
+  auditAdminAction,
   createCustomer,
   getAccount,
   usage,
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
       listInquiries(),
     ]);
     const [totals,total]=await Promise.all([activityTotals(accounts.map(a=>a.id)),db().zcard(key('accounts'))]);
-    return privateJson({owner:safeAccount(admin),accounts:accounts.map((a,i)=>({...safeAccount(a),activity:totals[i]})),inquiries,total,offset,pageSize:50,inquiryEmail:inquiryEmailSettings(admin.email)});
+    return privateJson({owner:safeAccount(admin),accounts:accounts.map((a,i)=>({...safeAccount(a),activity:totals[i],activationRequired:!a.passwordHash})),inquiries,total,offset,pageSize:50,inquiryEmail:inquiryEmailSettings(admin.email)});
   } catch (error) {
     return failure(error);
   }
@@ -86,6 +86,7 @@ export async function POST(req: NextRequest) {
         z.object({
           action: z.literal("reissue"),
           id: z.string().uuid(),
+          version: z.number().int().positive().optional(),
           contactVerified: z.literal(true),
         }),
         z.object({
@@ -96,6 +97,10 @@ export async function POST(req: NextRequest) {
         z.object({ action: z.literal("close"), inquiryId: z.string().uuid() }),
       ])
       .parse(await readJson(req));
+    if ((body.action === 'create' || body.action === 'approve' ||
+        (body.action === 'update' && body.status === 'approved')) && body.expiresAt <= Date.now()) {
+      throw new AccessError(400, '이용 종료일을 미래 날짜로 지정해 주세요.');
+    }
     if (body.action === 'notify-inquiry') {
       await rateLimit('inquiry-email-retry:' + body.inquiryId, 3, 3600);
       const status = await notifyInquiry(body.inquiryId);
@@ -103,29 +108,26 @@ export async function POST(req: NextRequest) {
       return privateJson({ ok: status === 'sent', message });
     }
     if(body.action==='create'){
-      if(body.expiresAt<=Date.now())throw new AccessError(400,'이용 종료일을 미래 날짜로 지정해 주세요.');
       const {account,invite,activationExpiresAt}=await createCustomer(body,admin.id);
       await captureActivity(admin.id,'account_created',req.headers,{subjectId:account.id});
       return privateJson({account:safeAccount(account),activationPath:'/activate#'+invite,activationExpiresAt});
     }
     if (body.action === "approve") {
-      if (body.expiresAt <= Date.now())
-        throw new AccessError(400, "이용 종료일을 미래 날짜로 지정해 주세요.");
       const { account, invite, activationExpiresAt } = await issueAccount(
         body.inquiryId,
         body,
         admin.id,
       );
       await captureActivity(admin.id,'account_approved',req.headers,{subjectId:account.id});
-      // Fragment tokens are absent from HTTP request URLs, referrers and server access logs.
       return privateJson({
         account: safeAccount(account),
-        activationPath: "/activate#" + invite,
-        activationExpiresAt,
+        // Fragments keep invitation tokens out of HTTP request URLs and referrers.
+        ...(invite ? {activationPath: '/activate#' + invite, activationExpiresAt} :
+          {ok: true, message: '기존 계정에 이용 조건을 반영했습니다. 고객은 기존 비밀번호로 다시 로그인할 수 있습니다.'}),
       });
     }
     if (body.action === "reissue") {
-      const {invite,activationExpiresAt,plan} = await reissueInvite(body.id, admin.id);
+      const {invite,activationExpiresAt,plan} = await reissueInvite(body.id, admin.id, body.version);
       await captureActivity(admin.id,'invite_reissued',req.headers,{subjectId:body.id});
       return privateJson({
         activationPath: "/activate#" + invite,
@@ -138,17 +140,25 @@ export async function POST(req: NextRequest) {
       await captureActivity(admin.id,'account_deleted',req.headers,{subjectId:body.id});
     }
     if (body.action === "update") {
-      await updateAccount(body.id, body.version, body, admin.id);
+      const {account,invite,activationExpiresAt} = await updateAccount(body.id, body.version, body, admin.id);
       await captureActivity(admin.id,'account_updated',req.headers,{subjectId:body.id});
+      return privateJson({
+        ok: true,
+        account: safeAccount(account),
+        ...(invite ? {activationPath: '/activate#' + invite, activationExpiresAt} : {}),
+      });
     }
     if (body.action === "close") {
       const ok = await db().eval<unknown[], number>(
-        `local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end;local i=cjson.decode(raw);i.status='closed';redis.call('SET',KEYS[1],cjson.encode(i),'KEEPTTL');return 1`,
+        `local raw=redis.call('GET',KEYS[1]);if not raw then return 0 end
+local i=cjson.decode(raw);if i.status~='pending' then return -1 end
+i.status='closed';redis.call('SET',KEYS[1],cjson.encode(i),'KEEPTTL');return 1`,
         [key("inquiry:" + body.inquiryId)],
         [],
       );
       if (!ok) throw new AccessError(404, "문의를 찾을 수 없습니다.");
-      await audit(admin.id, "close-inquiry", body.inquiryId);
+      if (ok === -1) throw new AccessError(409, '이미 처리한 문의입니다. 목록을 새로고침해 주세요.');
+      await auditAdminAction(admin.id, "close-inquiry", body.inquiryId);
       await captureActivity(admin.id,'inquiry_closed',req.headers,{subjectId:body.inquiryId});
     }
     return privateJson({ ok: true });

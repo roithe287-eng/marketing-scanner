@@ -1,20 +1,24 @@
 "use client";
-import { useCallback, useEffect, useState, useRef } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import type { Account, AccountPlan, Inquiry, Features } from "@/lib/saas/types";
 import { DEFAULT_FEATURES, accountPlan } from "@/lib/saas/types";
 import { inquiryServiceLabels } from '@/lib/inquiry';
-import { inquiryPlanLabel } from '@/lib/pricing';
+import { getScannerPlan, inquiryPlanLabel } from '@/lib/pricing';
 import AdminActivityDashboard from './AdminActivityDashboard';
 import ActivationInvite, { type Activation } from './ActivationInvite';
 import { NETWORK_ACTIVITY_ID } from '@/lib/saas/activityTypes';
 import UserActivityView, {koreanTime} from './UserActivityView';
 import type {ActivityStats} from '@/lib/saas/activityTypes';
-type SafeAccount = Omit<Account, "passwordHash"> & {activity?:ActivityStats};
+type SafeAccount = Omit<Account, "passwordHash"> & {activity?:ActivityStats;activationRequired?:boolean};
 const formatDate = (value: number) =>
   new Date(value+9*3600000).toISOString().slice(0, 10);
 const planLabels: Record<AccountPlan,string>={monthly:'월간 이용권',single:'1회 진단권 (PDF 미포함)','single-pdf':'1회 진단권 (PDF 포함)'};
-function GrantFields({ account, planId }: { account?: SafeAccount; planId?:string }) {
+export function GrantFields({ account, planId }: { account?: SafeAccount; planId?:string }) {
   const [plan,setPlan]=useState<AccountPlan>(()=>account?accountPlan(account):planId==='single'||planId==='single-pdf'?planId:'monthly');
+  const requestedPlan = getScannerPlan(planId);
+  const monthlyLimit = account && accountPlan(account) === 'monthly'
+    ? account.monthlyLimit
+    : requestedPlan?.monthly ? requestedPlan.count : 10;
   const features = account?.features || DEFAULT_FEATURES;
   return (
     <>
@@ -31,6 +35,7 @@ function GrantFields({ account, planId }: { account?: SafeAccount; planId?:strin
             name="date"
             type="date"
             required
+            min={account ? undefined : formatDate(Date.now())}
             defaultValue={formatDate(
               account?.expiresAt || Date.now() + 30 * 86400000,
             )}
@@ -44,7 +49,7 @@ function GrantFields({ account, planId }: { account?: SafeAccount; planId?:strin
             min={1}
             max={1000}
             required
-            defaultValue={account?.monthlyLimit || 10}
+            defaultValue={monthlyLimit}
           />
         </label>}
       </div>
@@ -89,6 +94,7 @@ export default function AdminView() {
   const [inquiryEmail, setInquiryEmail] = useState<{configured:boolean;enabled:boolean;recipient:string}|null>(null);
   const [accounts, setAccounts] = useState<SafeAccount[]>([]);
   const [busy, setBusy] = useState(false);
+  const inFlight = useRef(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -132,7 +138,8 @@ export default function AdminView() {
     return()=>{document.removeEventListener('visibilitychange',check);window.removeEventListener('pageshow',restore);};
   },[load]);
   async function action(body: unknown) {
-    if (busy) return;
+    if (inFlight.current) return;
+    inFlight.current = true;
     setBusy(true);
     setError("");
     setNotice("");
@@ -158,6 +165,7 @@ export default function AdminView() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "처리하지 못했습니다.");
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   }
@@ -189,7 +197,7 @@ export default function AdminView() {
       {owner&&overviewSelected&&<section ref={overviewDetailRef} className="admin-overview-detail"><div className="admin-section-head"><h2>{overviewSelected===NETWORK_ACTIVITY_ID?'허용 네트워크 이용 상세':'고객별 이용 상세'}</h2><button className="access-secondary" onClick={()=>setOverviewSelected('')}>닫기</button></div><UserActivityView id={overviewSelected} revision={revision}/></section>}
       <section id="admin-create">
         <h2>계정 직접 생성</h2>
-        <p className="access-muted">문의 접수 없이도 관리자가 고객 계정을 생성할 수 있습니다. 생성 즉시 승인되며, 고객이 48시간 내 전용 링크에서 비밀번호를 설정해야 로그인할 수 있습니다.</p>
+        <p className="access-muted">문의 접수 없이도 고객 계정을 만들 수 있습니다. 신규 고객은 발급 후 최대 48시간 동안 유효한 전용 링크에서 비밀번호를 설정해야 로그인할 수 있습니다.</p>
         <details className="access-admin-card"><summary><strong>새 고객 계정 만들기</strong><span>관리자 전용</span></summary><div>
           <form className="access-form" onSubmit={e=>{e.preventDefault();const f=new FormData(e.currentTarget);void action({action:'create',name:f.get('name'),email:f.get('email'),company:f.get('company'),contactVerified:f.has('contactVerified'),...grant(f)});}}>
             <div className="access-form-grid"><label>고객 이름<input name="name" required maxLength={80}/></label><label>로그인 이메일<input name="email" type="email" required maxLength={254}/></label></div>
@@ -202,8 +210,7 @@ export default function AdminView() {
       <section id="admin-inquiries">
         <h2>이용 문의</h2>
         <p className="access-muted">
-          최근 90일 내 문의 중 최신 100건. 연락처와 이메일을 확인한 뒤 승인해
-          주세요. 아래에서 알림 연결 상태와 문의별 발송 결과를 확인할 수 있습니다.
+          최근 90일 내 문의 중 최신 100건입니다. 연락처와 이메일을 확인한 뒤 승인해 주세요. 이미 활성화한 고객은 기존 비밀번호로 다시 로그인할 수 있습니다.
         </p>
         {inquiryEmail && <div className="admin-inquiry-email">
           <strong>이메일 알림 · {inquiryEmail.enabled ? '발송 설정됨' : inquiryEmail.configured ? '운영 환경에서만 발송' : '설정 필요'}</strong>
@@ -275,7 +282,7 @@ export default function AdminView() {
                       연락처·이메일의 본인 확인과 이용 조건 협의를 마쳤습니다.
                     </label>
                     <button className="jm-button" disabled={busy}>
-                      승인하고 활성화 링크 발급
+                      승인하고 이용권 부여
                     </button>
                     <button
                       className="access-secondary"
@@ -298,7 +305,7 @@ export default function AdminView() {
         <h2>사용자·활동 기록</h2>
         <p className="access-muted">
           전체 {total}개 계정 중 {total?offset+1:0}~{Math.min(offset+50,total)}번째 계정. 이용 조건을 변경하면 기존 로그인 세션이 종료되고 다시
-          로그인해야 합니다.
+          로그인해야 합니다. 활성화 대기 중인 계정은 승인 상태로 저장하면 새 링크가 발급됩니다.
         </p>
         <label className="admin-search">현재 목록 검색<input value={search} onChange={e=>setSearch(e.target.value)} placeholder="이름 · 회사 · 로그인 이메일 · UUID"/></label>
         {owner&&<details className="access-admin-card" onToggle={e=>{if(e.currentTarget.open)setSelected(owner.id);}}><summary><strong>{owner.name} · 내 관리자 기록</strong><span>소유자</span></summary><div>{selected===owner.id&&<UserActivityView id={owner.id} revision={revision}/>}</div></details>}
@@ -319,7 +326,7 @@ export default function AdminView() {
                     ? "이용 중지"
                     : account.expiresAt <= Date.now()
                       ? "기간 종료"
-                      : "승인됨"}
+                      : account.activationRequired ? "활성화 대기" : "승인됨"}
                 </span>
               </summary>
               <div>
@@ -358,6 +365,7 @@ export default function AdminView() {
                     void action({
                       action: "reissue",
                       id: account.id,
+                      version: account.version,
                       contactVerified: true,
                     });
                   }}
@@ -366,7 +374,7 @@ export default function AdminView() {
                     <input type="checkbox" required /> 계정 소유자를 별도로
                     확인했습니다.
                   </label>
-                  <button className="access-secondary" disabled={busy}>
+                  <button className="access-secondary" disabled={busy || account.status !== 'approved' || account.expiresAt <= Date.now()}>
                     비밀번호 설정 링크 재발급
                   </button>
                 </form>
