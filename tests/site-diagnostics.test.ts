@@ -157,5 +157,10 @@ test('report panel preserves legacy and limited states and renders source-based 
   assert.match(renderToStaticMarkup(React.createElement(SiteDiagnosticsPanel,{})),/다시 진단/);
   const audit=await collectSiteDiagnostics(url,{seed:captureSiteDiagnosticSeed(html('&lt;img src=x&gt;','설명'),url),robots:robots(),limited:true});
   const $=load(renderToStaticMarkup(React.createElement(SiteDiagnosticsPanel,{audit})));
+  assert.equal($('option[value="medical"]').length,0);
+  const clinic=captureSiteDiagnosticSeed(html('새길의원','진료시간 안내'),url).page;
+  const medicalAudit={...audit,pages:[clinic],findings:buildSiteDiagnosticFindings([clinic])};
+  const medicalPanel=load(renderToStaticMarkup(React.createElement(SiteDiagnosticsPanel,{audit:medicalAudit})));
+  assert.equal(medicalPanel('option[value="medical"]').text(),'의료기관·의료진');
   assert.equal($('img,script').length,0);assert.equal($('tbody tr').length,10);assert.match($.text(),/수집이 제한/);
 });
