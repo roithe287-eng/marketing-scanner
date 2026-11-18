@@ -1,3 +1,4 @@
+import {isPlacePosition,placeChecks,placeLabels,type PlacePosition} from './placePositioning';
 import {classificationText} from './websiteIdentity';
 import {keywordList} from './industryLanguage';
 import type {IndustryCategory,MarketingReport} from './reportSchema';
@@ -8,9 +9,9 @@ export type {PositionCategory} from './positionEditorial';
 
 export type PositionCriterion={id:string;label:string;pattern:RegExp;description:string;examples:string[];action:string;template:string;weight:number};
 type Spec=[string,string,string,string];
-export const POSITION_INDUSTRIES:Record<PositionCategory,string>={ski:'스키·보드 렌탈·강습',rental:'대여·렌탈',education:'교육',medical:'의료·병원',commerce:'커머스·쇼핑',realestate:'부동산',legal:'법률·세무',beauty:'뷰티·미용',food:'식음료·외식',travel:'여행·숙박',logistics:'해외이사·국제물류',fortune:'사주·운세',it_service:'IT·서비스',manufacturing:'제조·산업',finance:'금융',consulting:'컨설팅·마케팅',media:'미디어·콘텐츠',sports:'스포츠·피트니스',pet:'반려동물',automotive:'자동차',parenting:'육아·아동',interior:'인테리어·건축',ecommerce:'이커머스',etc:'공통 기준'};
+export const POSITION_INDUSTRIES:Record<PositionCategory,string>={...placeLabels,ski:'스키·보드 렌탈·강습',rental:'대여·렌탈',education:'교육',medical:'의료·병원',commerce:'커머스·쇼핑',realestate:'부동산',legal:'법률·세무',beauty:'뷰티·미용',food:'식음료·외식',travel:'여행·숙박',logistics:'해외이사·국제물류',fortune:'사주·운세',it_service:'IT·서비스',manufacturing:'제조·산업',finance:'금융',consulting:'컨설팅·마케팅',media:'미디어·콘텐츠',sports:'스포츠·피트니스',pet:'반려동물',automotive:'자동차',parenting:'육아·아동',interior:'인테리어·건축',ecommerce:'이커머스',etc:'공통 기준'};
 // Editorial comparison lenses, not empirical industry averages or performance scores.
-const SPECS:Record<PositionCategory,[Spec,Spec,Spec,Spec]>={
+const SPECS:Record<Exclude<PositionCategory,PlacePosition>,[Spec,Spec,Spec,Spec]>={
  ski:[['cost','렌탈 요금·포함 항목','요금|가격|리프트권|시간권|추가금|보증금|환불','시간별 렌탈 요금과 장비·리프트권 포함 여부'],['scope','장비·강습 범위','스키|보드|부츠|의류|헬멧|강습|사이즈','대여 품목·사이즈와 실제 강습 범위'],['proof','장비 상태·담당자','정비|세척|장비 사진|점검|강사|자격|경력','실제 장비 상태·관리와 강습 담당자'],['process','수령·반납·이동','수령|반납|픽업|셔틀|예약|위치|주차|취소','매장 위치와 장비 수령·반납·스키장 이동']],
  rental:[['cost','대여 비용·보증금','요금|가격|보증금|연장|추가금|환불','기간별 대여료·보증금·별도 비용'],['scope','대여 품목·구성','대여|렌탈|렌털|규격|구성|수량|사이즈','대여 품목과 포함 구성'],['proof','물품 상태·관리','점검|정비|세척|사진|교체|관리','실제 물품 상태와 관리 기준'],['process','수령·반납','수령|반납|배송|설치|예약|취소|위치','수령·설치와 반납·변경 조건']],
  fortune:[['cost','무료 범위·비용과 변경','무료|유료|복채|상담료|가격|환불|취소','무료 범위와 유료 조건·환불·취소 기준'],['scope','풀이·상담 유형','사주|궁합|만세력|운세|타로|신점','서비스별 주제와 실제 제공 방식'],['proof','이용 근거·정보 안내','샘플|예시|상담사|역술인|생년월일|개인정보','공개 예시 또는 상담 담당자와 개인정보 안내'],['process','시작·예약·결과 확인','입력|열람|결제|예약|접수|오시는 길','풀이 시작부터 결과 열람 또는 상담 예약까지']],
@@ -36,18 +37,24 @@ const SPECS:Record<PositionCategory,[Spec,Spec,Spec,Spec]>={
  interior:[['cost','견적·계약 조건','견적|평당|비용|계약|추가비|하자','견적 포함 범위와 추가 비용·보증'],['scope','공간·시공 범위','주거|상업|아파트|평형|공간|설계|시공','공간 종류와 설계·시공 범위'],['proof','시공·자격 근거','포트폴리오|사례|면허|등록|완공|사진','실제 시공 사례와 자격·등록 자료'],['process','진행·사후 관리','실측|상담|공정|기간|일정|하자|A/S','실측부터 완공, 사후 관리까지']],
  etc:[['cost','가격·조건','가격|비용|요금|견적|환불|교환|할인|무료|\\d[\\d,]*원','가격 또는 견적 기준과 이용 조건'],['scope','대상·범위','대상|전용|맞춤|기업|초보|단체|B2B|B2C|포함|제외|제품|서비스','누구에게 무엇을 제공하는지'],['proof','사례·근거','사례|포트폴리오|고객사|후기|리뷰|인증|특허|시험|수상','직접 확인 가능한 사례와 근거'],['process','진행·지원','절차|진행|배송|상담|문의|예약|지원|A/S','이용 절차와 문의·지원 방법']],
 };
-export function positionProfile(category:PositionCategory){return {id:category,label:POSITION_INDUSTRIES[category],criteria:SPECS[category].map(([id,label,pattern,description],index)=>{const editorial=positionEditorial(category,index);return {id,label,description,editorial,examples:pattern.split('|').map(term=>term.includes('\\d')?'금액 표기 (예: 10,000원)':term),pattern:new RegExp(pattern,'i'),weight:25,action:editorial.verify,template:editorial.description};})};}
+export function positionProfile(category:PositionCategory){const specs:Spec[]=isPlacePosition(category)?placeChecks[category].map(([subject,terms,,verify],i)=>[['cost','scope','proof','process'][i],subject,terms,verify]):SPECS[category];
+ return {id:category,label:POSITION_INDUSTRIES[category],criteria:specs.map(([id,label,pattern,description],index)=>{const editorial=positionEditorial(category,index);return {id,label,description,editorial,examples:pattern.split('|').map(term=>term.includes('\\d')?'금액 표기 (예: 10,000원)':term),pattern:new RegExp(pattern,'i'),weight:25,action:editorial.verify,template:editorial.description};})};}
+const scopeCategories:Record<string,PositionCategory>={retail:'commerce',finance:'finance',pharmacy:'pharmacy',insurance:'finance',rehabilitation:'legal',property_sales:'realestate',startup:'consulting',franchise:'consulting',custom_apparel:'manufacturing',medical:'medical',veterinary:'pet',pet_care:'pet',pet_store:'pet',agency:'consulting',medical_consulting:'consulting',software:'it_service',manufacturing:'manufacturing',education:'education',international_logistics:'logistics',fortune_digital:'fortune',fortune_consultation:'fortune',legal:'legal',accounting:'legal',professional:'legal',home:'interior',home_service:'interior',restaurant:'food',cafe:'food',beauty:'beauty',rental:'rental',lodging:'travel',hospitality:'travel',travel:'travel',travel_booking:'travel',fitness:'sports',automotive:'automotive',real_estate:'realestate',community:'media',content:'media'};
 export function defaultPositionIndustry(report:MarketingReport):{category:PositionCategory;basis:string} {
  if(report.sitePurpose?.business?.id==='custom_apparel')return {category:'manufacturing',basis:'홈페이지 원문에서 확인한 단체복 주문제작'};
  const scope=report.competitorAnalysis?.ourSite?.scope;
  if(scope&&sameSite(scope.sourceUrl,report.url)){
-  const map:Record<string,PositionCategory>={custom_apparel:'manufacturing',medical:'medical',veterinary:'pet',pet_care:'pet',pet_store:'pet',agency:'consulting',medical_consulting:'consulting',software:'it_service',manufacturing:'manufacturing',education:'education',international_logistics:'logistics',fortune_digital:'fortune',fortune_consultation:'fortune',legal:'legal',accounting:'legal',professional:'legal',home:'interior',home_service:'interior',restaurant:'food',cafe:'food',beauty:'beauty',rental:'rental',lodging:'travel',hospitality:'travel',travel:'travel',travel_booking:'travel',fitness:'sports',automotive:'automotive',real_estate:'realestate',community:'media',content:'media'};
-  const category=scope.kind==='commerce'?'ecommerce':scope.profile==='rental'&&scope.specialties.includes('season:ski')?'ski':map[scope.profile];
+
+  const category=scope.kind==='commerce'?'ecommerce':scope.profile==='rental'&&scope.specialties.includes('season:ski')?'ski':isPlacePosition(scope.profile)?scope.profile:scopeCategories[scope.profile];
   if(category)return {category,basis:'홈페이지 원문에서 확인한 제공 업무·세부 업종 기준'};
  }
 
+ const ownPlace=report.siteDiagnostics?.pages.find(p=>p.url===report.siteDiagnostics?.targetUrl&&sameSite(p.url,report.url))?.localPlaceEvidence;
+ if(ownPlace&&isPlacePosition(ownPlace.sector))return {category:ownPlace.sector,basis:'입력 페이지에서 확인한 방문·이용 업종'};
  if(report.sitePurpose?.business?.industry==='fortune')return {category:'fortune',basis:'홈페이지 원문에서 확인한 사주·운세 서비스'};
  if(report.sitePurpose?.business?.industry==='logistics')return {category:'logistics',basis:'현재 원문에 근거한 국제물류 업종 분류'};
+ const declared=report.sitePurpose?.declaredIndustry;
+ if(declared)return {category:declared.category,basis:'입력 페이지에서 직접 제공한다고 명시한 업무'};
  const saved=report.industryBenchmark?.category;if(saved&&saved!=='etc')return {category:saved,basis:'저장된 업종 분류'};
  const page=report.pageEvidence,our=report.competitorAnalysis?.ourSite;
  const title=classificationText([page?.title,...page?.h1||[],our?.title].filter(Boolean).join('\n'));

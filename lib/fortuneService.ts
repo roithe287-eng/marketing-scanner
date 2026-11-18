@@ -1,4 +1,4 @@
-import {offeringClauses} from './websiteIdentity';
+import {classificationText,offeringClauses} from './websiteIdentity';
 import type {BusinessProfile} from './businessContext';
 
 export const fortuneTopic=/사주(?!\s*(?:팔기|조합|매입|주식|펀드))|만세력|명리학|명리\s*상담|타로|신점|운세|점성술|(?:사주|연애|결혼|커플|속)\s*궁합|철학관|역술/;
@@ -13,7 +13,7 @@ const thirdParty=/(?:사주|타로|운세|신점|점집|철학관|역술인|상�
 export function detectFortuneService(input:{url:string;headings:string;description:string;body:string;actions:string[]}){
   const path=new URL(input.url).pathname;
   if(/\/(?:blog|news|articles?|posts?|columns?|reviews?|guide|legal)(?:\/|$)/i.test(path))return;
-  const active=(text:string)=>offeringClauses(text).filter(s=>!/(?:상담|예약|풀이).{0,8}(?:종료|중단|미제공|불가|하지\s*않)|(?:^|\s)(?:관련글|고객사|참고\s*자료)\s*[:：]/.test(s)).join('\n');
+  const active=(text:string)=>offeringClauses(text).filter(s=>!/(?:상담|예약|풀이).{0,8}(?:종료|중단|미제공|불가|하지\s*않)|(?:^|\s)(?:관련글|고객사|참고\s*자료)\s*[:：]/.test(s)).map(classificationText).join('\n');
   const headings=active(input.headings),description=active(input.description),body=active(input.body);
   const primary=headings+'\n'+description;
   if(!fortuneTopic.test(primary)||thirdParty.test(primary)||/(?:운세|사주|타로)\s*(?:칼럼|기사|매거진|해설\s*블로그)|(?:명리|사주|타로)\s*(?:책|교재|교본|카드)\s*(?:판매|구매|쇼핑몰)/.test(headings))return;
