@@ -1,3 +1,4 @@
+import {customApparelIdentity} from './customApparel';
 import {restoreStreamedHtml} from './streamedHtml';
 import * as cheerio from 'cheerio';
 import {evaluateRobots,type RobotsAgent,type RobotsObservation} from './robotsRules';
@@ -59,7 +60,7 @@ export function captureSiteDiagnosticSeed(html:string,url:string,hospitalContext
   let backgroundCandidates=0;
   $('[style]').each((_,el)=>{const node=$(el);if(/background(?:-image)?\s*:[^;]*url\s*\(/i.test(node.attr('style')||'')&&!clean(node.text())&&!clean(node.attr('aria-label'))&&node.attr('aria-hidden')!=='true'&&node.attr('role')!=='presentation')backgroundCandidates++;});
   const heading=clean($('h1').map((_,e)=>$(e).text()).get().join(' '),1000);
-  const provider=analyzeNonCommerceSector([{text:title,locator:'head > title'},{text:clean(rawDescription,600),locator:'meta[name="description"]'},...$('h1').slice(0,4).toArray().map(el=>({text:clean($(el).text(),600),locator:'h1'}))],[])?.id==='medical_consulting';
+  const provider=customApparelIdentity(title+' '+heading,rawDescription)||analyzeNonCommerceSector([{text:title,locator:'head > title'},{text:clean(rawDescription,600),locator:'meta[name="description"]'},...$('h1').slice(0,4).toArray().map(el=>({text:clean($(el).text(),600),locator:'h1'}))],[])?.id==='medical_consulting';
   const page:DiagnosticPage={url,title,description:clean(rawDescription,1500),canonicals:$('head link[rel~="canonical" i]').slice(0,5).map((_,e)=>clean($(e).attr('href'),2048)).get(),noindex:$('meta[name="robots" i],meta[name="googlebot" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')),twitterCard:!!$('meta[name="twitter:card" i]').attr('content'),jquery:[...jquery].slice(0,5),analytics:[...analytics],backgroundCandidates,medicalRelevant:medical.length>0||(!provider&&/병원|의원|한의원|치과|\b(?:hospital|clinic|dentist)\b/i.test(title+' '+heading)),medical};
   const productOffer=auditProductOffer($,objects,url);
   if(productOffer)page.productOffer=productOffer;
@@ -135,7 +136,7 @@ export function buildSiteDiagnosticFindings(pages:DiagnosticPage[]):DiagnosticFi
     if(!p.twitterCard)add(`twitter-${i}`,'소셜 카드 선언 확인','review','수집 HTML에서 twitter:card 값을 감지하지 못했습니다.','X 공유를 사용할 때 카드 유형과 제목·이미지를 확인합니다. 검색 순위의 필수 조건으로 보지 않습니다.',[p.url]);
     if(p.jquery.length)add(`jquery-${i}`,'jQuery 선언 버전','review',`스크립트 URL 관측: ${p.jquery.join(' · ')}`,'운영자가 사용 중인 플러그인 호환성과 공식 보안 공지를 확인합니다. URL만으로 실제 실행 버전·취약점을 확정할 수 없습니다.',[p.url]);
     if(p.analytics.length)add(`analytics-${i}`,'분석 태그 선언','review',`${p.analytics.join(' · ')} 식별 신호 관측. ${p.analytics.includes('UA')?'Universal Analytics 흔적이 남아 있습니다. ':''}태그 설치·실제 이벤트 전송 성공은 별도입니다.`,'동의 설정과 GA4 DebugView·실시간 보고서에서 방문·전환 이벤트를 확인합니다. GTM 컨테이너 내부 태그는 이 검사로 알 수 없습니다.',[p.url]);
-    if(p.backgroundCandidates)add(`background-${i}`,'배경 이미지의 정보 전달 확인','review',`인라인 배경 이미지 중 자체 텍스트·aria-label이 없는 요소 ${p.backgroundCandidates}개. 외부 CSS는 검사하지 않았습니다.`,'장식 이미지라면 조치가 필요하지 않습니다. 진료·상품 설명이 이미지에만 있다면 같은 내용을 접근 가능한 본문으로 제공합니다.',[p.url]);
+    if(p.backgroundCandidates)add(`background-${i}`,'배경 이미지의 정보 전달 확인','review',`인라인 배경 이미지 중 자체 텍스트·aria-label이 없는 요소 ${p.backgroundCandidates}개. 외부 CSS는 검사하지 않았습니다.`,'장식 이미지라면 조치가 필요하지 않습니다. 상품·서비스의 핵심 설명이 이미지에만 있다면 같은 내용을 접근 가능한 본문으로 제공합니다.',[p.url]);
     if(p.medicalRelevant&&!p.medical.length&&!p.medicalEvidence?.entities.length)add(`medical-missing-${i}`,'의료기관 엔터티 검토','review','제목·H1 또는 기관 정보에서 의료기관 관련 표현을 관측했지만 이 HTML에서 해당 시설·의료인 엔터티를 감지하지 못했습니다.','실제 의료기관 사이트인지 먼저 확인합니다. 해당할 때 공개된 기관·의료진 정보에 맞는 Schema.org 유형을 적용합니다. 다른 페이지의 선언·렌더링 후 내용은 별도 확인합니다.',[p.url]);
     for(const [j,m] of p.medical.entries()){
       const missing=m.fields.filter(f=>f.state==='missing').map(f=>f.label),refs=m.fields.filter(f=>f.state==='reference').map(f=>f.label);

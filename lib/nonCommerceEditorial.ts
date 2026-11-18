@@ -1,3 +1,4 @@
+import {apparelFields} from './customApparel';
 import {koreanParticle} from './koreanParticle';
 import type {NonCommercePlaybook} from './nonCommercePlaybook';
 import type {ServiceStrategy} from './serviceStrategy';
@@ -14,6 +15,7 @@ export const INDUSTRY_AXES:Record<string,[string,string,string,string]>={
  startup:['창업 단계·해결 과제','검토 범위·사업계획 산출물','자문료·추가 업무·지원 종료 조건','담당자·자료 전달·회의 일정'],
  franchise:['개설 지역·점포 조건','본부 지원·점주 담당 업무','가맹비·설비비·별도 운영비','정보공개서·개설 절차·계약 조건'],
  fortune_digital:['사주·운세·만세력 주제','공개 결과 예시와 입력 항목','무료 범위·유료 가격과 환불','결과 열람·재열람과 문의'],
+ custom_apparel:apparelFields,
  fortune_consultation:['사주·타로 상담 주제','상담사와 상담 방식','상담료·시간·변경 조건','예약·변경·방문 또는 접속'],
  travel_booking:['코스·여행일·최소 출발 인원','교통·숙박·식사 포함/불포함','인원별 요금·추가 선택 비용','집결·픽업·기상 변경·취소'],
  education:['수강 대상·선수 지식','차시·실습·강사 역할','수강료·교재비·수료 기준','시간표·신청·환불 조건'],

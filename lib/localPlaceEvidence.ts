@@ -1,3 +1,4 @@
+import {customApparelIdentity} from './customApparel';
 import {ownBusinessRole,classificationText,offeringClauses,isContextOnlyEvidence,isSecondarySection} from './websiteIdentity';
 import {publicBusinessSections} from './publicBusinessSections';
 import * as cheerio from 'cheerio';
@@ -29,7 +30,8 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   const description=isContextOnlyEvidence('',rawDescription)?'':rawDescription;
   const identity=[title,h1,siteName].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ').slice(0,500);
   const role=ownBusinessRole({title,h1:[h1],description});
-  if(['agency','software','manufacturing'].includes(role||'')||provider.test(identity))return;
+  const apparel=(!role||role==='retail'||role==='manufacturing')&&customApparelIdentity(identity,description);
+  if((['agency','software','manufacturing'].includes(role||'')&&!apparel)||provider.test(identity))return;
   const objects:Record<string,unknown>[]=[];
   const walk=(v:unknown,depth=0)=>{if(!v||typeof v!=='object'||depth>8||objects.length>=150)return;if(Array.isArray(v)){v.slice(0,40).forEach(x=>walk(x,depth+1));return;}const o=v as Record<string,unknown>;objects.push(o);Object.values(o).forEach(x=>walk(x,depth+1));};
   $('script[type="application/ld+json"]').slice(0,15).each((_,e)=>{const raw=$(e).text();if(raw.length<100000)try{walk(JSON.parse(raw));}catch{/* Invalid schema cannot establish identity. */}});
@@ -43,9 +45,15 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   $('a[href]').slice(0,500).each((_,e)=>{const a=$(e);const link=placeChannel(a.attr('href')||'',clean(a.text())+' '+clean(a.attr('aria-label')),true);if(link&&!links.some(l=>l.url===link.url)&&links.length<8)links.push(link);});
   const industryText=(value:string)=>value.replace(/(?:반려동물|반려견|애견|강아지|고양이)\s*동반/gu,'');
   const semantic=classificationText(industryText([identity,clean(entity?.name),ownTypes.join(' ')].join(' ')));
-  let sector=role==='home'?placeSector('home_service'):role==='education'?placeSector('education'):role==='retail'?placeSector(placeSector('pet_store').identity.test(semantic)?'pet_store':'retail'):PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.identity.test(semantic)||s.types.some(t=>ownTypes.includes(t)));
+  const clinical=/진료(?:시간|과목|안내|예약)?|의료진|전문의|초진|재진|내원|백내장|시력검사/i;
+  const clinicalBody=clinical.test(description+' '+$('main h2,main h3,main p,article h2,article p').slice(0,24).map((_,e)=>$(e).text()).get().join(' '));
+  const namedDept=/[가-힣A-Za-z]{1,24}(?:안과|내과)(?:의원)?(?=$|[\s|·-])/.test(title);
+  const clinicalCandidate=!apparel&&(ownTypes.some(t=>placeSector('medical').types.includes(t))||clinicalBody);
+  let sector=apparel?placeSector('custom_apparel'):role==='home'?placeSector('home_service'):role==='education'?placeSector('education'):role==='retail'?placeSector(placeSector('pet_store').identity.test(semantic)?'pet_store':'retail'):PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.id!=='local'&&s.types.some(t=>ownTypes.includes(t)))
+    ||PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.identity.test(semantic));
   // Branded homepages often have only a brand in the title. Their own description may identify the offering.
-  if(!sector&&!provider.test(description))sector=PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.id!=='local'&&s.identity.test(classificationText(industryText(description))));
+  if(!sector&&namedDept&&clinicalCandidate)sector=placeSector('medical');
+  if(!sector&&!provider.test(description))sector=PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.id!=='local'&&(s.id!=='medical'||clinicalCandidate)&&s.identity.test(classificationText(industryText(description))));
   const seasonalSector=seasonalIdentitySector(semantic+' '+(!provider.test(description)?description:''));
   if((!sector||sector.id==='local')&&seasonalSector)sector=placeSector(seasonalSector);
   if(!sector&&!links.length&&!entity&&!($('address,[itemprop="address"]').length&&/영업시간|운영시간|방문\s*(?:예약|상담)|오시는\s*길/.test($('body').text())))return;
@@ -65,6 +73,7 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   const positive=positiveText(lines),positiveDescription=positiveText([description]);
   const address=addressText(entity?.address)||clean(root.find('address,[itemprop="address"]').first().text(),300)||clean(lines.join('\n').match(/(?:서울(?:특별시)?|부산(?:광역시)?|대구(?:광역시)?|인천(?:광역시)?|광주(?:광역시)?|대전(?:광역시)?|울산(?:광역시)?|세종(?:특별자치시)?|경기(?:도)?|강원(?:특별자치도)?|충청[남북]도|전[라북남특별자치]+도|경상[남북]도|제주(?:특별자치도)?)\s+[가-힣]+(?:시|군|구)\s+[^|\n]{3,65}/u)?.[0],150);
   const physical=!!address||!!links.length||!!entity||/오시는\s*길|매장\s*(?:안내|찾기)|방문\s*상담|주차|찾아오시는/.test(text);
+  if(!physical&&apparel)return;
   if(!physical&&/쇼핑몰|온라인\s*(?:전용|전문)|인터넷\s*쇼핑/.test(identity+' '+description))return;
   const name=clean(entity?.name,120)||siteName||clean(title.split(/[|｜–—]|\s-\s|::/)[0],120)||clean(h1,120);
   if(!name)return;

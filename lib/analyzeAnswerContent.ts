@@ -1,4 +1,4 @@
-import {answerSources,buildAnswerContentPlan,AnswerSuggestionSchema,type AnswerPageData} from './answerContent';
+import {apparelDetailQuestions,answerSources,buildAnswerContentPlan,AnswerSuggestionSchema,type AnswerPageData} from './answerContent';
 import {getOpenAI} from './openaiClient';
 import {zodResponseFormat} from 'openai/helpers/zod';
 import {purposePrompt,analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
@@ -9,7 +9,8 @@ export function answerContentPrompt(data:AnswerPageData):string{
 }
 export async function analyzeAnswerContent(data:AnswerPageData){
   const fallback=buildAnswerContentPlan(data);
-  if(fallback.scope==='submitted-page-and-business'||isNonCommerce(analyzeWebsitePurpose(data)))return fallback;
+  const purpose=analyzeWebsitePurpose(data);
+  if(!apparelDetailQuestions(data,purpose)&&(fallback.scope==='submitted-page-and-business'||isNonCommerce(purpose)))return fallback;
   if(!process.env.OPENAI_API_KEY||(fallback.mode==='limited'&&!data.productContext?.sources.length)||!fallback.primaryKeyword)return fallback;
   try{
     const result=await getOpenAI().chat.completions.create({

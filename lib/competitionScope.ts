@@ -22,6 +22,7 @@ const localProfiles=new Set(['medical','legal','professional','accounting','home
 const facetRules:Record<string,[string,RegExp][]>={
   fortune_digital:[['사주·만세력',/사주|만세력|명리학/],['운세',/운세/],['궁합',/궁합/],['타로',/타로/],['점성술',/점성술/]],
   fortune_consultation:[['사주·명리',/사주|철학관|명리|역술/],['타로',/타로/],['신점',/신점/],['점성술',/점성술/]],
+  custom_apparel:[['단체복',/단체복|과잠|유니폼/],['자수·프린팅',/자수|프린팅/]],
   medical:[['한방',/한방|한의원/],['치과',/치과|치아|임플란트/],['피부과',/피부과/],['안과',/안과|라식|라섹/],['정형외과',/정형외과/],['성형외과',/성형외과/],['내과',/내과/],['소아',/소아청소년과|소아과/],['산부인과',/산부인과/],['이비인후과',/이비인후과/]],
   legal:[['변호사',/법무법인|법률사무소|변호사/],['세무',/세무/],['회계',/회계/],['노무',/노무/],['법무사',/법무사/]],
   professional:[['세무',/세무/],['회계',/회계/],['노무',/노무/],['변리',/변리/]],
@@ -70,7 +71,7 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
   const role=ownBusinessRole(data),book=nonCommercePlaybook(purpose,identity,place);
   const kind=purpose.kind==='unknown'&&!['agency','software','manufacturing','home','education'].includes(role||'')&&/쇼핑몰|공식몰|전문몰|온라인몰|스토어|\bshop\b|\bstore\b/i.test(identity)?'commerce':purpose.kind;
-  let profile=kind==='commerce'?'commerce':role==='manufacturing'?'manufacturing':book.local&&place?place.sector:purpose.business?.id||book.id;
+  let profile=purpose.business?.id==='custom_apparel'?'custom_apparel':kind==='commerce'?'commerce':role==='manufacturing'?'manufacturing':book.local&&place?place.sector:purpose.business?.id||book.id;
   if(profile.startsWith('place_'))profile=profile.slice(6);
   if(profile==='organization'&&role==='manufacturing')profile=role;
   const specialties=providerSpecialties(profile,data);

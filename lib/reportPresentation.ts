@@ -1,3 +1,4 @@
+import {reconcileStoredIndustry} from './storedIndustry';
 import {providerIdentity} from './websiteIdentity';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
 import {applyActionableGuides} from './actionableGuides';
@@ -14,7 +15,7 @@ import {PAGE_EVIDENCE_METADATA_LIMITS} from './pageEvidence';
 
 /** Reapply candidate policy to saved reports without mutating their observations. */
 export function reportForPresentation(report:MarketingReport):MarketingReport {
-  report=applyActionableGuides(report);
+  report=applyActionableGuides(reconcileStoredIndustry(report));
   const diagnostics=report.siteDiagnostics;
   if (diagnostics?.medicalAudit?.reviewedOn==='2026-11-04') report={...report,siteDiagnostics:{...diagnostics,medicalAudit:currentPlacePolicy(diagnostics.medicalAudit,!!buildHospitalPlaceReview(diagnostics))}};
   const page=report.pageEvidence;
@@ -24,7 +25,7 @@ export function reportForPresentation(report:MarketingReport):MarketingReport {
     report={...report,keywordFrequency:reconcileKeywordMetadata(report.keywordFrequency,titleClipped?undefined:page.title,descriptionClipped?undefined:page.description)};
   }
   // Reuse retained public source bodies when opening a saved report. No new request or invented fact.
-  if(page&&report.serviceStrategy?.industry==='noncommerce'&&report.sitePurpose){
+  if(page&&report.serviceStrategy?.industry==='noncommerce'&&report.sitePurpose&&report.sitePurpose.business?.id!=='custom_apparel'){
     const plan=report.serviceStrategy;
     const documents=(report.siteDiagnostics?.pages||[]).filter(p=>!p.noindex).flatMap(p=>p.businessDocument?[p.businessDocument]:[]);
     for(const s of plan.sources){
