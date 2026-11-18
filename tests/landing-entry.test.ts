@@ -27,13 +27,13 @@ test('entry respects access state without presenting a fake URL input to guests'
   assert.equal(render({allowed:true,loading:true})('#scanner-start button[type="submit"][disabled]').length,1);
 });
 
-test('landing examples follow noncommerce, commerce and common order without small shortcuts',()=>{
+test('landing examples follow common, noncommerce and commerce order without small shortcuts',()=>{
   const $=render();
   assert.equal($('.scanner-entry-links, .scanner-feature-eyebrow').length,0);
-  assert.deepEqual($('.scanner-gate-details>section').toArray().slice(0,3).map(el=>$(el).attr('id')),['scanner-sector-preview','scanner-commerce-preview','scanner-report-features']);
+  assert.deepEqual($('.scanner-gate-details>section').toArray().slice(0,3).map(el=>$(el).attr('id')),['scanner-report-features','scanner-sector-preview','scanner-commerce-preview']);
   assert.equal($('.scanner-common-result[open]').length,0);
   assert.equal($('#scanner-report-features #scanner-result-preview').length,1);
-  assert.equal($('.scanner-example-title>span').text(),'비커머스커머스공통 적용');
+  assert.equal($('.scanner-example-title>span').text(),'공통 적용비커머스커머스');
   assert.doesNotMatch($.text(),/FROM SIGNALS TO ACTION|YOUR MARKETING MAP/);
   assert.equal($('.feature-reading').length,6);
   assert.equal($('.feature-reading[open]').length,6);

@@ -1,5 +1,5 @@
 /* Three compact example sections share the restored landing page's central axis. */
-.scanner-industry-preview {--industry-accent:#344f7a;--industry-soft:#f5f7fb;text-align:center;scroll-margin-top:28px;margin-bottom:56px}
+.scanner-industry-preview {--industry-accent:#344f7a;--industry-soft:#f5f7fb;text-align:center;scroll-margin-top:28px;margin-top:56px}
 .scanner-industry-preview[data-industry-group=commerce] {--industry-accent:#3b6d65;--industry-soft:#f3f8f6}
 .scanner-landing--gate h2.scanner-example-title {margin:0;font-size:clamp(27px,3vw,39px);font-weight:600;color:#43516a;line-height:1.5;letter-spacing:-.04em;text-align:center;word-break:keep-all}
 .scanner-example-title>span {font-weight:850;color:#203a60;text-decoration:underline;text-decoration-thickness:5px;text-underline-offset:9px;text-decoration-color:#94a9cb}
@@ -96,7 +96,7 @@
 .scanner-common-result .scanner-preview-heading h3 {font-size:23px;line-height:1.5;font-weight:750;color:#203049}
 .scanner-industry-preview :is(button,summary):focus-visible,.scanner-common-result>summary:focus-visible {outline:3px solid #315cad;outline-offset:3px}
 @media(max-width:599px){
- .scanner-industry-preview {margin-bottom:40px}
+ .scanner-industry-preview {margin-top:40px}
  .scanner-example-title>span {text-decoration-thickness:4px;text-underline-offset:8px}
  .scanner-industry-purpose {font-size:14px;margin:14px 0 18px}
  .scanner-industry-options {gap:6px}
