@@ -1,3 +1,4 @@
+import {reconcileStoredIndustry} from './storedIndustry';
 import {presentBenchmark} from './benchmarkPresentation';
 import {reviewStoredCitation} from './storedCitation';
 import { getRedisClient } from "./redisClient";
@@ -76,7 +77,7 @@ async function readSharedReport(id: string, principal: Principal | null): Promis
   if(!principal&&record.visibility==='private')return null;
   const parsed=MarketingReportSchema.safeParse(record.report);
   if(!parsed.success)return null;
-  const report=commercialSearchSnapshot(parsed.data);
+  const report=reconcileStoredIndustry(commercialSearchSnapshot(parsed.data));
   return {...report,sharedRetention:{reportId:id,createdAt:stored[1],expiresAt:stored[2]},adWasteSimulation:null,industryBenchmark:presentBenchmark(report.industryBenchmark),
     llmCitationTest:reviewStoredCitation(report.llmCitationTest,report.url),
     geoBaseline:report.geoBaseline?{...report.geoBaseline,citation:reviewStoredCitation(report.geoBaseline.citation,report.geoBaseline.url)!}:undefined};

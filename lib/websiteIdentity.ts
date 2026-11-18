@@ -49,7 +49,7 @@ export function purposeSchemaTypes(data:{schemaTypes?:string[];jsonLdSchemas?:un
 
 /** Explicit third-party examples and non-offering sentences are not provider facts. */
 export function isContextOnlyEvidence(heading:string,text:string,url=''):boolean{
-  return /고객사|고객\s*사례|납품\s*사례|시공\s*사례|포트폴리오|이용\s*후기|고객\s*후기|사용\s*후기|\btestimonial\b|\bcase\s*stud(?:y|ies)\b/i.test(heading)
+  return /(?:님의?\s*견적\s*문의|문의\s*상태\s*[:：].{0,65}(?:담당자|등록일)\s*[:：])/u.test(text)||/고객사|고객\s*사례|납품\s*사례|시공\s*사례|포트폴리오|이용\s*후기|고객\s*후기|사용\s*후기|\btestimonial\b|\bcase\s*stud(?:y|ies)\b/i.test(heading)
     ||/^(?:고객사|고객\s*사례|납품\s*사례|시공\s*사례)\s*[:：]/.test(text)
     ||/\/(?:portfolio|testimonials?|reviews?|client-cases)(?:[/?#]|$)/i.test(url);
 }

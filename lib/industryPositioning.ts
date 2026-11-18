@@ -36,12 +36,14 @@ const SPECS:Record<PositionCategory,[Spec,Spec,Spec,Spec]>={
 };
 export function positionProfile(category:PositionCategory){return {id:category,label:POSITION_INDUSTRIES[category],criteria:SPECS[category].map(([id,label,pattern,description],index)=>{const editorial=positionEditorial(category,index);return {id,label,description,editorial,examples:pattern.split('|').map(term=>term.includes('\\d')?'금액 표기 (예: 10,000원)':term),pattern:new RegExp(pattern,'i'),weight:25,action:editorial.verify,template:editorial.description};})};}
 export function defaultPositionIndustry(report:MarketingReport):{category:PositionCategory;basis:string} {
+ if(report.sitePurpose?.business?.id==='custom_apparel')return {category:'manufacturing',basis:'홈페이지 원문에서 확인한 단체복 주문제작'};
  const scope=report.competitorAnalysis?.ourSite?.scope;
  if(scope&&sameSite(scope.sourceUrl,report.url)){
-  const map:Record<string,PositionCategory>={medical:'medical',veterinary:'pet',pet_care:'pet',pet_store:'pet',agency:'consulting',medical_consulting:'consulting',software:'it_service',manufacturing:'manufacturing',education:'education',international_logistics:'logistics',fortune_digital:'fortune',fortune_consultation:'fortune',legal:'legal',accounting:'legal',professional:'legal',home:'interior',home_service:'interior',restaurant:'food',cafe:'food',beauty:'beauty',rental:'rental',lodging:'travel',hospitality:'travel',travel:'travel',travel_booking:'travel',fitness:'sports',automotive:'automotive',real_estate:'realestate',community:'media',content:'media'};
+  const map:Record<string,PositionCategory>={custom_apparel:'manufacturing',medical:'medical',veterinary:'pet',pet_care:'pet',pet_store:'pet',agency:'consulting',medical_consulting:'consulting',software:'it_service',manufacturing:'manufacturing',education:'education',international_logistics:'logistics',fortune_digital:'fortune',fortune_consultation:'fortune',legal:'legal',accounting:'legal',professional:'legal',home:'interior',home_service:'interior',restaurant:'food',cafe:'food',beauty:'beauty',rental:'rental',lodging:'travel',hospitality:'travel',travel:'travel',travel_booking:'travel',fitness:'sports',automotive:'automotive',real_estate:'realestate',community:'media',content:'media'};
   const category=scope.kind==='commerce'?'ecommerce':scope.profile==='rental'&&scope.specialties.includes('season:ski')?'ski':map[scope.profile];
   if(category)return {category,basis:'홈페이지 원문에서 확인한 제공 업무·세부 업종 기준'};
  }
+
  if(report.sitePurpose?.business?.industry==='fortune')return {category:'fortune',basis:'홈페이지 원문에서 확인한 사주·운세 서비스'};
  if(report.sitePurpose?.business?.industry==='logistics')return {category:'logistics',basis:'현재 원문에 근거한 국제물류 업종 분류'};
  const saved=report.industryBenchmark?.category;if(saved&&saved!=='etc')return {category:saved,basis:'저장된 업종 분류'};

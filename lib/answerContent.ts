@@ -106,6 +106,12 @@ export function fallbackKeywords(pool:AnswerSource[]):AnswerKeyword[]{
 const RawQuestionSchema=z.object({question:z.string().min(5).max(160),intent:AnswerIntentSchema,evidenceIds:z.array(z.string().max(30)).max(3),missingFacts:z.array(z.string().min(2).max(100)).max(5)});
 export const AnswerSuggestionSchema=z.object({primaryKeyword:z.string().min(2).max(40),secondaryKeywords:z.array(z.string().min(2).max(40)).max(2),topicScope:z.enum(['focused','mixed','unknown']),questions:z.array(RawQuestionSchema).length(3)});
 
+// A single garment detail page can answer quantity, lead-time and price questions from its own copy.
+export function apparelDetailQuestions(data:AnswerPageData,purpose:WebsitePurpose){
+  return purpose.business?.id==='custom_apparel'&&new URL(data.finalUrl||data.url).pathname.replace(/\/+$/,'')!==''&&
+    data.h1.some(h=>/과잠|야구점퍼|티셔츠|바람막이|작업복|유니폼/.test(h)&&!/룩북|카탈로그|제품 목록|공식 사이트/.test(h));
+}
+
 function defaultIntents(k:string,pool:AnswerSource[],purpose:WebsitePurpose):AnswerIntent[]{
   if(purpose.community)return ['scope','process','proof'];
   if(purpose.business)return businessProfile(purpose.business.id).questions.map(q=>q.intent);
@@ -156,25 +162,27 @@ function purposeGuide(intent:AnswerIntent,p:WebsitePurpose):IntentGuide{
 /** Unknown model IDs and any model-written answer prose are discarded. Facts are full source units only. */
 export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):AnswerContentPlan{
   const purpose=analyzeWebsitePurpose(data);
+  const detail=apparelDetailQuestions(data,purpose);
+  const fixedBusiness=!!purpose.business&&!detail;
   const pool=answerSources(data),products=data.productContext?.status==='observed'&&!isNonCommerce(purpose)?data.productContext.sources:[];
   const productKeywords=products.length?marketKeywordCandidates({title:data.title,description:data.description,h1:data.h1,h2:data.h2,productSources:products}).map(c=>keyword(c.keyword,pool)).filter((k):k is AnswerKeyword=>!!k).slice(0,3):[];
   const sectorKeywords=purpose.sector?sectorTopicPatterns(purpose.sector.id).flatMap(re=>{
     const term=pool.map(p=>p.text.match(re)?.[0]).find(Boolean);const candidate=term&&keyword(term,pool);return candidate?[candidate]:[];
   }).filter((k,i,a)=>a.findIndex(v=>compact(v.term)===compact(k.term))===i):[];
   const businessKeywords=(purpose.business?.keywords||[]).map(k=>keyword(k,pool)).filter((k):k is AnswerKeyword=>!!k);
-  const fallback=businessKeywords.length?businessKeywords:productKeywords.length?productKeywords:sectorKeywords.length?sectorKeywords:fallbackKeywords(pool);
+  const fallback=detail?fallbackKeywords(pool):businessKeywords.length?businessKeywords:productKeywords.length?productKeywords:sectorKeywords.length?sectorKeywords:fallbackKeywords(pool);
   const parsed=AnswerSuggestionSchema.safeParse(suggestion);
   const ai=parsed.success&&!purpose.community?parsed.data:null;
   const proposed=ai&&keyword(ai.primaryKeyword,pool);
-  const primary=purpose.business?fallback[0]||null:(proposed&&(!products.length||proposed.evidence.some(e=>e.kind==='product'))?proposed:null)||fallback[0]||null;
+  const primary=fixedBusiness?fallback[0]||null:(proposed&&(!products.length||proposed.evidence.some(e=>e.kind==='product'))?proposed:null)||fallback[0]||null;
   const assisted=!!(ai&&primary&&compact(primary.term)===compact(ai.primaryKeyword));
   const secondaries=(assisted?ai!.secondaryKeywords.map(k=>keyword(k,pool)).filter((k):k is AnswerKeyword=>!!k):fallback.slice(1)).filter((k,i,a)=>(!products.length||k.evidence.some(e=>e.kind==='product'))&&compact(k.term)!==compact(primary?.term||'')&&a.findIndex(v=>compact(v.term)===compact(k.term))===i).slice(0,2);
   const limited=(data.bodyText||'').trim().length<80||data.isJsHeavy===true;
-  const expanded=isNonCommerce(purpose)&&purpose.business?.id!=='international_logistics'?nonCommerceQuestionGuides(purpose,providerIdentity(data),data.diagnosticSeed?.page.localPlaceEvidence):undefined;
-  const guideFor=(intent:AnswerIntent):IntentGuide=>{const q=expanded?.find(q=>q.intent===intent);return q?{...q,question:()=>q.question,template:()=>q.template}:purposeGuide(intent,purpose);};
-  const intents=expanded?.map(q=>q.intent)||defaultIntents(primary?.term||'',pool,purpose);
+  const expanded=!detail&&isNonCommerce(purpose)&&purpose.business?.id!=='international_logistics'?nonCommerceQuestionGuides(purpose,providerIdentity(data),data.diagnosticSeed?.page.localPlaceEvidence):undefined;
+  const guideFor=(intent:AnswerIntent):IntentGuide=>{const q=expanded?.find(q=>q.intent===intent);return detail?ANSWER_GUIDES[intent]:q?{...q,question:()=>q.question,template:()=>q.template}:purposeGuide(intent,purpose);};
+  const intents:AnswerIntent[]=detail?['delivery','minimum','price']:expanded?.map(q=>q.intent)||defaultIntents(primary?.term||'',pool,purpose);
   const fallbackRows=intents.map(intent=>({question:guideFor(intent).question(primary?.term||'이 페이지'),intent,evidenceIds:[] as string[],missingFacts:guideFor(intent).fields}));
-  const rows=purpose.business||expanded?fallbackRows.map(row=>{const matched=pool.filter(p=>p.kind==='body'&&guideFor(row.intent).match.test(p.text)).sort((a,b)=>{const relevance=(s:AnswerSource)=>Number(!!s.url&&s.url!==data.finalUrl)+(purpose.business?.id==='international_logistics'&&row.intent==='price'&&/출발지/.test(s.text)&&/도착지/.test(s.text)?2:0);return relevance(b)-relevance(a);});const source=matched[0]?.url;return {...row,evidenceIds:matched.filter(p=>p.url===source).slice(0,2).map(p=>p.id)};}):assisted?ai!.questions.map((q,i)=>isNonCommerce(purpose)&&(!intents.includes(q.intent)||outOfPurpose(q.question,purpose))?fallbackRows[i]:q):fallbackRows;
+  const rows=fixedBusiness||expanded?fallbackRows.map(row=>{const matched=pool.filter(p=>p.kind==='body'&&guideFor(row.intent).match.test(p.text)).sort((a,b)=>{const relevance=(s:AnswerSource)=>Number(!!s.url&&s.url!==data.finalUrl)+(purpose.business?.id==='international_logistics'&&row.intent==='price'&&/출발지/.test(s.text)&&/도착지/.test(s.text)?2:0);return relevance(b)-relevance(a);});const source=matched[0]?.url;return {...row,evidenceIds:matched.filter(p=>p.url===source).slice(0,2).map(p=>p.id)};}):assisted?ai!.questions.map((q,i)=>isNonCommerce(purpose)&&(!intents.includes(q.intent)||!detail&&outOfPurpose(q.question,purpose))?fallbackRows[i]:q):fallbackRows;
   const usedQuestions=new Set<string>();
   const questions:AnswerQuestion[]=primary?rows.map((row,i)=>{
     const guide=guideFor(row.intent);
@@ -192,8 +200,8 @@ export function buildAnswerContentPlan(data:AnswerPageData,suggestion?:unknown):
       steps:expanded?[`${guide.placement}에 질문을 소제목으로 넣어야 합니다.`,`${guide.fields.join(' / ')}을 항목별 답변으로 써야 합니다.`]:['해당 질문과 첫 문장 답변을 고객이 읽을 수 있는 본문 텍스트로 배치합니다.','수량·금액·기간·예외 조건은 실제 운영 기준과 대조한 뒤 게시합니다.','수정 후 같은 URL을 재진단하고, 실제 검색 노출은 별도로 확인합니다.']};
   }):[];
   const searchOnly=purpose.business?.documents.length&&purpose.business.documents.every(d=>d.source==='search_excerpt');
-  const notice=searchOnly?purpose.business!.note:purpose.business?'입력 페이지와 자사 공개 상세·이용안내에서 확인한 자료로 만든 고객 질문입니다. 답변 근거마다 원문 URL을 구분하며 상품별 조건·가격·기간·효능·인증의 정확성과 최신성은 별도로 대조해야 합니다. 실제 검색 수요·노출·광고 성과는 측정하지 않았습니다.':products.length?'입력 페이지와 확인한 자사 상품 표본으로 만든 추천 질문입니다. 상품명은 주제 선택의 근거이며 가격·효능·배송·사용법의 답변 근거가 아닙니다. 표본의 대표 키워드를 사이트 전체 주력 품목으로 단정하지 않습니다. 네이버 자동완성 순위·AI 브리핑 노출은 측정하지 않았습니다. 게시 전 실제 상품 상세와 운영 조건을 확인해 주세요.':ANSWER_CONTENT_NOTICE;
-  return AnswerContentPlanSchema.parse({version:1,source:'own-page',mode:limited?'limited':assisted&&!expanded?'ai-assisted':'basic',targetUrl:data.finalUrl||data.url,observedAt:data.seoEvidence?.capturedAt||new Date().toISOString(),scope:purpose.business||data.businessDocuments?.some(d=>d.url!==(data.finalUrl||data.url))?'submitted-page-and-business':products.length?'submitted-page-and-products':'submitted-page',coverage:limited?'limited':'partial',observation:'not-measured',notice,primaryKeyword:primary,secondaryKeywords:secondaries,topicScope:assisted?ai!.topicScope:'unknown',questions});
+  const notice=searchOnly?purpose.business!.note:fixedBusiness?'입력 페이지와 자사 공개 상세·이용안내에서 확인한 자료로 만든 고객 질문입니다. 답변 근거마다 원문 URL을 구분하며 상품별 조건·가격·기간·효능·인증의 정확성과 최신성은 별도로 대조해야 합니다. 실제 검색 수요·노출·광고 성과는 측정하지 않았습니다.':products.length?'입력 페이지와 확인한 자사 상품 표본으로 만든 추천 질문입니다. 상품명은 주제 선택의 근거이며 가격·효능·배송·사용법의 답변 근거가 아닙니다. 표본의 대표 키워드를 사이트 전체 주력 품목으로 단정하지 않습니다. 네이버 자동완성 순위·AI 브리핑 노출은 측정하지 않았습니다. 게시 전 실제 상품 상세와 운영 조건을 확인해 주세요.':ANSWER_CONTENT_NOTICE;
+  return AnswerContentPlanSchema.parse({version:1,source:'own-page',mode:limited?'limited':assisted&&!expanded?'ai-assisted':'basic',targetUrl:data.finalUrl||data.url,observedAt:data.seoEvidence?.capturedAt||new Date().toISOString(),scope:fixedBusiness||data.businessDocuments?.some(d=>d.url!==(data.finalUrl||data.url))?'submitted-page-and-business':products.length?'submitted-page-and-products':'submitted-page',coverage:limited?'limited':'partial',observation:'not-measured',notice,primaryKeyword:primary,secondaryKeywords:secondaries,topicScope:assisted?ai!.topicScope:'unknown',questions});
 }
 
 export function answerQuestionText(question:AnswerQuestion):string{

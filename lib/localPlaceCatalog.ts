@@ -1,9 +1,12 @@
+import {apparelFields,apparelTerms} from './customApparel';
+
 /** Editorial guidance, not Naver's exhaustive category taxonomy. Match the business identity, never customer case studies. */
 export type PlaceSector = {id:string;label:string;identity:RegExp;types:string[];services:string[];fields:[string,string,string,string];questions:[string,string];schema:string};
 export const PLACE_SECTORS:PlaceSector[]=[
+  {id:'custom_apparel',label:'단체복·유니폼 주문제작',identity:/(?:단체복|과잠|유니폼)\s*(?:주문|맞춤)\s*제작/,types:[],services:apparelTerms,fields:apparelFields,questions:['샘플을 확인하고 시안을 요청하려면 어떻게 하나요?','수량과 가공 방식에 따른 견적은 어디에서 받나요?'],schema:'LocalBusiness'},
   {id:'pharmacy',label:'약국·건강 관련 매장',identity:/약국|pharmacy/i,types:['Pharmacy'],services:['조제','복약상담','의약품','건강기능식품','야간','휴일'],fields:['실제 취급 품목·조제·상담 범위','평일·야간·휴일 영업시간','약국 위치·주차·접근 동선','재고 문의·운영정보 확인 경로'],questions:['언제 방문하고 어떤 상담을 받을 수 있나요?','취급 품목과 운영시간은 어디에서 확인하나요?'],schema:'Pharmacy'},
   {id:'finance',label:'은행·보험 등 지역 상담 지점',identity:/은행|신협|새마을금고|저축은행|보험\s*(?:대리점|지점|상담)/,types:['BankOrCreditUnion','InsuranceAgency','FinancialService'],services:['상담','방문예약','보험','계좌','ATM','대출'],fields:['지점명·운영 주체·상담 업무','창구·상담·ATM 운영시간 구분','방문 예약·필요 서류·연락 방법','주소·주차·접근성·공식 안내'],questions:['해당 지점에서 어떤 업무를 볼 수 있나요?','방문 시간과 준비 서류는 어떻게 확인하나요?'],schema:'FinancialService'},
-  {id:'medical',label:'병의원',identity:/병원|의원|치과|한의원|피부과|안과|이비인후과|정형외과|내과|의학과|\b(?:hospital|clinic|dentist)\b/i,types:['Hospital','MedicalClinic','Dentist','PhysiciansOffice'],services:['진료','검진','검사','치료'],fields:['진료과목·의료진·실제 진료 범위','진료시간·휴진·접수 마감','증상·질병·시술·검진 등록값','진료 예약·준비사항·비급여 안내'],questions:['어떤 진료를 받을 수 있나요?','예약과 방문 전에 무엇을 확인해야 하나요?'],schema:'MedicalClinic'},
+  {id:'medical',label:'병의원',identity:/병원|의원|치과|한의원|피부과|(?<![가-힣])(?:안과|내과)(?![가-힣])|(?:안과|내과)(?=의원|병원|전문의|\s*(?:진료|검진|클리닉))|이비인후과|정형외과|의학과|\b(?:hospital|clinic|dentist)\b/i,types:['Hospital','MedicalClinic','Dentist','PhysiciansOffice'],services:['진료','검진','검사','치료'],fields:['진료과목·의료진·실제 진료 범위','진료시간·휴진·접수 마감','증상·질병·시술·검진 등록값','진료 예약·준비사항·비급여 안내'],questions:['어떤 진료를 받을 수 있나요?','예약과 방문 전에 무엇을 확인해야 하나요?'],schema:'MedicalClinic'},
   {id:'legal',label:'법률사무소·법무법인',identity:/법률\s*사무소|법무\s*법인|변호사|법무사|법률사무|로펌/,types:['LegalService','Attorney','Notary'],services:['이혼','상속','형사','민사','노동','부동산','개인회생','개인파산','기업자문','등기','법률상담'],fields:['실제 취급 사건·상담 대상','담당 변호사·법무사와 소속','상담료·예약 방식·준비 서류','사무소 위치·지점·비밀보호 안내'],questions:['어떤 사건을 상담할 수 있나요?','상담료와 준비 서류는 무엇인가요?'],schema:'LegalService'},
   {id:'professional',label:'세무·회계·노무·특허 사무소',identity:/세무사|세무\s*법인|회계사|회계\s*법인|노무사|노무\s*법인|변리사|특허\s*(?:사무소|법인)/,types:['AccountingService'],services:['기장','세무신고','상속세','양도세','회계감사','급여','노무상담','특허','상표'],fields:['업무별 대상·포함 범위','담당자 자격·소속 확인','상담료·견적 기준·준비 서류','사무소 주소·상담 가능 시간'],questions:['내 상황에 맞는 업무를 맡길 수 있나요?','상담 전 서류와 비용을 어떻게 확인하나요?'],schema:'ProfessionalService'},
   {id:'veterinary',label:'동물병원',identity:/동물\s*(?:병원|의료)|수의(?:사|과)|veterinar/i,types:['VeterinaryCare'],services:['강아지','고양이','예방접종','중성화','건강검진','응급진료','입원'],fields:['진료 동물·진료 분야·수의사','진료시간·야간 및 응급 운영 여부','검사·입원·진료 장비의 실제 범위','예약·내원 준비·주차 안내'],questions:['어떤 동물과 진료 분야를 다루나요?','응급 방문이나 예약은 어떻게 하나요?'],schema:'VeterinaryCare'},
@@ -31,7 +34,7 @@ export const PLACE_SECTORS:PlaceSector[]=[
 // Specific animal categories must precede human medical/lodging, and spaces precede generic retail.
 // Concrete provider roles outrank an animal mentioned as their customer;
 // the broad pet-store matcher alone cannot establish retail activity.
-export const PLACE_DETECTION_ORDER=['veterinary','funeral','pet_care','legal','professional','pharmacy','finance','medical','real_estate','travel','beauty','education','fitness','automotive','home_service','event','rental','welfare','living','culture','cafe','restaurant','lodging','pet_store','retail','local'];
+export const PLACE_DETECTION_ORDER=['veterinary','funeral','pet_care','legal','professional','pharmacy','finance','custom_apparel','medical','real_estate','travel','beauty','education','fitness','automotive','home_service','event','rental','welfare','living','culture','cafe','restaurant','lodging','pet_store','retail','local'];
 export const placeSector=(id:string)=>PLACE_SECTORS.find(s=>s.id===id)||PLACE_SECTORS[PLACE_SECTORS.length-1];
 
 export const PLACE_POLICY_REVIEWED='2026-11-12';

@@ -1,3 +1,4 @@
+import {apparelProfile,customApparelIdentity} from './customApparel';
 import {sameSite} from './siteIdentity';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
 import {PLACE_DETECTION_ORDER,placeSector} from './localPlaceCatalog';
@@ -15,8 +16,8 @@ export const BusinessDocumentSchema=z.object({
 });
 export type BusinessDocument=z.infer<typeof BusinessDocumentSchema>;
 export const BusinessContextSchema=z.object({
-  version:z.literal(1),id:z.enum(['duty_free','cross_border','supplements','travel_booking','international_logistics','fortune_digital','fortune_consultation']),label:z.string().max(100),
-  industry:z.enum(['commerce','ecommerce','travel','logistics','fortune']),kind:z.enum(['commerce','mixed','service']),
+  version:z.literal(1),id:z.enum(['custom_apparel','duty_free','cross_border','supplements','travel_booking','international_logistics','fortune_digital','fortune_consultation']),label:z.string().max(100),
+  industry:z.enum(['manufacturing','commerce','ecommerce','travel','logistics','fortune']),kind:z.enum(['commerce','mixed','service']),
   goalKey:z.enum(['purchase','contact','booking','start']),goalLabel:z.string().max(100),
   evidence:z.array(unit).max(8),documents:z.array(BusinessDocumentSchema).max(9),
   keywords:z.array(z.string().max(60)).max(5),
@@ -28,6 +29,7 @@ type CheckSpec={id:string;label:string;match:RegExp;guide:string};
 export type BusinessQuestion={intent:'location'|'eligibility'|'process'|'delivery'|'price'|'choice'|'care'|'proof'|'scope';question:string;fields:string[];match:RegExp;placement:string;explanation?:string;template?:string};
 export type BusinessProfile={label:string;industry:BusinessContext['industry'];kind:BusinessContext['kind'];goalKey:BusinessContext['goalKey'];goalLabel:string;checks:CheckSpec[];questions:BusinessQuestion[];keywords:string[];caution:string};
 const profiles:Record<BusinessContext['id'],BusinessProfile>={
+  custom_apparel:apparelProfile,
   fortune_digital:fortuneDigitalProfile,
   fortune_consultation:fortuneConsultationProfile,
   international_logistics:{label:'해외이사·국제운송 견적 상담형',industry:'logistics',kind:'service',goalKey:'contact',goalLabel:'운송 조건 확인·견적 상담',
@@ -100,13 +102,14 @@ type Input=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'
 export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   if(purposeSchemaTypes(data).some(t=>/^(Article|BlogPosting|NewsArticle|Course)$/i.test(t)))return;
   const role=ownBusinessRole(data);
-  if(role&&role!=='retail')return;
+  const apparel=(!role||role==='retail'||role==='manufacturing')&&customApparelIdentity([data.title,...data.h1||[]].join(' '),data.description||data.ogDescription||'',providerBody(data));
+  if(role&&role!=='retail'&&!apparel)return;
   const headings=[data.title,...data.h1||[]].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ');
   if(role!=='retail'&&/블로그|매거진|칼럼|뉴스레터|(?:^|[\s·|])뉴스(?:$|[\s·|])/.test(headings))return;
   const place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
   const headingIdentity=classificationText(headings).replace(/(?:반려동물|반려견|애견|강아지|고양이)\s*동반/gu,'');
   const placeIdentity=place?.sector||(role!=='retail'?PLACE_DETECTION_ORDER.find(id=>placeSector(id).identity.test(headingIdentity)):undefined);
-  const placeProfiles:Record<BusinessContext['id'],string[]>={international_logistics:[],duty_free:['retail'],cross_border:['retail','pet_store','pharmacy'],supplements:['retail','pharmacy'],travel_booking:['travel'],fortune_digital:[],fortune_consultation:[]};
+  const placeProfiles:Record<BusinessContext['id'],string[]>={custom_apparel:['custom_apparel','retail'],international_logistics:[],duty_free:['retail'],cross_border:['retail','pet_store','pharmacy'],supplements:['retail','pharmacy'],travel_booking:['travel'],fortune_digital:[],fortune_consultation:[]};
   const compatible=(id:BusinessContext['id'])=>(!placeIdentity||placeIdentity==='local'||placeProfiles[id].includes(placeIdentity))&&!(role==='retail'&&['international_logistics','travel_booking','fortune_digital','fortune_consultation'].includes(id));
   const documents=(data.businessDocuments||[]).filter(d=>sameSite(d.url,data.finalUrl||data.url)).map(d=>({...d,sections:d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url))})).filter(d=>!isSecondarySection(d.title,'',d.url));
   const identity=[data.title,data.description,data.ogDescription,...(data.h1||[])].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ');
@@ -116,16 +119,17 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const units=[...inputUnits,...documents.filter(d=>d.source!=='search_excerpt').flatMap(d=>[{text:d.title,locator:d.url},...d.sections.map(s=>({text:s.text,locator:d.url}))])].map(u=>({...u,text:u.text.slice(0,600)}));
   const all=[primary,...units.map(u=>u.text),...documents.filter(d=>!identity&&d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
   const merchantDocs=documents.filter(d=>d.source!=='search_excerpt');
-  const fortuneActions=data.siteEditing?data.siteEditing.elements.filter(e=>e.kind==='cta'&&!['header','nav','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)).map(e=>e.text):[...data.ctaButtons||[],...data.buttons||[]];
+  const serviceActions=data.siteEditing?data.siteEditing.elements.filter(e=>e.kind==='cta'&&!['header','nav','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)).map(e=>e.text):[...data.ctaButtons||[],...data.buttons||[]];
   const fortune=detectFortuneService({
     url:data.finalUrl||data.url,headings,description:data.description||data.ogDescription||'',
     body:[providerBody(data),...merchantDocs.flatMap(d=>d.sections.map(s=>s.text))].join('\n'),
-    actions:fortuneActions,
+    actions:serviceActions,
   });
   let id:BusinessContext['id']|undefined;
   const logistics=/해외\s*이사|귀국\s*이사|국제\s*운송|국제\s*물류|포워딩|freight\s*(?:forward|service)|international\s*(?:moving|relocation)/i;
   const logisticsUnits=units.filter(u=>logistics.test(u.text));
-  if(fortune&&compatible(fortune))id=fortune;
+  if(apparel&&(compatible('custom_apparel')||(!place&&customApparelIdentity(headings,''))))id='custom_apparel';
+  else if(fortune&&compatible(fortune))id=fortune;
   else if(compatible('international_logistics')&&(logistics.test(primary)||logisticsUnits.length>=2)&&/운송|포장|화물|견적|통관|freight|moving/i.test(all))id='international_logistics';
   else if(compatible('duty_free')&&/면세점|duty\s*free/i.test(primary)&&/시드니|sydney|매장|store/i.test(all))id='duty_free';
   else if(compatible('cross_border')&&/직구|구매대행|cross.border/i.test(primary)&&/호주|australia|해외/i.test(all))id='cross_border';
@@ -133,14 +137,14 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   else if(compatible('supplements')&&/health foods|supplements|nutritional|건강식품|영양제/i.test(all)&&/TGA|AUST\s*L|Australian.made|호주산/i.test(all)&&/제품|products?|브랜드|brand/i.test(all))id='supplements';
   if(!id)return;
   const p=profiles[id],isFortune=p.industry==='fortune';
-  const keywordSource=isFortune?classificationText([primary,providerBody(data),...fortuneActions,...units.map(u=>u.text)].join('\n')):all;
+  const keywordSource=isFortune?classificationText([primary,providerBody(data),...serviceActions,...units.map(u=>u.text)].join('\n')):all;
   const normalizeKeyword=(keyword:string)=>keyword.toLowerCase().replace(/\s/g,'');
   const keywordText=normalizeKeyword(keywordSource);
   const keywords=p.keywords.filter(k=>keywordText.includes(normalizeKeyword(k))).filter((k,i,list)=>!isFortune||!list.slice(0,i).some(prior=>normalizeKeyword(prior).includes(normalizeKeyword(k)))).slice(0,5);
   // The supplemental collector strips testimonials. Do not let a customer's
   // one-off quote or transit time become a provider's shipping/insurance terms.
   const sourceUnits=id==='international_logistics'&&merchantDocs.length?units.filter(u=>merchantDocs.some(d=>d.url===u.locator)||['head > title','meta[name="description"]','h1'].includes(u.locator)):units;
-  const evidence=sourceUnits.filter(u=>isFortune?fortuneTopic.test(classificationText(u.text)):id==='international_logistics'?/이사|운송|화물|견적|통관|freight|moving/i.test(u.text):/면세|duty.free|직구|구매대행|health foods|supplement|TGA|공항|투어|예약|ingredients/i.test(u.text)).slice(0,8);
+  const evidence=sourceUnits.filter(u=>id==='custom_apparel'?apparelProfile.keywords.some(term=>u.text.includes(term)):isFortune?fortuneTopic.test(classificationText(u.text)):id==='international_logistics'?/이사|운송|화물|견적|통관|freight|moving/i.test(u.text):/면세|duty.free|직구|구매대행|health foods|supplement|TGA|공항|투어|예약|ingredients/i.test(u.text)).slice(0,8);
   const checks=p.checks.map(c=>{
     const matching=sourceUnits.filter(u=>c.match.test(isFortune?classificationText(u.text):u.text));
     const supplemental=(locator:string)=>/^https?:/.test(locator)&&!documents.some(d=>d.url===locator&&d.url===data.finalUrl);
@@ -154,7 +158,8 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
     return {id:'business-'+c.id,label:c.label,status:found.length?'observed' as const:'review' as const,evidence:found,guide:c.guide};
   });
   const searchOnly=documents.length>0&&documents.every(d=>d.source==='search_excerpt');
-  return BusinessContextSchema.parse({version:1,id,label:p.label,industry:p.industry,kind:p.kind,goalKey:p.goalKey,goalLabel:p.goalLabel,evidence,documents:documents.slice(0,9),keywords,checks,note:searchOnly?'사이트가 JinjjaScanner의 수집을 차단해 네이버 검색 요약으로 업종·고객 질문을 보완한 제한 진단입니다. HTML·본문 원문·가격·예약 조건·이벤트는 확인하지 않았으며 검색 요약을 답변 사실이나 HTML 통과 근거로 사용하지 않습니다. 사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 재진단하면 원문 검증이 가능합니다.':'입력 페이지와 허용된 자사 공개 상세·이용안내를 함께 검토했습니다. 보완 원문은 메인 페이지의 H1·메타·CTA 관측값에 합산하지 않습니다. 상품별 조건은 서로 분리하며 원문 신호 확인은 정확성·최신성·실제 동작 검증을 뜻하지 않습니다.'});
+  const kind=id==='custom_apparel'&&[...serviceActions,...data.ctaButtons||[]].some(t=>/바로\s*구매|장바구니|checkout|add to cart/i.test(t))?'mixed':p.kind;
+  return BusinessContextSchema.parse({version:1,id,label:p.label,industry:p.industry,kind,goalKey:p.goalKey,goalLabel:p.goalLabel,evidence,documents:documents.slice(0,9),keywords,checks,note:searchOnly?'사이트가 JinjjaScanner의 수집을 차단해 네이버 검색 요약으로 업종·고객 질문을 보완한 제한 진단입니다. HTML·본문 원문·가격·예약 조건·이벤트는 확인하지 않았으며 검색 요약을 답변 사실이나 HTML 통과 근거로 사용하지 않습니다. 사이트 운영자가 JinjjaScanner의 공개 경로 수집을 허용한 뒤 재진단하면 원문 검증이 가능합니다.':'입력 페이지와 허용된 자사 공개 상세·이용안내를 함께 검토했습니다. 보완 원문은 메인 페이지의 H1·메타·CTA 관측값에 합산하지 않습니다. 상품별 조건은 서로 분리하며 원문 신호 확인은 정확성·최신성·실제 동작 검증을 뜻하지 않습니다.'});
 }
 
 export function businessPrompt(context:BusinessContext|undefined):string{
