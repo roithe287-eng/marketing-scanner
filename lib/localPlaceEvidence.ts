@@ -1,3 +1,4 @@
+import {placeFromDescription} from './placeIndustry';
 import {customApparelIdentity} from './customApparel';
 import {ownBusinessRole,classificationText,offeringClauses,isContextOnlyEvidence,isSecondarySection} from './websiteIdentity';
 import {publicBusinessSections} from './publicBusinessSections';
@@ -46,15 +47,19 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   const industryText=(value:string)=>value.replace(/(?:반려동물|반려견|애견|강아지|고양이)\s*동반/gu,'');
   const semantic=classificationText(industryText([identity,clean(entity?.name),ownTypes.join(' ')].join(' ')));
   const clinical=/진료(?:시간|과목|안내|예약)?|의료진|전문의|초진|재진|내원|백내장|시력검사/i;
-  const clinicalBody=clinical.test(description+' '+$('main h2,main h3,main p,article h2,article p').slice(0,24).map((_,e)=>$(e).text()).get().join(' '));
+  const primaryBody=publicBusinessSections(html).filter(s=>!isSecondarySection(s.heading,s.text)).map(s=>s.text);
+  const clinicalBody=clinical.test(classificationText([description,...primaryBody].join('\n')));
   const namedDept=/[가-힣A-Za-z]{1,24}(?:안과|내과)(?:의원)?(?=$|[\s|·-])/.test(title);
   const clinicalCandidate=!apparel&&(ownTypes.some(t=>placeSector('medical').types.includes(t))||clinicalBody);
   let sector=apparel?placeSector('custom_apparel'):role==='home'?placeSector('home_service'):role==='education'?placeSector('education'):role==='retail'?placeSector(placeSector('pet_store').identity.test(semantic)?'pet_store':'retail'):PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.id!=='local'&&s.types.some(t=>ownTypes.includes(t)))
     ||PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.identity.test(semantic));
   // Branded homepages often have only a brand in the title. Their own description may identify the offering.
   if(!sector&&namedDept&&clinicalCandidate)sector=placeSector('medical');
-  if(!sector&&!provider.test(description))sector=PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.id!=='local'&&(s.id!=='medical'||clinicalCandidate)&&s.identity.test(classificationText(industryText(description))));
-  const seasonalSector=seasonalIdentitySector(semantic+' '+(!provider.test(description)?description:''));
+  if(!sector&&!provider.test(description)){
+    const candidate=placeFromDescription(description,primaryBody);
+    if(candidate&&(candidate.id!=='medical'||clinicalCandidate))sector=candidate;
+  }
+  const seasonalSector=seasonalIdentitySector(semantic+' '+(!provider.test(description)?classificationText(description):''));
   if((!sector||sector.id==='local')&&seasonalSector)sector=placeSector(seasonalSector);
   if(!sector&&!links.length&&!entity&&!($('address,[itemprop="address"]').length&&/영업시간|운영시간|방문\s*(?:예약|상담)|오시는\s*길/.test($('body').text())))return;
   sector=sector||placeSector('local');
@@ -65,7 +70,7 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
     if(section.length&&section.find('h1,h2,h3,h4').first()[0]===e)section.remove();
     else {heading.nextUntil('h1,h2,h3,h4').remove();heading.remove();}
   });
-  const detailed=publicBusinessSections($.html(root)).filter(s=>!isSecondarySection(s.heading,s.text)).map(s=>s.text);
+  const detailed=primaryBody;
   root.find('br').replaceWith('\n');root.find('p,li,h1,h2,h3,h4,div,section,address').append('\n');
   const lines=root.text().slice(0,30000).split(/\n+/u).map(v=>clean(v,700)).filter(Boolean);
   const text=lines.join(' ');
@@ -90,5 +95,5 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   const signals=specs.flatMap(([key,label,re])=>{const line=[...detailed,...lines].filter(v=>re.test(v)).sort((a,b)=>Number(b.length>=15)-Number(a.length>=15)||Number(/\d/.test(b))-Number(/\d/.test(a)))[0];if(!line)return [];const at=line.search(re);return [{key,label,excerpt:line.slice(Math.max(0,at-35),at+110).trim()}];});
   const images=root.find('img').slice(0,200).toArray();
   const seasonal=captureSeasonalEvidence({sector:sector.id,identity,description,headings:root.find('h2,h3').slice(0,20).toArray().map(e=>clean($(e).text(),160)),lines});
-  return {...(seasonal?{seasonal}:{}),sector:sector.id,name,identity,address,branch,franchise,links,terms,signals,media:{images:images.length,described:images.filter(e=>!!clean($(e).attr('alt'))).length,videos:Math.min(100,root.find('video,iframe[src*="youtube"],iframe[src*="vimeo"]').length)}};
+  return {contextReviewed:true,...(seasonal?{seasonal}:{}),sector:sector.id,name,identity,address,branch,franchise,links,terms,signals,media:{images:images.length,described:images.filter(e=>!!clean($(e).attr('alt'))).length,videos:Math.min(100,root.find('video,iframe[src*="youtube"],iframe[src*="vimeo"]').length)}};
 }

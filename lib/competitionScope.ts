@@ -60,7 +60,7 @@ function providerSpecialties(profile:string,data:Input):string[]{
     .filter(t=>/(?:제공|취급|판매|운영|시술|대행)(?:합니다|하고|하며|됩니다|해드립니다|\s*중입니다)|진료\s*과목\s*[:：]/.test(t)&&!/관련|고객사|참고\s*(?:정보|자료)/.test(t)).join('\n');
   return [...new Set([
     ...(metadataFacets.length?metadataFacets:facets.filter(([,re])=>re.test(body))),
-    ...facets.filter(([,re])=>re.test(offeringText)),
+    ...facets.filter(([,re])=>re.test(classificationText(offeringText))),
   ].map(([id])=>id))];
 }
 

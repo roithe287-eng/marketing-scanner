@@ -1,3 +1,4 @@
+import {keywordList} from './industryLanguage';
 import {apparelProfile,customApparelIdentity} from './customApparel';
 import {sameSite} from './siteIdentity';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
@@ -112,7 +113,7 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const placeProfiles:Record<BusinessContext['id'],string[]>={custom_apparel:['custom_apparel','retail'],international_logistics:[],duty_free:['retail'],cross_border:['retail','pet_store','pharmacy'],supplements:['retail','pharmacy'],travel_booking:['travel'],fortune_digital:[],fortune_consultation:[]};
   const compatible=(id:BusinessContext['id'])=>(!placeIdentity||placeIdentity==='local'||placeProfiles[id].includes(placeIdentity))&&!(role==='retail'&&['international_logistics','travel_booking','fortune_digital','fortune_consultation'].includes(id));
   const documents=(data.businessDocuments||[]).filter(d=>sameSite(d.url,data.finalUrl||data.url)).map(d=>({...d,sections:d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url))})).filter(d=>!isSecondarySection(d.title,'',d.url));
-  const identity=[data.title,data.description,data.ogDescription,...(data.h1||[])].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ');
+  const identity=[data.title,...[data.description,data.ogDescription].filter(v=>v&&!keywordList(v)),...(data.h1||[])].filter(v=>v&&!isContextOnlyEvidence('',v)).join('\n');
   const primary=classificationText(identity|| (documents.length&&documents.every(d=>d.source==='search_excerpt')?documents.map(d=>d.title).join(' '):''));
   const testimonial=(text:string)=>/[★☆]|testimonial|고객.{0,5}후기|highly recommend|I.ve been using|I love that/i.test(text);
   const inputUnits=[{text:data.title,locator:'head > title'},{text:data.description||data.ogDescription||'',locator:'meta[name="description"]'},...(data.h1||[]).map(text=>({text,locator:'h1'})),...(!data.siteEditing&&!documents.length?(data.bodyText||'').split(/\n+/).slice(0,32).map(text=>({text,locator:'수집된 본문'})):[]),...(data.siteEditing?.contentSections||[]).filter(s=>!s.truncated&&!isSecondarySection(s.heading,s.text,s.url)).map(s=>({text:s.text,locator:s.heading||'입력 페이지 본문'}))].filter(u=>u.text&&!testimonial(u.text)&&!isContextOnlyEvidence(u.locator,u.text));

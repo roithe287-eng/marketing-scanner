@@ -20,7 +20,7 @@ export function excludedPlaceIdentity(identity:string,url:string) {
   return !site || site.shared || /(^|\.)(?:naver\.com|naver\.me)$/.test(site.host) || excludedSite.test(identity);
 }
 export function clinicPlaceIdentity(title:string,identity:string,url:string,clinical:boolean,namedEntity:boolean) {
-  if (excludedPlaceIdentity(identity,url)) return false;
+  if (excludedPlaceIdentity(title+' '+identity,url)) return false;
   const named = /[가-힣A-Za-z0-9]+(?:병원|의원|치과|피부과|성형외과|정형외과|안과|이비인후과|내과|산부인과|소아청소년과|비뇨의학과|정신건강의학과|재활의학과|가정의학과|클리닉)|\b(?:clinic|hospital|dentist)\b/i.test(title);
   return (named && clinical) || (namedEntity && (named || clinical));
 }

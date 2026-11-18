@@ -8,6 +8,7 @@ export const SeasonalPlaceEvidenceSchema=z.object({
   signals:z.array(z.object({key:z.string().max(40),label:z.string().max(80),excerpt:z.string().max(220)})).max(7),
 });
 export const LocalPlaceEvidenceSchema=z.object({
+  contextReviewed:z.literal(true).optional(),
   seasonal:SeasonalPlaceEvidenceSchema.optional(),
   sector:z.string().max(40),name:z.string().max(120),identity:z.string().max(500),address:z.string().max(300),
   branch:z.string().max(80),franchise:z.boolean(),

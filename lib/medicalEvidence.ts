@@ -1,3 +1,5 @@
+import {classificationText} from './websiteIdentity';
+import {keywordList} from './industryLanguage';
 import {isConsentBoilerplate} from './contentBoilerplate';
 import {publicBusinessSections} from './publicBusinessSections';
 import * as cheerio from 'cheerio';
@@ -47,7 +49,9 @@ function hoursIssues(node:Record<string,unknown>,units:{text:string}[]):string[]
 /** Source declarations, not verified credentials. No external requests or script execution. */
 export function captureMedicalEvidence(html:string,url:string,providerOnly=false,hospitalContext=false):MedicalPageEvidence{
   const $=cheerio.load(html),sensitive=medicalSensitiveUrl(url);
-  const identity=clean([$ ('head > title').text(),$('meta[name="description" i]').first().attr('content'),$('h1').slice(0,3).text()].filter(Boolean).join(' '),1500);
+  const headings=classificationText([$('head > title').text(),$('h1').slice(0,3).text()].join('\n'));
+  const meta=$('meta[name="description" i]').first().attr('content')||'';
+  const identity=clean([headings,keywordList(meta)?'':classificationText(meta)].join(' '),1500);
   const nodes:Record<string,unknown>[]=[],formats=new Set<MedicalPageEvidence['formats'][number]>();
   const walk=(v:unknown,depth=0)=>{if(depth>10||nodes.length>=700||!v||typeof v!=='object')return;if(Array.isArray(v)){v.slice(0,100).forEach(x=>walk(x,depth+1));return;}const n=v as Record<string,unknown>;nodes.push(n);Object.values(n).forEach(x=>walk(x,depth+1));};
   $('script[type="application/ld+json"]').slice(0,30).each((_,el)=>{const s=$(el).text();if(s.length>200000)return;try{walk(JSON.parse(s));formats.add('JSON-LD');}catch{/* Core JSON audit preserves syntax errors. */}});
@@ -88,7 +92,10 @@ export function captureMedicalEvidence(html:string,url:string,providerOnly=false
     for(const profile of MEDICAL_PROFILES){const unit=profile.match.test(identity)?{text:identity,locator:'title / description / h1'}:units.find(u=>/^(?:h1|h2|h3)$/.test(u.locator)&&profile.match.test(u.text));if(unit)observed.push({key:`profile:${profile.id}`,evidence:evidence(unit.text,unit.locator)});}
   }
   const declared=nodes.some(n=>values(n['@type']).map(term).some(t=>FACILITIES.has(t)&&t!=='MedicalOrganization'));
-  const institution=/병원|의원|한의원|치과|\b(?:hospital|clinic|dentist)\b/i.test(identity);
+  const institutionName=/병원|의원|한의원|치과|\b(?:hospital|clinic|dentist)\b/i;
+  const clinicalCopy=/진료(?:과목|시간|예약)|의료진|내원|초진|재진|전문의|외래|검진/;
+  const institution=institutionName.test(headings)||(institutionName.test(identity)&&
+    (clinicalCopy.test(identity)||units.some(u=>clinicalCopy.test(classificationText(u.text)))));
   const editorial=/블로그|뉴스|기사|가이드|선택\s*(?:방법|기준)|고르는\s*법/i.test(identity);
   const namedFacility=/[가-힣A-Za-z0-9]{2,20}(?:한의원|한방병원|의원|병원|치과|클리닉)/.test(identity);
   const facilityCandidate=!providerOnly&&!sensitive&&(declared||institution&&(!editorial||namedFacility));
@@ -141,7 +148,7 @@ export function captureMedicalEvidence(html:string,url:string,providerOnly=false
   if(/비급여|진료비|비용|price/i.test(identity+' '+url))roles.push('cost');
   if(/칼럼|건강\s*정보|의학\s*정보|article|column/i.test(identity+' '+url))roles.push('article');
   let place:MedicalPageEvidence['place'];
-  if ((facility || hospitalContext) && !providerOnly && !sensitive && !excludedPlaceIdentity(identity,url)) {
+  if ((facility || hospitalContext) && !providerOnly && !sensitive && !excludedPlaceIdentity(ownTitle+' '+identity,url)) {
     const excerpts:{text:string;context?:string}[] = [];
     const pagePath = new URL(url).pathname;
     const publicTreatment = !/\/(?:patient|reviews?|cases?|news|blog|column|consult|counsel|board|mypage)(?:[/.\-_]|$)/i.test(pagePath)
