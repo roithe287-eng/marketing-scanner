@@ -44,9 +44,9 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
         </ol>}
       </div>
       {!compact && <div className="scanner-gate-details">
+        <LandingReportFeatures />
         <LandingSectorPreview />
         <LandingSectorPreview group="commerce" />
-        <LandingReportFeatures />
         <LandingPricing />
       </div>}
     </div>
