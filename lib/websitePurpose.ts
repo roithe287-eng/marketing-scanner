@@ -1,3 +1,4 @@
+import {bareIndustryTag,keywordList} from './industryLanguage';
 import {providerIdentity,ownBusinessRole,isSecondarySection,classificationText,purposeSchemaTypes,isOtherBranch} from './websiteIdentity';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
 import {isConsentBoilerplate} from './contentBoilerplate';
@@ -74,7 +75,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   if(actionSector)for(const e of data.siteEditing?.elements||[]){
     if(e.kind==='cta'&&['nav','header','footer'].includes(e.region||'')&&sectorActionPattern(actionSector.id).test(e.text)&&!actions.some(a=>a.text===short(e.text)))actions.push({text:short(e.text),locator:e.selector});
   }
-  const identityUnits=units.filter(u=>!isSecondarySection(u.locator,u.text)).map(u=>({...u,text:classificationText(u.text)})).filter(u=>u.text);
+  const identityUnits=units.filter(u=>!isSecondarySection(u.locator,u.text)&&!(u.locator==='meta[name="description"]'&&(keywordList(u.text)||bareIndustryTag(u.text)))).map(u=>({...u,text:classificationText(u.text)})).filter(u=>u.text);
   const role=ownBusinessRole(data);
   const matched=Object.fromEntries(Object.entries(patterns).map(([key,re])=>[key,identityUnits.filter(u=>re.test(u.text))]));
   // A clear inquiry/booking page can identify a service without the literal word "서비스".

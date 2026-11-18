@@ -1,3 +1,5 @@
+import {classificationText} from './websiteIdentity';
+import {keywordList,describesOwnBusiness} from './industryLanguage';
 import {isConsentBoilerplate} from './contentBoilerplate';
 import {z} from 'zod';
 import {sectorJourneys} from './nonCommerceJourneys';
@@ -173,7 +175,15 @@ export function sectorTopicPatterns(id:NonCommerceSector['id']):RegExp[]{
 export function analyzeNonCommerceSector(units:SectorEvidence[],actions:SectorEvidence[],supplemental:SectorEvidence[]=[]):NonCommerceSector|undefined{
   const primary=(u:SectorEvidence)=>u.locator==='head > title'?16:u.locator==='h1'?12:u.locator==='meta[name="description"]'?10:0;
   const candidates=SECTOR_PROFILES.map((p,index)=>{
-    const evidence=units.filter(u=>p.match.test(u.text));
+    const evidence=units.filter(u=>p.match.test(classificationText(u.text))).filter(u=>{
+      if(u.locator!=='meta[name="description"]')return true;
+      const text=classificationText(u.text);
+      if(keywordList(text))return false;
+      const independent=units.some(other=>other!==u&&p.match.test(classificationText(other.text))&&
+        !text.includes(classificationText(other.text))&&!classificationText(other.text).includes(text));
+      const serviceDetails=p.checks.some(c=>!['contact','proof','scope'].includes(c.id)&&c.match.test(text.replace(p.match,'')));
+      return independent||serviceDetails||describesOwnBusiness(text,p.match);
+    });
     const score=evidence.reduce((n,u)=>n+primary(u),0)+Math.min(6,evidence.filter(u=>!primary(u)).length*2);
     return {p,index,evidence,score,anchored:evidence.some(u=>primary(u)>0)};
   }).filter(c=>c.anchored||c.evidence.length>=2).sort((a,b)=>b.score-a.score||a.index-b.index);

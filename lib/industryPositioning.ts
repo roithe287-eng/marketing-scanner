@@ -1,3 +1,5 @@
+import {classificationText} from './websiteIdentity';
+import {keywordList} from './industryLanguage';
 import type {IndustryCategory,MarketingReport} from './reportSchema';
 import {positionEditorial} from './positionEditorial';
 import type {PositionCategory} from './positionEditorial';
@@ -47,8 +49,12 @@ export function defaultPositionIndustry(report:MarketingReport):{category:Positi
  if(report.sitePurpose?.business?.industry==='fortune')return {category:'fortune',basis:'홈페이지 원문에서 확인한 사주·운세 서비스'};
  if(report.sitePurpose?.business?.industry==='logistics')return {category:'logistics',basis:'현재 원문에 근거한 국제물류 업종 분류'};
  const saved=report.industryBenchmark?.category;if(saved&&saved!=='etc')return {category:saved,basis:'저장된 업종 분류'};
- const text=[report.pageEvidence?.title,report.pageEvidence?.description,report.competitorAnalysis?.ourSite?.title,report.competitorAnalysis?.ourSite?.metaDescription,report.competitorAnalysis?.searchKeyword].filter(Boolean).join(' ');
+ const page=report.pageEvidence,our=report.competitorAnalysis?.ourSite;
+ const title=classificationText([page?.title,...page?.h1||[],our?.title].filter(Boolean).join('\n'));
+ const descriptions=[...new Set([page?.description,our?.metaDescription].filter((v):v is string=>!!v&&!keywordList(v)).map(classificationText).filter(Boolean))];
+ const body=descriptions.reduce((text,copy)=>text.replaceAll(copy,' '),classificationText(page?.bodyText||''));
+ const description=descriptions.join(' ');
  const hints:[IndustryCategory,RegExp][]=[['ecommerce',/쇼핑몰|의류|패션|사이즈|장바구니|과잠|단체복|유니폼/],['medical',/병원|의원|진료|치과/],['education',/학원|수강|강의|교육/],['manufacturing',/제조|공장|생산|산업재/],['consulting',/마케팅|컨설팅|광고대행/],['it_service',/SaaS|소프트웨어|클라우드/i],['realestate',/부동산|전세|매매/],['legal',/법률|변호사|세무사/],['beauty',/네일|미용|피부관리/],['food',/메뉴|음식점|레스토랑/],['travel',/숙박|호텔|펜션|여행/],['sports',/피트니스|필라테스|헬스장/],['pet',/반려|강아지|고양이/],['automotive',/자동차|정비|렌트카/],['parenting',/육아|유아|아동/],['interior',/인테리어|리모델링|건축/],['finance',/금융|보험|대출/],['media',/매거진|언론|뉴스/]];
- const found=hints.filter(([,pattern])=>pattern.test(text));
+ const found=hints.filter(([,pattern])=>pattern.test(title)||pattern.test(description)&&pattern.test(body));
  return found.length===1?{category:found[0][0],basis:'자사 제목·설명의 업종 단서 · 직접 변경 가능'}:{category:'etc',basis:'업종 미확인 · 아래에서 업종을 선택하세요'};
 }

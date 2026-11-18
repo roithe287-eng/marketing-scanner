@@ -1,3 +1,4 @@
+import {keywordList} from './industryLanguage';
 import {providerIdentity,ownBusinessRole,providerBody,classificationText,isExcludedOffering,isContextOnlyEvidence} from './websiteIdentity';
 import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
@@ -85,6 +86,22 @@ const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
   etc: [],
 };
 
+// Keep each evidence channel separate. A repeated meta/OG description is one observation.
+const broadHints=new Set(['브랜드','제품','매장','상담','앱','플랫폼','콘텐츠','설계','카드','app','store','shop','content']);
+const concreteHints=(category:IndustryCategory)=>CATEGORY_HINTS[category].filter(h=>!broadHints.has(h));
+function matchingHints(text:string,hints:string[]){
+  return hints.filter(h=>/^[a-z ]+$/i.test(h)?new RegExp('\\b'+h.replace(/ /g,'\\s+')+'\\b','i').test(text):text.toLowerCase().includes(h.toLowerCase()));
+}
+function industrySources(data:Parameters<typeof analyzeWebsitePurpose>[0]&{ogTitle?:string}){
+  const eligible=(s:string|undefined)=>s&&!isContextOnlyEvidence('',s)&&!keywordList(s)?classificationText(s):'';
+  const names=[data.title,...data.h1||[],data.ogTitle].map(eligible).filter(Boolean);
+  const meta=[...new Set([data.description,data.ogDescription].map(eligible).filter(Boolean))];
+  const body=providerBody(data).slice(0,6000).split(/\n+/).map(eligible).filter(Boolean);
+  const primary=[...names,...meta];
+  const independent=body.map(line=>primary.reduce((v,p)=>v.split(p).join(' '),line)).filter(line=>line.trim()&&!primary.some(p=>p.includes(line.trim())));
+  return {names,meta,body,independent};
+}
+
 /**
  * 키워드 기반 빠른 예비 분류 (AI 호출 전 힌트)
  */
@@ -111,33 +128,43 @@ export function classifyIndustryFromEvidence(data: Parameters<typeof analyzeWebs
   }
   if(data.productContext?.sources.length&&(data.productContext.commerce===true||data.productContext.discovery==='public_catalog'))return 'ecommerce';
   if(purpose.kind==='commerce'&&ownBusinessRole(data)==='retail')return 'ecommerce';
-  const primary=classificationText([data.title,data.description,data.ogTitle,data.ogDescription,...data.h1||[]].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ')).toLowerCase();
-  const body=classificationText(providerBody(data).slice(0,2500)).toLowerCase();
-  const contains=(text:string,hint:string)=>/^[a-z ]+$/i.test(hint)?new RegExp('\\b'+hint.replace(/ /g,'\\s+')+'\\b','i').test(text):text.includes(hint.toLowerCase());
-  const generic=new Set(['브랜드','제품','매장','상담','앱','플랫폼','콘텐츠','설계','app','store','shop','content']);
-  const scores=Object.entries(CATEGORY_HINTS).map(([category,hints])=>{
-    const concrete=hints.filter(h=>!generic.has(h));
-    const primaryHits=concrete.filter(h=>contains(primary,h)).length;
-    const bodyHits=concrete.filter(h=>contains(body,h)).length;
-    return {category,primaryHits,score:primaryHits*4+Math.min(3,bodyHits),eligible:primaryHits>=2||primaryHits>=1&&bodyHits>=1||bodyHits>=3};
+  const sources=industrySources(data);
+  const scores=Object.keys(CATEGORY_HINTS).map(key=>{
+    const category=key as IndustryCategory,hints=concreteHints(category);
+    const nameHits=matchingHints(sources.names.join(' '),hints).length;
+    const metaHits=matchingHints(sources.meta.join(' '),hints).length;
+    const bodyHits=matchingHints(sources.independent.join(' '),hints).length;
+    const eligible=nameHits>=2||nameHits>=1&&(metaHits>=1||bodyHits>=1)||metaHits>=1&&bodyHits>=1||bodyHits>=3;
+    return {category,score:nameHits*5+Math.min(3,metaHits)*2+Math.min(3,bodyHits),eligible};
   }).filter(s=>s.eligible).sort((a,b)=>b.score-a.score);
   if(scores[0]&&scores[0].score>(scores[1]?.score||0))return scores[0].category as IndustryCategory;
   return null;
 }
 
+// The service noun must be the object of a matching verb. “병원 이용 가이드를 제공합니다” offers a guide.
+const providerClaims:Partial<Record<IndustryCategory,RegExp>>={
+  interior:/(?:가구|인테리어|리모델링)(?:을|를)?\s*(?:직접\s*)?(?:제작|시공|설계)합니다/u,
+  medical:/(?:외래|초진|환자)(?:를|을)?\s*진료합니다|(?:외래\s*진료|건강\s*검진)(?:를|을)?\s*(?:시행|제공)합니다/u,
+  manufacturing:/(?:부품|설비|산업재|장비)(?:를|을)?\s*(?:직접\s*)?(?:제조|생산)합니다/u,
+  it_service:/(?:소프트웨어|솔루션|앱)(?:를|을)?\s*(?:개발|운영)합니다/u,
+  consulting:/(?:광고|마케팅)(?:를|을)?\s*대행합니다/u,
+};
+
 /** A model suggestion must cite literal eligible page text, never invent a basis. */
-export function groundedIndustrySuggestion(value:unknown,data:ExtractedWebsiteData):IndustryCategory{
+export function groundedIndustrySuggestion(value:unknown,data:Parameters<typeof industrySources>[0]):IndustryCategory{
   if(!value||typeof value!=='object')return 'etc';
   const result=value as Record<string,unknown>,category=String(result.category||'etc').toLowerCase();
   if(!Object.hasOwn(INDUSTRY_LABELS,category)||category==='etc')return 'etc';
   const evidence=typeof result.evidence==='string'?result.evidence.replace(/\s+/g,' ').trim():'';
   if(evidence.length<4||evidence.length>200||isExcludedOffering(evidence))return 'etc';
-  const source=classificationText([data.title,data.description,...data.h1||[],providerBody(data)].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ')).replace(/\s+/g,' ');
-  if(!source.includes(evidence))return 'etc';
-  // A literal quotation alone does not support an arbitrary category. Require
-  // an industry signal in the quoted provider evidence as well.
-  const hints=CATEGORY_HINTS[category as IndustryCategory].filter(h=>!['브랜드','제품','매장','상담','앱','플랫폼','콘텐츠','설계','app','store','shop','content'].includes(h));
-  return hints.some(h=>/^[a-z ]+$/i.test(h)?new RegExp('\\b'+h.replace(/ /g,'\\s+')+'\\b','i').test(evidence):evidence.includes(h))?category as IndustryCategory:'etc';
+  const sources=industrySources(data);
+  const hints=concreteHints(category as IndustryCategory);
+  const containsQuote=(s:string)=>s.replace(/\s+/g,' ').includes(evidence);
+  if(!matchingHints(classificationText(evidence),hints).length)return 'etc';
+  if([...sources.names,...sources.independent].some(containsQuote))return category as IndustryCategory;
+  if(!sources.meta.some(containsQuote))return 'etc';
+  const supported=matchingHints([...sources.names,...sources.independent].join(' '),hints).length>0;
+  return supported||providerClaims[category as IndustryCategory]?.test(evidence)?category as IndustryCategory:'etc';
 }
 
 /**

@@ -1,3 +1,5 @@
+import {industryLanguage,keywordList,bareIndustryTag} from './industryLanguage';
+
 /** Identity and evidence boundaries shared by the deterministic analysis paths. */
 export type OwnBusinessRole='agency'|'software'|'manufacturing'|'home'|'education'|'retail';
 type IdentityInput={title?:string;description?:string;h1?:string[]};
@@ -12,13 +14,13 @@ export function ownBusinessRole(data:IdentityInput):OwnBusinessRole|undefined{
   // A legal practice can work on software copyright; that noun is not its role.
   if(ownLegal.test(headings)&&!/광고\s*대행|홈페이지\s*제작|웹\s*제작|소프트웨어\s*(?:개발|제공)/i.test(headings))return;
   for(const [i,text] of [headings,classificationText(data.description||'')].entries()){
-    if(isContextOnlyEvidence('',text))continue;
+    if(isContextOnlyEvidence('',text)||(i===1&&(keywordList(text)||bareIndustryTag(text))))continue;
     if(i===1&&/법무법인|법률사무소|병원|의원|클리닉|식당|카페|호텔|펜션|약국/.test(headings))return;
     if(/(?:인테리어|리모델링).{0,8}상품/.test(text)&&!/시공|설계/.test(text))return 'retail';
     if(i===0&&/교육(?!용)|강의|수업|학습|커리큘럼/.test(text)&&!/교재|도서|판매|교육청|교육원\s*소개/.test(text))return 'education';
     if(/쇼핑몰\s*(?:구축|제작)|광고\s*대행|마케팅\s*(?:대행|에이전시)|홈페이지\s*제작|웹\s*제작|브랜딩\s*(?:대행|스튜디오)/i.test(text))return 'agency';
     if(/소프트웨어|\bSaaS\b|업무\s*솔루션|(?:예약|보험|물류|병원|쇼핑몰)\s*(?:관리\s*)?(?:솔루션|시스템)\s*(?:개발|제공)/i.test(text))return 'software';
-    if(/제조\s*(?:기업|업체|회사|전문)|(?:기기|장비|부품|제품|임플란트|산업재).{0,12}(?:제조|생산)|(?:manufactur(?:er|ing))\b/i.test(text))return 'manufacturing';
+    if(/제조\s*(?:기업|업체|회사|전문)|(?:기기|장비|부품|제품|포장재|포장\s*상자|산업재|임플란트).{0,12}(?:제조|생산)|포장\s*(?:상자|용기|박스).{0,8}제작(?:합니다|업체|사)|(?:manufactur(?:er|ing))\b/i.test(text))return 'manufacturing';
     if(/인테리어|리모델링|(?:청소|소독|방역)\s*(?:전문|서비스|업체)|(?:설계|시공)\s*(?:전문|업체)/i.test(text))return 'home';
     if(/학원|교습소|자격증\s*(?:교육|과정)|지도자\s*(?:교육|양성)|수강\s*(?:신청|안내)/.test(text))return 'education';
     if(/온라인\s*쇼핑몰|쇼핑몰|온라인\s*(?:판매|스토어)|전문\s*(?:쇼핑몰|판매점)/.test(text))return 'retail';
@@ -28,7 +30,7 @@ export function ownBusinessRole(data:IdentityInput):OwnBusinessRole|undefined{
 
 /** Only provider metadata may choose a playbook or an industry. Raw metadata stays available for SEO. */
 export function providerIdentity(data:IdentityInput):string{
-  return classificationText([data.title,data.description,...data.h1||[]].filter((v):v is string=>!!v&&!isContextOnlyEvidence('',v)).join('\n'));
+  return classificationText([data.title,data.description&&!keywordList(data.description)&&!bareIndustryTag(data.description)?data.description:'',...data.h1||[]].filter((v):v is string=>!!v&&!isContextOnlyEvidence('',v)).join('\n'));
 }
 
 /** Embedded related articles/courses describe their own URLs, not this page. */
@@ -50,7 +52,7 @@ export function purposeSchemaTypes(data:{schemaTypes?:string[];jsonLdSchemas?:un
 /** Explicit third-party examples and non-offering sentences are not provider facts. */
 export function isContextOnlyEvidence(heading:string,text:string,url=''):boolean{
   return /(?:님의?\s*견적\s*문의|문의\s*상태\s*[:：].{0,65}(?:담당자|등록일)\s*[:：])/u.test(text)||/고객사|고객\s*사례|납품\s*사례|시공\s*사례|포트폴리오|이용\s*후기|고객\s*후기|사용\s*후기|\btestimonial\b|\bcase\s*stud(?:y|ies)\b/i.test(heading)
-    ||/^(?:고객사|고객\s*사례|납품\s*사례|시공\s*사례)\s*[:：]/.test(text)
+    ||(/^(?:고객사|고객\s*사례|납품\s*사례|시공\s*사례)\s*[:：]/.test(text)&&!/[.!?。]\s*\S/.test(text))
     ||/\/(?:portfolio|testimonials?|reviews?|client-cases)(?:[/?#]|$)/i.test(url);
 }
 export function isExcludedOffering(text:string):boolean{
@@ -64,7 +66,7 @@ export function offeringClauses(text:string):string[]{
     .filter(sentence=>sentence.trim()&&!isExcludedOffering(sentence));
 }
 export function classificationText(text:string):string{
-  return offeringClauses(text).join(' ');
+  return offeringClauses(text).map(industryLanguage).filter(Boolean).join(' ');
 }
 export function isSecondarySection(heading:string,text:string,url=''):boolean{
   return isContextOnlyEvidence(heading,text,url)||/^(?:블로그|관련\s*(?:글|기사|콘텐츠)|뉴스|칼럼|소식|추천\s*(?:글|기사))\s*(?:$|[:：·|])/.test(heading);

@@ -7,18 +7,31 @@ import type {MarketingReport} from './reportSchema';
 import type {DiagnosticPage} from './siteDiagnosticsSchema';
 import {canonicalPage} from './geoComparison';
 import {analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
-import {providerIdentity,isSecondarySection,ownBusinessRole} from './websiteIdentity';
+import {providerIdentity,isSecondarySection,ownBusinessRole,classificationText,providerBody} from './websiteIdentity';
+import {keywordList} from './industryLanguage';
+import {placeFromDescription} from './placeIndustry';
 import {sameSite} from './siteIdentity';
 
-function correctedSector(page:DiagnosticPage){
+function correctedSector(page:DiagnosticPage,capturedBody:readonly string[]=[]){
   const old=page.localPlaceEvidence;
   if(!old)return;
   const role=ownBusinessRole({title:page.title,description:page.description});
   if((!role||role==='retail'||role==='manufacturing')&&customApparelIdentity(page.title,page.description))return 'custom_apparel';
-  if(old.sector!=='medical'||page.medicalRelevant||page.medicalEvidence?.facilityCandidate)return old.sector;
-  const identity=[old.identity,page.description].join(' ');
-  if(placeSector('medical').identity.test(identity))return old.sector;
-  return PLACE_DETECTION_ORDER.find(id=>id!=='local'&&placeSector(id).identity.test(identity))||'local';
+  if(old.contextReviewed||old.sector==='local')return old.sector;
+  const sector=placeSector(old.sector);
+  const raw=[old.identity,page.title,page.description].join(' ');
+  const headings=classificationText([old.identity,page.title].join(' '));
+  if(sector.identity.test(headings))return old.sector;
+  if(old.sector==='medical'&&(page.medical.length||page.medicalEvidence?.place?.facility))return old.sector;
+  const body=(page.businessDocument?.sections||[]).filter(s=>!isSecondarySection(s.heading,s.text)).map(s=>s.text);
+  const replacement=placeFromDescription(page.description,[...body,...capturedBody]);
+  if(replacement?.id===old.sector)return old.sector;
+  // Old snapshots lack the full DOM. Repair only when the saved text reveals the source of the mismatch.
+  const ambiguous=sector.identity.test(raw)&&(!sector.identity.test(classificationText(raw))||
+    keywordList(page.description)||sector.identity.test(page.description)&&!replacement);
+  const priorMedicalFallback=old.sector==='medical'&&!page.medicalRelevant&&!page.medicalEvidence?.facilityCandidate;
+  if(!ambiguous&&!priorMedicalFallback)return old.sector;
+  return PLACE_DETECTION_ORDER.find(id=>id!=='local'&&placeSector(id).identity.test(headings))||replacement?.id||'local';
 }
 
 /** Repair editorial outputs from the original capture, without network calls or new measurements. */
@@ -26,19 +39,21 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
   const page=report.pageEvidence, diagnostics=report.siteDiagnostics;
   if(!page||canonicalPage(page.requestedUrl)!==canonicalPage(report.url)||!sameSite(page.finalUrl,report.url))return report;
   const root=diagnostics?.pages.find(p=>canonicalPage(p.url)===canonicalPage(page.finalUrl));
-  const old=root?.localPlaceEvidence, sector=root&&correctedSector(root);
+  const capturedBody=providerBody(page).split(/\n+/u);
+  const old=root?.localPlaceEvidence, sector=root&&correctedSector(root,capturedBody);
   const changedPlace=!!old&&!!sector&&old.sector!==sector;
   const needsApparel=report.sitePurpose?.business?.id!=='custom_apparel'&&customApparelIdentity(page.title,page.description);
   if(!changedPlace&&!needsApparel)return report;
 
   const pages=diagnostics?.pages.map(p=>{
-    const item=p.localPlaceEvidence, next=correctedSector(p);
+    const item=p.localPlaceEvidence, next=p===root?sector:correctedSector(p);
     if(!item||!next||next===item.sector)return p;
     const terms=item.terms.filter(term=>term.group!=='상품·서비스');
     if(next==='custom_apparel')for(const term of apparelTerms){
       if((p.title+' '+p.description).includes(term))terms.push({group:'상품·서비스',term});
     }
-    return {...p,localPlaceEvidence:{...item,sector:next,terms:terms.slice(0,32),signals:item.signals.filter(s=>s.key!=='offer'),seasonal:undefined}};
+    const clearMedical=item.sector==='medical'&&next!=='medical'&&!p.medical.length&&!p.medicalEvidence?.place?.facility;
+    return {...p,...(clearMedical?{medicalRelevant:false,medicalEvidence:undefined}:{}),localPlaceEvidence:{...item,contextReviewed:true as const,sector:next,terms:terms.slice(0,32),signals:item.signals.filter(s=>s.key!=='offer'),seasonal:undefined}};
   });
   const current=pages?.find(p=>p.url===root?.url);
   const sourcePlan=report.serviceStrategy;
@@ -56,10 +71,15 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
   purpose.capturedAt=report.sitePurpose?.capturedAt||page.capturedAt;
   const book=nonCommercePlaybook(purpose,providerIdentity(page),current?.localPlaceEvidence);
   const rebuilt=buildAnswerContentPlan(data);
-  const staleBenchmark=report.industryBenchmark?.category==='medical'&&book.id!=='medical'&&current?.localPlaceEvidence?.sector!=='medical';
+  const staleBenchmark=changedPlace&&!!report.industryBenchmark||report.industryBenchmark?.category==='medical'&&book.id!=='medical'&&current?.localPlaceEvidence?.sector!=='medical';
+  const comparison=report.competitorAnalysis;
   return {...report,sitePurpose:purpose,
+    ...(changedPlace&&comparison?.ourSite?.scope&&comparison.ourSite.scope.profile===old?.sector?
+      {competitorAnalysis:null,competitorStatus:{status:'unavailable' as const,message:'업종을 바로잡아 이전 업종으로 수집한 경쟁사 비교를 제외했습니다.'}}:{}),
     ...(report.evidenceReview&&report.oneLineSummary.startsWith('HTML 기본 항목 ')?{oneLineSummary:`HTML 기본 항목 ${report.evidenceReview.assessed}개 중 ${report.evidenceReview.passed}개 충족 · ${purpose.label} · ${purpose.goal.label} 동선과 실제 화면은 별도 확인이 필요합니다.`}:{}),
-    ...(diagnostics&&pages?{siteDiagnostics:{...diagnostics,pages,findings:diagnostics.findings.map(f=>
+    ...(diagnostics&&pages?{siteDiagnostics:{...diagnostics,pages,...(changedPlace?{localPlaceLookup:undefined}:{}),
+      ...(changedPlace&&!pages.some(p=>p.medicalRelevant)?{medicalAudit:undefined}:{}),
+      findings:diagnostics.findings.filter(f=>!f.id.startsWith('medical-missing-')||pages.some(p=>p.medicalRelevant&&f.urls.includes(p.url))).map(f=>
       f.id.startsWith('background-')?{...f,action:f.action.replace('진료·상품 설명','상품·서비스의 핵심 설명')}:f)}}:{}),
     ...(staleBenchmark?{industryBenchmark:null}:{}),
     ...(sourcePlan?.industry==='noncommerce'?{serviceStrategy:isNonCommerce(purpose)?{...sourcePlan,sources,
