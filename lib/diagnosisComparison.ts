@@ -3,7 +3,7 @@ import {canonicalPage} from './geoComparison';
 import {growthPageEvidence} from './growthPlan';
 import {diagnosisAxes} from './diagnosisVisuals';
 
-export const DIAGNOSIS_METHOD='marketing-diagnosis-2026-11-v22-contextual-industry-evidence';
+export const DIAGNOSIS_METHOD='marketing-diagnosis-2026-11-v23-all-sector-provider-context';
 export const DIAGNOSIS_COMPARISON_NOTE='같은 URL의 진단 변화를 비교합니다. 수정 반영은 실제 페이지에서, 노출·클릭·문의 변화는 같은 조건의 계정 실적으로 확인하세요.';
 const normal=(s:string)=>s.trim().replace(/\s+/g,' ').toLowerCase();
 export function diagnosisChecks(report:MarketingReport):DiagnosisCheck[] {

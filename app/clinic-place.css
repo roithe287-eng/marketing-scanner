@@ -8,7 +8,7 @@
 .report-v2.report-focused .hp-panel :where(h3,h4,h5,p,ol,ul,dl,dt,dd,fieldset,legend) {margin:0}
 .report-v2.report-focused .hp-panel p {text-align:left;font-size:.9375rem;line-height:1.7;white-space:normal;margin:0;color:var(--hp-muted)}
 .hp-icon {display:block;flex:none}
-.hp-heading {display:flex;align-items:center;gap:12px;margin-bottom:18px}
+.hp-heading {display:grid;justify-items:center;text-align:center;gap:12px;margin:0 auto 18px}
 .hp-heading-icon,.hp-cat-icon {display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:12px;color:var(--hp-blue);background:var(--hp-wash);border:1px solid #cbe0d8}
 .report-v2.report-focused .hp-panel .hp-heading h3 {font-size:clamp(20px,2vw,25px);line-height:1.38;font-weight:800;letter-spacing:-.035em;margin:0 0 4px}
 .hp-heading h3 {scroll-margin-top:180px}
@@ -132,7 +132,7 @@
 }
 @media(max-width:600px){
  .report-v2.report-focused .hp-panel {padding:14px;margin:16px 0}
- .hp-heading {align-items:flex-start;gap:9px}.hp-heading-icon {width:36px;height:36px}.hp-heading-icon .hp-icon{width:21px;height:21px}
+ .hp-heading {gap:9px}.hp-heading-icon {width:36px;height:36px}.hp-heading-icon .hp-icon{width:21px;height:21px}
  .hp-profile {display:grid;grid-template-columns:50px minmax(0,1fr);gap:8px;padding:10px}.hp-place-mark {width:50px}
  .hp-profile .hp-place-link,.hp-profile-note {grid-column:1/-1;justify-self:start}
  .hp-category {grid-template-columns:64px minmax(0,1fr);gap:6px}.hp-category>header {gap:4px}

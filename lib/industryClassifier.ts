@@ -1,3 +1,6 @@
+import {INDUSTRY_LABELS} from './industryCategory';
+export {INDUSTRY_LABELS} from './industryCategory';
+import {directIndustries} from './providerClaims';
 import {keywordList} from './industryLanguage';
 import {providerIdentity,ownBusinessRole,providerBody,classificationText,isExcludedOffering,isContextOnlyEvidence} from './websiteIdentity';
 import { getOpenAI } from "./openaiClient";
@@ -34,32 +37,6 @@ const SERVICE_INDUSTRIES:Partial<Record<string,IndustryCategory>>={
 
 const OPENAI_MODEL = "gpt-4o-mini";
 const AI_TIMEOUT_MS = 15000;
-
-// 20개 업종 카테고리 라벨 매핑
-export const INDUSTRY_LABELS: Record<IndustryCategory, string> = {
-  education: "교육",
-  medical: "의료·병원",
-  commerce: "커머스·쇼핑",
-  realestate: "부동산",
-  legal: "법률·세무",
-  beauty: "뷰티·미용",
-  food: "식음료·외식",
-  travel: "여행·숙박",
-  logistics: "해외이사·국제물류",
-  fortune: "사주·운세",
-  it_service: "IT·서비스",
-  manufacturing: "제조·산업",
-  finance: "금융·투자",
-  consulting: "컨설팅·마케팅",
-  media: "미디어·콘텐츠",
-  sports: "스포츠·피트니스",
-  pet: "반려동물",
-  automotive: "자동차",
-  parenting: "육아·교육",
-  interior: "인테리어·건축",
-  ecommerce: "이커머스",
-  etc: "기타",
-};
 
 const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
   education: ["학원", "강의", "수업", "교육", "과외", "온라인 클래스", "코딩스쿨", "수강", "튜터", "academy", "school", "course"],
@@ -120,7 +97,7 @@ export function classifyIndustryFromEvidence(data: Parameters<typeof analyzeWebs
     const season=book.id.startsWith('season_')?SEASON_INDUSTRIES[book.id.slice(7)]:undefined;
     if(!season&&place?.sector==='rental'&&/렌터카|렌트카|(?:자동차|차량)\s*대여/.test(providerIdentity(data)))return 'automotive';
     const local=book.local&&place?PLACE_INDUSTRIES[place.sector]:undefined;
-    const category=season||local||SERVICE_INDUSTRIES[book.id];
+    const category=season||local||book.industry||SERVICE_INDUSTRIES[book.id];
     if(category)return category;
     // A concrete local business without a benchmark category must not fall
     // through to incidental words such as insurance in its operating terms.
@@ -129,6 +106,7 @@ export function classifyIndustryFromEvidence(data: Parameters<typeof analyzeWebs
   if(data.productContext?.sources.length&&(data.productContext.commerce===true||data.productContext.discovery==='public_catalog'))return 'ecommerce';
   if(purpose.kind==='commerce'&&ownBusinessRole(data)==='retail')return 'ecommerce';
   const sources=industrySources(data);
+  if(purpose.declaredIndustry)return purpose.declaredIndustry.category;
   const scores=Object.keys(CATEGORY_HINTS).map(key=>{
     const category=key as IndustryCategory,hints=concreteHints(category);
     const nameHits=matchingHints(sources.names.join(' '),hints).length;
@@ -141,15 +119,6 @@ export function classifyIndustryFromEvidence(data: Parameters<typeof analyzeWebs
   return null;
 }
 
-// The service noun must be the object of a matching verb. “병원 이용 가이드를 제공합니다” offers a guide.
-const providerClaims:Partial<Record<IndustryCategory,RegExp>>={
-  interior:/(?:가구|인테리어|리모델링)(?:을|를)?\s*(?:직접\s*)?(?:제작|시공|설계)합니다/u,
-  medical:/(?:외래|초진|환자)(?:를|을)?\s*진료합니다|(?:외래\s*진료|건강\s*검진)(?:를|을)?\s*(?:시행|제공)합니다/u,
-  manufacturing:/(?:부품|설비|산업재|장비)(?:를|을)?\s*(?:직접\s*)?(?:제조|생산)합니다/u,
-  it_service:/(?:소프트웨어|솔루션|앱)(?:를|을)?\s*(?:개발|운영)합니다/u,
-  consulting:/(?:광고|마케팅)(?:를|을)?\s*대행합니다/u,
-};
-
 /** A model suggestion must cite literal eligible page text, never invent a basis. */
 export function groundedIndustrySuggestion(value:unknown,data:Parameters<typeof industrySources>[0]):IndustryCategory{
   if(!value||typeof value!=='object')return 'etc';
@@ -160,11 +129,13 @@ export function groundedIndustrySuggestion(value:unknown,data:Parameters<typeof 
   const sources=industrySources(data);
   const hints=concreteHints(category as IndustryCategory);
   const containsQuote=(s:string)=>s.replace(/\s+/g,' ').includes(evidence);
-  if(!matchingHints(classificationText(evidence),hints).length)return 'etc';
+  const direct=directIndustries(evidence);
+  const matchesClaim=direct.length===1&&direct[0]===category;
+  if(!matchesClaim&&!matchingHints(classificationText(evidence),hints).length)return 'etc';
   if([...sources.names,...sources.independent].some(containsQuote))return category as IndustryCategory;
   if(!sources.meta.some(containsQuote))return 'etc';
   const supported=matchingHints([...sources.names,...sources.independent].join(' '),hints).length>0;
-  return supported||providerClaims[category as IndustryCategory]?.test(evidence)?category as IndustryCategory:'etc';
+  return supported||matchesClaim?category as IndustryCategory:'etc';
 }
 
 /**

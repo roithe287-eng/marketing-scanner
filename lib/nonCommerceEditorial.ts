@@ -1,3 +1,4 @@
+import {positionEditorial} from './positionEditorial';
 import {apparelFields} from './customApparel';
 import {koreanParticle} from './koreanParticle';
 import type {NonCommercePlaybook} from './nonCommercePlaybook';
@@ -38,7 +39,7 @@ export const INDUSTRY_AXES:Record<string,[string,string,string,string]>={
  public_service:['신청 대상·제외 조건','원공고·운영 기관·정정 이력','제출 서류·접수 기간','공식 신청·접수 확인·진행 조회'],
 };
 export function editorialFocus(book:NonCommercePlaybook){
- const fields=book.local?.fields||INDUSTRY_AXES[book.id]||INDUSTRY_AXES.service;
+ const fields=book.local?.fields||(book.industry?[1,2,0,3].map(i=>positionEditorial(book.industry!,i).titleSubject):undefined)||INDUSTRY_AXES[book.id]||INDUSTRY_AXES.service;
  const mode=book.id==='fortune_digital'?'self_serve':book.id==='public_service'?'public':book.id==='content'?'read':book.id==='community'?'community':/^방문·/.test(book.outcome)?'visit':'request';
  return {fields,mode,information:['public','read','community'].includes(mode),questions:[`${koreanParticle(fields[0],'topic')} 어떻게 구분하나요?`,`${koreanParticle(fields[2],'topic')} 어디에서 확인하나요?`]};
 }

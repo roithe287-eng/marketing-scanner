@@ -1,3 +1,5 @@
+import {IndustryCategorySchema} from './industryCategory';
+export {IndustryCategorySchema} from './industryCategory';
 import {CompetitionScopeSchema} from './competitionScope';
 import {OfficialSeoAuditSchema} from './officialSeoSchema';
 import {SiteDiagnosticsSchema} from './siteDiagnosticsSchema';
@@ -314,30 +316,7 @@ export const KeywordFrequencySchema = z.object({
 });
 
 // v45-W3: 업종별 벤치마크 리더보드
-export const IndustryCategorySchema = z.enum([
-  "education",
-  "medical",
-  "commerce",
-  "realestate",
-  "legal",
-  "beauty",
-  "food",
-  "travel",
-  "logistics",
-  "fortune",
-  "it_service",
-  "manufacturing",
-  "finance",
-  "consulting",
-  "media",
-  "sports",
-  "pet",
-  "automotive",
-  "parenting",
-  "interior",
-  "ecommerce",
-  "etc",
-]);
+
 
 export const IndustryMetricSchema = z.object({
   key: z.string(),

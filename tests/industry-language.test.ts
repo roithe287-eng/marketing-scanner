@@ -80,7 +80,7 @@ test('a generic contact action does not turn a standalone hotel tag into a lodgi
 test('an older restaurant report sourced from 신청서 양식 loses its sector-specific guidance',()=>{
   const data=capture('신청서 양식과 파일을 다운로드하세요.','신청에 필요한 자료입니다.');
   const base=capture('파스타와 스테이크를 제공합니다.','오늘의 메뉴와 예약 안내','온결 양식당').diagnosticSeed.page.localPlaceEvidence!;
-  const {contextReviewed,...old}=base;
+  const {contextVersion,contextReviewed,...old}=base;
   const capturedAt='2026-11-01T00:00:00Z';
   const report=MarketingReportSchema.parse({...fixture,url,pageEvidence:{version:1,requestedUrl:url,finalUrl:url,capturedAt,title:data.title,description:data.description,h1:data.h1,h2:[],bodyText:data.bodyText,bodyTruncated:false,ctaButtons:[]},
     siteDiagnostics:{version:1,observedAt:capturedAt,targetUrl:url,limited:false,scopeNote:'입력 페이지',pages:[{...data.diagnosticSeed.page,localPlaceEvidence:{...old,identity:data.title,name:data.title,sector:'restaurant'}}],attempts:[],sitemap:{url,status:'unavailable',note:'미확인',declared:false,entries:0,lastmod:0,invalidDates:0,futureDates:0,sampled:false},llms:{url,status:'unavailable',note:'미확인'},crawlers:[],findings:[]},

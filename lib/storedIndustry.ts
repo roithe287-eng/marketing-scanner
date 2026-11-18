@@ -1,3 +1,4 @@
+import {directIndustries} from './providerClaims';
 import {buildAnswerContentPlan} from './answerContent';
 import {apparelTerms,customApparelIdentity} from './customApparel';
 import {placeSector,PLACE_DETECTION_ORDER} from './localPlaceCatalog';
@@ -8,7 +9,7 @@ import type {DiagnosticPage} from './siteDiagnosticsSchema';
 import {canonicalPage} from './geoComparison';
 import {analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
 import {providerIdentity,isSecondarySection,ownBusinessRole,classificationText,providerBody} from './websiteIdentity';
-import {keywordList} from './industryLanguage';
+import {keywordList,withoutThirdPartyRoles} from './industryLanguage';
 import {placeFromDescription} from './placeIndustry';
 import {sameSite} from './siteIdentity';
 
@@ -17,7 +18,8 @@ function correctedSector(page:DiagnosticPage,capturedBody:readonly string[]=[]){
   if(!old)return;
   const role=ownBusinessRole({title:page.title,description:page.description});
   if((!role||role==='retail'||role==='manufacturing')&&customApparelIdentity(page.title,page.description))return 'custom_apparel';
-  if(old.contextReviewed||old.sector==='local')return old.sector;
+  if(old.contextVersion===2||old.sector==='local')return old.sector;
+  if(old.contextReviewed&&[old.identity,page.title,page.description].every(v=>withoutThirdPartyRoles(v)===v))return old.sector;
   const sector=placeSector(old.sector);
   const raw=[old.identity,page.title,page.description].join(' ');
   const headings=classificationText([old.identity,page.title].join(' '));
@@ -43,7 +45,12 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
   const old=root?.localPlaceEvidence, sector=root&&correctedSector(root,capturedBody);
   const changedPlace=!!old&&!!sector&&old.sector!==sector;
   const needsApparel=report.sitePurpose?.business?.id!=='custom_apparel'&&customApparelIdentity(page.title,page.description);
-  if(!changedPlace&&!needsApparel)return report;
+  const previous=report.sitePurpose;
+  const reviewPurpose=!!previous&&(!!previous.business||!!previous.sector)&&
+    [page.title,page.description,...page.h1].some(v=>withoutThirdPartyRoles(v)!==v);
+  const reviewClaim=!!previous&&!previous.declaredIndustry&&!previous.business&&!previous.sector&&(!old||old.sector==='local')&&
+    [page.title,page.description,...page.h1].some(v=>directIndustries(v).length>0);
+  if(!changedPlace&&!needsApparel&&!reviewPurpose&&!reviewClaim)return report;
 
   const pages=diagnostics?.pages.map(p=>{
     const item=p.localPlaceEvidence, next=p===root?sector:correctedSector(p);
@@ -53,7 +60,7 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
       if((p.title+' '+p.description).includes(term))terms.push({group:'상품·서비스',term});
     }
     const clearMedical=item.sector==='medical'&&next!=='medical'&&!p.medical.length&&!p.medicalEvidence?.place?.facility;
-    return {...p,...(clearMedical?{medicalRelevant:false,medicalEvidence:undefined}:{}),localPlaceEvidence:{...item,contextReviewed:true as const,sector:next,terms:terms.slice(0,32),signals:item.signals.filter(s=>s.key!=='offer'),seasonal:undefined}};
+    return {...p,...(clearMedical?{medicalRelevant:false,medicalEvidence:undefined}:{}),localPlaceEvidence:{...item,contextReviewed:true as const,contextVersion:2 as const,sector:next,terms:terms.slice(0,32),signals:item.signals.filter(s=>s.key!=='offer'),seasonal:undefined}};
   });
   const current=pages?.find(p=>p.url===root?.url);
   const sourcePlan=report.serviceStrategy;
@@ -67,14 +74,15 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
   const data={...page,url:report.url,ogDescription:'',isJsHeavy:report.answerContentPlan?.coverage==='limited',businessDocuments:documents,
     productContext:report.productContext??undefined,communityContext:report.sitePurpose?.community,diagnosticSeed:current?{page:current,links:[]}:undefined};
   const purpose=analyzeWebsitePurpose(data);
-  if(!changedPlace&&purpose.business?.id!=='custom_apparel')return report;
+  const changedPurpose=reviewPurpose&&(purpose.business?.id!==previous?.business?.id||purpose.sector?.id!==previous?.sector?.id);
+  if(!changedPlace&&!changedPurpose&&!(reviewClaim&&purpose.declaredIndustry)&&purpose.business?.id!=='custom_apparel')return report;
   purpose.capturedAt=report.sitePurpose?.capturedAt||page.capturedAt;
   const book=nonCommercePlaybook(purpose,providerIdentity(page),current?.localPlaceEvidence);
   const rebuilt=buildAnswerContentPlan(data);
-  const staleBenchmark=changedPlace&&!!report.industryBenchmark||report.industryBenchmark?.category==='medical'&&book.id!=='medical'&&current?.localPlaceEvidence?.sector!=='medical';
+  const staleBenchmark=!!report.industryBenchmark&&(changedPlace||changedPurpose||reviewClaim&&!!purpose.declaredIndustry&&purpose.declaredIndustry.category!==report.industryBenchmark.category)||report.industryBenchmark?.category==='medical'&&book.id!=='medical'&&current?.localPlaceEvidence?.sector!=='medical';
   const comparison=report.competitorAnalysis;
   return {...report,sitePurpose:purpose,
-    ...(changedPlace&&comparison?.ourSite?.scope&&comparison.ourSite.scope.profile===old?.sector?
+    ...((changedPlace||changedPurpose)&&comparison?.ourSite?.scope&&[old?.sector,previous?.business?.id,previous?.sector?.id].includes(comparison.ourSite.scope.profile)?
       {competitorAnalysis:null,competitorStatus:{status:'unavailable' as const,message:'업종을 바로잡아 이전 업종으로 수집한 경쟁사 비교를 제외했습니다.'}}:{}),
     ...(report.evidenceReview&&report.oneLineSummary.startsWith('HTML 기본 항목 ')?{oneLineSummary:`HTML 기본 항목 ${report.evidenceReview.assessed}개 중 ${report.evidenceReview.passed}개 충족 · ${purpose.label} · ${purpose.goal.label} 동선과 실제 화면은 별도 확인이 필요합니다.`}:{}),
     ...(diagnostics&&pages?{siteDiagnostics:{...diagnostics,pages,...(changedPlace?{localPlaceLookup:undefined}:{}),

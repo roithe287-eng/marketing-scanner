@@ -71,7 +71,7 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
   const role=ownBusinessRole(data),book=nonCommercePlaybook(purpose,identity,place);
   const kind=purpose.kind==='unknown'&&!['agency','software','manufacturing','home','education'].includes(role||'')&&/쇼핑몰|공식몰|전문몰|온라인몰|스토어|\bshop\b|\bstore\b/i.test(identity)?'commerce':purpose.kind;
-  let profile=purpose.business?.id==='custom_apparel'?'custom_apparel':kind==='commerce'?'commerce':role==='manufacturing'?'manufacturing':book.local&&place?place.sector:purpose.business?.id||book.id;
+  let profile=purpose.business?.id==='custom_apparel'?'custom_apparel':kind==='commerce'?'commerce':role==='manufacturing'?'manufacturing':book.local&&place?place.sector:purpose.business?.id||book.industry||book.id;
   if(profile.startsWith('place_'))profile=profile.slice(6);
   if(profile==='organization'&&role==='manufacturing')profile=role;
   const specialties=providerSpecialties(profile,data);

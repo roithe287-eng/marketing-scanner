@@ -118,7 +118,7 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const testimonial=(text:string)=>/[★☆]|testimonial|고객.{0,5}후기|highly recommend|I.ve been using|I love that/i.test(text);
   const inputUnits=[{text:data.title,locator:'head > title'},{text:data.description||data.ogDescription||'',locator:'meta[name="description"]'},...(data.h1||[]).map(text=>({text,locator:'h1'})),...(!data.siteEditing&&!documents.length?(data.bodyText||'').split(/\n+/).slice(0,32).map(text=>({text,locator:'수집된 본문'})):[]),...(data.siteEditing?.contentSections||[]).filter(s=>!s.truncated&&!isSecondarySection(s.heading,s.text,s.url)).map(s=>({text:s.text,locator:s.heading||'입력 페이지 본문'}))].filter(u=>u.text&&!testimonial(u.text)&&!isContextOnlyEvidence(u.locator,u.text));
   const units=[...inputUnits,...documents.filter(d=>d.source!=='search_excerpt').flatMap(d=>[{text:d.title,locator:d.url},...d.sections.map(s=>({text:s.text,locator:d.url}))])].map(u=>({...u,text:u.text.slice(0,600)}));
-  const all=[primary,...units.map(u=>u.text),...documents.filter(d=>!identity&&d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
+  const all=[primary,...units.map(u=>classificationText(u.text)),...documents.filter(d=>!identity&&d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
   const merchantDocs=documents.filter(d=>d.source!=='search_excerpt');
   const serviceActions=data.siteEditing?data.siteEditing.elements.filter(e=>e.kind==='cta'&&!['header','nav','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)).map(e=>e.text):[...data.ctaButtons||[],...data.buttons||[]];
   const fortune=detectFortuneService({
@@ -128,10 +128,10 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   });
   let id:BusinessContext['id']|undefined;
   const logistics=/해외\s*이사|귀국\s*이사|국제\s*운송|국제\s*물류|포워딩|freight\s*(?:forward|service)|international\s*(?:moving|relocation)/i;
-  const logisticsUnits=units.filter(u=>logistics.test(u.text));
+  const logisticsUnits=new Set(units.map(u=>classificationText(u.text)).filter(t=>logistics.test(t)));
   if(apparel&&(compatible('custom_apparel')||(!place&&customApparelIdentity(headings,''))))id='custom_apparel';
   else if(fortune&&compatible(fortune))id=fortune;
-  else if(compatible('international_logistics')&&(logistics.test(primary)||logisticsUnits.length>=2)&&/운송|포장|화물|견적|통관|freight|moving/i.test(all))id='international_logistics';
+  else if(compatible('international_logistics')&&(logistics.test(primary)||logisticsUnits.size>=2)&&/운송|포장|화물|견적|통관|freight|moving/i.test(all))id='international_logistics';
   else if(compatible('duty_free')&&/면세점|duty\s*free/i.test(primary)&&/시드니|sydney|매장|store/i.test(all))id='duty_free';
   else if(compatible('cross_border')&&/직구|구매대행|cross.border/i.test(primary)&&/호주|australia|해외/i.test(all))id='cross_border';
   else if(compatible('travel_booking')&&/투어|공항\s*픽업|여행|숙소|airport.{0,20}(transfer|pickup)|\btours?\b/i.test(primary)&&/예약|픽업|여행사|가이드|booking|tour/i.test(all))id='travel_booking';

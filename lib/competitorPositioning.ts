@@ -1,3 +1,4 @@
+import {withoutThirdPartyRoles} from './industryLanguage';
 import {positionProfile,defaultPositionIndustry,type PositionCategory} from './industryPositioning';
 import type {MarketingReport} from './reportSchema';
 import {queryMatches,COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE} from './competitorResearch';
@@ -20,7 +21,7 @@ function positiveExpressions(text:string,pattern:RegExp) {
   const offsets:number[]=[];
   for(let i=0;i<text.length;i++)if(!/\s/.test(text[i]))offsets.push(i);
   const compact=offsets.map(i=>text[i]).join('');
-  for(const match of compact.matchAll(new RegExp(pattern.source,'gi'))) {
+  for(const match of compact.matchAll(new RegExp(pattern.source.replace(/ /g,''),'gi'))) {
     const start=match.index!,end=start+match[0].length;
     const expression=text.slice(offsets[start],offsets[end-1]+1);
     const negative=/^(?:[은는이가을를도])?(?:없|미제공|미보유|미지원|불가|예정|준비중|제공하지|지원하지|확인되지)/.exec(compact.slice(end));
@@ -40,7 +41,7 @@ export function scorePosition(input:Input,keyword:string,category:PositionCatego
   const eligible=!input.fetchError&&fieldsPresent===2&&match.terms.length>0;
   const termFields=fields.map(f=>({...f,matched:queryMatches(keyword,f.text).matched}));
   const profile=positionProfile(category);
-  const checks=profile.criteria.map(c=>{const sources=fields.map(f=>({...f,...positiveExpressions(f.text,c.pattern)}));const field=sources.find(f=>f.matches.length);const distinct=new Map<string,string>();for(const source of sources)for(const text of source.matches)distinct.set(text.toLocaleLowerCase().replace(/\s/g,''),text);const signals=[...distinct.values()];return {...c,sources,found:!!field,field:field?.label||'',excerpt:field?.text||'',matched:field?.matches[0]||'',signals,signalCount:Math.min(2,signals.length)};});
+  const checks=profile.criteria.map(c=>{const sources=fields.map(f=>({...f,...positiveExpressions(category==='etc'?f.text:withoutThirdPartyRoles(f.text),c.pattern)}));const field=sources.find(f=>f.matches.length);const distinct=new Map<string,string>();for(const source of sources)for(const text of source.matches)distinct.set(text.toLocaleLowerCase().replace(/\s/g,''),text);const signals=[...distinct.values()];return {...c,sources,found:!!field,field:field?.label||'',excerpt:field?.text||'',matched:field?.matches[0]||'',signals,signalCount:Math.min(2,signals.length)};});
   const signalCount=eligible?checks.reduce((sum,c)=>sum+c.signalCount,0):null;
   const keywordScore=eligible?Math.round(termFields.reduce((sum,f)=>sum+f.matched.length,0)/(match.terms.length*2)*100):null;
   const x=eligible?(checks[0].signalCount+checks[1].signalCount)*25:null;

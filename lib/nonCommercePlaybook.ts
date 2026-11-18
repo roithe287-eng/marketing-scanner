@@ -1,3 +1,5 @@
+import {positionProfile} from './industryPositioning';
+import type {IndustryCategory} from './reportSchema';
 import {classificationText,ownBusinessRole} from './websiteIdentity';
 import {koreanParticle} from './koreanParticle';
 import type {WebsitePurpose} from './websitePurpose';
@@ -12,6 +14,7 @@ import type {LocalPlaceEvidence} from './localPlaceSchema';
 export type NonCommercePlaybook={
   id:string;label:string;audience:string;preparation:string[];proof:string;assets:string[];
   stages:[string,string,string,string,string];outcome:string;cta:string;caution:string;
+  industry?:IndustryCategory;
   local?:{fields:string[];questions:string[];regions:string[];seasonal:boolean};
 };
 const make=(id:string,label:string,audience:string,preparation:string[],proof:string,assets:string[],stages:NonCommercePlaybook['stages'],outcome:string,cta:string,caution='공개된 원문과 실제 운영 자료를 대조한 뒤 사용하세요. 수치·비용·기간·실적은 추정하지 않습니다.'):NonCommercePlaybook=>({id,label,audience,preparation,proof,assets,stages,outcome,cta,caution});
@@ -78,6 +81,13 @@ export function nonCommercePlaybook(p:WebsitePurpose,identity='',place?:LocalPla
       result={...result,local};
     }
   }
+  const industry=p.declaredIndustry?.category;
+  if(industry&&!p.sector&&!p.business&&!p.community&&(!place||place.sector==='local')&&
+      ['service','organization','education','content'].includes(key)){
+    const profile=positionProfile(industry);
+    result={...NONCOMMERCE_PLAYBOOKS[key],industry,label:profile.label,proof:profile.criteria[2].label,
+      preparation:[profile.criteria[1].label,profile.criteria[0].label,profile.criteria[3].label]};
+  }
   return {...result,caution:p.sector?result.caution+' '+p.sector.caution:result.caution};
 }
 
@@ -88,7 +98,10 @@ export function nonCommerceQuestionGuides(p:WebsitePurpose,identity='',place?:Lo
     {intent:'scope' as const,question:'커뮤니티에서 어떤 게시판과 공개 정보를 찾아볼 수 있나요?',fields:['게시판별 주제','공개 열람 범위'],placement:'게시판 탐색 안내',match:/게시판|커뮤니티|정보/,explanation:'운영자의 게시판·이용 안내를 기준으로 설명합니다. 회원 글에 등장하는 사업과 성과를 운영사 제공 범위로 합치지 않습니다.'},
     {intent:'process' as const,question:'회원가입·질문 작성·댓글 참여는 어떤 순서로 진행하나요?',fields:['비회원 열람 조건','가입·참여 절차'],placement:'가입·참여 안내 앞',match:/회원|가입|질문|댓글/,explanation:'공개 열람과 회원 참여 경로를 나눠 설명하고 실제 이용 약관·운영 정책과 대조합니다.'},
     {intent:'proof' as const,question:'게시글의 작성자·원출처와 최신 정보는 어디에서 확인하나요?',fields:['작성자·발행일','원출처','수정일'],placement:'글 상세의 작성·출처 영역',match:/작성|출처|수정/,explanation:'게시글 원문과 작성 정보를 확인할 수 있도록 안내합니다. 회원의 경험담과 검증된 사실을 구분하세요.'},
-  ]:[];
+  ]:book.industry?positionProfile(book.industry).criteria.map((criterion,i)=>({
+    intent:(['price','scope','proof','process'] as const)[i],question:criterion.editorial.question,
+    fields:[criterion.editorial.titleSubject],placement:criterion.label+' 안내',match:criterion.pattern,explanation:criterion.editorial.verify,
+  })):[];
   const extra=[
     {intent:'scope' as const,question:`${scope}에서 확인할 제공 범위와 제외 항목은 무엇인가요?`,fields:['실제 제공 범위','제외·별도 조건'],match:/범위|제공|포함|제외|커리큘럼|주제|게시판/,explanation:`${book.proof} 등의 근거를 기준으로 안내의 범위를 한정합니다. 다른 페이지의 조건을 동일한 서비스나 프로그램의 약속으로 합치지 않습니다.`},
     {intent:'eligibility' as const,question:`${scope} 이용 대상과 사전 준비사항은 무엇인가요?`,fields:book.preparation,match:/대상|조건|준비|필수|자격|초진|선수/,explanation:`${book.audience}의 판단에 필요한 질문입니다. ${book.preparation.join('·')} 등 준비 항목을 공개 설명과 후속 확인 항목으로 구분하고 개인정보나 민감한 상세 내용은 처음부터 요구하지 않습니다.`},

@@ -17,6 +17,14 @@ const url='https://rental.example.com/';
 const html=(name:string,body='',address='경상남도 양산시 원동면 123',desc='')=>`<html><head><title>${name}</title><meta name="description" content="${desc}"></head><body><h1>${name}</h1>${address?'<address>'+address+'</address>':''}<main>${body}</main></body></html>`;
 const profiles:[string,string][]=[['ski','하이원 스키렌탈샵'],['snow_ice','무주 눈썰매장'],['water_leisure','가평 수상레저 빠지'],['surf_dive','양양 서핑강습'],['beach_pool','부산 파라솔 대여'],['camp_picnic','한강 피크닉대여'],['strawberry','논산 딸기체험농장'],['harvest','제주 감귤체험농장'],['flowers_foliage','춘천 수목원'],['fishing_tidal','태안 갯벌체험'],['holiday_event','서울 크리스마스 트리대여'],['graduation','부산 졸업 꽃다발'],['cooling','부산 에어컨 청소'],['winter_car','원주 윈터타이어'],['seasonal_food','부산 대방어 식당'],['season_event','부산 해돋이 투어 여행사']];
 for(const [profile,name] of profiles)test('seasonal offering: '+profile,()=>{const e=captureLocalPlaceEvidence(html(name),url)!;assert.ok(e?.seasonal?.profiles.some(p=>p.id===profile),JSON.stringify(e));assert.deepEqual(LocalPlaceEvidenceSchema.parse(e),e);});
+test('every seasonal template excludes client offerings from the place and its seasonal questions',()=>{
+ assert.deepEqual(profiles.map(([id])=>id).sort(),SEASONAL_PROFILES.map(p=>p.id).sort());
+ for(const [id,name] of profiles){
+   const e=captureLocalPlaceEvidence(html('온결','오시는 길','서울특별시 중구 세종대로 20','거래 실적: '+name),url);
+   assert.equal(e?.sector,'local',name);
+   assert.ok(!e?.seasonal?.profiles.some(p=>p.id===id),id);
+ }
+});
 test('all ski destinations and Eden spelling aliases are bounded observed evidence',()=>{
  const names=['하이원','무주','에덴벨리','용평','휘닉스평창','비발디파크','엘리시안강촌','알펜시아','웰리힐리','곤지암','지산스키장','오크밸리'];
  names.forEach((n,i)=>{const e=captureLocalPlaceEvidence(html(n+' 스키렌탈'),url)!;assert.equal(e.seasonal?.destinations[0]?.id,SKI_DESTINATIONS[i].id,n);assert.equal(e.seasonal?.destinations.length,1,n);});

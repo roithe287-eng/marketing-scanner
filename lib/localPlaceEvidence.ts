@@ -32,7 +32,7 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   const identity=[title,h1,siteName].filter(v=>v&&!isContextOnlyEvidence('',v)).join(' ').slice(0,500);
   const role=ownBusinessRole({title,h1:[h1],description});
   const apparel=(!role||role==='retail'||role==='manufacturing')&&customApparelIdentity(identity,description);
-  if((['agency','software','manufacturing'].includes(role||'')&&!apparel)||provider.test(identity))return;
+  if((['agency','software','manufacturing'].includes(role||'')&&!apparel)||provider.test(classificationText(identity)))return;
   const objects:Record<string,unknown>[]=[];
   const walk=(v:unknown,depth=0)=>{if(!v||typeof v!=='object'||depth>8||objects.length>=150)return;if(Array.isArray(v)){v.slice(0,40).forEach(x=>walk(x,depth+1));return;}const o=v as Record<string,unknown>;objects.push(o);Object.values(o).forEach(x=>walk(x,depth+1));};
   $('script[type="application/ld+json"]').slice(0,15).each((_,e)=>{const raw=$(e).text();if(raw.length<100000)try{walk(JSON.parse(raw));}catch{/* Invalid schema cannot establish identity. */}});
@@ -55,11 +55,11 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
     ||PLACE_DETECTION_ORDER.map(placeSector).find(s=>s.identity.test(semantic));
   // Branded homepages often have only a brand in the title. Their own description may identify the offering.
   if(!sector&&namedDept&&clinicalCandidate)sector=placeSector('medical');
-  if(!sector&&!provider.test(description)){
+  if(!sector&&!provider.test(classificationText(description))){
     const candidate=placeFromDescription(description,primaryBody);
     if(candidate&&(candidate.id!=='medical'||clinicalCandidate))sector=candidate;
   }
-  const seasonalSector=seasonalIdentitySector(semantic+' '+(!provider.test(description)?classificationText(description):''));
+  const seasonalSector=seasonalIdentitySector(semantic+' '+(!provider.test(classificationText(description))?classificationText(description):''));
   if((!sector||sector.id==='local')&&seasonalSector)sector=placeSector(seasonalSector);
   if(!sector&&!links.length&&!entity&&!($('address,[itemprop="address"]').length&&/영업시간|운영시간|방문\s*(?:예약|상담)|오시는\s*길/.test($('body').text())))return;
   sector=sector||placeSector('local');
@@ -74,7 +74,7 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   root.find('br').replaceWith('\n');root.find('p,li,h1,h2,h3,h4,div,section,address').append('\n');
   const lines=root.text().slice(0,30000).split(/\n+/u).map(v=>clean(v,700)).filter(Boolean);
   const text=lines.join(' ');
-  const positiveText=(values:string[])=>values.flatMap(offeringClauses).filter(v=>!/(?:불가|미제공|하지\s*않|취급하지|시행하지|운영하지|서비스\s*종료)/u.test(v)).join('\n');
+  const positiveText=(values:string[])=>values.flatMap(offeringClauses).map(classificationText).filter(v=>!/(?:불가|미제공|하지\s*않|취급하지|시행하지|운영하지|서비스\s*종료)/u.test(v)).join('\n');
   const positive=positiveText(lines),positiveDescription=positiveText([description]);
   const address=addressText(entity?.address)||clean(root.find('address,[itemprop="address"]').first().text(),300)||clean(lines.join('\n').match(/(?:서울(?:특별시)?|부산(?:광역시)?|대구(?:광역시)?|인천(?:광역시)?|광주(?:광역시)?|대전(?:광역시)?|울산(?:광역시)?|세종(?:특별자치시)?|경기(?:도)?|강원(?:특별자치도)?|충청[남북]도|전[라북남특별자치]+도|경상[남북]도|제주(?:특별자치도)?)\s+[가-힣]+(?:시|군|구)\s+[^|\n]{3,65}/u)?.[0],150);
   const physical=!!address||!!links.length||!!entity||/오시는\s*길|매장\s*(?:안내|찾기)|방문\s*상담|주차|찾아오시는/.test(text);
@@ -95,5 +95,5 @@ export function captureLocalPlaceEvidence(html:string,url:string):LocalPlaceEvid
   const signals=specs.flatMap(([key,label,re])=>{const line=[...detailed,...lines].filter(v=>re.test(v)).sort((a,b)=>Number(b.length>=15)-Number(a.length>=15)||Number(/\d/.test(b))-Number(/\d/.test(a)))[0];if(!line)return [];const at=line.search(re);return [{key,label,excerpt:line.slice(Math.max(0,at-35),at+110).trim()}];});
   const images=root.find('img').slice(0,200).toArray();
   const seasonal=captureSeasonalEvidence({sector:sector.id,identity,description,headings:root.find('h2,h3').slice(0,20).toArray().map(e=>clean($(e).text(),160)),lines});
-  return {contextReviewed:true,...(seasonal?{seasonal}:{}),sector:sector.id,name,identity,address,branch,franchise,links,terms,signals,media:{images:images.length,described:images.filter(e=>!!clean($(e).attr('alt'))).length,videos:Math.min(100,root.find('video,iframe[src*="youtube"],iframe[src*="vimeo"]').length)}};
+  return {contextVersion:2,contextReviewed:true,...(seasonal?{seasonal}:{}),sector:sector.id,name,identity,address,branch,franchise,links,terms,signals,media:{images:images.length,described:images.filter(e=>!!clean($(e).attr('alt'))).length,videos:Math.min(100,root.find('video,iframe[src*="youtube"],iframe[src*="vimeo"]').length)}};
 }

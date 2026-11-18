@@ -1,5 +1,6 @@
+import {isPlacePosition,placeChecks,type PlacePosition} from './placePositioning';
 import type {IndustryCategory} from './reportSchema';
-export type PositionCategory=IndustryCategory|'rental'|'ski';
+export type PositionCategory=IndustryCategory|'rental'|'ski'|PlacePosition;
 
 // Editorial options, never claims about the scanned business. Brackets require verified values.
 type Lens = [question:string, titleSubject:string, description:string, verify:string];
@@ -10,7 +11,7 @@ const SHOP:Lenses=[
  ['상품 설명을 믿을 근거가 있나요?','실측·상품 확인 자료','[상품명]의 [실측·상세 사진]과 [출처를 확인할 수 있는 구매 자료]를 제공합니다.','실측 기준, 촬영 대상, 인증의 적용 상품을 대조하세요. 리뷰나 인증이 없다면 해당 표현은 넣지 않습니다.'],
  ['주문 후 언제 받고 어디에 문의하나요?','주문·출고 안내','[재고·주문 제작 여부]에 따른 [출고 기준]과 [주문 후 문의 경로]를 안내합니다.','결제부터 출고까지의 기준을 정하고, 제작 상품과 재고 상품의 일정이 다르면 구분하세요.'],
 ];
-const LENSES:Record<PositionCategory,Lenses>={
+const LENSES:Record<Exclude<PositionCategory,PlacePosition>,Lenses>={
  ski:[
   ['시간권과 장비·리프트권 비용을 구분할 수 있나요?','렌탈 요금·포함 항목','[시간권·주중/주말 요금]과 [장비·의류·리프트권 포함 여부]를 안내합니다.','시간권별 요금표에 장비·의류·헬멧·리프트권의 포함 여부와 추가금을 각각 써야 합니다. 강습료는 렌탈료와 구분해야 합니다.'],
   ['어떤 장비를 빌리고 어떤 강습을 받을 수 있나요?','스키·보드 장비와 강습','[대여 가능한 장비·사이즈]와 [실제 운영하는 강습 대상·구성]을 확인하세요.','스키·보드·부츠·의류의 대여 품목과 사이즈를 표시해야 합니다. 강습을 제공할 때만 대상·시간·인원을 별도로 써야 합니다.'],
@@ -147,6 +148,10 @@ const LENSES:Record<PositionCategory,Lenses>={
 };
 
 export function positionEditorial(category:PositionCategory,index:number){
+ if(isPlacePosition(category)){
+   const [titleSubject,,question,verify,description]=placeChecks[category][index];
+   return {question,titleSubject,description,verify};
+ }
  const [question,titleSubject,description,verify]=LENSES[category][index];
  return {question,titleSubject,description,verify};
 }

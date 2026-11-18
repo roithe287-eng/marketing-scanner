@@ -6,17 +6,44 @@ const homonyms = [
   /카드\s*(?:뉴스|결제|영수증)|(?:신용|체크)카드(?:로|를)?\s*(?:결제|납부)|(?:홍보|안내|광고|버튼|오류)\s*문구|문구(?:를|의)?\s*(?:작성|수정|입력)/gu,
   /(?:서버|데이터|계정)\s*이사(?=\s|[.,]|$)|(?:물품|화물|운송|여행자)\s*보험\s*(?:포함|별도|가입\s*여부)/gu,
 ];
+// Grammatical roles apply to new industries, brands and multi-word service names as well.
+// Stop a recipient phrase at the preceding subject, object or predicate (e.g. "가구를 미술관에 납품").
+const relation = /(?:에게|에도|에만|에)\s*(?:직접\s*)?(?=납품|공급)|(?:을|를)\s*(?:위한|대상으로)|\s+대상(?=\s|[,.:])|(?:이|가|은|는|도)?\s*(?:당사(?:의)?\s*)?(?:주요\s*)?(?:고객사|납품처|거래처|협력사|제휴처)(?:입니다|이며|로서)(?=[.\s,]|$)|(?:이|가|은|는)?\s*(?:인근|근처|도보권|주변)(?=\s|에|의|입|이|[,.]|$)/gu;
+
+// Walk left from an explicit relationship, bounded independently of the length of the input.
+// Commas and conjunctions can join recipients. An earlier subject, object or verb starts a new phrase.
+function hideRecipientPhrases(text:string):string{
+  let output='',copied=0;
+  for(const marker of text.matchAll(relation)){
+    const end=marker.index!;
+    const prefix=text.slice(Math.max(copied,end-180),end);
+    const words=Array.from(prefix.matchAll(/[가-힣A-Za-z0-9&-]+|[^가-힣A-Za-z0-9&-]+/gu));
+    let start=end,found=false;
+    for(let i=words.length-1;i>=0;i--){
+      const token=words[i][0];
+      if(/^[\s,·ㆍ/]+$/u.test(token))continue;
+      if(!/^[가-힣A-Za-z0-9&-]+$/u.test(token)||found&&/(?:[은는을를에며]|합니다|습니다|입니다|하고|하여|하며|에서|으로|에게)$/u.test(token))break;
+      start=end-prefix.length+words[i].index!;
+      found=true;
+    }
+    if(!found)continue;
+    output+=text.slice(copied,start)+' ';
+    copied=end+marker[0].length;
+  }
+  return output+text.slice(copied);
+}
 const clientNoun='(?:병의원|병원|의원|약국|학원|학교|식당|음식점|카페|호텔|은행|보험사|법무법인|공공기관|기업|브랜드|매장|기관|업체)';
 const clientList=clientNoun+'(?:\\s*(?:[,·ㆍ/]|및|또는|와|과)\\s*'+clientNoun+')*';
 const recipient=new RegExp(clientList+'(?:\\s*등)?(?:에|에도|에게|에만|을|를)\\s*(?:직접\\s*)?(?:납품|공급|납품하는|대상으로)', 'gu');
 const proximity=new RegExp('(?:인근|주변|근처|가까운|도보권)\\s*(?:의\\s*)?'+clientList+'|'+clientList+'(?:\\s*등)?(?:이|가)?\\s*(?:인접|인근|주변|근처|가까이|도보권)', 'gu');
 const intendedAudience=new RegExp(clientList+'(?:을|를)\\s*위한(?=\\s)', 'gu');
-const clientLabel=/(?:주요\s*)?(?:고객사|납품처|거래처|협력사|제휴처|입점사)(?:\s*(?:목록|명단))?\s*(?:[:：]|는|은|로는)/u;
-const clauseEnd=/[.!?。;\n]|(?:이며|이고|로서|로는|입니다만|이며요)[,\s]/u;
+const clientLabel=/(?:주요\s*)?(?:고객사|납품처|거래처|협력사|제휴처|입점사|고객\s*업체|거래\s*실적|납품\s*실적|협력\s*업체|제휴\s*업체|주변\s*(?:시설|업체|명소)|인근\s*(?:시설|명소))(?:\s*(?:목록|명단|소개|사례))?\s*(?:[:：]|는|은|로는|인\s)/u;
+const clauseEnd=/[.!?。;|\n]|(?:,\s*|\s+)(?=(?:저희|자사|당사|우리(?:는|가|의\s+서비스)))|(?:이며|이고|로서|로는|입니다만|이며요)[,\s]/u;
 const listedTags=/^(?:(?:추천\s*)?키워드|태그|tags?)\s*[:：]|^(?:#[^\s#]+\s*){2,}$/iu;
 
-export function industryLanguage(text:string):string{
-  let value=text.normalize('NFKC');
+export function withoutThirdPartyRoles(text:string):string{
+  let value=text;
+  value=value.replace(/\b(?:our\s+)?(?:clients?|customers?|partners?|nearby (?:facilities|attractions))\s*(?:include|are|[:：])[^.!?;|\n]*/gi,' ');
   const label=clientLabel.exec(value);
   if(label){
     const rest=value.slice(label.index+label[0].length);
@@ -24,9 +51,15 @@ export function industryLanguage(text:string):string{
     value=value.slice(0,label.index)+' '+(end?rest.slice(end.index+end[0].length):'');
   }
   if(listedTags.test(value.trim()))return '';
-  value=value.replace(recipient,' ').replace(proximity,' ')
+  value=hideRecipientPhrases(value)
+    .replace(recipient,' ').replace(proximity,' ')
     .replace(intendedAudience,' ')
     .replace(/(?:병원|병의원|의료진|약국|학교|학원)\s*(?:전용|납품용|근무자용)|(?:병원|병의원|약국|학교|학원)(?=\s*(?:유니폼|가운|근무복|단체복|포장재|홍보물|관리\s*(?:솔루션|시스템)))/gu,' ');
+  return value;
+}
+
+export function industryLanguage(text:string):string{
+  let value=withoutThirdPartyRoles(text.normalize('NFKC'));
   for(const pattern of homonyms)value=value.replace(pattern,' ');
   return value.replace(/[ \t]+/gu,' ').trim();
 }
@@ -38,6 +71,10 @@ export function keywordList(text:string):boolean{
 
 // A standalone category in a description still needs context (a title may legitimately be the name).
 export function bareIndustryTag(text:string):boolean{
+  const label=text.trim().replace(/[.!]$/u,'');
+  // A brand-only page may have any category as a single tag, including future categories.
+  if(/^[\p{L}\p{N}-]{1,30}$/u.test(label)&&!/(?:입니다|합니다|습니다|운영중|전문점입니다)$/u.test(label))return true;
+  if(/^[가-힣A-Za-z0-9-]+(?:\s+[가-힣A-Za-z0-9-]+){0,2}\s+(?:센터|사무소|업체|매장|시설|서비스|전문점)$/u.test(label))return true;
   return /^(?:학원|교습소|소프트웨어|인테리어|리모델링|쇼핑몰|온라인 스토어|광고 대행|수강 신청|호텔|펜션|은행|보험|카페|식당|약국|병원|의원|법률|마케팅|피트니스|스튜디오|헬스장|렌탈|네일|카드)[.!]?$/u.test(text.trim());
 }
 
