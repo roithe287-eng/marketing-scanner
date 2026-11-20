@@ -6,6 +6,7 @@ import {buildReportDocument} from '../lib/reportDocument';
 import {buildReadingSections,buildReadingPdfPages,buildReadingContents,type ReadingSection} from '../lib/reportReadingPdf';
 import {PDF_PAGE,type PdfTextStyle} from '../lib/pdfLayout';
 import {fixture} from './fixtures/report';
+import {nonCommerceGoalReport} from './fixtures/noncommerce-goal-report';
 const measure=(s:string,t:PdfTextStyle)=>Array.from(s).reduce((n,c)=>n+(/[ -~]/.test(c)?.5:1)*t.size*(t.weight>=600?1.04:1),0);
 const normalize=(s:string)=>s.replace(/\s/g,'');
 const value=(s:string)=>s.match(/^[^\n:：]{1,32}[:：]([\s\S]*)$/)?.[1].trim()||s.trim();
@@ -74,4 +75,30 @@ test('basic reports keep the same data and useful navigation without invented ob
   const sections=buildReadingSections(fixture),pages=buildReadingPdfPages(sections,measure);
   assert.ok(pages.length);assert.ok(sections.some(s=>s.title==='분석 대상과 결과'));
   assert.ok(pages.flatMap(p=>p.lines).some(l=>l.text.includes('측정 불가')||l.text.includes('미확인')));
+});
+
+test('developer handoffs close each of the four PDF groups with actual, linked requests',()=>{
+  const sections=buildReadingSections(report),pages=buildReadingPdfPages(sections,measure);
+  const groups=[...new Set(sections.map(section=>section.group))];
+  assert.equal(groups.length,4);
+  for(const group of groups){
+    const members=sections.filter(section=>section.group===group),handoff=members.at(-1)!;
+    assert.equal(members.filter(section=>section.id.startsWith('developer-handoff-')).length,1);
+    assert.match(handoff.title,/^개발자 전달 사항/);
+    const fields=handoff.blocks.filter(block=>/^(확인 근거|수정 위치|수정 요청|완료 기준): /u.test(block.text));
+    assert.equal(fields.length,handoff.blocks.filter(block=>block.kind==='subheading').length*4);
+    assert.ok(handoff.blocks.some(block=>block.targetId&&sections.some(section=>section.id===block.targetId)));
+    assert.ok(pages.some(page=>page.anchors?.includes(handoff.id)));
+  }
+});
+
+test('developer verification uses the site purpose and marks unconfirmed operation',()=>{
+  for(const [sample,goal] of [['medical-goal','진료 예약 확정'],['fortune-booking','상담 예약 확정'],['fortune-reading','풀이 결과 열람']] as const){
+    const sections=buildReadingSections(nonCommerceGoalReport(sample));
+    const diagnosis=sections.find(section=>section.id==='developer-handoff-01')!.blocks.map(block=>block.text).join(' ');
+    const verification=sections.find(section=>section.id==='developer-handoff-04')!.blocks.map(block=>block.text).join(' ');
+    assert.ok(diagnosis.includes(goal));assert.ok(verification.includes(goal));
+    assert.match(verification,/실제 완료 건수는 이 PDF에서 확인할 수 없습니다/);
+    assert.doesNotMatch(verification,/구매 완료|결제 이벤트/);
+  }
 });
