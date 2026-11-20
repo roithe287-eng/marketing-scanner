@@ -45,7 +45,8 @@ test('shared report keeps all five chapters, eight directions and complete issue
   const report=MarketingReportSchema.parse({...fixture,criticalIssues:[issue],keywordFrequency:{totalTokens:100,uniqueSingles:1,uniquePhrases:0,singles:[{keyword:'운영',count:12,density:12,inTitle:false,inMetaDescription:false}],phrases:[]}});
   const before=JSON.stringify(report),$=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
   assert.equal($('.report-chapter').length,5);assert.equal($('.report-axis').length,8);
-  assert.ok($.text().includes(issue.recommendation));assert.equal($('.report-copy-fallback textarea[readonly]').length,0);
+  assert.deepEqual($('#report-issue-0 [data-report-role="proposal"] .report-reading-points li').toArray().map(item=>$(item).text()),reportReadingPoints(issue.recommendation));
+  assert.equal($('.report-copy-fallback textarea[readonly]').length,0);
   assert.ok($('button[aria-label="운영 수정안 복사"]').length);
   assert.equal($('#report-execution-board').length,1);assert.equal($('.report-backlog-distribution').length,0);assert.ok($('.work-task-list>details').length>0);
   assert.equal(JSON.stringify(report),before);

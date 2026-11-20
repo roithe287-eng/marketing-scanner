@@ -5,6 +5,7 @@ import {buildSourceLibrary} from './reportContent';
 import {buildDiagnosisComparison} from './diagnosisComparison';
 import {buildGeoComparison} from './geoComparison';
 import {readinessItems} from './reportVisuals';
+import {buildExecutionPlan,workOwners} from './reportExecution';
 
 export type DiagramIcon='firstView'|'cta'|'copywriting'|'trust'|'conversionFlow'|'adLanding'|'mobileUx'|'seo';
 export type DiagramNode={title:string;detail:string;icon:DiagramIcon;role:ReportRole;value?:string;target?:{id:string;label:string}};
@@ -36,7 +37,7 @@ const guides:Record<string,ReportDiagram>={
  'competition-messages':diagram('제목·설명에 함께 담긴 정보를 확인하는 법',[node('자사에서 확인한 표현','자사 원문에 실제로 적힌 가격·혜택·신뢰 등의 표현입니다.','copywriting'),node('후보에서 자주 확인한 표현','두 원문을 확보한 후보만 비교하고 자사에서 보완할 정보를 고릅니다.','adLanding','review')],'서비스 제공 여부는 제목·설명과 서비스 상세 안내를 함께 확인하세요.','compare'),
  'competition-pages':diagram('비교 카드에서 원문과 다음 행동까지',[node('검색 표현','제목·메타 설명','seo'),node('첫 화면 문구','제공 가치와 대상','firstView','review'),node('행동 버튼','무엇으로 연결되는지','cta','location')],'저장된 문구를 실제 페이지와 대조해 참고할 구성을 고르세요.'),
  'competition-benchmark':diagram('동일한 표본·기준인지 확인한 뒤 비교',[node('우리 기록','현재 진단과 관측 범위','copywriting'),node('업종 표본','수집 시점·표본 수·평가 기준','adLanding','review')],'표본 비교와 업계 전체의 평균은 구분하세요.','compare'),
- 'actions-board':diagram('진단 항목을 담당자와 수정 위치에 연결',[node('저장된 보완 항목','기본 진단, 검색, AI 등에서 제시한 작업 기록입니다.','copywriting'),node('담당자가 확인할 화면','제작 도구, 공개 페이지, 실제 계정 중 작업할 곳을 확인합니다.','firstView','location'),node('완료를 확인하는 방법','수정한 항목을 같은 화면이나 계정에서 다시 점검합니다.','trust','verify')],'같은 문제가 다른 진단에서 발견되면 근거가 각각 저장될 수 있습니다.'),
+ 'actions-board':diagram('내가 할 일과 전달할 일',[node('직접 수정','공개 페이지의 소개, 문구, 콘텐츠를 담당할 작업입니다.','copywriting','proposal'),node('개발자 전달','페이지 설정, HTML 또는 동작을 담당할 작업입니다.','firstView','location'),node('추가 확인','실제 화면이나 운영 계정에서 근거를 먼저 확인할 작업입니다.','trust','verify')],'담당 구분은 추천입니다. 같은 작업이 여러 진단에서 발견되면 각 기록이 집계에 포함됩니다.','branch'),
  'actions-guide':diagram('검색에서 찾고, 답변으로 이해하고, 행동으로',[node('SEO · 찾기','검색 수집·제목·설명','seo'),node('GEO·AEO · 이해','질문에 답할 정보와 출처','conversionFlow','proposal'),node('행동 · 완료','문의·구매와 실제 기록','cta','verify')],'각 단계의 준비 상태와 실제 성과 지표를 나누어 확인하세요.'),
  'actions-issues':diagram('문제의 근거에서 조치와 확인까지',[node('무엇이 보였나','문제와 원문 근거','firstView'),node('어떻게 바꾸나','이유에 맞는 수정안','copywriting','proposal'),node('무엇을 확인하나','적용 조건과 실제 변화','trust','verify')],'제안은 적용 전 실제 제공 내용과 대조하세요.'),
  'actions-copy':diagram('같은 위치의 현재 문구와 수정 제안',[node('현재 표현','수집한 원문·기존 문구','copywriting'),node('수정 제안','대상·가치·다음 행동을 명확히','cta','proposal')],'가격·기간·성과 등은 확인된 사실만 문구에 담으세요.','compare'),
@@ -45,7 +46,7 @@ const guides:Record<string,ReportDiagram>={
  'actions-geo':diagram('관측에서 답변 보강으로, 다시 관측까지',[node('답변 관측','언급·인용·출처 기록','conversionFlow'),node('내용 보강','질문에 맞는 사실과 조건','copywriting','proposal'),node('다시 확인','같은 질문과 기준으로 대조','trust','verify')],'콘텐츠를 바꿨다고 AI 인용이 보장되는 것은 아닙니다.','cycle'),
 };
 
-export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,sources=buildSourceLibrary(report)):Record<string,ReportDiagram>{
+export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,sources=buildSourceLibrary(report),execution=buildExecutionPlan(report,data)):Record<string,ReportDiagram>{
  const result=Object.fromEntries(Object.entries(guides).map(([id,g])=>[id,{...g,scope:'결과 읽는 법',nodes:g.nodes.map(n=>({...n}))}])) as Record<string,ReportDiagram>;
  const set=(id:string,index:number,value:string)=>{result[id].nodes[index].value=value;result[id].scope='저장된 보고서 기준';};
  const link=(id:string,index:number,targetId:string,label:string)=>{result[id].nodes[index].target={id:targetId,label};};
@@ -122,8 +123,11 @@ export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,s
    if(data.competitorCount)link('competition-map',1,'report-view-competition-messages','제목·설명 표현 비교 보기');
  }
  if(!data.tasks.length)result['overview-priority']=diagram('과제가 생기면 이 순서로 실행합니다',[node('근거 확인','먼저 현재 페이지 기록을 확인','firstView'),node('할 일과 담당','실제 권한에 맞게 작업을 정리','copywriting','proposal'),node('완료 확인','적용 결과와 같은 항목을 대조','trust','verify')],'현재 저장된 보완 항목은 없습니다. 실행 방법을 설명하는 개념도입니다.');
- set('actions-board',0,`${data.tasks.length}개 항목`);
- link('actions-board',1,'report-work-map','수정 위치별 작업 열기');
+ for(const [i,owner] of workOwners.entries()){
+   const tasks=execution.tasks.filter(task=>task.owner===owner.id);
+   set('actions-board',i,`${tasks.length}개 항목`);
+   if(tasks.length)link('actions-board',i,tasks[0].anchor,`${owner.label} 항목 열기`);
+ }
  set('actions-issues',0,`${report.criticalIssues.length}개 이슈`);
  for(const [i,key] of (['immediately','thisWeek','thisMonth'] as const).entries()){
    const tasks=report.priorityRoadmap[key];
