@@ -2,6 +2,7 @@ import {load} from 'cheerio';
 import {captureSiteEditing} from '../../lib/captureSiteEditing';
 import {analyzeWebsitePurpose} from '../../lib/websitePurpose';
 import {buildAnswerContentPlan} from '../../lib/answerContent';
+import {buildNonCommerceStrategy} from '../../lib/nonCommerceStrategy';
 import type {MarketingReport} from '../../lib/reportSchema';
 import {radarReviewReport} from './radar-review-report';
 import {sectorIntegrationCases} from './noncommerce-sectors';
@@ -28,7 +29,7 @@ export function nonCommerceGoalReport(sample:NonCommerceGoalSample):MarketingRep
   const base=radarReviewReport(),sitePurpose=analyzeWebsitePurpose(input),capturedAt=base.evidenceReview!.capturedAt;
   return {...base,url:entry.url,meta:{...base.meta,siteName:input.title,domain:new URL(entry.url).hostname},
     pageEvidence:{version:1,requestedUrl:entry.url,finalUrl:entry.url,capturedAt,title:input.title,description:input.description,h1:input.h1,h2:input.h2,ctaButtons:input.ctaButtons,bodyText:input.bodyText,bodyTruncated:false,siteEditing:input.siteEditing},
-    sitePurpose,answerContentPlan:buildAnswerContentPlan(input),siteDiagnostics:undefined,serviceStrategy:undefined,
+    sitePurpose,answerContentPlan:buildAnswerContentPlan(input),siteDiagnostics:undefined,serviceStrategy:buildNonCommerceStrategy(input),
     llmCitationTest:null,competitorAnalysis:null,competitorStatus:undefined,
     exampleCopy:{heroHeadline:input.title,subHeadline:input.description,ctaText:sitePurpose.goal.evidence[0]?.text||sitePurpose.goal.label},
     criticalIssues:[],

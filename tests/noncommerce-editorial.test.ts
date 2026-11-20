@@ -31,7 +31,7 @@ function check(book:ReturnType<typeof nonCommercePlaybook>){
  assert.equal(new Set(stages.map(s=>s.cta)).size,3);
  const instructions=stages.flatMap(s=>s.landingBlocks);
  assert.equal(new Set(instructions).size,instructions.length);
- assert.ok(instructions.every(s=>s.endsWith('야 합니다.')));
+ assert.ok(instructions.every(s=>/(?:야 합니다|세요)\.$/.test(s)));
  const quotes=stages.flatMap(s=>s.evidence.map(e=>e.text));
  assert.equal(new Set(quotes).size,quotes.length);
  assert.ok(quotes.every(q=>sources.some(s=>s.text===q)));

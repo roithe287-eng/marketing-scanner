@@ -10,6 +10,7 @@ import HospitalPlacePanel from './HospitalPlacePanel';
 import ReportJumpLink from './ReportJumpLink';
 import ReportItemPanels from './ReportItemPanels';
 import {PagePatternGrid} from './PagePatternGuide';
+import {LongReadingText} from './EvidenceFlow';
 
 function CopyText({text,label}:{text:string;label:string}){
   const [message,setMessage]=useState('');
@@ -26,35 +27,38 @@ function BriefIcon({kind}:{kind:'answer'|'source'|'question'}){
   </svg>;
 }
 
-function BriefingEvidence({evidence,targetUrl,hasDraft}:{evidence:AnswerSource[];targetUrl:string;hasDraft:boolean}){
+function BriefingEvidence({evidence,targetUrl,quotedAbove}:{evidence:AnswerSource[];targetUrl:string;quotedAbove:boolean}){
   const [selected,setSelected]=useState('');
   const excerptId=useId();
   const item=evidence.find(e=>e.id===selected)||evidence[0];
   if(!item)return null;
   const href=safeHttpUrl(item.url??targetUrl);
-  return <details className="briefing-evidence"><summary>원문 출처 {evidence.length}개</summary>
-    <div className="briefing-source-title"><BriefIcon kind="source"/><strong>{hasDraft?'답변 근거':'참고할 페이지 문구'}</strong><small>{evidence.length}개</small></div>
+  return <details className="briefing-evidence"><summary>원문 위치와 출처 {evidence.length}개</summary>
+    <div className="briefing-source-title"><BriefIcon kind="source"/><strong>{quotedAbove?'위에 인용한 문구의 위치':'참고할 페이지 문구'}</strong></div>
     {evidence.length>1&&<div className="briefing-source-picker" role="group" aria-label="답변 근거 선택">{evidence.map((e,i)=>
       <button type="button" key={e.id} aria-controls={excerptId} aria-pressed={item.id===e.id} onClick={()=>setSelected(e.id)}>근거 {i+1}</button>)}</div>}
-    <div id={excerptId} className="briefing-excerpt" aria-live="polite"><strong>{item.location}</strong><blockquote>{item.text}</blockquote>
+    <div id={excerptId} className="briefing-excerpt" aria-live="polite"><strong>{item.location}</strong>{!quotedAbove&&<blockquote>{item.text}</blockquote>}
       {href&&<a href={href} target="_blank" rel="noopener noreferrer">{new URL(href).hostname} · 원문 열기 ↗</a>}</div>
   </details>;
 }
 
 function BriefingQuestion({q,targetUrl}:{q:AnswerQuestion;targetUrl:string}){
+  const quotedAbove=!!q.draft&&q.draft===q.evidence.map(e=>e.text).join('\n');
   return <article className="answer-question">
     <div className="briefing-query"><BriefIcon kind="question"/><h4>{q.question}</h4></div>
 
-    <div className="briefing-answer"><div className="briefing-answer-meta"><span><BriefIcon kind="answer"/>{q.draft?(q.explanation?'현재 확인한 원문':'원문 기반 답변 초안'):'확인 후 채울 답변 예시'}</span><small data-state={q.status}>{ANSWER_STATUS[q.status]}</small></div>
-      <p className="briefing-answer-text">{q.draft||<DraftText text={q.template}/>}</p>
+    <div className="briefing-answer"><div className="briefing-answer-meta"><span><BriefIcon kind="answer"/>{quotedAbove?'홈페이지에서 확인한 문구':q.draft?'원문 기반 답변 초안':'확인 후 채울 답변 예시'}</span><small data-state={q.status}>{ANSWER_STATUS[q.status]}</small></div>
+      {quotedAbove?<blockquote className="briefing-answer-text">{q.draft}</blockquote>:<p className="briefing-answer-text">{q.draft||<DraftText text={q.template}/>}</p>}
       {!q.draft&&<small>대괄호는 실제 운영 정보로 채우세요.</small>}
-      <BriefingEvidence evidence={q.evidence} targetUrl={targetUrl} hasDraft={!!q.draft}/>
+      {q.explanation&&q.explanation!==q.draft&&<div className="briefing-interpretation"><strong>이 질문을 확인하는 이유</strong><LongReadingText text={q.explanation}/></div>}
+      {!!q.missingFacts.length&&<p className="briefing-review-link"><ReportJumpLink id={`report-question-check-${q.id}`}>게시 전 확인할 항목 {q.missingFacts.length}개</ReportJumpLink></p>}
+      <BriefingEvidence evidence={q.evidence} targetUrl={targetUrl} quotedAbove={quotedAbove}/>
     </div>
   </article>;
 }
 
 function BriefingFollowup({q,index}:{q:AnswerQuestion;index:number}){
-  return <><details className="briefing-details"><summary>홈페이지 적용 위치·게시 전 확인<ReadingToggle variant="report"/></summary><div>
+  return <><details className="briefing-details" id={`report-question-check-${q.id}`}><summary>홈페이지 적용 위치·게시 전 확인<ReadingToggle variant="report"/></summary><div>
       <strong>적용 위치</strong><p>{q.placement}</p>
       {q.missingFacts.length>0&&<><strong>게시 전 확인</strong><ul>{q.missingFacts.map(f=><li key={f}>{f}</li>)}</ul></>}
       {!!q.steps.length&&<><strong>작성 순서</strong><ol>{q.steps.map(step=><li key={step}>{step}</li>)}</ol></>}
@@ -72,7 +76,7 @@ export default function AnswerContentPanel({plan,opportunityFirst=false,placeRev
     </nav><HospitalPlacePanel key={placeReview.page.url} review={placeReview} webAllowed={clinicWebAllowed}/></>}
     <section className="report-card answer-content briefing-panel" id="answer-content" aria-labelledby="answer-content-title">
       <header className="briefing-heading"><span className="briefing-symbol"><BriefIcon kind="answer"/></span><div>
-        <h3 className="answer-header" id="answer-content-title">{ANSWER_CONTENT_TITLE}</h3><p>마케팅스캐너 작성 제안 · 실제 네이버 노출 미측정</p>
+        <h3 className="answer-header" id="answer-content-title">{ANSWER_CONTENT_TITLE}</h3><p>홈페이지에 넣을 질문과 답변 제안입니다. 실제 네이버 노출은 따로 확인하세요.</p>
       </div></header>
       {!plan?<><p className="briefing-unavailable">고객이 먼저 궁금해할 대상과 이용 조건을 질문으로 정리하세요.</p>
         <details className="briefing-details"><summary>콘텐츠 분석 기록<ReadingToggle variant="report"/></summary><div><p>이 보고서에는 질문·답변 분석 기록이 없습니다. 같은 URL로 다시 진단하면 페이지에 맞는 초안을 확인할 수 있습니다.</p></div></details>

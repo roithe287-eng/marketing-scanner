@@ -2,7 +2,7 @@
 .report-v2.report-focused :is(.work-number,.report-phase-number,.report-numbered-list>li>span,
   .report-execution-steps>li>span,.growth-action-index,.position-step,.report-section-divider>span,
   .report-priority-trio>li>span,.report-step-top>span,.report-brief-grid>div>span,
-  .report-wirezone>b,.naver-priorities button>b,.sector-journey>div>span,
+  .report-wirezone>b,.naver-priorities button>b,.sector-journey>li>span,
   .store-demo-journey b,.report-outcome-number,.reading-index,.report-chapter-symbol small,
   .guide-field-list h6>span,.simple-kpi-fields b,.guide-route b,.guide-steps>li>span,
   .naver-execution li>span,.report-evidence-flow dt>span,.growth-steps li>span) {
@@ -21,7 +21,7 @@
 .report-v2.report-focused .report-priority-trio>li>span {width:32px;height:32px;border-radius:8px}
 .report-v2.report-focused .growth-action-index {height:32px;margin-top:0}
 .report-v2.report-focused .report-issue-heading .report-index {padding-top:0;margin-top:0;align-self:center}
-.report-v2.report-focused .sector-journey>div {align-items:center}
+.report-v2.report-focused .sector-journey>li {align-items:center}
 
 /* A value and its unit form one centered group, with a shared text baseline. */
 .report-v2.report-focused :is(.report-selected-score,.report-axis-scoreline>strong,
