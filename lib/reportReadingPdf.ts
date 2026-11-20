@@ -6,7 +6,7 @@ import {reportRoles,reportFieldRole} from './reportRoles';
 import {reportEmphasisParts} from './reportEmphasis';
 import {buildDeveloperHandoffs,PDF_READING_GROUPS} from './reportDeveloperHandoff';
 
-export type ReadingBlock = ReportBlock & { sourceId?:number; anchor?:string; targetId?:string; originalText?:string; references?:{id:string;label:string}[] };
+export type ReadingBlock = ReportBlock & { sourceId?:number; anchor?:string; targetId?:string; originalText?:string; references?:{id:string;label:string}[]; indexHeading?:boolean };
 export type ReadingSection = { id:string; title:string; group:string; blocks:ReadingBlock[] };
 const C={ink:'#17233b',muted:'#59677c',blue:'#2442b5',line:'#dce3ec',soft:'#f5f7fb',pale:'#eef3ff',white:'#ffffff'};
 const body:PdfTextStyle={size:14,weight:400,color:C.ink,lineHeight:22};
@@ -90,19 +90,34 @@ export function buildReadingSections(report:MarketingReport):ReadingSection[] {
     const handoff=handoffs.find(item=>item.group===section.group);
     if(!handoff)return [section];
     const blocks:ReadingBlock[]=[];
+    const part=handoff.group.slice(0,2);
+    const tasks=handoff.requests.map((task,i)=>{
+      const number=`${part}-${String(i+1).padStart(2,'0')}`;
+      return {...task,anchor:`developer-task-${number}`,heading:`${number}  ${task.title}`};
+    });
     if(handoff.targetUrl)blocks.push({kind:'body',text:'진단 대상 열기 · '+handoff.targetUrl,href:handoff.targetUrl});
-    for(const task of handoff.requests)blocks.push(
-      {kind:'subheading',text:task.title},
-      {kind:'body',text:'확인 근거: '+task.basis},
-      {kind:'body',text:'수정 위치: '+task.location},
-      {kind:'body',text:'수정 요청: '+task.request},
-      {kind:'body',text:'완료 기준: '+task.done},
-    );
+    blocks.push({kind:'body',text:`수정 목차 · ${tasks.length}개 작업`,indexHeading:true});
+    for(const task of tasks)blocks.push({kind:'body',text:task.heading,targetId:task.anchor});
+    for(const task of tasks){
+      blocks.push(
+        {kind:'subheading',text:task.heading,anchor:task.anchor},
+        {kind:'body',text:'확인 근거: '+task.basis},
+        {kind:'body',text:'수정 위치: '+task.location},
+        {kind:'body',text:'실행 순서: '+task.steps.map((step,i)=>`${i+1}. ${step}`).join('\n')},
+        {kind:'body',text:'기대효과: '+task.expected},
+        {kind:'body',text:'검증 지표: '+task.metric},
+        {kind:'body',text:'완료 기준: '+task.done},
+      );
+      if(part==='02'&&task.relatedEdit){
+        const editIndex=handoffs[2].requests.findIndex(edit=>edit.relatedEdit===task.relatedEdit);
+        if(editIndex>=0)blocks.push({kind:'body',text:'이 항목의 편집 위치와 적용안 보기',targetId:`developer-task-03-${String(editIndex+1).padStart(2,'0')}`});
+      }
+    }
     for(const title of handoff.details){
       const reference=sections.find(item=>item.title===title);
       if(reference)blocks.push({kind:'body',text:'보고서 상세 보기 · '+reference.title,targetId:reference.id});
     }
-    return [section,{id:`developer-handoff-${handoff.group.slice(0,2)}`,title:'개발자 전달 사항 · '+handoff.topic,group:handoff.group,blocks}];
+    return [section,{id:`developer-handoff-${part}`,title:'개발자 전달 사항 · '+handoff.topic,group:handoff.group,blocks}];
   });
 }
 
@@ -136,7 +151,11 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
     rect(X,titleEnd+12,W,1,C.line);y=titleEnd+30;
   }
   function ensure(height:number){if(y+height>BOTTOM)newPage();}
-  function mark(block:ReadingBlock){if(block.anchor)page.anchors!.push(block.anchor);}
+  function mark(block:ReadingBlock){
+    if(!block.anchor)return;
+    page.anchors!.push(block.anchor);
+    if(block.anchor.startsWith('developer-task-'))(page.anchorOffsets??={})[block.anchor]=y;
+  }
   function renderReferences(block:ReadingBlock){
     const refs=block.references!;const gap=8;let x=X,top=y;
     ensure(66);top=y;
@@ -190,7 +209,7 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
   }
   function renderText(block:ReadingBlock){
     const isTitle=block.kind==='title',isSub=block.kind==='subheading';
-    const style=isTitle?{...heading,size:24,lineHeight:34}:isSub?{...body,size:16,weight:700,lineHeight:25}:block.href?{...body,size:12.5,lineHeight:20,color:C.blue}:body;
+    const style=isTitle?{...heading,size:24,lineHeight:34}:isSub?{...body,size:16,weight:700,lineHeight:25}:block.indexHeading?{...body,weight:700}:block.href?{...body,size:12.5,lineHeight:20,color:C.blue}:body;
     const wrapped=lines(block.text,style,W-(isSub?24:0));
     const total=wrapped.length*style.lineHeight+(isSub?22:8);
     if(isSub||isTitle)ensure(Math.min(total+80,700));else if(total<460)ensure(total);else ensure(88);
@@ -226,16 +245,15 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
   function handoffCardHeight(blocks:ReadingBlock[],index:number){
     const title=blocks[index];
     const headingHeight=lines(title.text,{...body,size:16,weight:700,lineHeight:25},W-24).length*25+22;
-    const fields=blocks.slice(index+1,index+5);
+    const fields=blocks.slice(index+1,index+7);
     const height=headingHeight+fields.reduce((sum,block)=>sum+bodyStartHeight(block),0)+8;
-    return height<=480?Math.max(height,headingHeight+80):Math.max(followingHeight(blocks,index)+8,headingHeight+80);
+    return height<=725?Math.max(height,headingHeight+80):Math.max(followingHeight(blocks,index)+8,headingHeight+80);
   }
   for(const section of sections){
     const sameGroup=current?.group===section.group;current=section;
     const isHandoff=section.id.startsWith('developer-handoff-');
-    const firstCard=isHandoff?section.blocks.findIndex(block=>block.kind==='subheading'):-1;
-    const minContent=firstCard>=0
-      ?section.blocks.slice(0,firstCard).reduce((sum,block)=>sum+bodyStartHeight(block),0)+handoffCardHeight(section.blocks,firstCard)
+    const minContent=isHandoff
+      ?section.blocks.slice(0,3).reduce((sum,block)=>sum+bodyStartHeight(block),8)
       :section.title==='영역별 점수'?220:followingHeight(section.blocks,0);
     const opening=Math.max(200,lines(section.title,heading).length*heading.lineHeight+59+minContent);
     if(!page||!sameGroup||y+opening>BOTTOM)newPage();

@@ -29,8 +29,8 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
   if(visuals.length)visuals[0].anchors=['visual-report-start'];
   const detail=scope==='full'?buildDetailedReportPdf(report,measure,1+visuals.length):null;
   const pages=detail?[summary,...detail.contents,...visuals,...detail.pages]:[summary];
-  const anchors=new Map<string,number>();
-  pages.forEach((page,index)=>page.anchors?.forEach(id=>anchors.set(id,index+1)));
+  const anchors=new Map<string,{pageNumber:number;top:number}>();
+  pages.forEach((page,index)=>page.anchors?.forEach(id=>anchors.set(id,{pageNumber:index+1,top:Math.max(0,(page.anchorOffsets?.[id]||0)-12)*297/PDF_PAGE.height})));
   const pdf=new JsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true});
   pdf.setProperties({title:`${report.meta?.siteName || 'Marketing Scanner'} report`,creator:'Marketing Scanner'});
   try {
@@ -67,10 +67,11 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
       if(i>0) pdf.addPage();
       pdf.addImage(canvas.toDataURL('image/jpeg',0.92),'JPEG',0,0,210,297,undefined,'FAST');
       for(const line of pages[i].lines) if((line.href||line.targetId) && line.width) {
-        const targetPage=line.targetId?anchors.get(line.targetId):undefined;
-        if(line.href||targetPage)pdf.link(line.x*210/PDF_PAGE.width,line.y*297/PDF_PAGE.height,line.width*210/PDF_PAGE.width,line.lineHeight*297/PDF_PAGE.height,line.href?{url:line.href}:{pageNumber:targetPage!,top:0});
+        const destination=line.href?{url:line.href}:line.targetId?anchors.get(line.targetId):undefined;
+        if(destination)pdf.link(line.x*210/PDF_PAGE.width,line.y*297/PDF_PAGE.height,line.width*210/PDF_PAGE.width,line.lineHeight*297/PDF_PAGE.height,destination);
       }
-      if(detail&&i>0)pdf.link((PDF_PAGE.width-PDF_PAGE.padding-70)*210/PDF_PAGE.width,(footerTop+5)*297/PDF_PAGE.height,23,7,{pageNumber:anchors.get('report-contents')!,top:0});
+      const contents=anchors.get('report-contents');
+      if(contents&&i>0)pdf.link((PDF_PAGE.width-PDF_PAGE.padding-70)*210/PDF_PAGE.width,(footerTop+5)*297/PDF_PAGE.height,23,7,contents);
     }
     let domain='website';
     try {domain=new URL(report.url).hostname.replace(/[^a-zA-Z0-9-]/g,'_');} catch { /* Older snapshots may contain a bare domain. */ }
