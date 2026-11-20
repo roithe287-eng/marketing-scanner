@@ -24,7 +24,7 @@ export default function ReportHeader({report,data,actions,topAnchor=true}:{repor
       <p>{review?'판정 기준·산식은 아래 근거에서 확인':'수집 문서에 대한 AI 의견'}</p>
     </div>}
     <div className="report-hero-bottom">
-      <ReportIndustryEvidence report={report}/>
+      <ReportIndustryEvidence report={report} linkToPurpose={!topAnchor}/>
       <div className="report-outcome-links" aria-label="핵심 결과 바로가기">{outcomes.map(o=><a key={o.id} href={`#${o.target}`} data-outcome={o.id}><span className="report-outcome-number">{o.number}</span><strong>{o.title}</strong><span className="report-outcome-detail">{o.detail}</span><span className="report-outcome-metric">{o.metric}<b aria-hidden="true">↗</b></span></a>)}</div>
       {actions&&<div className="report-toolbar" data-hide-on-export>{actions}</div>}
     </div>

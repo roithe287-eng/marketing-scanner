@@ -62,11 +62,12 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
       ? `수집한 페이지 ${audit.pages.length}개 · 기술 점검 결과 ${audit.findings.length}개`
       : '수집된 페이지·기술 점검 기록이 없습니다.',
     'search-scope': report.analysisWarnings?.length
-      ? `수집이 제한된 항목이 ${report.analysisWarnings.length}건 있습니다. 항목별 상태와 이유를 확인하세요.`
+      ? `확인이 제한된 항목 ${report.analysisWarnings.length}건입니다. 결과에 미치는 영향과 이어서 확인할 항목을 보세요.`
       : '페이지에서 읽은 정보, 실제 화면과 광고 계정에서 확인할 정보를 살펴보세요.',
     'search-checklist': `기본 점검 ${checks.length}개 · 보완·검토 ${checks.filter(c=>['fail','warning','review'].includes(c.status)).length}개`,
+    'competition-map': data.competitorCount?`후보 ${data.competitorCount}곳의 선정 기준과 비교 지도를 확인하세요.`:'후보를 선정한 기록과 이번 수집 상태를 확인하세요.',
     'competition-messages': data.competitorCount
-      ? `후보 ${data.competitorCount}곳의 제목과 설명을 비교합니다. 실제 제공 범위와 맞는 표현을 골라 보세요.` : '자사 메시지와 비교할 후보 페이지 기록이 없습니다.',
+      ? '가격·혜택, 상담 안내처럼 고객이 비교하는 표현을 봅니다. 제목과 설명을 모두 확보한 후보만 비교합니다.' : '자사 메시지와 비교할 후보 페이지 기록이 없습니다.',
     'competition-pages': `후보 ${data.competitorCount}곳 중 ${data.metadataCount}곳에서 제목, 설명, 대표 제목, 버튼 중 하나 이상을 확인했습니다.`,
     'competition-benchmark': '업종 표본의 수집 시점과 평가 기준을 확인한 뒤 자사와 비교하세요.',
     'actions-board': tasks.length
@@ -74,7 +75,7 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
     'actions-guide': '검색 수집, 고객 질문에 답할 페이지, 문의·구매 경로 순서로 적용 방법을 확인하세요.',
     'actions-issues': firstIssue ? `핵심 이슈 ${report.criticalIssues.length}개입니다. 확인한 내용과 고객에게 줄 수 있는 영향을 살펴보세요.` : '저장된 핵심 이슈가 없습니다.',
     'actions-copy': '제목이 약속한 내용부터 버튼을 누른 뒤의 행동까지 자연스럽게 이어지는지 확인하세요.',
-    'actions-schedule': `즉시 ${schedule.immediately.length}개 · 이번 주 ${schedule.thisWeek.length}개 · 이번 달 ${schedule.thisMonth.length}개`,
+    'actions-schedule': `즉시 ${schedule.immediately.length}개 · 이번 주 ${schedule.thisWeek.length}개 · 이번 달 ${schedule.thisMonth.length}개. 항목을 고르면 등록된 적용 순서나 관련 기록을 볼 수 있습니다.`,
     'actions-kpi': '현재 완료율을 기준으로 목표에 필요한 방문 수를 계산하세요.',
     'actions-geo': data.questions.length
       ? `관측 질문 ${data.questions.length}개를 바탕으로 수정할 페이지와 다시 확인할 질문을 정하세요.`

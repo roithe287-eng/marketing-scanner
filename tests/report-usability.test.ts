@@ -90,3 +90,26 @@ test('reused result content links to its detail without removing unique copy, li
  assert.match($('#report-view-actions-schedule .report-roadmap').text(),/접수 수신 테스트/);
  assert.equal(JSON.stringify(sample),before);
 });
+
+test('coverage warnings explain the affected result while archived quick wins keep their task title and destination',async t=>{
+ const {buildReportDocument}=await import('../lib/reportDocument');
+ const previous=(globalThis as typeof globalThis&{React?:typeof React}).React;
+ Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:previous}));
+ const saved={
+  ...report,
+  analysisWarnings:[{key:'citation',status:'timeout' as const,label:'GEO 답변·출처 관측'},{key:'source',status:'unavailable' as const,label:'입력 페이지의 첫 화면만 수집했습니다.'}],
+  quickWins:['모바일에서 버튼을 먼저 확인하세요.'],
+  quickWinsDetailed:undefined,
+  priorityRoadmap:{immediately:['모바일에서 버튼을 먼저 확인하세요'],thisWeek:[],thisMonth:[]},
+ };
+ const before=JSON.stringify(saved);
+ const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report:saved})));
+ assert.match($('.report-coverage-warnings').text(),/입력 페이지의 첫 화면만 수집했습니다/);
+ assert.match($('.report-coverage-warnings').text(),/응답 대기 시간 초과/);
+ assert.equal($('.report-coverage-warnings a[href="#report-view-geo-observations"]').length,1);
+ assert.match($('.report-roadmap-reference').text(),/모바일에서 버튼을 먼저 확인하세요/);
+ assert.equal($('.report-roadmap a[href="#report-quick-win-0"]').length,1);
+ assert.match($('#report-quick-win-0').text(),/모바일에서 버튼을 먼저 확인하세요/);
+ assert.ok(buildReportDocument(saved).some(block=>block.text.includes('응답 대기 시간 초과')));
+ assert.equal(JSON.stringify(saved),before);
+});

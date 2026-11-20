@@ -168,3 +168,58 @@
 @media print {
   .report-v2.report-focused .report-ai-question-detail[hidden] {display:block}
 }
+
+/* Result evidence stays readable in narrow reports and keyboard navigation. */
+.report-v2.report-focused :is(.report-purpose-overview,.report-purpose-checks) {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));
+  gap:.75rem;
+}
+.report-v2.report-focused :is(.report-purpose-overview>div,.report-purpose-checks>article,.report-coverage-warnings li,.report-purpose-originals>li) {
+  min-width:0;
+  padding:1rem;
+  border:1px solid #d2dfed;
+  border-radius:10px;
+  background:#f8fbff;
+  overflow-wrap:anywhere;
+}
+.report-v2.report-focused :is(.report-coverage-warnings ul,.report-purpose-originals,.report-message-opportunities) {
+  display:grid;
+  gap:.7rem;
+  margin:.8rem 0;
+  padding:0;
+  list-style:none;
+}
+.report-v2.report-focused .report-coverage-row-heading {
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:.5rem;
+  margin-bottom:.5rem;
+}
+.report-v2.report-focused .report-coverage-row-heading h4 {font-weight:750;color:#193853}
+.report-v2.report-focused :is(.report-purpose-overview,.report-coverage-warnings dl,.report-message-originals) dt {font-size:.875rem;font-weight:750;color:#344f6f}
+.report-v2.report-focused :is(.report-purpose-overview,.report-coverage-warnings dl,.report-message-originals) dd {margin:.2rem 0 0;line-height:1.7}
+.report-v2.report-focused .report-purpose-overview dd small {display:block;color:#475c75}
+.report-v2.report-focused .report-coverage-warnings dl {display:grid;gap:.65rem}
+.report-v2.report-focused .report-purpose-links {display:flex;flex-wrap:wrap;gap:.35rem .7rem;margin-top:.4rem}
+.report-v2.report-focused :is(.report-purpose-links,.report-coverage-warnings,.report-roadmap-reference) .work-link {
+  display:inline-flex;
+  min-height:44px;
+  align-items:center;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.report-v2.report-focused .report-purpose-originals blockquote {margin:.35rem 0;white-space:pre-wrap;line-height:1.7}
+.report-v2.report-focused :is(.report-purpose-originals>li,.competitor-card,#report-scope-product-originals):focus {outline:2px solid #3b6098;outline-offset:4px}
+.report-v2.report-focused .report-roadmap-reference {display:grid;gap:.1rem;min-width:0;overflow-wrap:anywhere}
+.report-v2.report-focused .report-roadmap-reference>strong {line-height:1.55}
+.report-v2.report-focused .report-legacy-wins {margin:.75rem 0 0;padding-left:1.5rem;list-style:decimal;line-height:1.75}
+.report-v2.report-focused .industry-original dd small {display:block;color:#475c75}
+.report-v2.report-focused .report-position-selection {margin:1rem 0}
+.report-v2.report-focused .report-position-method {display:grid;gap:.65rem;line-height:1.75}
+.report-v2.report-focused .report-position-method blockquote {padding:.65rem .8rem;border-inline-start:2px solid #a6bedb;background:#f6f9fc;overflow-wrap:anywhere}
+.report-v2.report-focused .report-message-opportunities li {display:flex;flex-wrap:wrap;gap:.2rem .65rem;line-height:1.65}
+.report-v2.report-focused .report-message-originals {display:grid;gap:.55rem;margin:.6rem 0;overflow-wrap:anywhere}
+.report-v2.report-focused .competitor-card button {min-height:44px}

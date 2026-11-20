@@ -6,6 +6,7 @@ import EvidenceFlow from './EvidenceFlow';
 import {RoleBox} from './ReportRole';
 import {InternalLinkAuditCard} from './SearchAuditCards';
 
+const localTime=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium',timeStyle:'short'});
 const status={observed:'관측 확인',review:'직접 확인',action:'보완 필요'};
 const resourceStatus={observed:'응답 관측',missing:'해당 경로 없음',blocked:'수집 제한',unavailable:'확인 불가',unsupported:'형식·범위 확인'};
 const findingGroups=[
@@ -20,11 +21,11 @@ export default function SiteDiagnosticsPanel({audit}:{audit?:SiteDiagnostics}){
   const selected=available.find(group=>group.id===filter);
   const rows=selected?audit.findings.filter(f=>selected.pattern.test(f.id)):audit.findings;
   return <section className="report-card official-seo site-diagnostics" aria-labelledby="site-diagnostics-title">
-    <div className="report-card-heading"><div><p className="report-eyebrow">PAGE · ENTITY · CRAWLER</p><h3 id="site-diagnostics-title">페이지·기술 정밀 점검</h3></div><div className="naver-reviewed"><span>관측 시각</span><time dateTime={audit.observedAt}>{audit.observedAt.replace('T',' ').slice(0,19)} UTC</time></div></div>
+    <div className="report-card-heading"><div><p className="report-eyebrow">PAGE · ENTITY · CRAWLER</p><h3 id="site-diagnostics-title">페이지·기술 정밀 점검</h3></div><div className="naver-reviewed"><span>관측 시각</span><time dateTime={audit.observedAt}>{Number.isFinite(Date.parse(audit.observedAt))?`${localTime.format(new Date(audit.observedAt))} (한국시간)`:audit.observedAt}</time></div></div>
     <p className="report-note">{audit.scopeNote}</p>
     <div className="naver-counts"><div data-state="observed"><span>수집한 HTML</span><strong>{audit.pages.length}<small>페이지</small></strong></div><div data-state="action"><span>보완 필요</span><strong>{audit.findings.filter(f=>f.status==='action').length}<small>항목</small></strong></div><div data-state="manual"><span>직접 확인</span><strong>{audit.findings.filter(f=>f.status==='review').length}<small>항목</small></strong></div></div>
     <InternalLinkAuditCard audit={audit.internalLinks}/>
-    <details className="naver-check" open><summary><strong>수집한 페이지와 검사 범위</strong><span aria-hidden="true">+</span></summary><div className="naver-check-body">
+    <details className="naver-check" open><summary><strong>직접 읽은 페이지와 추가 요청 기록</strong><span aria-hidden="true">+</span></summary><div className="naver-check-body">
       {audit.pages.length?<div className="site-diagnostics-pages">{audit.pages.map(p=><div key={p.url}><a href={p.url} target="_blank" rel="noopener noreferrer">{p.title||'제목 미감지'} ↗</a><small>{p.url}</small><p>{p.description||'메타 설명 미감지'}</p><small>대표 URL: {p.canonicals.join(' · ')||'미감지'}{p.noindex?' · noindex 선언':''}</small></div>)}</div>:<p>비교 가능한 원문 페이지를 수집하지 못했습니다.</p>}
       {audit.attempts.length>0&&<details><summary>추가 요청 결과 {audit.attempts.length}건</summary>{audit.attempts.map((a,i)=><p className="report-note" key={i}>{resourceStatus[a.status]} · {a.url}<br/>{a.note}</p>)}</details>}
     </div></details>
@@ -37,7 +38,7 @@ export default function SiteDiagnosticsPanel({audit}:{audit?:SiteDiagnostics}){
       <p className="report-note">입력 경로에 적용되는 robots.txt 선언입니다. 실제 봇 방문·WAF 통과·색인·인용 성공을 뜻하지 않습니다. 학습 허용은 운영자 선택이며 차단에 감점하지 않습니다. 사용자 요청 봇은 규칙 적용 방식이 다릅니다.</p>
       <div className="site-diagnostics-scroll"><table><caption className="sr-only">봇별 역할과 입력 URL의 robots.txt 정책</caption><thead><tr><th scope="col">봇·역할</th><th scope="col">규칙 선언</th><th scope="col">해석</th></tr></thead><tbody>{audit.crawlers.map(c=><tr key={c.agent}><th scope="row"><a href={c.source} target="_blank" rel="noopener noreferrer">{c.agent} ↗</a><small>{c.role}</small></th><td><strong>{c.status==='allowed'?'차단 규칙 없음':c.status==='blocked'?'차단 규칙 감지':'미확인'}</strong><small>{c.rule}</small></td><td>{c.note}</td></tr>)}</tbody></table></div>
     </div></details>
-    <div className="official-seo-controls"><label>점검 분야<select value={selected?.id||'all'} onChange={e=>setFilter(e.target.value)}><option value="all">전체 항목</option>{available.map(group=><option key={group.id} value={group.id}>{group.label}</option>)}</select></label><span aria-live="polite">{rows.length}개 항목</span></div>
-    {rows.length?<ReportItemPanels id="site-diagnostic-checks" label="정밀 점검 결과" items={rows.map(f=>({id:f.id,label:f.title,children:<details className="naver-check" data-state={f.status==='review'?'manual':f.status} open><summary><strong>{f.title}</strong><span className="naver-badge">{status[f.status]}</span><span aria-hidden="true">+</span></summary><div className="naver-check-body"><EvidenceFlow items={[{label:'확인 근거',role:'current',content:f.evidence}]}/><RoleBox role="proposal" label="실행·확인 방법"><p>{f.action}</p></RoleBox><div className="naver-sources">{f.urls.map(url=><a key={url} href={url} target="_blank" rel="noopener noreferrer">관측 페이지 ↗</a>)}{f.id.startsWith('medical-')&&<a href="https://schema.org/MedicalClinic" target="_blank" rel="noopener noreferrer">Schema.org 의료기관 명세 ↗</a>}</div></div></details>}))}/>:<p className="report-empty">이 분야에서 확인된 점검 항목이 없습니다.</p>}
+    <div className="official-seo-controls"><label>확인할 점검 분야<select value={selected?.id||'all'} onChange={e=>setFilter(e.target.value)}><option value="all">전체 항목</option>{available.map(group=><option key={group.id} value={group.id}>{group.label}</option>)}</select></label><span role="status">{selected?.label||'전체 분야'}에서 {rows.length}개 점검 항목 표시</span></div>
+    {rows.length?<ReportItemPanels id="site-diagnostic-checks" label="정밀 점검 결과" items={rows.map(f=>({id:f.id,label:f.title,children:<details className="naver-check" data-state={f.status==='review'?'manual':f.status} open><summary><strong>{f.title}</strong><span className="naver-badge">{status[f.status]}</span><span aria-hidden="true">+</span></summary><div className="naver-check-body"><EvidenceFlow items={[{label:'확인 근거',role:'current',content:f.evidence}]}/><RoleBox role="proposal" label="다음에 확인할 것"><p>{f.action}</p></RoleBox><div className="naver-sources">{f.urls.map(url=><a key={url} href={url} target="_blank" rel="noopener noreferrer">관측 페이지 ↗</a>)}{f.id.startsWith('medical-')&&<a href="https://schema.org/MedicalClinic" target="_blank" rel="noopener noreferrer">Schema.org 의료기관 명세 ↗</a>}</div></div></details>}))}/>:<p className="report-empty">이 분야에서 확인된 점검 항목이 없습니다.</p>}
   </section>;
 }

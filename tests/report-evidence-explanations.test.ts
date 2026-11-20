@@ -106,3 +106,48 @@ test('PDF and copied work instructions carry field-level findings and retain una
   }
   assert.equal(JSON.stringify(sample),before);
 });
+
+test('partial competitor evidence remains visible without counting as a comparison',async ()=>{
+  const {MessageMap}=await import('../components/report/InsightPanels');
+  const partial={rank:3,title:'검색 요약 제목',description:'검색용 문구',domain:'partial.example',link:'https://partial.example',metaTitle:'수집한 단체복 제목'};
+  const report={...sample,competitorAnalysis:{...sample.competitorAnalysis!,competitors:[...sample.competitorAnalysis!.competitors,partial]}};
+  const data=buildReportInsights(report);
+  assert.equal(data.messageRows.find(r=>r.name==='partial.example')?.fieldCount,1);
+  assert.ok(data.messageRows.find(r=>r.name==='partial.example')?.cells.every(c=>c.match===undefined));
+  const $=load(renderToStaticMarkup(React.createElement(MessageMap,{data})));
+  assert.match($.text(),/후보 3곳 중 제목과 설명을 모두 확보한 곳은 1곳/);
+  assert.match($.text(),/제목·설명 중 1개 확인 · 비교 보류/);
+  assert.match($('.report-inline-details').text(),/수집한 단체복 제목/);
+  assert.doesNotMatch($.text(),/검색용 문구/);
+});
+
+test('page-purpose checks share identical evidence, retain distinct sources and show each checking guide',async ()=>{
+  const {default:WebsitePurposePanel}=await import('../components/report/WebsitePurposePanel');
+  const {WebsitePurposeSchema}=await import('../lib/websitePurpose');
+  const common={text:'단체복 주문은 수량 확인 뒤 진행합니다.',locator:'head > title'};
+  const different={...common,locator:'https://example.com/process'};
+  const purpose=WebsitePurposeSchema.parse({version:1,kind:'service',label:'단체복 주문 제작',sourceUrl:'https://example.com',goal:{key:'contact',label:'견적 문의',observed:true,evidence:[common]},pricingObserved:false,evidence:[common],note:'이 URL의 범위를 확인했습니다.',
+    checks:[
+      {id:'audience',label:'대상',status:'observed',evidence:[common],guide:'대상과 수량을 확인하세요. 실제 견적서와 대조하세요.'},
+      {id:'procedure',label:'절차',status:'observed',evidence:[common,different],guide:'문의 절차를 확인하세요.'},
+    ],
+  });
+  const $=load(renderToStaticMarkup(React.createElement(WebsitePurposePanel,{purpose})));
+  assert.equal($('.report-purpose-originals>li').length,2);
+  assert.equal($('a[href="#report-purpose-source-1"]').length,2);
+  assert.equal($('.report-purpose-originals a[href="https://example.com/process"]').length,1);
+  assert.equal($('.report-purpose-checks article').first().find('.report-reading-points li').length,2);
+  assert.match($('.report-purpose-checks').text(),/실제 견적서와 대조하세요/);
+});
+
+test('comparison links an identical product sample to its source and keeps a differing sample visible',()=>{
+  const context={status:'observed' as const,discovery:'public_links' as const,attemptedPages:1,note:'확인한 상품 페이지 표본입니다.',sources:[{url:'https://example.com/product',name:'검수용 단체복 품목',description:'소재 안내',categories:['단체복'],kind:'product_page' as const}]};
+  const research={version:2 as const,capturedAt:'2026-11-20T00:00:00.000Z',provider:'naver_web' as const,requestedCount:2,returnedCount:2,apiStart:1,totalDocuments:2,searchVolumeStatus:'not_measured' as const,keywordReason:'상품 원문 확인',keywordEvidence:[],alternatives:[],attemptedKeywords:['과잠'],eligibleCount:2,budgetDeferredCount:0,successfulPages:1,selectedCount:2,productContext:context};
+  const report={...sample,competitorAnalysis:{...sample.competitorAnalysis!,research}};
+  const same=load(renderToStaticMarkup(React.createElement(CompetitorLandscape,{report,productContextInScope:{...context,sources:[{...context.sources[0]}]}})));
+  assert.equal(same('a[href="#report-scope-product-originals"]').length,1);
+  assert.doesNotMatch(same.text(),/검수용 단체복 품목/);
+  const different=load(renderToStaticMarkup(React.createElement(CompetitorLandscape,{report,productContextInScope:{...context,note:'다른 수집 범위의 표본입니다.'}})));
+  assert.equal(different('a[href="#report-scope-product-originals"]').length,0);
+  assert.match(different.text(),/검수용 단체복 품목/);
+});
