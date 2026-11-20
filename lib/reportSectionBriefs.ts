@@ -22,6 +22,7 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
   const firstGap = data.gaps[0];
   const goal=reportGoal(report.sitePurpose);
   return {
+    'overview-services':'이용자가 결정을 내리기 전에 묻는 질문을 단계별로 살펴보세요. 확인한 원문은 근거에서 열 수 있습니다.',
     'overview-questions': answers?.questions.length
       ? `${answers.mode==='ai-assisted'?'추천 질문':'질문 가이드'} ${answers.questions.length}개입니다. 원문으로 답할 수 있는 질문과 추가 확인이 필요한 질문을 살펴보세요.`
       : '고객이 묻는 내용과 페이지에서 바로 확인할 수 있는 답을 살펴보세요.',
@@ -30,6 +31,7 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
         : `판정 가능한 HTML 항목이 없습니다. 직접 확인할 항목은 ${review.unknown}개입니다.`
       : '페이지 진단을 방문부터 문의·구매까지의 흐름에 맞춰 확인하세요.',
     'overview-comparison': '같은 주소와 기준으로 확인한 항목에서 개선·악화·유지를 살펴보세요.',
+    'geo-noncommerce-briefing':'고객 질문을 홈페이지의 답변으로 바꾸는 방법을 살펴보세요. 게시 후 검색 노출을 확인하는 순서도 있습니다.',
     'geo-observations': !obs
       ? (report.llmCitationTest ? '이전 형식의 AI 관측 기록입니다. 현재 기준의 인용률은 계산할 수 없습니다.' : '저장된 AI 답변 관측이 없습니다.')
       : [
@@ -55,6 +57,7 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
       ? `원문 ${sources.groups.length}개 · 연결 주소 ${sources.links.length}개`
       : '이 보고서에서 확인할 수 있는 원문·링크 기록이 없습니다.',
     'search-keywords': firstGap ? `제목·설명에서 먼저 검토할 표현 · ${firstGap.keyword}` : '본문의 단어 빈도와 제목·설명에 실제로 쓰인 표현을 대조하세요.',
+    'search-intents':'검색어마다 연결할 주소와 첫 화면에 넣을 정보가 다릅니다. 문구 초안은 현재 안내와 대조하세요.',
     'search-naver': naver?.mode === 'diagnosis'
       ? `네이버 검색·광고·상품·API 점검 ${naver.checks.length}개입니다. 조치할 항목이 ${naver.checks.filter(c=>c.status==='action').length}개 있습니다.`
       : '현재 기준으로 저장된 네이버 점검 기록이 없습니다.',
@@ -75,7 +78,9 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
     'competition-benchmark': '업종 표본의 수집 시점과 평가 기준을 확인한 뒤 자사와 비교하세요.',
     'actions-board': tasks.length
       ? '직접 수정할 작업과 담당자에게 전달할 작업을 찾으세요. 먼저 확인이 필요한 작업도 모았습니다.' : '저장된 진단에서 분류된 보완 과제가 없습니다.',
-    'actions-guide': '검색 수집, 고객 질문에 답할 페이지, 문의·구매 경로 순서로 적용 방법을 확인하세요.',
+    'actions-acquisition':'채널마다 만들 소재와 운영 방법을 확인하세요. 실제 집행 결과와 대조할 지표도 정리했습니다.',
+    'actions-conversion':goal?`‘${goal.label}’까지의 단계와 집계 기준을 확인하세요. 각 수치에 필요한 운영 데이터도 볼 수 있습니다.`:'클릭, 접수, 유효 상담을 어떻게 구분해 기록할지 확인하세요.',
+    'actions-guide': `검색 수집과 고객 질문에 답할 페이지를 점검하세요. 마지막에 ${goal?`‘${goal.label}’`:'문의·구매'}를 확인하는 방법도 볼 수 있습니다.`,
     'actions-issues': firstIssue ? `핵심 이슈 ${report.criticalIssues.length}개입니다. 확인한 내용과 고객에게 줄 수 있는 영향을 살펴보세요.` : '저장된 핵심 이슈가 없습니다.',
     'actions-copy': '제목이 약속한 내용부터 버튼을 누른 뒤의 행동까지 자연스럽게 이어지는지 확인하세요.',
     'actions-schedule': schedule.immediately.length+schedule.thisWeek.length+schedule.thisMonth.length

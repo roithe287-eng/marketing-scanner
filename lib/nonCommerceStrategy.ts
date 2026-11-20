@@ -8,7 +8,9 @@ import {nonCommercePlaybook,type NonCommercePlaybook} from './nonCommercePlayboo
 import {editorialFocus,editorialChannels,editorialContent,editorialMeasurement,allocateSources,STAGE_MATCHERS} from './nonCommerceEditorial';
 import {buildNonCommerceBriefing,type StrategySource} from './nonCommerceBriefing';
 
-export function nonCommerceSources(data:ExtractedWebsiteData):StrategySource[]{
+type StrategyInput=Parameters<typeof analyzeWebsitePurpose>[0]&Pick<ExtractedWebsiteData,'collectionNotice'>;
+
+export function nonCommerceSources(data:StrategyInput):StrategySource[]{
   const url=data.finalUrl||data.url,host=new URL(url).hostname.replace(/^www\./,'');
   const own=(value:string)=>{try{const u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password&&u.hostname.replace(/^www\./,'')===host;}catch{return false;}};
   const candidates:StrategySource[]=data.communityContext?data.communityContext.evidence.map(e=>({url,title:'커뮤니티 운영·이용 안내',text:e.text})):
@@ -35,10 +37,10 @@ export function buildNonCommerceSegments(p:WebsitePurpose,sources:StrategySource
   const placePrefix=book.local?.regions.length?book.local.regions[0]+' ':book.local?'[실제 지역] ':'';
   const priceRelevant=!f.information;
   const actions=f.mode==='self_serve'?[
-    '풀이마다 실제 시작 화면을 연결하고, 입력 전에 필수·선택 항목과 출생 시간을 모를 때의 안내를 표시해야 합니다.',
-    '무료로 먼저 볼 수 있는 결과 범위를 설명해야 합니다. 유료 리포트 운영 시 결제 전에 실제 가격과 추가로 열리는 내용을 표시해야 합니다.',
-    '결과 열람·재열람 경로를 안내하고 유료 결제 시 환불 또는 장애 문의 조건을 연결해야 합니다.',
-    '시작, 입력 완료, 실제 결과 열람을 구분하고 출생 정보와 상대방 정보는 측정 항목에서 제외해야 합니다.',
+    '풀이별 시작 화면을 연결하세요. 입력 전 필수·선택 항목과 출생 시간을 모를 때의 방법을 안내하세요.',
+    '무료 결과의 범위를 알려 주세요. 유료 리포트가 있다면 결제 전에 가격과 추가로 볼 내용을 표시하세요.',
+    '결과를 보고 다시 여는 방법을 안내하세요. 유료 결제가 있다면 환불 조건과 장애 문의 경로를 연결하세요.',
+    '시작, 입력 완료, 결과 열람을 각각 집계하세요. 출생 정보와 상대방 정보는 집계 항목에서 제외하세요.',
   ]:f.information?[
     `준비 체크리스트: ${book.preparation.join('·')} 항목을 본문 끝의 관련 자료와 연결해야 합니다.`,
     `행동 경로: 「${book.cta}」 버튼에 [공식·관련 문서 URL]을 넣고 이동할 문서명을 표시해야 합니다.`,
@@ -50,10 +52,10 @@ export function buildNonCommerceSegments(p:WebsitePurpose,sources:StrategySource
     '운영 안내: [영업시간·휴무·마감시간]을 위치 안내 바로 위에 표시해야 합니다.',
     '완료 안내: 길찾기 클릭과 실제 매장 방문을 별도로 집계해야 합니다.',
   ]:[
-    `준비 체크리스트: ${book.preparation.join('·')} 항목의 준비 방법을 ${book.cta} 버튼 앞에 써야 합니다.`,
-    `접수 경로: 「${book.cta}」 버튼에 [실제 접수 URL]을 연결하고 성공·오류 화면을 각각 제공해야 합니다.`,
-    `처리 안내: ${book.stages[2]} 이후 ${book.stages[3]}까지의 담당자·[회신 시점·변경 경로]를 표시해야 합니다.`,
-    `완료 안내: ${book.outcome} 여부는 실제 운영 기록으로 확인해야 합니다.`,
+    `준비 안내: ${book.preparation.join('·')}의 준비 방법을 ${book.cta} 버튼 앞에 쓰세요.`,
+    `접수 경로: 「${book.cta}」 버튼을 [실제 접수 URL]에 연결하세요. 성공과 오류는 각각 안내하세요.`,
+    `처리 안내: ${book.stages[2]} 이후 ${book.stages[3]}까지 담당자를 알려 주세요. [회신 시점·변경 경로]도 표시하세요.`,
+    `완료 확인: ${book.outcome} 여부는 실제 운영 기록에서 확인하세요.`,
   ];
   const specs=[
     {id:'discover',label:'탐색 · 대상과 제공 범위',audience:book.audience,questions:[f.questions[0]],keywords:[`${placePrefix}${book.label}`,`${book.label} ${book.preparation[0]}`],
@@ -72,7 +74,7 @@ export function nonCommerceEditorialSections(p:WebsitePurpose,sources:StrategySo
     segments:buildNonCommerceSegments(p,sources,url,topic,book),briefingPlan:buildNonCommerceBriefing(book,sources),channels:editorialChannels(book),content:editorialContent(book,sources),...editorialMeasurement(book)};
 }
 
-export function buildNonCommerceStrategy(data:ExtractedWebsiteData):ServiceStrategy|undefined{
+export function buildNonCommerceStrategy(data:StrategyInput):ServiceStrategy|undefined{
   const p=analyzeWebsitePurpose(data);if(!isNonCommerce(p)||data.collectionNotice||p.business?.id==='international_logistics')return;
   const sources=nonCommerceSources(data);if(!sources.length)return;
   const book=nonCommercePlaybook(p,providerIdentity(data),data.diagnosticSeed?.page.localPlaceEvidence);

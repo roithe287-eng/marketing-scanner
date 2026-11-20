@@ -8,6 +8,7 @@ import {LongReadingText} from './EvidenceFlow';
 type Evidence=WebsitePurpose['evidence'][number];
 const labels={observed:'관련 문구 확인',review:'추가 확인',not_applicable:'해당 없음'} as const;
 const evidenceKey=(e:Evidence)=>JSON.stringify([e.text,e.locator]);
+export const purposeCheckAnchor=(index:number)=>`report-purpose-check-${index+1}`;
 
 export default function WebsitePurposePanel({purpose}:{purpose:WebsitePurpose}){
   const checks=purpose.checks.filter(c=>c.status!=='not_applicable');
@@ -27,12 +28,12 @@ export default function WebsitePurposePanel({purpose}:{purpose:WebsitePurpose}){
         <div><dt>다음 행동</dt><dd>{purpose.goal.label}<small>{purpose.goal.observed?'관련 문구 확인':'실제 행동 경로 확인 필요'}</small></dd></div>
       </dl>
     </div>
-    <div className="report-purpose-checks">{checks.map(c=><article key={c.id}>
+    <div className="report-purpose-checks">{checks.map((c,index)=><article key={c.id} id={purposeCheckAnchor(index)}>
       <div className="report-coverage-row-heading"><h4>{c.label}</h4><span className="report-pill">{labels[c.status]}</span></div>
-      <LongReadingText text={c.guide}/>
+      <div className="report-purpose-instruction"><strong>실제 화면에서 확인할 내용</strong><LongReadingText text={c.guide}/></div>
       {c.evidence.length>0&&<ul className="report-purpose-links" aria-label={`${c.label} 관련 근거`}>{Array.from(new Set(c.evidence.map(evidenceKey))).map(key=>{
         const source=sources.get(key);
-        return source?<li key={key}><ReportJumpLink id={source.id}>근거 {source.number} 보기</ReportJumpLink></li>:null;
+        return source?<li key={key}><ReportJumpLink id={source.id}>{c.label} 근거 {source.number}</ReportJumpLink></li>:null;
       })}</ul>}
       {!c.evidence.length&&<p className="report-note">이 항목을 뒷받침할 문구가 수집되지 않았습니다.</p>}
     </article>)}</div>

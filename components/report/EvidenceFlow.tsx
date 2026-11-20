@@ -3,11 +3,13 @@ import React from 'react';
 import type {ReportRole} from '@/lib/reportRoles';
 import {RoleLabel,reportRoleStyle} from './ReportRole';
 import {reportReadingPoints} from '@/lib/conciseReport';
+import DraftText from './DraftText';
 
-export function LongReadingText({text}:{text:string}) {
+export function LongReadingText({text,draft=false}:{text:string;draft?:boolean}) {
   const points=reportReadingPoints(text);
-  if(points.length<=1)return <p className="report-compact-text">{points[0]||text}</p>;
-  return <ul className="report-compact-text report-reading-points">{points.map((point,index)=><li key={index}>{point}</li>)}</ul>;
+  const render=(point:string)=>draft?<DraftText text={point}/>:point;
+  if(points.length<=1)return <p className="report-compact-text">{render(points[0]||text)}</p>;
+  return <ul className="report-compact-text report-reading-points">{points.map((point,index)=><li key={index}>{render(point)}</li>)}</ul>;
 }
 
 /** Fit parallel facts to the available container width without hiding any values. */

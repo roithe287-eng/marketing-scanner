@@ -31,12 +31,39 @@ test('non-commerce report paths show their own completion in text, visuals and c
     const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
     assert.equal($('.simple-kpi-tabs button[aria-pressed="true"]').text(),`${entry.completion} 목표`);
     assert.ok($('#report-simple-kpi input[aria-describedby]').length===3,entry.url);
+    assert.equal($('[data-page-model="service-conversion"]').children('li').length,report.serviceStrategy?.funnel.length);
+    assert.equal($('[data-page-model="service-decisions"] article').length,report.serviceStrategy?.segments.length);
+    assert.equal($('[data-page-model="service-landing"] a[href^="#report-service-segment-"]').length,report.serviceStrategy?.segments.length);
     for(const selector of ['#report-conversion-verification','.growth-path','[data-report-diagram="actions-guide"]','[data-report-diagram="actions-kpi"]','#report-view-actions-kpi .reading-preview','#report-simple-kpi .growth-measurement']){
       assert.ok($(selector).text().includes(entry.completion),`${entry.url} ${selector}`);
       assert.doesNotMatch($(selector).text(),/문의·구매|장바구니|재고·배송/,`${entry.url} ${selector}`);
     }
     assert.equal(JSON.stringify(report),before);
   }
+});
+
+test('identical industry quotations stay in one review section and links reach the retained source',t=>{
+  const previous=(globalThis as typeof globalThis&{React?:typeof React}).React;
+  Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:previous}));
+  const report=nonCommerceGoalReport('medical-goal'),render=()=>load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
+  const $=render(),strategy=$('#report-view-overview-services'),sector=$('#report-view-overview-sector');
+  assert.ok(strategy.find('a[href^="#report-purpose-check-"]').length>0);
+  assert.ok(sector.find('a[href^="#report-purpose-check-"]').length>0);
+  for(const link of strategy.find('a[href^="#report-purpose-check-"]').toArray()){
+    const target=$($(link).attr('href')!);
+    assert.equal(target.length,1);
+    for(const source of target.find('a[href^="#report-purpose-source-"]').toArray()){
+      const href=$(source).attr('href')!,quote=$(href).find('blockquote').text();
+      assert.ok(quote);
+      assert.equal(strategy.find('.service-source-quotes blockquote').toArray().some(e=>$(e).text()===quote),false);
+    }
+  }
+  const question=report.answerContentPlan?.questions.find(q=>q.draft&&q.missingFacts.length);
+  assert.ok(question);
+  const panel=$(`#report-question-check-${question.id}`).parent();
+  assert.equal(panel.find('blockquote.briefing-answer-text').text(),question.draft);
+  assert.equal(panel.find('.briefing-excerpt blockquote').length,0);
+  assert.equal(panel.find(`a[href="#report-question-check-${question.id}"]`).length,1);
 });
 
 test('fortune overview metadata identifies the topic without treating the page as a tool or a store',()=>{

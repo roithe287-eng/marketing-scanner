@@ -103,7 +103,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     <Chapter id="overview" number="01" title="홈페이지에서 무엇부터 확인할까요?" note="고객이 홈페이지에서 읽을 수 있는 내용을 살펴보세요. 답이 부족한 질문과 먼저 확인할 작업도 정리했습니다.">
       <ReportSections chapter="overview" diagrams={diagrams} briefs={briefs} items={[
         {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
-        ...(report.serviceStrategy?[{id:'overview-services',label:report.serviceStrategy.industry==='noncommerce'?'고객·목적별 전략':'서비스·고객별 전략',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="segments"/>}]:[]),
+        ...(report.serviceStrategy?[{id:'overview-services',label:report.serviceStrategy.industry==='noncommerce'?'고객의 선택 기준':'서비스·고객별 전략',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="segments" purpose={report.sitePurpose}/>}]:[]),
         {id:'overview-questions',label:placeReview||localPlaceReview?'플레이스·고객 질문':'고객 질문·답변',children:<>{localPlaceReview&&<LocalPlacePanel key={localPlaceReview.page.url} review={localPlaceReview}/>}<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst placeReview={placeReview} clinicWebAllowed={clinicWebAllowed}/></>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
         ...(report.sitePurpose?.sector||report.siteDiagnostics?.medicalAudit?[{id:'overview-sector',label:'업종별 확인',children:<>{report.sitePurpose&&<NonCommerceSectorPanel purpose={report.sitePurpose}/>}<MedicalAuditPanel audit={report.siteDiagnostics?.medicalAudit}/></>}]:[]),
@@ -129,7 +129,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         {id:'search-edits',label:'페이지 문구 수정',children:<PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'search-sources',label:'원문·링크',children:<><SiteGuidebookOverview report={report}/>{searchEvidenceAllowed&&<BacklinkEvidencePanel target={searchTarget} brand={report.meta?.siteName||''}/>}</>},
         {id:'search-keywords',label:'키워드',children:<><KeywordWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} data={data}/>{report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}<SearchConsoleEvidencePanel target={searchTarget}/></>},
-        ...(report.serviceStrategy?[{id:'search-intents',label:'검색 의도·랜딩',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="search"/>}]:[]),
+        ...(report.serviceStrategy?[{id:'search-intents',label:'검색어와 연결할 페이지',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="search" purpose={report.sitePurpose}/>}]:[]),
         {id:'search-naver',label:'네이버 운영 점검',children:<NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>},
         {id:'search-official',label:'검색엔진별 기준',children:<><OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>{productPages.map(page=><ProductOfferAuditCard key={page.url} audit={page.productOffer} url={page.url}/>)}</>},
         {id:'search-technical',label:'페이지·기술 점검',children:<SiteDiagnosticsPanel audit={report.siteDiagnostics}/>},
@@ -148,7 +148,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     <Chapter id="actions" number="05" title="진단에서 실행으로 옮기기" note="담당자를 정하고 작업을 시작하세요. 일정과 완료 기준을 함께 확인할 수 있습니다.">
       <ReportSections chapter="actions" diagrams={diagrams} briefs={briefs} items={[
         {id:'actions-board',label:'담당자별 작업',children:<><ExecutionBoard report={report} plan={execution} linkIssueDetails/><PageWorkMap plan={execution}/></>},
-        ...(report.serviceStrategy?[{id:'actions-acquisition',label:'광고·콘텐츠 실행',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="acquisition"/>},{id:'actions-conversion',label:report.serviceStrategy.industry==='noncommerce'?'목적별 전환·검증':'상담 전환·검증',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="conversion"/>}]:[]),
+        ...(report.serviceStrategy?[{id:'actions-acquisition',label:'광고·콘텐츠 실행',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="acquisition"/>},{id:'actions-conversion',label:report.serviceStrategy.industry==='noncommerce'?'완료 기준과 측정':'상담 전환·검증',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="conversion"/>}]:[]),
         {id:'actions-guide',label:'검색·AI 작업 가이드',children:<GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'actions-issues',label:'핵심 이슈',children:report.criticalIssues.length?<div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} taskAnchor={issueTasks.get(`critical-${index}`)} key={`${issue.title}-${index}`}/>)}</div>:<p className="report-empty">저장된 핵심 이슈가 없습니다. ‘영역별 근거’에서 실제 수집 범위를 확인할 수 있습니다.</p>},
         {id:'actions-copy',label:'첫 화면 문구 조합',children:<CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis} pageEdits={pageEdits}/>},

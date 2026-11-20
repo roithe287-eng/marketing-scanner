@@ -341,3 +341,38 @@
 @media print {
   .report-v2.report-focused .report-opening-links {display:none}
 }
+
+/* Keep industry evidence and suggested measurements distinct on narrow reports. */
+.report-v2.report-focused .sector-journey {list-style:none;padding:0}
+.report-v2.report-focused .sector-current .work-link,
+.report-v2.report-focused .sector-goal .work-link {display:flex;width:fit-content;min-height:44px;align-items:center;text-decoration:underline;text-underline-offset:.2em}
+.report-v2.report-focused .report-purpose-instruction>strong {display:block;color:#304b75;margin-bottom:.4rem;font-size:.875rem}
+.report-v2.report-focused :is([id^="report-purpose-check-"],[id^="report-service-segment-"],[id^="report-question-check-"]) {scroll-margin-top:var(--report-anchor-offset,180px)}
+.report-v2.report-focused :is([id^="report-purpose-check-"],[id^="report-service-segment-"],[id^="report-question-check-"]):focus {outline:3px solid #3159ad;outline-offset:4px}
+.report-v2.report-focused .service-strategy-counts {gap:.55rem;margin:1rem 0 1.25rem;padding:0;border:0}
+.report-v2.report-focused .service-strategy-counts>div {min-width:0;padding:.65rem .4rem;border:1px solid #d0dbea;border-radius:9px;background:#f5f8fe}
+.report-v2.report-focused .service-strategy-counts dt {font-size:.875rem;line-height:1.5;color:#354e75;overflow-wrap:anywhere}
+.report-v2.report-focused .service-strategy-counts dd {margin:.25rem 0 0;font-weight:800;font-size:1.2rem;line-height:1.35;color:#243d6c}
+.report-v2.report-focused .service-strategy-evidence {border:1px solid #d0dbea;border-radius:10px;padding:.35rem .85rem;background:#f8fafd}
+.report-v2.report-focused .service-strategy-evidence>summary {display:list-item;min-height:44px;padding:.6rem 0;color:#284776;font-weight:750;cursor:pointer}
+.report-v2.report-focused .service-strategy-evidence>.service-strategy-grid {padding:.35rem 0 1rem}
+.report-v2.report-focused .service-source-quotes {list-style:none;padding-left:0}
+.report-v2.report-focused .service-strategy .work-link,
+.report-v2.report-focused .service-source-quotes a {display:inline-flex;align-items:center;min-height:44px;overflow-wrap:anywhere}
+.report-v2.report-focused .service-measurement-flow {gap:.75rem;padding:0}
+.report-v2.report-focused .service-measurement-flow>li {display:grid;grid-template-columns:2rem minmax(0,1fr);gap:.8rem;margin:0;padding:.9rem;border:1px solid #d0dbea;border-radius:10px;background:#f9fbfe}
+.report-v2.report-focused .service-measurement-flow>li>span {min-width:2rem;line-height:2rem;border-radius:50%;background:#e5edfb;color:#29487b}
+.report-v2.report-focused .service-measurement-flow>li>div {min-width:0}
+.report-v2.report-focused .service-measurement-flow code {overflow-wrap:anywhere;font-size:.875rem}
+.report-v2.report-focused .service-step-check {padding:.55rem .7rem;margin:.65rem 0;background:#ebf5f2;border-inline-start:3px solid #6a9f88;border-radius:4px}
+.report-v2.report-focused .service-step-check>strong {display:block;color:#2a5c48;margin-bottom:.2rem}
+.report-v2.report-focused .briefing-review-link .work-link {display:inline-flex;align-items:center;min-height:44px;text-decoration:underline;text-underline-offset:.2em}
+.report-v2.report-focused .briefing-interpretation {margin:.75rem 0;padding:.65rem .8rem;background:#f0f5ff;border-radius:7px;color:#344d75}
+.report-v2.report-focused .briefing-interpretation>strong {display:block;margin-bottom:.3rem}
+.report-v2.report-focused .briefing-answer blockquote.briefing-answer-text {padding-inline-start:.7rem;border-inline-start:3px solid #8da8d0}
+@media(max-width:410px) {
+ .report-v2.report-focused .service-strategy .service-strategy-counts {grid-template-columns:1fr}
+ .report-v2.report-focused .service-strategy-counts>div {display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.55rem .75rem;text-align:start}
+ .report-v2.report-focused .service-strategy-counts dd {margin:0}
+ .report-v2.report-focused .service-measurement-flow>li {gap:.55rem;padding:.75rem}
+}

@@ -24,12 +24,12 @@
  .report-priority-trio li,.report-roadmap-grid header,.report-checklist-stats>div,
  .growth-concepts article[data-area],.growth-concepts article,.report-geo-intro,
  .position-selection-flow li,.position-axis-cards article,.position-quadrant-key>span,
- .report-source-rule>div[data-kind],.report-source-rule>div,.sector-journey>div) {
+ .report-source-rule>div[data-kind],.report-source-rule>div,.sector-journey>li) {
   background:#fff; border-color:var(--report-line); color:var(--report-ink);
 }
 .report-v2.report-focused :is(.work-today-grid>li,.report-outcome-links>a,.growth-concepts article) { border-top:3px solid var(--report-accent); }
 .report-v2.report-focused :is(.report-stat strong,.keyword-stats strong,.sector-count strong) { color:var(--report-accent); }
-.report-v2.report-focused :is(.report-stat,.keyword-stats>div,.report-evidence-types>section,.report-journey li,.sector-journey>div) { border:1px solid var(--report-line); }
+.report-v2.report-focused :is(.report-stat,.keyword-stats>div,.report-evidence-types>section,.report-journey li,.sector-journey>li) { border:1px solid var(--report-line); }
 .report-v2.report-focused :is(.report-journey .is-focus,.report-next-action) { background:var(--report-accent-soft); border-color:#b9cce7; color:var(--report-accent); }
 .report-v2.report-focused :is(.position-axis-cards h5,.position-axis-cards article>span,.position-axis-cards strong,.sector-journey strong) { color:var(--report-ink); }
 .report-v2.report-focused :is(.sector-journey span,.sector-journey b) { color:var(--report-accent); border-color:var(--report-line); }
