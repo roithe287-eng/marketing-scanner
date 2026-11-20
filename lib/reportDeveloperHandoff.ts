@@ -81,7 +81,7 @@ export function buildDeveloperHandoffs(report:MarketingReport):DeveloperHandoff[
   });
 
   const locations=buildPageEdits(report).filter(edit=>edit.id==='title'||edit.id==='description').map((edit):Request=>{
-    const guide=buildSiteGuide(report,{title:edit.label,current:edit.before,topic:edit.id});
+    const guide=buildSiteGuide(report,{title:edit.label,current:edit.before,topic:edit.id==='title'?'title':'description'});
     const selectors=[...new Set(guide.settings.map(item=>item.selector).filter(Boolean))];
     const changed=!!edit.after&&edit.before!==edit.after;
     return {
