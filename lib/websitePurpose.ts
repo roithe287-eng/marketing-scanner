@@ -9,7 +9,7 @@ import {z} from 'zod';
 import type {ExtractedWebsiteData} from './extractWebsite';
 import {NonCommerceSectorSchema,analyzeNonCommerceSector,sectorActionPattern} from './nonCommerceSectors';
 import {BusinessContextSchema,analyzeBusinessContext,businessPrompt} from './businessContext';
-import {firstPartyFortuneTools,fortuneStart,fortunePricing} from './fortuneService';
+import {firstPartyFortuneTools,fortuneStart,fortunePricing,hasFortuneOverview} from './fortuneService';
 import {medicalPrompt} from './medicalAudit';
 import {CommunityContextSchema,communityChecks} from './communityContext';
 
@@ -122,12 +122,17 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   // Select one provider claim from the submitted page. Conflicting categories need more evidence.
   const claimUnits=identityUnits.filter(u=>['head > title','h1','meta[name="description"]'].includes(u.locator))
     .flatMap(unit=>directIndustries(unit.text).map(category=>({category,evidence:original(unit)})));
-  const declaredIndustry=claimUnits.length&&claimUnits.every(c=>c.category===claimUnits[0].category)?claimUnits[0]:undefined;
-  const declaredKind=declaredIndustry&&({manufacturing:'organization',education:'education',media:'content',ecommerce:'commerce'} as Partial<Record<string,PurposeKind>>)[declaredIndustry.category];
+  const providerClaim=claimUnits.length&&claimUnits.every(c=>c.category===claimUnits[0].category)?claimUnits[0]:undefined;
+  const declaredKind=providerClaim&&({manufacturing:'organization',education:'education',media:'content',ecommerce:'commerce'} as Partial<Record<string,PurposeKind>>)[providerClaim.category];
   const candidate=sector?(genericCandidate==='public_service'?'public_service':'service'):genericCandidate||(place&&(!purchase.length||localPayment)&&!data.productContext?.commerce&&!data.productDiscovery?.commerce?'service':undefined);
   const explicitStore=role==='retail'&&/쇼핑몰|공식몰|전문몰|온라인\s*(?:몰|스토어|판매)/.test(providerIdentity(data));
   const commerce=explicitStore||purchase.length>0&&!localPayment||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
-  const kind:PurposeKind=business?.kind||(commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||declaredKind||(declaredIndustry?'service':'unknown'));
+  const fortuneDescription=data.description||data.ogDescription||'';
+  const serviceAction=actions.some(a=>actionPatterns.booking.test(a.text)||actionPatterns.contact.test(a.text)||actionPatterns.application.test(a.text));
+  const topicOnly=!candidate||candidate==='service'&&!sector&&!serviceAction;
+  const fortuneOverview=!business&&topicOnly&&!providerClaim&&!role&&!commerce&&hasFortuneOverview(fortuneDescription);
+  const declaredIndustry=fortuneOverview?{category:'fortune' as const,evidence:{text:short(fortuneDescription),locator:data.description?'meta[name="description"]':'meta[property="og:description"]'}}:providerClaim;
+  const kind:PurposeKind=business?.kind||(fortuneOverview?'content':commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||declaredKind||(declaredIndustry?'service':'unknown'));
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
   const provider=sector?.id==='medical_consulting'&&!commerce;
   const fortuneTools=business?.id==='fortune_digital'?firstPartyFortuneTools(data.finalUrl||data.url,ctaElements):[];
@@ -135,7 +140,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const matchesGoal=(text:string,key?:keyof typeof actionPatterns)=>(goalPattern||key&&actionPatterns[key])?.test(text)||fortuneTools.some(tool=>short(tool.text)===text);
   const action=business?(actions.some(a=>matchesGoal(a.text))?business.goalKey:undefined):provider?(actions.some(a=>actionPatterns.contact.test(a.text))?'contact':undefined):preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
   const goalKey=business?.goalKey||(provider?'contact':action)||(['content','organization','education','public_service'].includes(kind)?'read':'unknown');
-  const goalLabel=business?.goalLabel||actionLabels[goalKey];
+  const goalLabel=business?.goalLabel||(fortuneOverview&&goalKey==='read'?'운세 안내 열람':actionLabels[goalKey]);
   const evidence=(business?business.evidence:structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?(matched[candidate].length?matched[candidate]:place?[{text:short(place.identity),locator:'입력 페이지 업체 정보'}]:units):units).slice(0,commerce?6:8).map(original);
   if(commerce&&evidence.length<8)evidence.push(...purchase.slice(0,8-evidence.length));
   const pricingPattern=business?.industry==='fortune'?fortunePricing:/가격|비용|요금|견적|유료|무료|수강료|구독료|수수료|참가비|pricing|fees|\bcost\b/i;
@@ -175,9 +180,10 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   else check('price','가격·거래 조건 적용 범위',pricingPattern,pricingApplies&&pricingObserved?'관측한 비용 표현의 적용 대상·포함 범위·추가 협의 조건을 확인하세요.':'이 페이지에는 판매 가격을 필수로 요구하지 않습니다. 별도 유료 신청·거래가 있다면 해당 경로에서 조건을 확인하세요.',pricingApplies);
   const goalEvidence=action?actions.filter(a=>matchesGoal(a.text,action)).slice(0,4):[];
   checks.push({id:'goal',label:`다음 행동 · ${goalLabel}`,status:action?'observed':'review',evidence:goalEvidence.slice(0,3),guide:goalKey==='read'?'본문·출처·관련 자료를 실제로 읽고 이동하는 경로를 확인하세요. 버튼 개수·문의 폼 유무를 성과로 평가하지 않습니다.':`${goalLabel} 경로를 실제로 실행해 연결 대상·준비사항·완료 기준을 확인하세요. 입력 폼이나 완료 화면은 정적 HTML만으로 검증하지 않습니다.`});
-  const explicitLabel=declaredIndustry&&!sector&&(!place||place.sector==='local')&&!structuredKind&&
+  const explicitLabel=fortuneOverview?'사주·운세 정보 안내형':declaredIndustry&&!sector&&(!place||place.sector==='local')&&!structuredKind&&
     (!commerce||declaredIndustry.category==='ecommerce')?`${INDUSTRY_LABELS[declaredIndustry.category]} · ${labels[kind]}`:labels[kind];
-  return WebsitePurposeSchema.parse({version:1,kind,label:business?.label||explicitLabel,declaredIndustry,sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,...(sector&&!commerce&&!business?{sector}:{}),...(business?{business}:{}),goal:{key:goalKey,label:goalLabel,observed:!!action,evidence:goalEvidence},pricingObserved,checks,note:business?.note||'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});
+  const note=fortuneOverview?'검색 설명에서 사주·운세 주제를 확인했습니다. 풀이·상담의 시작 링크와 완료 화면은 확인되지 않았습니다. 도구 페이지나 예약 안내 주소를 입력하면 해당 동선을 따로 진단할 수 있습니다.':undefined;
+  return WebsitePurposeSchema.parse({version:1,kind,label:business?.label||explicitLabel,declaredIndustry,sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,...(sector&&!commerce&&!business?{sector}:{}),...(business?{business}:{}),goal:{key:goalKey,label:goalLabel,observed:!!action,evidence:goalEvidence},pricingObserved,checks,note:business?.note||note||'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});
 }
 
 export function purposePrompt(data:PurposeInput){const p=analyzeWebsitePurpose(data);return JSON.stringify({kind:p.kind,label:p.label,note:p.note,goal:p.goal,evidence:p.evidence,community:p.community,sector:p.sector,business:p.business?JSON.parse(businessPrompt(p.business)):undefined,medical:medicalPrompt(data.medicalAudit),checks:p.checks.map(c=>({label:c.label,applicable:c.status!=='not_applicable',status:c.status,evidence:c.evidence.slice(0,2)})),rule:'community가 있을 때 커뮤니티는 게시판 탐색·글 열람·회원가입·질문과 댓글 참여·재방문을 주된 흐름으로 평가한다. 교육·광고·대행 의뢰는 별도 목적이다. 게시글 제목과 입점업체의 금액·주장을 운영사의 CTA·가격·서비스·실적으로 해석하지 않는다. 공개 글 표본의 근거는 원문 URL과 구분하고 홈페이지에 합산하지 않는다. 페이지 목적과 업종별 기준에 맞춰 분석한다. sector가 있으면 해당 업종의 실제 제공 범위·담당 주체·조건·상담 행동을 우선하며 각 evidence를 현재 원문으로만 취급한다. 기준 항목과 추천 질문은 업체가 제공한다고 확인된 사실이 아니다. 정보형·기업형·공공형과 비커머스 서비스에 상품 배송·재고·장바구니·후기·별점을 필수로 요구하지 않는다. 업종의 caution을 지키며 미확인 목적·수치·운영 조건은 추측하지 않는다.'});}

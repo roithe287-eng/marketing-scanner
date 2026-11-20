@@ -7,11 +7,13 @@ import {radarReviewReport} from './radar-review-report';
 import {sectorIntegrationCases} from './noncommerce-sectors';
 
 const portalLinks='<p>서비스</p><a href="https://ai.yeonwoo.example.com/">연우 AI</a><a href="https://tools.yeonwoo.example.com/">연우 만세력</a>';
+const portalHtml='<title>연우서비스</title><meta name="description" content="신년운세, 사주, 주역, 타로와 궁합을 연우에서 만나보세요."><main>';
 export const nonCommerceGoalCases={
   'medical-goal':{...sectorIntegrationCases.find(row=>row.id==='medical')!,completion:'진료 예약 확정'},
   'legal-goal':{...sectorIntegrationCases.find(row=>row.id==='legal')!,completion:'문의 접수'},
   'fortune-booking':{url:'https://counsel.example.com/',completion:'상담 예약 확정',html:'<title>연우철학관 | 사주 상담</title><meta name="description" content="방문과 실시간 전화로 사주 상담을 진행합니다."><main><h1>연우철학관 사주 상담</h1><p>전화와 대면 상담은 사전 예약으로 진행합니다.</p><a href="/reserve">상담 예약</a></main>'},
-  'fortune-reading':{url:'https://yeonwoo.example.com/item',completion:'풀이 결과 열람',html:`<title>연우서비스</title><meta name="description" content="신년운세, 사주, 주역, 타로와 궁합을 연우에서 만나보세요."><main>${portalLinks}<h2>새 콘텐츠</h2><p>이번 주 별자리 이야기입니다.</p></main>`},
+  'fortune-reading':{url:'https://yeonwoo.example.com/item',completion:'풀이 결과 열람',html:`${portalHtml}${portalLinks}<h2>새 콘텐츠</h2><p>이번 주 별자리 이야기입니다.</p></main>`},
+  'fortune-overview':{url:'https://yeonwoo.example.com/item',completion:'운세 안내 열람',html:`${portalHtml}<p>서비스 항목을 불러옵니다.</p></main>`},
 };
 export type NonCommerceGoalSample=keyof typeof nonCommerceGoalCases;
 export function nonCommerceGoalPage(html:string,url:string) {

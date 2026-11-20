@@ -12,7 +12,7 @@ import {providerIdentity,isSecondarySection,ownBusinessRole,classificationText,p
 import {keywordList,withoutThirdPartyRoles} from './industryLanguage';
 import {placeFromDescription} from './placeIndustry';
 import {sameSite} from './siteIdentity';
-import {firstPartyFortuneTools} from './fortuneService';
+import {firstPartyFortuneTools,hasFortuneOverview} from './fortuneService';
 
 function correctedSector(page:DiagnosticPage,capturedBody:readonly string[]=[]){
   const old=page.localPlaceEvidence;
@@ -51,7 +51,7 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
     [page.title,page.description,...page.h1].some(v=>withoutThirdPartyRoles(v)!==v);
   const reviewClaim=!!previous&&!previous.declaredIndustry&&!previous.business&&!previous.sector&&(!old||old.sector==='local')&&
     [page.title,page.description,...page.h1].some(v=>directIndustries(v).length>0);
-  const reviewFortune=previous?.kind==='unknown'&&firstPartyFortuneTools(page.finalUrl,page.siteEditing?.elements).length>=2;
+  const reviewFortune=previous?.kind==='unknown'&&(hasFortuneOverview(page.description)||firstPartyFortuneTools(page.finalUrl,page.siteEditing?.elements).length>=2);
   if(!changedPlace&&!needsApparel&&!reviewPurpose&&!reviewClaim&&!reviewFortune)return report;
 
   const pages=diagnostics?.pages.map(p=>{
@@ -77,7 +77,7 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
     productContext:report.productContext??undefined,communityContext:report.sitePurpose?.community,diagnosticSeed:current?{page:current,links:[]}:undefined};
   const purpose=analyzeWebsitePurpose(data);
   const changedPurpose=(reviewPurpose&&(purpose.business?.id!==previous?.business?.id||purpose.sector?.id!==previous?.sector?.id))||
-    (reviewFortune&&purpose.business?.id==='fortune_digital');
+    (reviewFortune&&(purpose.business?.id==='fortune_digital'||(purpose.kind==='content'&&purpose.declaredIndustry?.category==='fortune')));
   if(!changedPlace&&!changedPurpose&&!(reviewClaim&&purpose.declaredIndustry)&&purpose.business?.id!=='custom_apparel')return report;
   purpose.capturedAt=report.sitePurpose?.capturedAt||page.capturedAt;
   const book=nonCommercePlaybook(purpose,providerIdentity(page),current?.localPlaceEvidence);
