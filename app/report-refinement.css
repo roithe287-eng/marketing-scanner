@@ -72,9 +72,10 @@
 .report-v2.report-focused .report-hero-conclusion>strong {display:block;margin-bottom:.35rem}
 .report-v2.report-focused .report-hero-conclusion .report-hero-summary {margin:0;border:0;padding:0;overflow-wrap:anywhere}
 .report-v2.report-focused .report-hero-conclusion .reading-summary {min-height:44px}
-.report-v2.report-focused .section-reading>.reading-summary .reading-preview {
+.report-v2.report-focused :is(.section-reading,.prose-reading)>.reading-summary .reading-preview {
   display:block;
   overflow:visible;
+  -webkit-line-clamp:unset;
   max-inline-size:68ch;
   color:#384f68;
   line-height:1.75;
@@ -119,6 +120,16 @@
 .report-v2.report-focused .report-visual-steps[aria-label="직접 확인할 고객 동선"] {grid-template-columns:repeat(4,minmax(0,1fr))}
 @media(max-width:767px) {
   .report-v2.report-focused .report-nav a {min-height:44px;line-height:1.35}
+  .report-v2.report-focused .prose-reading>.reading-summary:has(.reading-preview) {
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:.4rem .65rem;
+  }
+  .report-v2.report-focused .prose-reading>.reading-summary:has(.reading-preview)>.reading-caption {display:contents}
+  .report-v2.report-focused .prose-reading>.reading-summary .reading-caption>strong {grid-area:1/1}
+  .report-v2.report-focused .prose-reading>.reading-summary .reading-preview {grid-area:2/1/3/-1}
+  .report-v2.report-focused .prose-reading>.reading-summary:has(.reading-preview)>.reading-toggle {grid-area:1/2}
   .report-v2.report-focused .report-visual-steps[aria-label="직접 확인할 고객 동선"] {grid-template-columns:minmax(0,1fr)}
 }
 @media print {

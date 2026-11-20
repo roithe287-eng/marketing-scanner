@@ -1,5 +1,6 @@
 import React from 'react';
 import {RoleBox} from './report/ReportRole';
+import ReadingDisclosure from './ReadingDisclosure';
 import {Guidebook} from './report/SiteGuidebook';
 import ReportJumpLink from './report/ReportJumpLink';
 import type {MarketingReport} from '@/lib/reportSchema';
@@ -36,7 +37,7 @@ export default function CopyImprovement({exampleCopy,competitorAnalysis,pageEdit
           {!sameProposal&&<RoleBox role="proposal" label="문구 제안"><p>{item.proposed||'저장된 제안이 없습니다.'}</p></RoleBox>}
         </div>}
         {sameProposal||sameCurrent?<p className="report-related-link"><ReportJumpLink id={`report-edit-${item.id}`}>{item.label} 원문과 수정 위치 비교</ReportJumpLink></p>
-          :<Guidebook title={item.label} current={item.current} proposal={item.proposed}/>}
+          :<ReadingDisclosure title={`${item.label} 작성과 적용 방법`}><Guidebook title={item.label} current={item.current} proposal={item.proposed}/></ReadingDisclosure>}
       </article>;
     })}</div>
     {exampleCopy.competitorCopyInsight&&<div className="report-callout"><strong>비교 후보에서 참고할 표현</strong><p>{exampleCopy.competitorCopyInsight}</p>{competitorAnalysis?.searchKeyword&&<p className="report-note">검색 키워드 · {competitorAnalysis.searchKeyword}</p>}</div>}
