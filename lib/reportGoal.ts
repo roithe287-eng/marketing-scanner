@@ -12,11 +12,13 @@ const goals:Partial<Record<WebsitePurpose['goal']['key'],Completion>>={
 const medical:Completion={label:'진료 예약 확정',start:'진료과·의료진 안내에서 초진·재진에 맞는 예약 경로를 열어 보세요.',check:'예약 버튼 클릭, 예약 요청, 실제 예약 확정을 구분하세요.'};
 const fortuneConsultation:Completion={label:'상담 예약 확정',start:'실제 상담 방식과 가능 시간을 확인한 뒤 예약 경로를 열어 보세요.',check:'상담 문의, 예약 확정, 실제 상담 완료를 구분하세요.'};
 const fortuneDigital:Completion={label:'풀이 결과 열람',start:'풀이 주제를 골라 시작 화면과 입력 안내가 연결되는지 보세요.',check:'풀이 시작, 입력 완료, 결과 열람을 구분하세요. 유료 결제가 있다면 따로 집계하세요.'};
+const fortuneOverview:Completion={label:'운세 안내 열람',start:'관심 주제의 안내를 읽을 수 있는지 확인하세요.',check:'운세 안내 열람, 풀이 도구 시작, 실제 결과 열람을 구분하세요.'};
 
 export function reportGoal(purpose:WebsitePurpose|undefined):Completion|undefined {
   if(!purpose||!isNonCommerce(purpose))return;
   if(purpose.business?.id==='fortune_digital')return fortuneDigital;
   if(purpose.business?.id==='fortune_consultation')return fortuneConsultation;
+  if(purpose.goal.label===fortuneOverview.label&&purpose.kind==='content'&&purpose.declaredIndustry?.category==='fortune')return fortuneOverview;
   if(purpose.kind==='service'&&(purpose.sector?.id==='medical'||purpose.declaredIndustry?.category==='medical'))return medical;
   if(purpose.kind==='education'&&purpose.goal.key==='application')return {...goals.application!,label:'수강 신청 완료'};
   if(purpose.business?.id==='international_logistics')return {...goals.contact!,label:'견적 문의 접수'};

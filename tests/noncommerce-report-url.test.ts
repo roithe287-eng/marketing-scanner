@@ -22,7 +22,7 @@ test('public fortune listings need visible first-party tools beyond topical meta
   assert.notEqual(analyzeWebsitePurpose(nonCommerceGoalPage(html,url.replace('/item','/blog/reading'))).business?.id,'fortune_digital');
 });
 
-test('four non-commerce report paths show their own completion in text, visuals and controls',t=>{
+test('non-commerce report paths show their own completion in text, visuals and controls',t=>{
   const previous=(globalThis as typeof globalThis&{React?:typeof React}).React;
   Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:previous}));
   for(const [sample,entry] of Object.entries(nonCommerceGoalCases)){
@@ -37,6 +37,22 @@ test('four non-commerce report paths show their own completion in text, visuals 
     }
     assert.equal(JSON.stringify(report),before);
   }
+});
+
+test('fortune overview metadata identifies the topic without treating the page as a tool or a store',()=>{
+  const entry=nonCommerceGoalCases['fortune-overview'],input=nonCommerceGoalPage(entry.html,entry.url);
+  const result=analyzeWebsitePurpose(input);
+  assert.equal(result.kind,'content');
+  assert.equal(result.declaredIndustry?.category,'fortune');
+  assert.equal(result.goal.key,'read');
+  assert.equal(result.goal.observed,false);
+  assert.equal(result.business,undefined);
+  assert.equal(showProductCollection(result),false);
+  assert.match(result.note,/풀이·상담의 시작 링크와 완료 화면은 확인되지 않았습니다/);
+  const seller=analyzeWebsitePurpose(nonCommerceGoalPage(entry.html.replace('서비스 항목을 불러옵니다.</p>','서비스 항목을 불러옵니다.</p><a href="/cart">장바구니</a>'),entry.url));
+  assert.equal(showProductCollection(seller),true);
+  const report=nonCommerceGoalReport('fortune-overview'),legacy={...report,sitePurpose:{...result,kind:'unknown' as const,declaredIndustry:undefined}};
+  assert.equal(reportForPresentation(legacy).sitePurpose?.goal.label,entry.completion);
 });
 
 test('an older unknown report can recover a fortune purpose using its own retained action links',()=>{
