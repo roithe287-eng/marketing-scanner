@@ -143,6 +143,7 @@ export function buildDeveloperHandoffs(report:MarketingReport){
     const topic=editTopics[edit.id as keyof typeof editTopics];
     const guide=buildSiteGuide(report,{title:edit.label,current:edit.before,topic});
     const changed=!!edit.after&&edit.before!==edit.after;
+    const metadata=topic==='title'||topic==='description';
     const implementation=topic==='title'?'이 URL의 <head>에서 <title>을 출력하는 페이지별 필드나 템플릿을 수정합니다.':
       topic==='description'?'이 URL의 <head>에서 meta[name="description"]의 content를 출력하는 페이지별 필드나 템플릿을 수정합니다.':
       topic==='heading'?'첫 화면의 대표 제목을 출력하는 기존 H1 또는 제목 컴포넌트를 확인하고 하위 제목 계층을 유지합니다.':
@@ -150,12 +151,12 @@ export function buildDeveloperHandoffs(report:MarketingReport){
     return {
       title:edit.label+' · 수정 위치와 반영 방법',basis:edit.before?`${edit.source}\n${edit.before}`:edit.missing,
       location:guideLocation(guide,edit.location),
-      steps:[guide.route.instruction,implementation,
+      steps:[metadata&&!guide.platform.platform?'이 URL에만 적용되는 기존 출력값을 찾아 보관합니다. 공통 설정을 편집한다면 영향받는 URL을 먼저 확인합니다.':guide.route.instruction,implementation,
         changed?`담당자가 승인하면 이 위치의 기존 값에 적용합니다.\n적용안 · ${edit.after}`:'현재 값과 공개 화면을 대조한 뒤 변경 여부를 결정합니다.',
         '미리보기로 다른 페이지에 미치는 영향을 확인하고 배포합니다. 배포한 URL의 공개 출력과 화면을 다시 대조합니다.'],
       expected:changed?guide.effect.expected:'현재 설정값과 공개 출력의 일치 여부를 확인하고 불필요한 편집을 줄일 수 있습니다.',
       metric:guide.effect.metric,
-      done:topic==='title'||topic==='description'?'최종 HTML의 해당 태그가 한 번 출력되고 그 값이 승인한 문구와 일치합니다. 검색 화면 반영은 재수집 후 별도로 기록합니다.':edit.check,
+      done:metadata?'최종 HTML의 해당 태그가 한 번 출력되고 그 값이 승인한 문구와 일치합니다. 검색 화면 반영은 재수집 후 별도로 기록합니다.':edit.check,
       relatedEdit:edit.id,
     };
   });
