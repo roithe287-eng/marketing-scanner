@@ -19,7 +19,7 @@ import {buildLocalPlaceReview} from '@/lib/localPlaceReview';
 import LocalPlacePanel from './LocalPlacePanel';
 import {TodayWork,PageEditPreview,PageWorkMap,ExecutionBoard} from './ExecutionWorkflow';
 import DiagnosisComparisonPanel from './DiagnosisComparisonPanel';
-import {buildExecutionPlan} from '@/lib/reportExecution';
+import {buildExecutionPlan,buildPageEdits} from '@/lib/reportExecution';
 import {buildSourceLibrary} from '@/lib/reportContent';
 import {buildSectionBriefs} from '@/lib/reportSectionBriefs';
 import {buildReportDiagrams} from '@/lib/reportDiagrams';
@@ -78,6 +78,8 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
   const diagrams=useMemo(()=>buildReportDiagrams(report,data,sources),[report,data,sources]);
   const briefs=useMemo(()=>buildSectionBriefs(report,data,sources),[report,data,sources]);
   const execution=useMemo(()=>buildExecutionPlan(report,data),[report,data]);
+  const pageEdits=useMemo(()=>buildPageEdits(report),[report]);
+  const issueTasks=new Map(execution.tasks.filter(task=>task.group==='핵심 개선').map(task=>[task.id,task.anchor]));
   const searchTarget=report.pageEvidence?.finalUrl||report.url;
   const productPages=report.siteDiagnostics?.pages.filter(page=>page.productOffer).slice(0,3)||[];
   if(expired)return <section className="report-card" role="status"><h2 className="text-xl font-bold">보고서 보관 기간이 만료되었습니다</h2><p className="mt-3">이 결과에 포함된 보관·비교 자료는 더 이상 열람할 수 없습니다. 새 진단으로 현재 상태를 확인해 주세요.</p><a className="jm-button mt-4" href="/">새로 진단하기</a></section>;
@@ -91,7 +93,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     <div className="report-opening-radar" id="report-top"><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview} featured siteName={report.meta?.siteName||report.meta?.domain||report.url}/></div>
     <ReportHeader report={report} data={data} actions={actions} topAnchor={false}/>
     <ReportNavigation chapters={chapters}/><ReportReadingKey/>
-    <Chapter id="overview" number="01" title="우리 홈페이지, 무엇부터 바꾸면 될까요?" note="홈페이지 내용 → 고객 질문과 답변 → 우선 할 일 순서로 확인하세요.">
+    <Chapter id="overview" number="01" title="홈페이지에서 무엇부터 확인할까요?" note="현재 페이지가 전하는 내용과 고객 질문을 살펴보세요. 급한 작업은 ‘우선 할 일’에서 바로 확인할 수 있습니다.">
       <ReportSections chapter="overview" diagrams={diagrams} briefs={briefs} items={[
         {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
         ...(report.serviceStrategy?[{id:'overview-services',label:report.serviceStrategy.industry==='noncommerce'?'고객·목적별 전략':'서비스·고객별 전략',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="segments"/>}]:[]),
@@ -102,7 +104,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         ...(report.diagnosisBaseline?[{id:'overview-comparison',label:'이전 결과 비교',children:<DiagnosisComparisonPanel report={report}/>}]:[]),
       ]}/>
     </Chapter>
-    <Chapter id="geo" number="02" title="AI가 브랜드를 읽는 방식" note="실제 답변·출처·페이지 준비도를 나누어 확인하세요.">
+    <Chapter id="geo" number="02" title="AI가 답한 내용과 연결한 출처" note="브랜드 이름이 나왔는지, 우리 페이지가 출처로 연결됐는지 확인하세요.">
       <ReportSections chapter="geo" diagrams={diagrams} briefs={briefs} items={[
         ...(report.serviceStrategy?.briefing?[{id:'geo-logistics-briefing',label:'네이버 AI 브리핑 대응',children:<LogisticsBriefingPanel plan={report.serviceStrategy.briefing}/>}]:[]),
         ...(report.serviceStrategy?.briefingPlan?[{id:'geo-noncommerce-briefing',label:'업종별 AI 브리핑 대응',children:<NonCommerceBriefingPanel plan={report.serviceStrategy.briefingPlan}/>}]:[]),
@@ -114,10 +116,10 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         ...(report.geoBaseline?[{id:'geo-comparison',label:'이전 관측 비교',children:<GeoComparisonPanel report={report}/>}]:[]),
       ]}/>
     </Chapter>
-    <Chapter id="search" number="03" title="페이지를 확인하고 바로 다듬기" note="문구 개선, 원문·링크, 검색 점검을 순서대로 확인하세요.">
+    <Chapter id="search" number="03" title="검색 결과와 홈페이지 바로 다듬기" note="검색 제목과 설명, 첫 화면, 버튼을 살펴보세요. 실제 값을 수정할 위치도 확인할 수 있습니다.">
       <ReportSections chapter="search" diagrams={diagrams} briefs={briefs} items={[
         {id:'search-platforms',label:'플랫폼별 적용',children:<PlatformApplicationPanel report={report}/>},
-        {id:'search-edits',label:'문구 개선',children:<PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
+        {id:'search-edits',label:'페이지 문구 수정',children:<PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'search-sources',label:'원문·링크',children:<><SiteGuidebookOverview report={report}/>{searchEvidenceAllowed&&<BacklinkEvidencePanel target={searchTarget} brand={report.meta?.siteName||''}/>}</>},
         {id:'search-keywords',label:'키워드',children:<><KeywordWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} data={data}/>{report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}<SearchConsoleEvidencePanel target={searchTarget}/></>},
         ...(report.serviceStrategy?[{id:'search-intents',label:'검색 의도·랜딩',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="search"/>}]:[]),
@@ -128,7 +130,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         ...(report.checklist?.length?[{id:'search-checklist',label:'기본 체크리스트',children:<DiagnosisChecklist checklist={report.checklist}/>}]:[]),
       ]}/>
     </Chapter>
-    <Chapter id="competition" number="04" title="비교 후보에서 찾는 차이" note="비교 지도, 표현, 실제 페이지를 나누어 살펴보세요.">
+    <Chapter id="competition" number="04" title="비교 후보와 우리 페이지의 차이" note="먼저 같은 고객을 대상으로 하는지 확인하세요. 그다음 제목·설명·첫 화면을 비교하세요.">
       <ReportSections chapter="competition" diagrams={diagrams} briefs={briefs} items={[
         {id:'competition-map',label:'비교 지도',children:<>{(competitorLoading||report.competitorStatus?.status==='pending')&&<p className="report-empty" role="status">경쟁사 정보를 수집 중입니다.</p>}<CompetitorStatusNotice report={report} onRetry={onRetry}/><CompetitorLandscape report={report}/></>},
         {id:'competition-messages',label:'메시지 비교',children:<MessageMap data={data}/>},
@@ -136,14 +138,14 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         ...(!report.evidenceReview&&report.industryBenchmark?[{id:'competition-benchmark',label:'업종 표본',children:<IndustryBenchmarkCard benchmark={report.industryBenchmark}/>}]:[]),
       ]}/>
     </Chapter>
-    <Chapter id="actions" number="05" title="확인한 내용을 실행으로" note="담당 업무와 수정안, 일정, 목표 지표를 각각 확인하세요.">
+    <Chapter id="actions" number="05" title="진단에서 실행으로 옮기기" note="담당자를 정하고 작업을 시작하세요. 일정과 완료 기준을 함께 확인할 수 있습니다.">
       <ReportSections chapter="actions" diagrams={diagrams} briefs={briefs} items={[
-        {id:'actions-board',label:'담당자별 작업',children:<><ExecutionBoard report={report} plan={execution}/><PageWorkMap plan={execution}/></>},
+        {id:'actions-board',label:'담당자별 작업',children:<><ExecutionBoard report={report} plan={execution} linkIssueDetails/><PageWorkMap plan={execution}/></>},
         ...(report.serviceStrategy?[{id:'actions-acquisition',label:'광고·콘텐츠 실행',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="acquisition"/>},{id:'actions-conversion',label:report.serviceStrategy.industry==='noncommerce'?'목적별 전환·검증':'상담 전환·검증',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="conversion"/>}]:[]),
         {id:'actions-guide',label:'실행 가이드',children:<GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
-        {id:'actions-issues',label:'핵심 이슈',children:<div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} key={`${issue.title}-${index}`}/>)}</div>},
-        {id:'actions-copy',label:'카피 제안',children:<CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis}/>},
-        {id:'actions-schedule',label:'실행 일정',children:<><PriorityMatrix roadmap={report.priorityRoadmap}/>{report.quickWinsDetailed?.length?<QuickWinsFlow quickWins={report.quickWinsDetailed}/>:<ul>{report.quickWins?.map((w,i)=><li key={i}>{w}</li>)}</ul>}</>},
+        {id:'actions-issues',label:'핵심 이슈',children:report.criticalIssues.length?<div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} taskAnchor={issueTasks.get(`critical-${index}`)} key={`${issue.title}-${index}`}/>)}</div>:<p className="report-empty">저장된 핵심 이슈가 없습니다. ‘영역별 근거’에서 실제 수집 범위를 확인할 수 있습니다.</p>},
+        {id:'actions-copy',label:'첫 화면 문구 조합',children:<CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis} pageEdits={pageEdits}/>},
+        {id:'actions-schedule',label:'실행 일정',children:<><PriorityMatrix roadmap={report.priorityRoadmap} quickWins={report.quickWinsDetailed}/>{report.quickWinsDetailed?.length?<QuickWinsFlow quickWins={report.quickWinsDetailed}/>:<ul>{report.quickWins?.map((w,i)=><li key={i}>{w}</li>)}</ul>}</>},
         {id:'actions-kpi',label:'목표·예산 계산',children:<><GrowthKpiPanel key={`kpi:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} targetUrl={report.url}/><AdWasteCalculator/></>},
         {id:'actions-geo',label:'AI 답변 보강',children:<GeoFocusPanel key={report.llmCitationTest?.questionSetId||report.url} report={report}/>},
       ]}/>

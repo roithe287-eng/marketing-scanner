@@ -12,7 +12,16 @@ function Empty({children}:{children:React.ReactNode}) {return <p className="repo
 function Link({url,children}:{url:string;children:React.ReactNode}) {return <a className="report-source-link" href={url} target="_blank" rel="noopener noreferrer">{children} ↗</a>;}
 export function CollectionCoverage({data}:{data:ReportInsights}) {return <article className="report-card" aria-label="데이터 수집 현황"><Heading label="DATA COVERAGE" title="어디까지 확인했나요?" note="현재 보고서에 저장된 범위입니다. 항목별 확인 범위가 다르면 미확인 상태를 함께 표시합니다."/><div className="report-four-grid">{data.coverage.map((c,i)=><div className="report-stat" key={c.label}><div className="report-stat-top"><DiagnosisIcon axis={i===0?'firstView':i===1?'seo':i===2?'trust':'adLanding'}/><span className="report-pill">{c.state}</span></div><h4>{c.label}</h4><strong>{c.value}</strong><p>{c.detail}</p></div>)}</div></article>;}
 export function ConversionPath({data}:{data:ReportInsights}) {
-  if(data.evidenceReview)return <article className="report-card" aria-label="전환 흐름 측정 범위"><Heading label="CONVERSION REVIEW" title="목표 행동은 실제 동선으로 확인합니다" note={`검토할 행동: ${data.sitePurpose?.goal.label||'페이지의 다음 행동'}. HTML 관측으로 실제 행동 완료율과 이탈 원인을 판단하지 않습니다.`}/><div className="grid gap-3 md:grid-cols-2">{data.evidenceReview.axes.filter(a=>['firstView','trust','cta','conversionFlow'].includes(a.key)).map(a=><div key={a.key} className="min-w-0 rounded-xl bg-slate-50 p-4"><h4 className="font-bold">{a.label} · {a.status==='unmeasured'?'미측정':'추가 검토'}</h4><CompactText className="mt-2 break-words text-sm leading-7" text={a.evidence}/></div>)}</div></article>;
+  if(data.evidenceReview)return <article className="report-card" aria-label="전환 흐름 직접 확인">
+    <Heading label="CONVERSION REVIEW" title="고객이 목표 행동을 끝까지 할 수 있나요?" note={`확인할 목표는 ${data.sitePurpose?.goal.label||'페이지의 다음 행동'}입니다. 휴대폰에서 진단한 주소를 열어 고객처럼 이용해 보세요.`}/>
+    <VisualSteps label="직접 확인할 고객 동선" items={[
+      {title:'첫 화면 읽기',detail:'누구를 위한 페이지인지 확인하세요.',icon:'firstView'},
+      {title:'결정에 필요한 정보 찾기',detail:'대상·이용 조건·근거를 찾아보세요.',icon:'trust'},
+      {title:'목표 행동까지 이동',detail:'버튼 문구와 열린 화면이 맞는지 확인하세요.',icon:'cta'},
+      {title:'마지막 화면 확인',detail:'목표가 끝났음을 화면이나 실제 기록으로 확인하세요.',icon:'conversionFlow'},
+    ]}/>
+    <p className="report-note">어느 단계에서 막혔는지 화면과 함께 기록하세요. 방문 대비 완료율과 이탈 원인은 분석 계정에서 별도로 확인합니다.</p>
+  </article>;
 
   const lowest=Math.min(...data.stages.map(s=>s.score));
   return <article className="report-card" aria-label="고객 전환 준비도"><Heading label="CONVERSION READINESS" title="고객이 결정하기까지, 네 단계" note={insightNotes.stages}/><ol className="report-journey">{data.stages.map((s,i)=><li key={s.key} className={s.score===lowest?'is-focus':''}><div className="report-step-top"><span>{String(i+1).padStart(2,'0')}</span>{s.score===lowest&&<b>우선 검토</b>}</div><h4>{s.label}</h4><div className="report-score"><strong>{s.score}</strong><span>/ 100</span></div><div className="report-meter" aria-hidden="true"><i style={{width:`${s.score}%`}}/></div><p>{s.action}</p></li>)}</ol></article>;

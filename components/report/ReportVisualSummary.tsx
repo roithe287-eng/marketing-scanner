@@ -9,11 +9,12 @@ export {SourceSketch};
 export function CompactText({text,summary,verbatim=false,className='',label}:{text:string;summary?:string;verbatim?:boolean;className?:string;label?:string}){
   if(!text)return null;
   const long=text.trim().length>220 || text.trim().split(/\n+/).length>4;
-  if(verbatim || !long)return <p className={`report-compact-text ${className}`}>{verbatim?text:summary||text}</p>;
+  if(verbatim)return <p className={`report-compact-text ${className}`}>{text}</p>;
+  if(!long&&(!summary||summary.trim()===text.trim()))return <p className={`report-compact-text ${className}`}>{text}</p>;
 
   const points=reportReadingPoints(text);
   const first=points[0]||text.trim();
-  const preview=summary || (first.length<=110?first:Array.from(first).slice(0,100).join('').trimEnd()+'…');
+  const preview=summary || (first.length<=110?first:undefined);
   return <ReadingDisclosure title={label||'상세 설명'} preview={preview} className={`prose-reading ${className}`}>
     {points.length>1
       ? <ul className="report-compact-text report-reading-points">{points.map((point,i)=><li key={i}>{point}</li>)}</ul>

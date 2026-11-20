@@ -15,6 +15,11 @@ export function reportExcerpt(text:string,limit=130):string {
   return excerpt.length>=24&&excerpt.length<clean.length?excerpt:clean;
 }
 
+/** Compare whole report phrases. Keep numbers, punctuation inside a phrase, and word boundaries. */
+export function reportPhraseKey(text?:string):string {
+ return (text||'').normalize('NFC').trim().replace(/\s+/gu,' ').replace(/[.。]$/u,'').trim();
+}
+
 /** Compact explanatory prose without dropping distinct facts, qualifications or steps. */
 export function reportReadingPoints(text:string):string[]{
  const parts=text.trim().split(/(?<=[.!?。])\s+|\n+/u).map(part=>part.trim()).filter(Boolean);

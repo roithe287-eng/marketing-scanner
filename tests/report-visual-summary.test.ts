@@ -58,3 +58,13 @@ test('source visual PDF preserves scope and stays inside the page at realistic K
  for(const shape of page.shapes)if(shape.kind==='rect'){assert.ok(shape.x>=48&&shape.x+shape.width<=742);assert.ok(shape.y+shape.height<=PDF_PAGE.contentBottom);}
  assert.equal(JSON.stringify(report),before);
 });
+
+test('a short authored lead keeps every original condition accessible',()=>{
+ const text='수집 화면에는 버튼이 2개 보였습니다. 실제 접수는 모바일에서 별도로 확인해야 합니다.';
+ const summary='현재 버튼 2개 확인';
+ const $=load(renderToStaticMarkup(React.createElement(CompactText,{text,summary})));
+ assert.equal($('.reading-preview').text(),summary);
+ assert.equal($('.reading-body li').toArray().map(item=>$(item).text()).join(' '),text);
+ assert.equal($('.reading-show').text(),'펼치기');
+ assert.equal($('.reading-hide').text(),'접기');
+});

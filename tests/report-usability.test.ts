@@ -63,3 +63,30 @@ test('report links have real targets, one execution board and no repeated compar
  for(const a of $('a[href^="#"]').toArray()){const hash=$(a).attr('href')!.slice(1);assert.ok($(`[id="${hash}"]`).length,`missing destination ${hash}`);}
  const plan=buildExecutionPlan(report);for(const task of plan.first)assert.equal($(`[id="${task.anchor}"]`).length,1);
 });
+
+test('reused result content links to its detail without removing unique copy, limits, or timing',t=>{
+ const previous=(globalThis as typeof globalThis&{React?:typeof React}).React;
+ Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:previous}));
+ const sample={
+  ...report,
+  exampleCopy:{...report.exampleCopy,heroHeadline:'고객을 위한 단체복 주문 제작',subHeadline:'최소 수량은 디자인별로 확인해 주세요.',ctaText:'제작 견적 요청'},
+  criticalIssues:[{title:'문의 버튼 검토',priority:'high' as const,problem:'문의 버튼을 확인했습니다. 구매 화면으로 연결되는지는 별도 확인이 필요합니다.',reason:'문의 버튼을 확인했습니다. 구매 화면으로 연결되는지는 별도 확인이 필요합니다.',recommendation:'실제 문의 양식으로 연결하고 모바일에서 제출까지 확인하세요.'}],
+  priorityRoadmap:{immediately:['문의 버튼 확인','완료 화면 직접 검토'],thisWeek:['문의 버튼 확인.','접수 수신 테스트'],thisMonth:[]},
+  quickWinsDetailed:[{title:'문의 버튼 확인',steps:['모바일에서 문의 버튼을 누르세요.','완료 화면과 담당자 수신 기록을 대조하세요.']}],
+ };
+ const before=JSON.stringify(sample);
+ const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report:sample})));
+ const copy=$('#report-view-actions-copy');
+ assert.ok(copy.find('a[href="#report-edit-hero"]').length);
+ assert.ok(copy.find('a[href="#report-edit-cta"]').length);
+ assert.doesNotMatch(copy.text(),/고객을 위한 단체복 주문 제작|제작 견적 요청/);
+ assert.match(copy.text(),/최소 수량은 디자인별로 확인해 주세요/);
+ assert.ok($('#report-view-actions-board a[href="#report-issue-0"]').length);
+ assert.equal($('#report-issue-0 .report-evidence-flow [data-report-role="review"]').length,0);
+ assert.match($('#report-issue-0').text(),/구매 화면으로 연결되는지는 별도 확인이 필요합니다/);
+ assert.match($('#report-issue-0').text(),/모바일에서 제출까지 확인/);
+ assert.equal($('#report-view-actions-schedule .report-roadmap a[href="#report-quick-win-0"]').length,2);
+ assert.match($('#report-quick-win-0').text(),/담당자 수신 기록을 대조/);
+ assert.match($('#report-view-actions-schedule .report-roadmap').text(),/접수 수신 테스트/);
+ assert.equal(JSON.stringify(sample),before);
+});

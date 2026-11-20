@@ -2,7 +2,7 @@
 import React from 'react';
 import DiagnosisIcon from './DiagnosisIcon';
 
-export const REPORT_CHAPTERS=[['overview','핵심 요약'],['geo','AI·GEO'],['search','검색·페이지'],['competition','경쟁사'],['actions','실행 과제']] as const;
+export const REPORT_CHAPTERS=[['overview','핵심 요약'],['geo','AI 답변'],['search','검색·홈페이지'],['competition','경쟁사 비교'],['actions','실행 계획']] as const;
 export type ReportChapterId=typeof REPORT_CHAPTERS[number][0];
 
 export function ReportChapter({id,number,title,note,children}:{id:ReportChapterId;number:string;title:string;note:string;children:React.ReactNode}) {
