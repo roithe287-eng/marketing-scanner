@@ -4,6 +4,7 @@ import { PDF_PAGE, wrapPdfText, type PdfTextStyle, type TextMeasurer } from './p
 import type { VisualPdfPage } from './reportVisualPdf';
 import {reportRoles,reportFieldRole} from './reportRoles';
 import {reportEmphasisParts} from './reportEmphasis';
+import {buildDeveloperHandoffs,PDF_READING_GROUPS} from './reportDeveloperHandoff';
 
 export type ReadingBlock = ReportBlock & { sourceId?:number; anchor?:string; targetId?:string; originalText?:string; references?:{id:string;label:string}[] };
 export type ReadingSection = { id:string; title:string; group:string; blocks:ReadingBlock[] };
@@ -22,17 +23,17 @@ function commonName(block:ReportBlock){
 }
 
 function groupFor(title:string) {
-  if(/이용 안내|근거와 검증 범위|집계 범위|목표 CPA|숫자 3개/.test(title))return '04  참고·측정 기준';
-  if(/가이드북|공통 편집 안내/.test(title))return '03  원문 위치·편집 안내';
-  if(/GEO 질문·답변|콘텐츠 발견성|핵심 개선 이슈|진단 체크리스트|이전·현재 비교/.test(title))return '01  진단 결과·확인 근거';
-  if(/가이드|설정·설치 방법|TO-BE|과제|할 일|보완 목록|실행 보드|개선 전·후|수정 위치|로드맵|카피 개선|키워드 연결 기회|다음 단계/.test(title))return '02  수정안·실행 계획';
-  return '01  진단 결과·확인 근거';
+  if(/이용 안내|근거와 검증 범위|집계 범위|목표 CPA|숫자 3개/.test(title))return PDF_READING_GROUPS[3];
+  if(/가이드북|공통 편집 안내/.test(title))return PDF_READING_GROUPS[2];
+  if(/GEO 질문·답변|콘텐츠 발견성|핵심 개선 이슈|진단 체크리스트|이전·현재 비교/.test(title))return PDF_READING_GROUPS[0];
+  if(/가이드|설정·설치 방법|TO-BE|과제|할 일|보완 목록|실행 보드|개선 전·후|수정 위치|로드맵|카피 개선|키워드 연결 기회|다음 단계/.test(title))return PDF_READING_GROUPS[1];
+  return PDF_READING_GROUPS[0];
 }
 
 /** Exact repeated instructions are printed once. All unique source wording survives. */
 export function buildReadingSections(report:MarketingReport):ReadingSection[] {
   const sections:ReadingSection[]=[];
-  let section:ReadingSection={id:'report-details',title:'분석 대상과 결과',group:'01  진단 결과·확인 근거',blocks:[]};
+  let section:ReadingSection={id:'report-details',title:'분석 대상과 결과',group:PDF_READING_GROUPS[0],blocks:[]};
   sections.push(section);
   buildReportDocument(report).forEach((block,sourceId)=>{
     if(block.kind==='heading'){
@@ -59,7 +60,7 @@ export function buildReadingSections(report:MarketingReport):ReadingSection[] {
     }
     flush();guide.blocks=rewritten;
     if(common.size){
-      const shared:ReadingSection={id:'common-editing-guide',title:'공통 편집 안내·공식 출처',group:'03  원문 위치·편집 안내',blocks:[
+      const shared:ReadingSection={id:'common-editing-guide',title:'공통 편집 안내·공식 출처',group:PDF_READING_GROUPS[2],blocks:[
         {kind:'heading',text:'공통 편집 안내·공식 출처'},
         {kind:'body',text:'여러 항목에 반복되던 동일한 절차와 공식 출처를 한곳에 모았습니다. 각 항목의 G 번호를 누르면 해당 안내로 이동합니다. 원문과 수정안은 각 항목에 그대로 남겨 두었습니다.'},
       ]};
@@ -83,7 +84,26 @@ export function buildReadingSections(report:MarketingReport):ReadingSection[] {
       else {const id='detail-source-'+b.sourceId;b.anchor=id;repeated.set(value,{id,label:item+(f?' · '+f.label.replace(/[:：]$/,''):'')});}
     }
   }
-  return sections;
+  const handoffs=buildDeveloperHandoffs(report);
+  return sections.flatMap((section,index)=>{
+    if(sections[index+1]?.group===section.group)return [section];
+    const handoff=handoffs.find(item=>item.group===section.group);
+    if(!handoff)return [section];
+    const blocks:ReadingBlock[]=[];
+    if(handoff.targetUrl)blocks.push({kind:'body',text:'진단 대상 열기 · '+handoff.targetUrl,href:handoff.targetUrl});
+    for(const task of handoff.requests)blocks.push(
+      {kind:'subheading',text:task.title},
+      {kind:'body',text:'확인 근거: '+task.basis},
+      {kind:'body',text:'수정 위치: '+task.location},
+      {kind:'body',text:'수정 요청: '+task.request},
+      {kind:'body',text:'완료 기준: '+task.done},
+    );
+    for(const title of handoff.details){
+      const reference=sections.find(item=>item.title===title);
+      if(reference)blocks.push({kind:'body',text:'보고서 상세 보기 · '+reference.title,targetId:reference.id});
+    }
+    return [section,{id:`developer-handoff-${handoff.group.slice(0,2)}`,title:'개발자 전달 사항 · '+handoff.topic,group:handoff.group,blocks}];
+  });
 }
 
 function field(block:ReadingBlock) {
@@ -203,9 +223,21 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
     }
     return Math.min(height,740);
   }
+  function handoffCardHeight(blocks:ReadingBlock[],index:number){
+    const title=blocks[index];
+    const headingHeight=lines(title.text,{...body,size:16,weight:700,lineHeight:25},W-24).length*25+22;
+    const fields=blocks.slice(index+1,index+5);
+    const height=headingHeight+fields.reduce((sum,block)=>sum+bodyStartHeight(block),0)+8;
+    return height<=480?Math.max(height,headingHeight+80):Math.max(followingHeight(blocks,index)+8,headingHeight+80);
+  }
   for(const section of sections){
     const sameGroup=current?.group===section.group;current=section;
-    const opening=Math.max(200,lines(section.title,heading).length*heading.lineHeight+59+(section.title==='영역별 점수'?220:followingHeight(section.blocks,0)));
+    const isHandoff=section.id.startsWith('developer-handoff-');
+    const firstCard=isHandoff?section.blocks.findIndex(block=>block.kind==='subheading'):-1;
+    const minContent=firstCard>=0
+      ?section.blocks.slice(0,firstCard).reduce((sum,block)=>sum+bodyStartHeight(block),0)+handoffCardHeight(section.blocks,firstCard)
+      :section.title==='영역별 점수'?220:followingHeight(section.blocks,0);
+    const opening=Math.max(200,lines(section.title,heading).length*heading.lineHeight+59+minContent);
     if(!page||!sameGroup||y+opening>BOTTOM)newPage();
     else{
       y+=22;rect(X,y,W,1,C.line);y+=17;
@@ -226,7 +258,7 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
     for(let i=0;i<section.blocks.length;i++){
       const block=section.blocks[i];
       if(block.kind==='heading')continue; // Literal section heading is printed in the running title.
-      if(block.kind==='subheading')ensure(followingHeight(section.blocks,i));
+      if(block.kind==='subheading')ensure(isHandoff?handoffCardHeight(section.blocks,i):followingHeight(section.blocks,i));
       if(block.references){renderReferences(block);continue;}
       const pair=comparison(block,section.blocks[i+1]);
       if(pair){
@@ -273,7 +305,7 @@ export function buildReadingContents(sections:ReadingSection[],details:VisualPdf
     function text(value:string,x:number,top:number,width:number,s:PdfTextStyle,targetId?:string){for(const row of wrapPdfText(value,s,measure,width)){page.lines.push({...s,text:row.text,x,y:top,width:measure(row.text,s),targetId});top+=s.lineHeight;}return top;}
     function newPage(){page={lines:[],shapes:[],title:'보고서 목차',anchors:pages.length?[]:['report-contents']};pages.push(page);column=0;part='';
       text('RESULTS → ACTIONS → EVIDENCE',48,48,694,small);text('보고서 읽는 순서',48,77,694,{...heading,size:27,lineHeight:38});
-      text('결과를 먼저 확인하고, 필요한 수정안과 원문 위치로 이동하세요. 제목·쪽 번호를 누르면 해당 내용이 열립니다.',48,126,694,small);
+      text('각 큰 섹션 끝에 개발자 전달 사항이 있습니다. 제목이나 쪽 번호를 눌러 수정 요청과 완료 기준을 확인하세요.',48,126,694,small);
       text(`차트와 인포그래픽  ${directoryCount+2}–${directoryCount+prefixPages}쪽`,48,166,694,{...small,weight:700,color:C.blue},'visual-report-start');y=207;}
     newPage();
     for(const section of sections){
