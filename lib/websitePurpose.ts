@@ -128,7 +128,9 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const explicitStore=role==='retail'&&/쇼핑몰|공식몰|전문몰|온라인\s*(?:몰|스토어|판매)/.test(providerIdentity(data));
   const commerce=explicitStore||purchase.length>0&&!localPayment||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
   const fortuneDescription=data.description||data.ogDescription||'';
-  const fortuneOverview=!business&&!candidate&&!providerClaim&&!role&&!commerce&&hasFortuneOverview(fortuneDescription);
+  const serviceAction=actions.some(a=>actionPatterns.booking.test(a.text)||actionPatterns.contact.test(a.text)||actionPatterns.application.test(a.text));
+  const topicOnly=!candidate||candidate==='service'&&!sector&&!serviceAction;
+  const fortuneOverview=!business&&topicOnly&&!providerClaim&&!role&&!commerce&&hasFortuneOverview(fortuneDescription);
   const declaredIndustry=fortuneOverview?{category:'fortune' as const,evidence:{text:short(fortuneDescription),locator:data.description?'meta[name="description"]':'meta[property="og:description"]'}}:providerClaim;
   const kind:PurposeKind=business?.kind||(fortuneOverview?'content':commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||declaredKind||(declaredIndustry?'service':'unknown'));
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
