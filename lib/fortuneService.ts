@@ -1,5 +1,6 @@
-import {classificationText,offeringClauses} from './websiteIdentity';
+import {classificationText,isSecondarySection,offeringClauses} from './websiteIdentity';
 import type {BusinessProfile} from './businessContext';
+import {sameSite} from './siteIdentity';
 
 export const fortuneTopic=/사주(?!\s*(?:팔기|조합|매입|주식|펀드))|만세력|명리학|명리\s*상담|타로|신점|운세|점성술|(?:사주|연애|결혼|커플|속)\s*궁합|철학관|역술/;
 export const fortuneKeywords=['신년 사주','신년운세','무료 만세력','오늘의 운세','무료 사주','사주 풀이','사주 궁합','사주 상담','타로 상담','전화 사주','방문 상담','만세력','타로','신점','운세','사주','궁합'];
@@ -10,7 +11,13 @@ const consult=/(?:1\s*[:대]\s*1|상담사|역술인|역술가|선생님과|예�
 const digital=/(?:무료|온라인)\s*(?:사주|타로|운세)\s*(?:계산기|뽑기|풀이\s*(?:도구|서비스))|만세력\s*(?:계산|보기)|무료\s*만세력|(?:디지털|기본|프리미엄|유료|AI)\s*리포트|(?:사주|운세|궁합)\s*(?:분석\s*)?리포트|무료\s*티저|자동\s*(?:분석|생성|풀이)|사주\s*결과|(?:생년월일|출생\s*시간).{0,28}(?:입력|풀이|결과|확인)|(?:웹사이트|앱|브라우저)에서.{0,18}(?:읽|보|열람)|(?:운세|사주|만세력)\s*(?:앱|어플)|만세력(?:으로|을?\s*통해).{0,22}(?:분석|계산)/;
 const thirdParty=/(?:사주|타로|운세|신점|점집|철학관|역술인|상담사).{0,14}(?:모음|디렉터리|목록|순위|비교\s*사이트|매칭\s*플랫폼)|(?:점집|철학관|상담소)\s*(?:추천|찾기)|(?:방문|상담)\s*후기\s*모음/;
 
-export function detectFortuneService(input:{url:string;headings:string;description:string;body:string;actions:string[]}){
+export function firstPartyFortuneTools(url:string,elements:readonly {kind:string;text:string;href?:string;region?:string;heading?:string;section?:{label:string}}[]=[]){
+  const labels=[/(?:^|\s)만세력(?:\s*(?:앱|도구|계산기))?$/u,/(?:^|\s)AI(?:\s*(?:사주|운세|풀이))?$/iu,/운세\s*테스트$/u];
+  return elements.filter(el=>el.kind==='cta'&&el.href&&el.href.split('#')[0]!==url.split('#')[0]&&sameSite(el.href,url)&&
+    !['header','nav','footer'].includes(el.region||'')&&!isSecondarySection(el.section?.label||el.heading||'',el.text,el.href)&&labels.some(label=>label.test(el.text.trim())));
+}
+
+export function detectFortuneService(input:{url:string;headings:string;description:string;body:string;actions:string[];linkedTools?:boolean}){
   const path=new URL(input.url).pathname;
   if(/\/(?:blog|news|articles?|posts?|columns?|reviews?|guide|legal)(?:\/|$)/i.test(path))return;
   const active=(text:string)=>offeringClauses(text).filter(s=>!/(?:상담|예약|풀이).{0,8}(?:종료|중단|미제공|불가|하지\s*않)|(?:^|\s)(?:관련글|고객사|참고\s*자료)\s*[:：]/.test(s)).map(classificationText).join('\n');
@@ -22,7 +29,7 @@ export function detectFortuneService(input:{url:string;headings:string;descripti
   const isAutomated=/(?:AI|인공지능)\s*(?:타로|사주|상담)/i.test(primary);
   if(direct(primary)&&!digital.test(primary)&&!isAutomated)return 'fortune_consultation';
   const hasStart=input.actions.some(a=>fortuneStart.test(a)&&(!/^시작하기$/.test(a)||/사주\s*풀이|운세|만세력|신년\s*사주/.test(source)));
-  if(digital.test(source)||isAutomated||hasStart)return 'fortune_digital';
+  if(digital.test(source)||isAutomated||hasStart||(input.linkedTools&&/사주|만세력/u.test(primary)&&/운세|궁합|타로/u.test(primary)))return 'fortune_digital';
   if(direct(body))return 'fortune_consultation';
 }
 

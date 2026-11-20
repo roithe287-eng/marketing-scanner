@@ -12,6 +12,7 @@ import {providerIdentity,isSecondarySection,ownBusinessRole,classificationText,p
 import {keywordList,withoutThirdPartyRoles} from './industryLanguage';
 import {placeFromDescription} from './placeIndustry';
 import {sameSite} from './siteIdentity';
+import {firstPartyFortuneTools} from './fortuneService';
 
 function correctedSector(page:DiagnosticPage,capturedBody:readonly string[]=[]){
   const old=page.localPlaceEvidence;
@@ -50,7 +51,8 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
     [page.title,page.description,...page.h1].some(v=>withoutThirdPartyRoles(v)!==v);
   const reviewClaim=!!previous&&!previous.declaredIndustry&&!previous.business&&!previous.sector&&(!old||old.sector==='local')&&
     [page.title,page.description,...page.h1].some(v=>directIndustries(v).length>0);
-  if(!changedPlace&&!needsApparel&&!reviewPurpose&&!reviewClaim)return report;
+  const reviewFortune=previous?.kind==='unknown'&&firstPartyFortuneTools(page.finalUrl,page.siteEditing?.elements).length>=2;
+  if(!changedPlace&&!needsApparel&&!reviewPurpose&&!reviewClaim&&!reviewFortune)return report;
 
   const pages=diagnostics?.pages.map(p=>{
     const item=p.localPlaceEvidence, next=p===root?sector:correctedSector(p);
@@ -74,7 +76,8 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
   const data={...page,url:report.url,ogDescription:'',isJsHeavy:report.answerContentPlan?.coverage==='limited',businessDocuments:documents,
     productContext:report.productContext??undefined,communityContext:report.sitePurpose?.community,diagnosticSeed:current?{page:current,links:[]}:undefined};
   const purpose=analyzeWebsitePurpose(data);
-  const changedPurpose=reviewPurpose&&(purpose.business?.id!==previous?.business?.id||purpose.sector?.id!==previous?.sector?.id);
+  const changedPurpose=(reviewPurpose&&(purpose.business?.id!==previous?.business?.id||purpose.sector?.id!==previous?.sector?.id))||
+    (reviewFortune&&purpose.business?.id==='fortune_digital');
   if(!changedPlace&&!changedPurpose&&!(reviewClaim&&purpose.declaredIndustry)&&purpose.business?.id!=='custom_apparel')return report;
   purpose.capturedAt=report.sitePurpose?.capturedAt||page.capturedAt;
   const book=nonCommercePlaybook(purpose,providerIdentity(page),current?.localPlaceEvidence);
@@ -82,7 +85,7 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
   const staleBenchmark=!!report.industryBenchmark&&(changedPlace||changedPurpose||reviewClaim&&!!purpose.declaredIndustry&&purpose.declaredIndustry.category!==report.industryBenchmark.category)||report.industryBenchmark?.category==='medical'&&book.id!=='medical'&&current?.localPlaceEvidence?.sector!=='medical';
   const comparison=report.competitorAnalysis;
   return {...report,sitePurpose:purpose,
-    ...((changedPlace||changedPurpose)&&comparison?.ourSite?.scope&&[old?.sector,previous?.business?.id,previous?.sector?.id].includes(comparison.ourSite.scope.profile)?
+    ...((changedPlace||changedPurpose)&&comparison?.ourSite?.scope&&[old?.sector,previous?.business?.id,previous?.sector?.id,previous?.kind==='unknown'?'unknown':undefined].includes(comparison.ourSite.scope.profile)?
       {competitorAnalysis:null,competitorStatus:{status:'unavailable' as const,message:'업종을 바로잡아 이전 업종으로 수집한 경쟁사 비교를 제외했습니다.'}}:{}),
     ...(report.evidenceReview&&report.oneLineSummary.startsWith('HTML 기본 항목 ')?{oneLineSummary:`HTML 기본 항목 ${report.evidenceReview.assessed}개 중 ${report.evidenceReview.passed}개 충족 · ${purpose.label} · ${purpose.goal.label} 동선과 실제 화면은 별도 확인이 필요합니다.`}:{}),
     ...(diagnostics&&pages?{siteDiagnostics:{...diagnostics,pages,...(changedPlace?{localPlaceLookup:undefined}:{}),

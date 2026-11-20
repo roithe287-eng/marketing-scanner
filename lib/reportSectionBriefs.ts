@@ -4,6 +4,7 @@ import {buildPageEdits} from './reportExecution';
 import type {SourceLibrary} from './reportContent';
 import {editingPlatform} from './siteGuidebook';
 import {readinessItems} from './reportVisuals';
+import {reportGoal} from './reportGoal';
 
 /** A section's opening line uses the same snapshot and denominators as its detailed view. */
 export function buildSectionBriefs(report: MarketingReport, data: ReportInsights, sources: SourceLibrary): Record<string,string> {
@@ -19,6 +20,7 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
   const checks = report.checklist || [];
   const firstIssue = report.criticalIssues[0];
   const firstGap = data.gaps[0];
+  const goal=reportGoal(report.sitePurpose);
   return {
     'overview-questions': answers?.questions.length
       ? `${answers.mode==='ai-assisted'?'추천 질문':'질문 가이드'} ${answers.questions.length}개입니다. 원문으로 답할 수 있는 질문과 추가 확인이 필요한 질문을 살펴보세요.`
@@ -79,7 +81,7 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
     'actions-schedule': schedule.immediately.length+schedule.thisWeek.length+schedule.thisMonth.length
       ? '작업을 시작할 시점과 먼저 끝낼 항목을 확인하세요. 연결된 개선 작업에는 적용 순서가 있습니다.'
       : '시점별로 배정된 작업이 없습니다. 빠른 개선 작업이 저장된 경우 이 섹션에서 확인할 수 있습니다.',
-    'actions-kpi': '방문 수와 문의·구매 완료 수를 입력해 목표에 필요한 유입을 계산하세요. 광고 예산은 별도로 비교할 수 있습니다.',
+    'actions-kpi': `방문 수와 ${goal?`‘${goal.label}’까지 이어진 방문 수`:'문의·구매를 완료한 방문 수'}로 목표에 필요한 유입을 계산하세요. 광고 예산은 별도로 비교할 수 있습니다.`,
     'actions-geo': data.questions.length
       ? `관측 질문 ${data.questions.length}개를 바탕으로 수정할 페이지와 다시 확인할 질문을 정하세요.`
       : '자사 페이지에 질문·답변·근거를 준비하고 같은 질문으로 다시 확인하세요.',

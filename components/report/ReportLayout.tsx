@@ -25,6 +25,7 @@ import {buildExecutionPlan,buildPageEdits} from '@/lib/reportExecution';
 import {buildSourceLibrary} from '@/lib/reportContent';
 import {buildSectionBriefs} from '@/lib/reportSectionBriefs';
 import {buildReportDiagrams} from '@/lib/reportDiagrams';
+import {reportGoal} from '@/lib/reportGoal';
 import {ReportReadingKey} from './ReportSectionDiagram';
 import React,{useEffect,useMemo,useState} from 'react';
 import type {MarketingReport,DiagnosisBaseline} from '@/lib/reportSchema';
@@ -152,7 +153,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         {id:'actions-issues',label:'핵심 이슈',children:report.criticalIssues.length?<div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} taskAnchor={issueTasks.get(`critical-${index}`)} key={`${issue.title}-${index}`}/>)}</div>:<p className="report-empty">저장된 핵심 이슈가 없습니다. ‘영역별 근거’에서 실제 수집 범위를 확인할 수 있습니다.</p>},
         {id:'actions-copy',label:'첫 화면 문구 조합',children:<CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis} pageEdits={pageEdits}/>},
         {id:'actions-schedule',label:'실행 일정',children:<><PriorityMatrix roadmap={report.priorityRoadmap} quickWins={report.quickWinsDetailed} legacyQuickWins={report.quickWins}/>{report.quickWinsDetailed?.length?<QuickWinsFlow quickWins={report.quickWinsDetailed}/>:report.quickWins?.length?<section className="report-card"><h3>저장된 빠른 개선 작업</h3><ol className="report-legacy-wins">{report.quickWins.map((w,i)=><li key={i} id={`report-quick-win-${i}`}>{w}</li>)}</ol></section>:null}</>},
-        {id:'actions-kpi',label:'목표·예산 계산',children:<><GrowthKpiPanel key={`kpi:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} targetUrl={report.url}/><AdWasteCalculator/></>},
+        {id:'actions-kpi',label:'목표·예산 계산',children:<><GrowthKpiPanel key={`kpi:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} targetUrl={report.url} goal={reportGoal(report.sitePurpose)}/><AdWasteCalculator/></>},
         {id:'actions-geo',label:'AI 답변 보강',children:<><GeoFocusPanel key={report.llmCitationTest?.questionSetId||report.url} report={report} linkToDetails/><CitationActionPlan citation={report.llmCitationTest}/></>},
       ]}/>
     </Chapter>
