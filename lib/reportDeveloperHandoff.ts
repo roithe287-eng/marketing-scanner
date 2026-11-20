@@ -4,7 +4,7 @@ import {buildExecutionPlan,buildPageEdits} from './reportExecution';
 import {reportGoal} from './reportGoal';
 import {buildReportInsights} from './reportInsights';
 import type {MarketingReport} from './reportSchema';
-import {buildSiteGuide} from './siteGuidebook';
+import {buildSiteGuide,guideTopic} from './siteGuidebook';
 
 export const PDF_READING_GROUPS=[
   '01  진단 결과·확인 근거',
@@ -57,6 +57,7 @@ export function buildDeveloperHandoffs(report:MarketingReport):DeveloperHandoff[
     });
   }
 
+  const pageEdits=buildPageEdits(report);
   const tasks=buildExecutionPlan(report,insights).tasks;
   const ranked=[...tasks.filter(t=>t.owner==='developer'),...tasks.filter(t=>t.owner!=='developer')];
   const seen=new Set<string>();
@@ -67,10 +68,13 @@ export function buildDeveloperHandoffs(report:MarketingReport):DeveloperHandoff[
   }).slice(0,3).map((task):Request=>{
     const account=task.guideScope==='account';
     const confirm=task.status==='review'||account;
+    const topic=guideTopic(task.title);
+    const setting=topic==='content'?guideTopic(task.instructions?.[0]||task.action):topic;
+    const edit=pageEdits.find(item=>item.id===setting&&(setting==='title'||setting==='description'));
     return {
       title:`${confirm?'먼저 확인':'보완 검토'} · ${task.title}`,
       basis:task.evidence||`${task.source}에 세부 근거가 저장되지 않았습니다.`,
-      location:account?'해당 운영 계정 · 운영 담당자와 확인':task.location,
+      location:account?'해당 운영 계정 · 운영 담당자와 확인':edit?.location||task.location,
       request:(confirm?'실제 상태와 담당 권한을 먼저 확인해 주세요. ':'확인한 범위에서 적용안을 검토해 주세요. ')+(task.instructions?.join('\n')||task.action||'상세 실행 보드의 원문을 확인해 주세요.'),
       done:task.completion,
     };
@@ -80,7 +84,7 @@ export function buildDeveloperHandoffs(report:MarketingReport):DeveloperHandoff[
     request:'운영 담당자와 현재 화면을 확인하고 수정할 항목과 담당을 정해 주세요.',done:'확인한 화면, 변경 항목, 담당자와 테스트 방법을 공유해 주세요.',
   });
 
-  const locations=buildPageEdits(report).filter(edit=>edit.id==='title'||edit.id==='description').map((edit):Request=>{
+  const locations=pageEdits.filter(edit=>edit.id==='title'||edit.id==='description').map((edit):Request=>{
     const guide=buildSiteGuide(report,{title:edit.label,current:edit.before,topic:edit.id==='title'?'title':'description'});
     const selectors=[...new Set(guide.settings.map(item=>item.selector).filter(Boolean))];
     const changed=!!edit.after&&edit.before!==edit.after;

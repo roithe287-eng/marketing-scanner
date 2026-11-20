@@ -223,9 +223,21 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
     }
     return Math.min(height,740);
   }
+  function handoffCardHeight(blocks:ReadingBlock[],index:number){
+    const title=blocks[index];
+    const headingHeight=lines(title.text,{...body,size:16,weight:700,lineHeight:25},W-24).length*25+22;
+    const fields=blocks.slice(index+1,index+5);
+    const height=headingHeight+fields.reduce((sum,block)=>sum+bodyStartHeight(block),0)+8;
+    return height<=480?Math.max(height,headingHeight+80):Math.max(followingHeight(blocks,index)+8,headingHeight+80);
+  }
   for(const section of sections){
     const sameGroup=current?.group===section.group;current=section;
-    const opening=Math.max(200,lines(section.title,heading).length*heading.lineHeight+59+(section.title==='영역별 점수'?220:followingHeight(section.blocks,0)));
+    const isHandoff=section.id.startsWith('developer-handoff-');
+    const firstCard=isHandoff?section.blocks.findIndex(block=>block.kind==='subheading'):-1;
+    const minContent=firstCard>=0
+      ?section.blocks.slice(0,firstCard).reduce((sum,block)=>sum+bodyStartHeight(block),0)+handoffCardHeight(section.blocks,firstCard)
+      :section.title==='영역별 점수'?220:followingHeight(section.blocks,0);
+    const opening=Math.max(200,lines(section.title,heading).length*heading.lineHeight+59+minContent);
     if(!page||!sameGroup||y+opening>BOTTOM)newPage();
     else{
       y+=22;rect(X,y,W,1,C.line);y+=17;
@@ -246,7 +258,7 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
     for(let i=0;i<section.blocks.length;i++){
       const block=section.blocks[i];
       if(block.kind==='heading')continue; // Literal section heading is printed in the running title.
-      if(block.kind==='subheading')ensure(followingHeight(section.blocks,i));
+      if(block.kind==='subheading')ensure(isHandoff?handoffCardHeight(section.blocks,i):followingHeight(section.blocks,i));
       if(block.references){renderReferences(block);continue;}
       const pair=comparison(block,section.blocks[i+1]);
       if(pair){

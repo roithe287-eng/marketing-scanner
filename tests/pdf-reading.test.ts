@@ -88,7 +88,9 @@ test('developer handoffs close each of the four PDF groups with actual, linked r
     const fields=handoff.blocks.filter(block=>/^(확인 근거|수정 위치|수정 요청|완료 기준): /u.test(block.text));
     assert.equal(fields.length,handoff.blocks.filter(block=>block.kind==='subheading').length*4);
     assert.ok(handoff.blocks.some(block=>block.targetId&&sections.some(section=>section.id===block.targetId)));
-    assert.ok(pages.some(page=>page.anchors?.includes(handoff.id)));
+    const openingPage=pages.find(page=>page.anchors?.includes(handoff.id))!;
+    assert.ok(openingPage.lines.some(line=>line.text==='확인 근거:'),'the directory lands beside the first request');
+    assert.ok(openingPage.lines.some(line=>line.text==='완료 기준:'),'the first complete request fits on the opening page');
   }
 });
 
