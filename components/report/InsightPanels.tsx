@@ -89,8 +89,46 @@ function MessageSignal({match}:{match:string|null|undefined}) {
   const state=match===undefined?'unknown':match?'found':'absent';
   return <span className={`report-message-signal is-${state}`}><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/>{state==='found'?<path d="m5 8 2 2 4-4"/>:state==='absent'?<path d="M5.5 8h5"/>:<><path d="M6.5 5.7a1.5 1.5 0 0 1 3 .3c0 1-1.5 1-1.5 2"/><path d="M8 10.5h.01"/></>}</svg><span>{match===undefined?'미확인':match||'미탐지'}</span></span>;
 }
+function messageReviewLabel(row:ReportInsights['messageRows'][number]) {
+  if(row.collectionFailed)return '페이지 수집 실패 · 비교 보류';
+  if(row.available)return '제목·설명 모두 확인';
+  return row.fieldCount?'제목·설명 중 1개 확인 · 비교 보류':'수집 미확인 · 제목과 설명 없음';
+}
+
 export function MessageMap({data}:{data:ReportInsights}) {
-  return <article className="report-card" aria-label="경쟁사 메시지 비교 지도"><Heading label="MESSAGE COVERAGE" title="자사와 비교 후보가 강조하는 메시지" note={insightNotes.messages}/><div className="report-message-legend" aria-label="메시지 탐지 상태 범례"><MessageSignal match="표현 탐지"/><MessageSignal match={null}/><MessageSignal match={undefined}/></div><div className="report-table-scroll"><table className="report-message-table"><caption className="sr-only">제목·메타 설명에 저장된 메시지 표현 비교</caption><thead><tr><th scope="col">사이트</th>{messageThemes.map(t=><th scope="col" key={t.label}>{t.label}</th>)}</tr></thead><tbody>{data.messageRows.map((r,i)=><tr key={`${r.name}-${i}`} className={r.isOwn?'is-own':''}><th scope="row">{r.name}<small>{r.available?`${r.fieldCount}/2개 필드`:'수집 미확인'}</small></th>{r.cells.map(c=><td key={c.label} className={c.match?'has-match':''}><MessageSignal match={c.match}/></td>)}</tr>)}</tbody></table></div><div className="report-message-mobile">{data.messageRows.map((r,i)=><div key={`${r.name}-${i}`}><h4>{r.name} <span>{r.available?`${r.fieldCount}/2개 필드`:'수집 미확인'}</span></h4><dl>{r.cells.map(c=><div key={c.label}><dt>{c.label}</dt><dd><MessageSignal match={c.match}/></dd></div>)}</dl></div>)}</div><div className="report-callout"><strong>자사 문구에서 검토할 표현</strong>{data.messageOpportunities.length?<p>{data.messageOpportunities.map(o=>`${o.label} (${o.total}개 수집 후보 중 ${o.count}개에서 탐지)`).join(' · ')}. 실제 제공하는 가치와 맞는 항목만 검토하세요.</p>:<p>현재 저장된 제목·설명에서 제안할 공통 표현이 없거나, 비교할 정보가 충분하지 않습니다.</p>}</div><details className="report-inline-details"><summary>비교에 사용한 제목·설명 보기</summary>{data.messageRows.map((r,i)=><div className="report-evidence" key={`${r.name}-${i}`}><strong>{r.name}</strong><p>{r.available?r.evidence:'제목·메타 설명을 수집하지 못했습니다.'}</p>{r.url&&<Link url={r.url}>페이지 확인</Link>}</div>)}</details></article>;
+  const comparable=data.messageRows.filter(row=>!row.isOwn&&row.available).length;
+  return <article className="report-card" aria-label="경쟁사 메시지 비교 지도">
+    <Heading label="MESSAGE COVERAGE" title="제목과 설명에서 찾은 고객 선택 정보" note={insightNotes.messages}/>
+    <p className="report-note">{data.competitorCount?`비교 후보 ${data.competitorCount}곳 중 제목과 설명을 모두 확보한 곳은 ${comparable}곳입니다.`:'저장된 외부 비교 후보가 없습니다.'}</p>
+    <div className="report-message-legend" aria-label="메시지 탐지 상태 범례"><MessageSignal match="표현 탐지"/><MessageSignal match={null}/><MessageSignal match={undefined}/></div>
+    <div className="report-table-scroll"><table className="report-message-table">
+      <caption className="sr-only">제목·메타 설명에 저장된 메시지 표현 비교</caption>
+      <thead><tr><th scope="col">사이트</th>{messageThemes.map(t=><th scope="col" key={t.label}>{t.label}</th>)}</tr></thead>
+      <tbody>{data.messageRows.map((row,i)=><tr key={`${row.name}-${i}`} className={row.isOwn?'is-own':''}>
+        <th scope="row">{row.name}<small>{messageReviewLabel(row)}</small></th>
+        {row.cells.map(cell=><td key={cell.label} className={cell.match?'has-match':''}><MessageSignal match={cell.match}/></td>)}
+      </tr>)}</tbody>
+    </table></div>
+    <div className="report-message-mobile">{data.messageRows.map((row,i)=><div key={`${row.name}-${i}`}>
+      <h4>{row.name} <span>{messageReviewLabel(row)}</span></h4>
+      <dl>{row.cells.map(cell=><div key={cell.label}><dt>{cell.label}</dt><dd><MessageSignal match={cell.match}/></dd></div>)}</dl>
+    </div>)}</div>
+    <div className="report-callout"><strong>우리 문구에서 보완할 정보</strong>
+      {data.messageOpportunities.length?<ul className="report-message-opportunities">{data.messageOpportunities.map(o=><li key={o.label}><strong>{o.label}</strong><span>비교 가능한 후보 {o.total}곳 중 {o.count}곳에서 확인</span></li>)}</ul>:<p>현재 저장된 제목·설명에서 제안할 공통 표현이 없거나, 비교할 정보가 충분하지 않습니다.</p>}
+      {data.messageOpportunities.length>0&&<p>실제 제공하는 내용과 연결되는 항목을 먼저 검토하세요.</p>}
+    </div>
+    <details className="report-inline-details"><summary>업체별 제목·설명 확인</summary>
+      {data.messageRows.map((row,i)=><div className="report-evidence" key={`${row.name}-${i}`}>
+        <strong>{row.name}</strong>
+        <p className="report-note">{messageReviewLabel(row)}</p>
+        {row.fieldCount>0&&<dl className="report-message-originals">
+          <div><dt>페이지 제목</dt><dd>{row.title||'저장된 원문 없음'}</dd></div>
+          <div><dt>메타 설명</dt><dd>{row.description||'저장된 원문 없음'}</dd></div>
+        </dl>}
+        {row.url&&<Link url={row.url}>{row.name} 페이지 열기</Link>}
+      </div>)}
+    </details>
+  </article>;
 }
 export function KeywordOpportunities({data,compact=false}:{data:ReportInsights;compact?:boolean}) {
  const [selected,setSelected]=useState('');

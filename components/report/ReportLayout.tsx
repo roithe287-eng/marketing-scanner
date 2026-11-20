@@ -7,6 +7,7 @@ import SiteContentOverview from './SiteContentOverview';
 import ReportHeader from './ReportHeader';
 import ReportRetentionNotice from './ReportRetentionNotice';
 import ReportEvidenceGuide from './ReportEvidenceGuide';
+import ReportCoverageWarnings from './ReportCoverageWarnings';
 import WebsitePurposePanel from './WebsitePurposePanel';
 import NonCommerceSectorPanel from './NonCommerceSectorPanel';
 import {showProductCollection} from '@/lib/websitePurpose';
@@ -83,11 +84,12 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
   const searchTarget=report.pageEvidence?.finalUrl||report.url;
   const productPages=report.siteDiagnostics?.pages.filter(page=>page.productOffer).slice(0,3)||[];
   if(expired)return <section className="report-card" role="status"><h2 className="text-xl font-bold">보고서 보관 기간이 만료되었습니다</h2><p className="mt-3">이 결과에 포함된 보관·비교 자료는 더 이상 열람할 수 없습니다. 새 진단으로 현재 상태를 확인해 주세요.</p><a className="jm-button mt-4" href="/">새로 진단하기</a></section>;
+  const productContextInScope=showProductCollection(report.sitePurpose)?report.productContext||undefined:undefined;
   const scope=<>
+    <ReportCoverageWarnings warnings={report.analysisWarnings}/>
     {report.sitePurpose&&<Disclosure title="페이지 목적별 상세 점검" note="대상·제공 범위·다음 행동의 근거"><WebsitePurposePanel purpose={report.sitePurpose}/></Disclosure>}
     <Disclosure title="수집 근거와 측정 범위" note="관측값과 실제 화면 확인 항목"><ReportEvidenceGuide report={report}/><CollectionCoverage data={data}/></Disclosure>
-    {report.productContext&&showProductCollection(report.sitePurpose)&&<section className="report-card" aria-label="상품 정보 보완"><h3>공개 경로에서 확인한 상품 정보</h3><ProductCollection context={report.productContext}/></section>}
-    {!!report.analysisWarnings?.length&&<aside className="report-empty" role="status">{report.analysisWarnings.map(w=><p key={w.key}>{w.label} · {w.status==='timeout'?'응답 시간 초과':w.status==='unavailable'?'수집되지 않음':'일시적 오류'}</p>)}</aside>}
+    {productContextInScope&&<section id="report-scope-product-originals" className="report-card" aria-label="상품 정보 보완"><h3>공개 경로에서 확인한 상품 정보</h3><ProductCollection context={productContextInScope}/></section>}
   </>;
   return <SiteGuideProvider report={report}><ReportWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`}><div className="report-v2 report-focused report-continuous" id="report-area">
     <div className="report-opening-radar" id="report-top"><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview} featured siteName={report.meta?.siteName||report.meta?.domain||report.url}/></div>
@@ -132,9 +134,9 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     </Chapter>
     <Chapter id="competition" number="04" title="비교 후보와 우리 페이지의 차이" note="먼저 같은 고객을 대상으로 하는지 확인하세요. 그다음 제목·설명·첫 화면을 비교하세요.">
       <ReportSections chapter="competition" diagrams={diagrams} briefs={briefs} items={[
-        {id:'competition-map',label:'비교 지도',children:<>{(competitorLoading||report.competitorStatus?.status==='pending')&&<p className="report-empty" role="status">경쟁사 정보를 수집 중입니다.</p>}<CompetitorStatusNotice report={report} onRetry={onRetry}/><CompetitorLandscape report={report}/></>},
-        {id:'competition-messages',label:'메시지 비교',children:<MessageMap data={data}/>},
-        ...(report.competitorAnalysis&&(data.competitorCount>0||report.competitorAnalysis.filtering)?[{id:'competition-pages',label:'후보 페이지 원문',children:<CompetitorComparison competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/>}]:[]),
+        {id:'competition-map',label:'후보 선정과 비교 지도',children:<>{(competitorLoading||report.competitorStatus?.status==='pending')&&<p className="report-empty" role="status">경쟁사 정보를 수집 중입니다.</p>}<CompetitorStatusNotice report={report} onRetry={onRetry} candidateDetailsAvailable={!!report.competitorAnalysis}/><CompetitorLandscape report={report} productContextInScope={productContextInScope} linkToCandidateCards/></>},
+        {id:'competition-messages',label:'제목·설명 표현 비교',children:<MessageMap data={data}/>},
+        ...(report.competitorAnalysis&&(data.competitorCount>0||report.competitorAnalysis.filtering)?[{id:'competition-pages',label:'후보별 페이지 자료',children:<CompetitorComparison competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/>}]:[]),
         ...(!report.evidenceReview&&report.industryBenchmark?[{id:'competition-benchmark',label:'업종 표본',children:<IndustryBenchmarkCard benchmark={report.industryBenchmark}/>}]:[]),
       ]}/>
     </Chapter>
@@ -145,7 +147,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         {id:'actions-guide',label:'검색·AI 작업 가이드',children:<GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'actions-issues',label:'핵심 이슈',children:report.criticalIssues.length?<div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} taskAnchor={issueTasks.get(`critical-${index}`)} key={`${issue.title}-${index}`}/>)}</div>:<p className="report-empty">저장된 핵심 이슈가 없습니다. ‘영역별 근거’에서 실제 수집 범위를 확인할 수 있습니다.</p>},
         {id:'actions-copy',label:'첫 화면 문구 조합',children:<CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis} pageEdits={pageEdits}/>},
-        {id:'actions-schedule',label:'실행 일정',children:<><PriorityMatrix roadmap={report.priorityRoadmap} quickWins={report.quickWinsDetailed}/>{report.quickWinsDetailed?.length?<QuickWinsFlow quickWins={report.quickWinsDetailed}/>:<ul>{report.quickWins?.map((w,i)=><li key={i}>{w}</li>)}</ul>}</>},
+        {id:'actions-schedule',label:'실행 일정',children:<><PriorityMatrix roadmap={report.priorityRoadmap} quickWins={report.quickWinsDetailed} legacyQuickWins={report.quickWins}/>{report.quickWinsDetailed?.length?<QuickWinsFlow quickWins={report.quickWinsDetailed}/>:report.quickWins?.length?<section className="report-card"><h3>저장된 빠른 개선 작업</h3><ol className="report-legacy-wins">{report.quickWins.map((w,i)=><li key={i} id={`report-quick-win-${i}`}>{w}</li>)}</ol></section>:null}</>},
         {id:'actions-kpi',label:'목표·예산 계산',children:<><GrowthKpiPanel key={`kpi:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} targetUrl={report.url}/><AdWasteCalculator/></>},
         {id:'actions-geo',label:'AI 답변 보강',children:<><GeoFocusPanel key={report.llmCitationTest?.questionSetId||report.url} report={report} linkToDetails/><CitationActionPlan citation={report.llmCitationTest}/></>},
       ]}/>

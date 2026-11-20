@@ -63,8 +63,8 @@ export function buildReportInsights(report:MarketingReport) {
     return {question:q.question,id:q.id,target,kind:owned?'인용 페이지':rows.length?'입력 페이지 검토':'재측정 후 연결',evidence:owned?`출처에서 확인: ${owned.title}`:rows.length?'이번 정상 관측에서 자사 URL을 확인하지 못했습니다. 페이지의 답변 적합성을 검토하세요.':'판정 가능한 관측이 없습니다. 콘텐츠 부족으로 단정하지 마세요.',observations:rows.length};
   })||[];
   const competitors=report.competitorAnalysis?.competitors||[];
-  const messageRows=(buildCompetitorPositioning(report)?.rows||[]).map(r=>({name:r.own?'자사':r.name,url:r.url,title:r.title,description:r.description,available:r.fieldsPresent===2&&!r.fetchError,isOwn:r.own})).map(r=>{
-    const fields=[r.title,r.description].filter((v):v is string=>typeof v==='string');const content=fields.join(' ');
+  const messageRows=(buildCompetitorPositioning(report)?.rows||[]).map(r=>({name:r.own?'자사':r.name,url:r.url,title:r.title,description:r.description,available:r.fieldsPresent===2&&!r.fetchError,collectionFailed:!!r.fetchError,isOwn:r.own})).map(r=>{
+    const fields=[r.title,r.description].filter((v):v is string=>typeof v==='string'&&!!v.trim());const content=fields.join(' ');
     return {...r,fieldCount:fields.length,cells:messageThemes.map(theme=>({label:theme.label,match:r.available?content.match(theme.pattern)?.[0]||null:undefined})),evidence:content};
   });
   const ownMessage=messageRows[0];

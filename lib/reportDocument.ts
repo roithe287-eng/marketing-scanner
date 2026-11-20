@@ -1,3 +1,4 @@
+import {describeCoverageWarning} from './reportCoverage';
 import {readinessItems} from './reportVisuals';
 import {reportForPresentation} from './reportPresentation';
 import {nonCommerceOpening} from './reportOpening';
@@ -67,7 +68,15 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   if(report.productContext&&showProductCollection(report.sitePurpose)){const p=report.productContext;blocks.push({kind:'heading',text:p.sources.length?`상품 정보 보완 · 공개 상품 표본 ${p.sources.length}개`:'상품 정보 수집 범위와 확인 상태'});for(const s of p.sources)blocks.push({kind:'body',text:s.name+' · '+s.url,href:safeHttpUrl(s.url)||undefined});}
   blocks.push({kind:'heading',text:'광고비·목표 CPA 시나리오'},{kind:'body',text:AD_BUDGET_NOTE+' 화면 입력값은 저장되지 않습니다. CPA=광고비÷전환 수, 목표 예산=직접 정한 목표 CPA×현재 전환 수입니다. 절감 효과 예측이 아닙니다.'});
   if(report.integrity){blocks.push({kind:'heading',text:'결과의 근거와 검증 범위'},{kind:'body',text:report.integrity.note});for(const warning of report.integrity.warnings)blocks.push({kind:'body',text:warning.message});}
-  if(report.analysisWarnings?.length)for(const warning of report.analysisWarnings)blocks.push({kind:'body',text:`부가 분석 확인 필요: ${warning.label} · ${warning.status}`});
+  if(report.analysisWarnings?.length){
+    blocks.push({kind:'heading',text:'이번 진단에서 확인이 제한된 항목'});
+    for(const warning of report.analysisWarnings){
+      const entry=describeCoverageWarning(warning);
+      blocks.push({kind:'subheading',text:`${entry.title} · ${entry.status}`});
+      if(entry.observation)blocks.push({kind:'body',text:entry.observation});
+      blocks.push({kind:'body',text:entry.impact},{kind:'body',text:entry.guide});
+    }
+  }
   if(report.evidenceReview){const e=report.evidenceReview;blocks.push({kind:'heading',text:'관측 항목 충족률 · 산식과 근거'},...(opening?[{kind:'body' as const,text:evidenceScoreText(report)}]:[]),{kind:'body',text:e.note},{kind:'body',text:`대상 ${e.sourceUrl} · 수집 ${e.capturedAt}`});for(const c of e.criteria)blocks.push({kind:'subheading',text:c.label},{kind:'body',text:`${c.status==='pass'?'충족':c.status==='review'?'미확인':'보완 검토'} · 기준: ${c.rule}`},{kind:'body',text:`원문: ${c.evidence}`},{kind:'body',text:`위치: ${c.locator}`});}
   else if(report.scoringMethod)blocks.push({kind:'body',text:'구버전 종합 점수는 8개 AI 평가 점수의 산술평균입니다. 세부 배점은 검증되지 않았고 실제 성과·모바일 성능·AI 인용률이 아닙니다.'});
   if(report.keywordFrequency)blocks.push({kind:'heading',text:'반복 표현 집계 범위'},{kind:'body',text:keywordFrequencyScope(report.keywordFrequency)},{kind:'body',text:keywordDensityNote(report.keywordFrequency,false)},{kind:'body',text:keywordDensityNote(report.keywordFrequency,true)});

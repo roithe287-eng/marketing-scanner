@@ -1,10 +1,16 @@
+import ReportJumpLink from './ReportJumpLink';
 import type {MarketingReport} from '@/lib/reportSchema';
 
-function warningLabel(report:MarketingReport,field:string) {
+function warningReference(report:MarketingReport,field:string) {
   const match=field.match(/^(criticalIssues|quickWinsDetailed)\.(\d+)/);
-  if(!match)return '원문 대조';
+  if(!match)return {label:'원문 대조'};
   const index=Number(match[2]);
-  return match[1]==='criticalIssues'?`핵심 이슈 ${index+1} · ${report.criticalIssues[index]?.title||'문구 확인'}`:`빠른 개선 ${index+1}`;
+  const issue=match[1]==='criticalIssues';
+  const row=issue?report.criticalIssues[index]:report.quickWinsDetailed?.[index];
+  return {
+    label:row?.title||`${issue?'핵심 이슈':'빠른 개선'} ${index+1}`,
+    target:row?`${issue?'report-issue':'report-quick-win'}-${index}`:undefined,
+  };
 }
 export default function ReportEvidenceGuide({report}:{report:MarketingReport}) {
   const warnings=report.integrity?.warnings||[];
@@ -13,7 +19,13 @@ export default function ReportEvidenceGuide({report}:{report:MarketingReport}) {
     <details open className="report-evidence-details">
       <summary>{warnings.length?`원문 재확인 · ${warnings.length}개`:'원문 대조 기록 없음'}<span aria-hidden="true">＋</span></summary>
       {!report.integrity&&<p>이 저장 결과에는 원문 대조 기록이 없습니다. 현재 페이지를 다시 진단해 근거를 확인하세요.</p>}
-      {!!warnings.length&&<ul>{warnings.map((warning,i)=><li key={`${warning.field}-${i}`}><strong>{warningLabel(report,warning.field)}</strong><p>{warning.message}</p></li>)}</ul>}
+      {!!warnings.length&&<ul>{warnings.map((warning,i)=>{
+        const reference=warningReference(report,warning.field);
+        return <li key={`${warning.field}-${i}`}>
+          <strong>{reference.label}</strong><p>{warning.message}</p>
+          {reference.target&&<ReportJumpLink id={reference.target}>원문을 확인할 항목 보기</ReportJumpLink>}
+        </li>;
+      })}</ul>}
     </details>
   </aside>;
 }
