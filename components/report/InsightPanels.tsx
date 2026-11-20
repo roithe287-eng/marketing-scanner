@@ -3,6 +3,8 @@ import {CompactText,VisualSteps,SourceReferenceDiagram} from './ReportVisualSumm
 import React,{useState} from 'react';
 import EvidenceFlow from './EvidenceFlow';
 import ReportJumpLink from './ReportJumpLink';
+import {CopyWork} from './ExecutionWorkflow';
+import {observationQuestionAnchor} from '@/lib/reportVisuals';
 import {Guidebook} from './SiteGuidebook';
 import DiagnosisIcon from './DiagnosisIcon';
 import {contentBrief,insightNotes,sourceReferenceGuide,messageThemes,type ReportInsights} from '@/lib/reportInsights';
@@ -26,30 +28,60 @@ export function ConversionPath({data}:{data:ReportInsights}) {
   const lowest=Math.min(...data.stages.map(s=>s.score));
   return <article className="report-card" aria-label="고객 전환 준비도"><Heading label="CONVERSION READINESS" title="고객이 결정하기까지, 네 단계" note={insightNotes.stages}/><ol className="report-journey">{data.stages.map((s,i)=><li key={s.key} className={s.score===lowest?'is-focus':''}><div className="report-step-top"><span>{String(i+1).padStart(2,'0')}</span>{s.score===lowest&&<b>우선 검토</b>}</div><h4>{s.label}</h4><div className="report-score"><strong>{s.score}</strong><span>/ 100</span></div><div className="report-meter" aria-hidden="true"><i style={{width:`${s.score}%`}}/></div><p>{s.action}</p></li>)}</ol></article>;
 }
-function CopyBrief({question,target}:{question:string;target:string|null}) {
-  const [message,setMessage]=useState('');
-  return <div className="report-copy"><button type="button" className="report-secondary-button" onClick={async()=>{try{await navigator.clipboard.writeText(contentBrief(question,target));setMessage('콘텐츠 작성 틀을 복사했습니다.');}catch{setMessage('복사하지 못했습니다. 브라우저의 클립보드 권한을 확인해 주세요.');}}}>콘텐츠 작성 틀 복사</button><span role="status">{message}</span></div>;
-}
-export function AnswerPageMap({data}:{data:ReportInsights}) {return <article className="report-card" aria-label="질문과 답변 페이지 지도"><Heading label="QUESTION → PAGE" title="질문을 어떤 페이지에서 답할까요?" note={insightNotes.questions}/>{data.questions.length?<div className="report-detail-list">{data.questions.map(q=><details key={q.question}><summary><span className="report-index">{`Q${q.id}`}</span><span className="report-summary-title">{q.question}</span><span className="report-pill">{q.kind}</span></summary><div className="report-detail-body"><p>{q.evidence}</p>{q.target&&<Link url={q.target}>{q.target}</Link>}<div className="report-brief-grid">{['직접 답변','적용 조건·범위','검증 가능한 근거','최종 확인 날짜'].map((v,i)=><div key={v}><span>{String(i+1).padStart(2,'0')}</span><strong>{v}</strong></div>)}</div><p className="report-note">각 칸을 확인된 사실로 채운 뒤 페이지에 적용하세요. 가격·후기·성과 수치는 담당자 확인이 필요합니다.</p><CopyBrief question={q.question} target={q.target}/></div></details>)}</div>:<Empty>새 형식의 질문 관측이 저장되면 페이지 연결 후보를 표시합니다.</Empty>}</article>;}
-export function BrandReview({data}:{data:ReportInsights}) {
-  const stats=data.reviewSummary;
-  return <article className="report-card" aria-label="브랜드 답변 검토함">
-    <Heading label="BRAND ANSWER REVIEW" title="AI 답변에서 먼저 확인할 내용" note={insightNotes.reviews}/>
-    <dl className="report-review-stats">{[['저장된 답변',data.obs?stats.total:'—'],['출처 확인 완료',data.obs?stats.verified:'—'],['우선 대조 대상',stats.verified?data.reviews.length:'—']].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}<small>{typeof value==='number'?'건':''}</small></dd></div>)}</dl>
-    <div role="status"><CompactText className="report-explanation" text={data.reviewExplanation}/></div><VisualSteps kind="brand"/>
-    {!!stats.unavailable&&<p className="report-note">나머지 {stats.unavailable}건은 검색·출처 확인 미완료 또는 중복 관측으로 집계에서 제외했습니다. 위의 ‘실제 AI 답변’에서 개별 상태와 수집 원문을 확인할 수 있습니다.</p>}
-    {!!stats.verified&&<details className="report-inline-details"><summary>대조 대상 선정 근거 보기</summary><ul className="report-reason-list"><li>브랜드 미언급: {stats.noBrand}건</li><li>브랜드 언급 여부 미확인: {stats.unknownMention}건</li><li>브랜드 언급 + 자사 출처 연결: {stats.ownSource}건</li><li>브랜드 언급 + 대조 가능한 외부 출처 미확인: {stats.missingSource}건</li><li>브랜드 언급 + 외부 출처만 연결: {data.reviews.length}건 → 우선 대조 대상</li></ul><p className="report-note">0건은 위 선정 조건에 맞는 답변이 없다는 뜻입니다. 모든 답변의 내용 대조가 완료됐다는 뜻은 아닙니다.</p></details>}
-    {!!data.reviews.length&&<div className="report-detail-list">{data.reviews.map((r,i)=><details key={`${r.engine}-${i}`}><summary><span className="report-pill warning">내용 대조</span><span className="report-summary-title">{r.question}</span><span>{r.engine}</span></summary><div className="report-detail-body"><p className="report-note">확인할 순서: 업체명이 맞는지 → 실제 서비스인지 → 가격·조건이 최신인지 → 출처의 업체와 일치하는지</p><blockquote className="report-answer">{r.answer}</blockquote><div className="report-source-list">{r.sources.map(s=><Link key={s.url} url={s.url}>{s.title||s.url}</Link>)}</div></div></details>)}</div>}
+export function AnswerPageMap({data,linkToObservations=false}:{data:ReportInsights;linkToObservations?:boolean}) {
+  return <article className="report-card" aria-label="질문과 답변 페이지 지도">
+    <Heading label="QUESTION → PAGE" title="고객 질문에 답할 페이지를 고르세요" note={insightNotes.questions}/>
+    {data.questions.length?<div className="report-detail-list">{data.questions.map(q=><details key={q.question}>
+      <summary><span className="report-index">{`Q${q.id}`}</span><span className="report-summary-title">{q.question}</span><span className="report-pill">{q.kind}</span></summary>
+      <div className="report-detail-body">
+        <p>{q.evidence}</p>
+        {q.target&&<Link url={q.target}>{q.kind==='인용 페이지'?'AI가 인용한 페이지 열기':'답변을 추가할 후보 페이지 열기'}</Link>}
+        {q.target&&<small className="report-url-inline">{q.target}</small>}
+        <div className="report-brief-grid">{['직접 답변','적용 조건·범위','검증 가능한 근거','최종 확인 날짜'].map((value,i)=><div key={value}><span>{String(i+1).padStart(2,'0')}</span><strong>{value}</strong></div>)}</div>
+        <p className="report-note">가격, 후기, 성과를 쓰려면 담당자에게 사실을 확인하세요. 질문 바로 아래에 답변과 근거를 붙이세요.</p>
+        <CopyWork text={contentBrief(q.question,q.target)} label="이 질문의 콘텐츠 작성 틀 복사"/>
+        {linkToObservations&&<p className="report-related-link"><ReportJumpLink id={observationQuestionAnchor(q.id)}>이 질문의 AI 답변과 출처 보기</ReportJumpLink></p>}
+      </div>
+    </details>)}</div>:<Empty>이 보고서에 저장된 질문별 AI 관측이 없습니다. 관측이 수집되면 질문에 맞는 페이지를 이곳에서 검토할 수 있습니다.</Empty>}
   </article>;
 }
-export function SourceDirectory({data}:{data:ReportInsights}) {
+export function BrandReview({data,linkToObservations=false}:{data:ReportInsights;linkToObservations?:boolean}) {
+  const stats=data.reviewSummary;
+  return <article className="report-card" aria-label="브랜드 답변 검토함">
+    <Heading label="BRAND ANSWER REVIEW" title="AI 설명이 우리 정보와 일치하나요?" note={insightNotes.reviews}/>
+    <dl className="report-review-stats">{[['저장된 답변',data.obs?stats.total:'—'],['출처 확인 완료',data.obs?stats.verified:'—'],['우선 대조 대상',stats.verified?data.reviews.length:'—']].map(([label,value])=><div key={label}><dt>{label}</dt><dd>{value}<small>{typeof value==='number'?'건':''}</small></dd></div>)}</dl>
+    <div><CompactText className="report-explanation" text={data.reviewExplanation}/></div><VisualSteps kind="brand"/>
+    {!!stats.unavailable&&<p className="report-note">나머지 {stats.unavailable}건은 검색·출처 확인 미완료 또는 중복 관측으로 집계에서 제외했습니다. {linkToObservations?<ReportJumpLink id="report-view-geo-observations">집계에서 제외된 답변의 상태 보기</ReportJumpLink>:'실제 AI 답변에서 개별 상태를 확인하세요.'}</p>}
+    {!!stats.verified&&<details className="report-inline-details"><summary>대조 대상 선정 근거 보기</summary><ul className="report-reason-list"><li>브랜드 미언급: {stats.noBrand}건</li><li>브랜드 언급 여부 미확인: {stats.unknownMention}건</li><li>브랜드 언급 + 자사 출처 연결: {stats.ownSource}건</li><li>브랜드 언급 + 대조 가능한 외부 출처 미확인: {stats.missingSource}건</li><li>브랜드 언급 + 외부 출처만 연결: {data.reviews.length}건 → 우선 대조 대상</li></ul><p className="report-note">0건은 위 선정 조건에 맞는 답변이 없다는 뜻입니다. 모든 답변의 내용 대조가 완료됐다는 뜻은 아닙니다.</p></details>}
+    {!!data.reviews.length&&<div className="report-detail-list">{data.reviews.map((r,i)=>{
+      const original=data.questions.find(q=>q.question===r.question.trim());
+      return <details key={`${r.engine}-${i}`}>
+        <summary><span className="report-pill warning">대조 필요</span><span className="report-summary-title">{r.question}</span><span>{r.engine}</span></summary>
+        <div className="report-detail-body">
+          <ol className="report-verification-list">
+            <li>답변의 업체명과 출처에 적힌 업체명이 일치하는지 확인하세요.</li>
+            <li>소개된 서비스, 가격, 이용 조건을 우리 최신 안내 페이지와 대조하세요.</li>
+            <li>달라진 내용이 있다면 확인 날짜와 근거 URL을 기록하세요.</li>
+          </ol>
+          {linkToObservations&&original
+            ? <ReportJumpLink id={observationQuestionAnchor(original.id)}>대조할 AI 답변 원문과 출처 열기</ReportJumpLink>
+            : <><blockquote className="report-answer">{r.answer}</blockquote><div className="report-source-list">{r.sources.map((s,index)=><Link key={`${s.url}-${index}`} url={s.url}>{s.title||s.url}</Link>)}</div></>}
+        </div>
+      </details>;
+    })}</div>}
+  </article>;
+}
+export function SourceDirectory({data,linkToObservations=false}:{data:ReportInsights;linkToObservations?:boolean}) {
   const [filter,setFilter]=useState('all'),[expanded,setExpanded]=useState(true);
   const filtered=data.eligibleSources.filter(s=>filter==='all'||s.ownership===filter),shown=expanded?filtered:filtered.slice(0,6);
-  return <article className="report-card" aria-label="AI 출처 검토함"><Heading label="SOURCE DIRECTORY" title="검토할 외부 출처" note={insightNotes.sources}/>
-    {!!data.eligibleSources.length&&<SourceReferenceDiagram details={<><h4>{sourceReferenceGuide.title}</h4><p>{sourceReferenceGuide.purpose}</p><p>{sourceReferenceGuide.examples}</p><p>{sourceReferenceGuide.check}</p></>}/>}
+  return <article className="report-card" aria-label="AI 출처 검토함"><Heading label="SOURCE DIRECTORY" title="어떤 외부 페이지가 답변의 근거였나요?" note={insightNotes.sources}/>
     <div className="report-filter-row" role="group" aria-label="출처 구분 필터">{([['all','전체'],['external','외부 도메인 확인'],['unresolved','도메인 미확인']] as const).map(([key,label])=><button type="button" key={key} aria-pressed={filter===key} onClick={()=>{setFilter(key);setExpanded(true);}}>{label}</button>)}<span role="status">{filtered.length}개 URL</span></div>
-    {shown.length?<div className="report-source-grid">{shown.map(s=><div className="report-source-item" key={s.url}><div className="report-source-meta"><span className="report-pill">{s.ownership==='unresolved'?'도메인 미확인':'외부'}</span><span>{s.observations.length}건의 관측</span></div><h4><Link url={s.url}>{s.title}</Link></h4><p className="report-note">{s.domain}</p><details><summary>연결된 질문 {s.questions.length}개</summary><ul>{s.questions.map(q=><li key={q}>{q}</li>)}</ul></details></div>)}</div>:<Empty>{data.excludedSources.length?'자사몰·대형몰 등을 제외한 뒤 이 조건에 남는 출처가 없습니다. 아래 제외 내역에서 수집 여부를 확인할 수 있습니다.':data.reviewSummary.verified?'이 조건에 해당하는 출처 URL이 답변에 저장되지 않았습니다.':'검색·출처 확인이 완료된 답변이 없어 표시할 외부 출처가 없습니다.'}</Empty>}
+    {shown.length?<div className="report-source-grid">{shown.map(s=><div className="report-source-item" key={s.url}><div className="report-source-meta"><span className="report-pill">{s.ownership==='unresolved'?'도메인 미확인':'외부'}</span><span>{s.observations.length}건의 관측</span></div><h4><Link url={s.url}>{s.title}</Link></h4><p className="report-note">{s.domain}</p><details><summary>연결된 질문 {s.questions.length}개</summary><ul>{s.questions.map(q=>{const original=data.questions.find(row=>row.question===q);return <li key={q}>{linkToObservations&&original?<ReportJumpLink id={observationQuestionAnchor(original.id)}>{q}</ReportJumpLink>:q}</li>;})}</ul></details></div>)}</div>:<Empty>{data.excludedSources.length?'자사몰·대형몰 등을 제외한 뒤 이 조건에 남는 출처가 없습니다. 아래 제외 내역에서 수집 여부를 확인할 수 있습니다.':data.reviewSummary.verified?'이 조건에 해당하는 출처 URL이 답변에 저장되지 않았습니다.':'검색·출처 확인이 완료된 답변이 없어 표시할 외부 출처가 없습니다.'}</Empty>}
     {filtered.length>6&&<button type="button" className="report-secondary-button mt-4" onClick={()=>setExpanded(!expanded)}>{expanded?'출처 접기':`전체 ${filtered.length}개 출처 보기`}</button>}
+    {!!data.eligibleSources.length&&<details className="report-inline-details report-section-reading-guide">
+      <summary>외부 출처에서 참고할 수 있는 구성 보기</summary>
+      <SourceReferenceDiagram details={<><h4>{sourceReferenceGuide.title}</h4><p>{sourceReferenceGuide.purpose}</p><p>{sourceReferenceGuide.examples}</p><p>{sourceReferenceGuide.check}</p></>}/>
+    </details>}
     {!!data.excludedSources.length&&<details className="report-inline-details report-excluded-sources"><summary>목록에서 제외한 출처 {data.excludedSources.length}개 · 사유와 원문 기록</summary><p className="report-note">추천·비교 목록에서는 제외했습니다. AI가 실제 연결한 출처라는 관측 기록은 확인용으로 보존합니다.</p><ul>{data.excludedSources.map(s=><li key={s.url}><span><strong>{s.domain}</strong> · {s.reason}</span><Link url={s.url}>{s.title}</Link><small>{s.observations.length}건의 관측 · {s.questions.join(' / ')}</small></li>)}</ul></details>}
   </article>;
 }

@@ -41,7 +41,7 @@ import DiagnosisChecklist from '@/components/DiagnosisChecklist';
 import QuickWinsFlow from '@/components/QuickWinsFlow';
 import CopyImprovement from '@/components/CopyImprovement';
 import DiscoverabilityPanel from '@/components/DiscoverabilityPanel';
-import LlmCitationCard from '@/components/LlmCitationCard';
+import LlmCitationCard,{CitationActionPlan} from '@/components/LlmCitationCard';
 import GeoIntroduction from '@/components/GeoIntroduction';
 import GeoComparisonPanel from '@/components/GeoComparisonPanel';
 import GeoFocusPanel from '@/components/GeoFocusPanel';
@@ -108,11 +108,11 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
       <ReportSections chapter="geo" diagrams={diagrams} briefs={briefs} items={[
         ...(report.serviceStrategy?.briefing?[{id:'geo-logistics-briefing',label:'네이버 AI 브리핑 대응',children:<LogisticsBriefingPanel plan={report.serviceStrategy.briefing}/>}]:[]),
         ...(report.serviceStrategy?.briefingPlan?[{id:'geo-noncommerce-briefing',label:'업종별 AI 브리핑 대응',children:<NonCommerceBriefingPanel plan={report.serviceStrategy.briefingPlan}/>}]:[]),
-        {id:'geo-observations',label:'실제 AI 답변',children:report.llmCitationTest?<LlmCitationCard citation={report.llmCitationTest}/>:<p className="report-empty">저장된 AI 답변 관측이 없습니다.</p>},
-        {id:'geo-questions',label:'질문별 페이지',children:<AnswerPageMap data={data}/>},
-        {id:'geo-brand',label:'브랜드 표현 검토',children:<BrandReview data={data}/>},
-        {id:'geo-sources',label:'AI 인용 출처',children:<SourceDirectory data={data}/>},
-        {id:'geo-readiness',label:'페이지 준비도',children:<><GeoIntroduction/>{report.discoverability&&<DiscoverabilityPanel discoverability={report.discoverability} observedOnly={!!report.evidenceReview}/>}</>},
+        {id:'geo-observations',label:'실제 AI 답변',children:report.llmCitationTest?<LlmCitationCard citation={report.llmCitationTest} showActionPlan={false}/>:<p className="report-empty">저장된 AI 답변 관측이 없습니다.</p>},
+        {id:'geo-questions',label:'답변을 올릴 페이지',children:<AnswerPageMap data={data} linkToObservations/>},
+        {id:'geo-brand',label:'우리 정보와 대조',children:<BrandReview data={data} linkToObservations/>},
+        {id:'geo-sources',label:'AI 인용 출처',children:<SourceDirectory data={data} linkToObservations/>},
+        {id:'geo-readiness',label:'페이지 정보 준비도',children:<>{report.discoverability?<DiscoverabilityPanel discoverability={report.discoverability} observedOnly={!!report.evidenceReview}/>:<p className="report-empty">저장된 콘텐츠 준비도 점검이 없습니다.</p>}<GeoIntroduction/></>},
         ...(report.geoBaseline?[{id:'geo-comparison',label:'이전 관측 비교',children:<GeoComparisonPanel report={report}/>}]:[]),
       ]}/>
     </Chapter>
@@ -123,8 +123,8 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         {id:'search-sources',label:'원문·링크',children:<><SiteGuidebookOverview report={report}/>{searchEvidenceAllowed&&<BacklinkEvidencePanel target={searchTarget} brand={report.meta?.siteName||''}/>}</>},
         {id:'search-keywords',label:'키워드',children:<><KeywordWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} data={data}/>{report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}<SearchConsoleEvidencePanel target={searchTarget}/></>},
         ...(report.serviceStrategy?[{id:'search-intents',label:'검색 의도·랜딩',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="search"/>}]:[]),
-        {id:'search-naver',label:'네이버 점검',children:<NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>},
-        {id:'search-official',label:'공통 검색 점검',children:<><OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>{productPages.map(page=><ProductOfferAuditCard key={page.url} audit={page.productOffer} url={page.url}/>)}</>},
+        {id:'search-naver',label:'네이버 운영 점검',children:<NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>},
+        {id:'search-official',label:'검색엔진별 기준',children:<><OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>{productPages.map(page=><ProductOfferAuditCard key={page.url} audit={page.productOffer} url={page.url}/>)}</>},
         {id:'search-technical',label:'페이지·기술 점검',children:<SiteDiagnosticsPanel audit={report.siteDiagnostics}/>},
         {id:'search-scope',label:'수집·분석 범위',children:scope},
         ...(report.checklist?.length?[{id:'search-checklist',label:'기본 체크리스트',children:<DiagnosisChecklist checklist={report.checklist}/>}]:[]),
@@ -142,12 +142,12 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
       <ReportSections chapter="actions" diagrams={diagrams} briefs={briefs} items={[
         {id:'actions-board',label:'담당자별 작업',children:<><ExecutionBoard report={report} plan={execution} linkIssueDetails/><PageWorkMap plan={execution}/></>},
         ...(report.serviceStrategy?[{id:'actions-acquisition',label:'광고·콘텐츠 실행',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="acquisition"/>},{id:'actions-conversion',label:report.serviceStrategy.industry==='noncommerce'?'목적별 전환·검증':'상담 전환·검증',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="conversion"/>}]:[]),
-        {id:'actions-guide',label:'실행 가이드',children:<GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
+        {id:'actions-guide',label:'검색·AI 작업 가이드',children:<GrowthPlanPanel key={`growth:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
         {id:'actions-issues',label:'핵심 이슈',children:report.criticalIssues.length?<div className="report-stack">{report.criticalIssues.map((issue,index)=><DiagnosisCard issue={issue} index={index} taskAnchor={issueTasks.get(`critical-${index}`)} key={`${issue.title}-${index}`}/>)}</div>:<p className="report-empty">저장된 핵심 이슈가 없습니다. ‘영역별 근거’에서 실제 수집 범위를 확인할 수 있습니다.</p>},
         {id:'actions-copy',label:'첫 화면 문구 조합',children:<CopyImprovement exampleCopy={report.exampleCopy} competitorAnalysis={report.competitorAnalysis} pageEdits={pageEdits}/>},
         {id:'actions-schedule',label:'실행 일정',children:<><PriorityMatrix roadmap={report.priorityRoadmap} quickWins={report.quickWinsDetailed}/>{report.quickWinsDetailed?.length?<QuickWinsFlow quickWins={report.quickWinsDetailed}/>:<ul>{report.quickWins?.map((w,i)=><li key={i}>{w}</li>)}</ul>}</>},
         {id:'actions-kpi',label:'목표·예산 계산',children:<><GrowthKpiPanel key={`kpi:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} targetUrl={report.url}/><AdWasteCalculator/></>},
-        {id:'actions-geo',label:'AI 답변 보강',children:<GeoFocusPanel key={report.llmCitationTest?.questionSetId||report.url} report={report}/>},
+        {id:'actions-geo',label:'AI 답변 보강',children:<><GeoFocusPanel key={report.llmCitationTest?.questionSetId||report.url} report={report} linkToDetails/><CitationActionPlan citation={report.llmCitationTest}/></>},
       ]}/>
     </Chapter>
     <ReportRetentionNotice report={report}/><div className="report-ending"><FinalCTA report={report}/><Disclaimer/></div>

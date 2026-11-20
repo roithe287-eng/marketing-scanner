@@ -136,3 +136,35 @@
   .report-v2.report-focused .report-section-reading-guide>summary {display:none}
   .report-v2.report-focused .report-section-reading-guide>figure {display:block}
 }
+
+.report-v2.report-focused .report-ai-metrics {
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));
+  gap:.65rem;
+  margin:1rem 0;
+}
+.report-v2.report-focused .report-ai-metrics>div {
+  padding:.8rem 1rem;
+  border:1px solid #d2dfed;
+  border-radius:8px;
+  background:#fff;
+  color:#193853;
+}
+.report-v2.report-focused .report-ai-metrics dt {font-size:.875rem;line-height:1.6}
+.report-v2.report-focused .report-ai-metrics dd {margin:.3rem 0 0;font-weight:750;line-height:1.6}
+.report-v2.report-focused .report-ai-question-detail[hidden] {display:none}
+.report-v2.report-focused :is(.report-ai-question-detail,.naver-check,.official-seo-library):focus {
+  outline:2px solid #3b6098;
+  outline-offset:4px;
+}
+.report-v2.report-focused .report-ai-question-detail .geo-detail > summary {min-height:44px}
+.report-v2.report-focused .report-url-inline {display:block;overflow-wrap:anywhere;color:#475c75}
+.report-v2.report-focused .report-verification-list {display:grid;gap:.5rem;margin:.25rem 0 .8rem;padding-left:1.5rem;list-style:decimal;line-height:1.75}
+.report-v2.report-focused .report-geo-definitions {display:grid;gap:.75rem;margin-top:1rem}
+.report-v2.report-focused .report-geo-definitions dt {font-weight:750}
+.report-v2.report-focused .report-geo-definitions dd {margin:0;color:#475c75;line-height:1.7}
+.report-v2.report-focused .report-checklist-rows>article>.reading-fold {margin-top:.85rem}
+.report-v2.report-focused .report-question-row {min-height:48px;overflow-wrap:anywhere}
+@media print {
+  .report-v2.report-focused .report-ai-question-detail[hidden] {display:block}
+}

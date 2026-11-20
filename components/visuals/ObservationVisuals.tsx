@@ -1,7 +1,7 @@
 "use client";
-import React,{useState} from 'react';
+import React,{useEffect,useState} from 'react';
 import type {LlmCitationTest} from '@/lib/reportSchema';
-import {buildObservationVisual,engineNames,engines,observationStates} from '@/lib/reportVisuals';
+import {buildObservationVisual,engineNames,engines,observationQuestionAnchor,observationStates} from '@/lib/reportVisuals';
 
 export function MetricRing({value,label,numerator,denominator,color='#087f72'}:{value:number|null;label:string;numerator:number;denominator:number;color?:string}) {
   return <div className="report-metric-ring flex min-w-0 items-center gap-4 rounded-2xl border bg-white p-4">
@@ -13,22 +13,33 @@ export function ObservationOverview({citation}:{citation:LlmCitationTest}) {
   const data=buildObservationVisual(citation);if(!data)return null;
   return <div aria-label="GEO 관측 요약 차트" className="my-5 rounded-2xl bg-slate-50 p-4 md:p-5">
     <div className="grid gap-3 md:grid-cols-2"><MetricRing label="브랜드 미포함 질문 · 자사 인용" value={data.unbrandedRate} numerator={data.unbrandedCount} denominator={data.unbrandedTotal} color="#3564a7"/><MetricRing label="브랜드 포함 질문 · 자사 인용" value={data.brandedRate} numerator={data.brandedCount} denominator={data.brandedTotal}/></div>
-    <p className="mt-4 text-sm leading-7">전체 질문 인용 {data.sourceCount}/{data.sourceTotal}건 ({data.citationRate===null?'판정 불가':data.citationRate+'%'}) · 브랜드 언급 {data.mentionCount}/{data.mentionTotal}건 · 질문 유형 미분류 {data.unclassifiedTotal}건</p>
+    <dl className="report-ai-metrics">
+      <div><dt>우리 페이지를 출처로 연결</dt><dd>{data.sourceTotal?`${data.sourceTotal}건 중 ${data.sourceCount}건 (${data.citationRate}%)`:'출처를 판정할 답변이 없습니다.'}</dd></div>
+      <div><dt>답변에 우리 이름이 등장</dt><dd>{data.mentionTotal?`${data.mentionTotal}건 중 ${data.mentionCount}건 (${data.mentionRate}%)`:'브랜드 언급을 판정할 답변이 없습니다.'}</dd></div>
+      {data.unclassifiedTotal>0&&<div><dt>질문 유형 미분류</dt><dd>{data.unclassifiedTotal}건 · 전체 인용 집계에 포함</dd></div>}
+    </dl>
     <p className="mt-2 text-sm leading-7 text-jm-gray">브랜드명·도메인을 지정한 질문과 일반 고객 질문을 분리합니다. 이 표본의 관측이며 시장 전체 노출률·검색 점유율이나 반복 측정으로 검증한 확률이 아닙니다.</p>
     <h4 className="mt-5 text-sm font-bold">OpenAI 관측 상태 <span className="font-normal text-jm-gray">· 총 {data.total}건</span></h4>
     <div className="mt-3 space-y-4">{data.distributions.map(d=><div key={d.engine}><div className="mb-2 flex items-center justify-between text-xs"><strong>{engineNames[d.engine]}</strong><span>{d.total}건</span></div><div className="flex h-4 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">{Object.entries(d.counts).map(([key,count])=><div key={key} style={{width:`${d.total?100*count/d.total:0}%`,background:observationStates[key as keyof typeof d.counts].color}}/>)}</div><p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs leading-5">{Object.entries(d.counts).filter(([,count])=>count>0).map(([key,count])=><span key={key} style={{color:observationStates[key as keyof typeof d.counts].color}}>{observationStates[key as keyof typeof d.counts].symbol} {observationStates[key as keyof typeof d.counts].label} {count}건</span>)}{!d.total&&<span>관측 없음</span>}</p></div>)}</div>
     <p className="mt-4 text-xs leading-6 text-jm-gray">막대는 측정 상태의 구성입니다. 실패·판정 불가를 인용률의 0점으로 처리하지 않습니다.</p>
   </div>;
 }
-const filters=[['all','전체 질문'],['cited','인용 확인 포함'],['uncited','미인용 포함'],['unknown','판정 불가 포함']] as const;
+const filters=[['all','전체 질문'],['cited','자사 인용 확인'],['uncited','자사 미인용'],['unknown','확인 필요·실패']] as const;
+type QuestionFilter=typeof filters[number][0];
+function matchesFilter(state:keyof typeof observationStates,filter:QuestionFilter) {
+  return filter==='all'||(filter==='unknown'?state!=='cited'&&state!=='uncited':state===filter);
+}
 export function QuestionMatrix({citation,selected,onSelect}:{citation:LlmCitationTest;selected:string|null;onSelect:(question:string|null)=>void}) {
-  const [filter,setFilter]=useState<string>('all');
-  const data=buildObservationVisual(citation);if(!data)return null;
-  const questions=data.questions.filter(q=>filter==='all'||Object.values(q.cells).some(c=>filter==='unknown'?['failed','unverified','unavailable','missing','duplicate'].includes(c.state):c.state===filter));
+  const [filter,setFilter]=useState<QuestionFilter>('all');
+  const data=buildObservationVisual(citation);
+  const selectionOutside=!!selected&&!!data?.questions.some(q=>q.question===selected&&!matchesFilter(q.cells.chatgpt.state,filter));
+  useEffect(()=>{if(selectionOutside)setFilter('all');},[selectionOutside]);
+  if(!data)return null;
+  const questions=data.questions.filter(q=>matchesFilter(q.cells.chatgpt.state,filter));
   return <div aria-label="질문별 AI 관측 지도">
     <div className="flex flex-wrap items-end justify-between gap-3"><div><h4 className="text-lg font-black">질문별 AI 관측 지도</h4><p className="mt-1 text-xs leading-6 text-jm-gray">질문을 선택하면 아래에서 답변과 출처를 확인할 수 있습니다.</p></div><p role="status" className="text-xs text-jm-gray">{questions.length} / {data.questions.length}개 질문</p></div>
-    <div className="my-3 flex flex-wrap gap-2" role="group" aria-label="질문 상태 필터">{filters.map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} onClick={()=>{setFilter(key);onSelect(null);}} className={`rounded-full border px-3 py-2 text-xs font-bold ${filter===key?'border-slate-900 bg-slate-900 text-white':'bg-white text-slate-600'}`}>{label}</button>)}</div>
-    <div className="space-y-2">{questions.map(q=><button key={q.question} type="button" aria-pressed={selected===q.question} onClick={()=>onSelect(q.question)} className={`report-question-row grid w-full gap-3 rounded-xl border p-4 text-left md:grid-cols-[minmax(0,1fr)_180px] ${selected===q.question?'border-blue-600 bg-blue-50/50':'bg-white hover:bg-slate-50'}`}>
+    <div className="my-3 flex flex-wrap gap-2" role="group" aria-label="질문 상태 필터">{filters.map(([key,label])=><button key={key} type="button" aria-pressed={filter===key} onClick={()=>{setFilter(key);const match=data.questions.find(q=>q.question===selected&&matchesFilter(q.cells.chatgpt.state,key))||data.questions.find(q=>matchesFilter(q.cells.chatgpt.state,key));onSelect(match?.question||null);}} className={`rounded-full border px-3 py-2 text-xs font-bold ${filter===key?'border-slate-900 bg-slate-900 text-white':'bg-white text-slate-600'}`}>{label}</button>)}</div>
+    <div className="space-y-2">{questions.map(q=><button key={q.question} type="button" aria-pressed={selected===q.question} aria-controls={observationQuestionAnchor(q.id)} onClick={()=>onSelect(q.question)} className={`report-question-row grid w-full gap-3 rounded-xl border p-4 text-left md:grid-cols-[minmax(0,1fr)_180px] ${selected===q.question?'border-blue-600 bg-blue-50/50':'bg-white hover:bg-slate-50'}`}>
       <span className="min-w-0"><span className="mb-1 block text-xs font-bold text-jm-gray">Q{q.id} · {q.journey}</span><span className="block break-words text-sm font-semibold leading-6">{q.question}</span></span>
       <span className="grid grid-cols-1 gap-2">{engines.map(engine=>{const cell=q.cells[engine],state=observationStates[cell.state];return <span key={engine} className="rounded-lg px-3 py-2" style={{background:state.background,color:state.color}}><span className="block text-xs font-bold">{engineNames[engine]}</span><span className="mt-1 block text-xs font-bold">{state.symbol} {state.label}</span><span className="mt-1 block text-[11px]">브랜드 {cell.mentioned===null?'미확인':cell.mentioned?'언급 있음':'언급 없음'}</span></span>;})}</span>
     </button>)}</div>
