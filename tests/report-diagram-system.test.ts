@@ -8,6 +8,7 @@ import ReportSectionDiagram from '../components/report/ReportSectionDiagram';
 import PageModelGraphic from '../components/report/PageModelGraphic';
 import {buildReportDiagrams} from '../lib/reportDiagrams';
 import {buildReportInsights} from '../lib/reportInsights';
+import {buildExecutionPlan,workOwners} from '../lib/reportExecution';
 import {buildSourceLibrary} from '../lib/reportContent';
 import {serviceReviewReport} from './fixtures/service-review-report';
 import {visualReviewReport} from './fixtures/visual-review-report';
@@ -32,6 +33,9 @@ test('every result section has a diagram or an integrated page model without cha
    const figure=$(el);
    for(const attr of ['aria-labelledby','aria-describedby'])assert.ok($(`[id="${figure.attr(attr)}"]`).length);
    for(const a of figure.find('a[href^="#"]').toArray())assert.equal($(`[id="${$(a).attr('href')!.slice(1)}"]`).length,1);
+   const entry=figure.parent();
+   assert.equal(entry.children('summary').attr('aria-controls'),figure.attr('id'));
+   assert.equal(entry.next().hasClass('report-stack'),true,'the optional diagram control precedes the detailed body');
   }
   assert.equal($('.report-reading-key [data-reading-role]').length,5);
   assert.deepEqual($('.report-nav a[data-chapter-link]').toArray().map(el=>$(el).attr('data-chapter-link')),['overview','geo','search','competition','actions']);
@@ -45,7 +49,13 @@ test('diagram counts match stored groups, URLs, tasks, issues and actual roadmap
  const report=serviceReviewReport(),data=buildReportInsights(report),sources=buildSourceLibrary(report),before=JSON.stringify(report),diagrams=buildReportDiagrams(report,data);
  assert.equal(diagrams['search-sources'].nodes[0].value,`${sources.groups.length}개`);
  assert.equal(diagrams['search-sources'].nodes[2].value,`${sources.links.length}개`);
- assert.equal(diagrams['actions-board'].nodes[0].value,`${data.tasks.length}개 항목`);
+ const execution=buildExecutionPlan(report,data);
+ assert.equal(diagrams['actions-board'].kind,'branch');
+ for(const [i,owner] of workOwners.entries()){
+  const tasks=execution.tasks.filter(task=>task.owner===owner.id);
+  assert.equal(diagrams['actions-board'].nodes[i].value,`${tasks.length}개 항목`);
+  assert.equal(diagrams['actions-board'].nodes[i].target?.id,tasks[0]?.anchor);
+ }
  assert.equal(diagrams['actions-issues'].nodes[0].value,`${report.criticalIssues.length}개 이슈`);
  for(const [i,key] of (['immediately','thisWeek','thisMonth'] as const).entries())assert.equal(diagrams['actions-schedule'].nodes[i].value,`${report.priorityRoadmap[key].length}개 항목`);
  assert.equal(JSON.stringify(report),before);

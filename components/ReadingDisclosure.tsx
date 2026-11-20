@@ -20,12 +20,13 @@ type Props = {
 };
 
 export default function ReadingDisclosure({title, preview, index, defaultOpen=false, className = '', children}: Props) {
+  const summaryId=React.useId();
   return (
     <details open={defaultOpen || undefined} className={`reading-fold ${className}`}>
-      <summary className="reading-summary">
+      <summary className="reading-summary" aria-labelledby={`${summaryId}-title`} aria-describedby={preview?`${summaryId}-preview`:undefined}>
         <span className="reading-caption">
-          <strong>{index?<><span className="reading-index" aria-hidden="true">{index}</span><span className="reading-title">{title}</span></>:title}</strong>
-          {preview && <span className="reading-preview">{preview}</span>}
+          <strong id={`${summaryId}-title`}>{index?<><span className="reading-index" aria-hidden="true">{index}</span><span className="reading-title">{title}</span></>:title}</strong>
+          {preview && <span id={`${summaryId}-preview`} className="reading-preview">{preview}</span>}
         </span>
         <ReadingToggle variant="report"/>
       </summary>

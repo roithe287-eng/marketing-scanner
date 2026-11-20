@@ -22,7 +22,7 @@ export default function ReportSectionDiagram({diagram,id}:{diagram:ReportDiagram
  const List=ordered?'ol':'ul';
  const captionId=`report-diagram-caption-${id}`;
  const footnoteId=`report-diagram-note-${id}`;
- return <figure className="report-section-diagram" data-report-diagram={id} data-diagram-kind={diagram.kind} aria-labelledby={captionId} aria-describedby={footnoteId}>
+ return <figure id={`report-diagram-${id}`} className="report-section-diagram" data-report-diagram={id} data-diagram-kind={diagram.kind} aria-labelledby={captionId} aria-describedby={footnoteId}>
   <figcaption id={captionId}><div><span className="report-diagram-kicker">{kindNames[diagram.kind]}</span><strong>{diagram.title}</strong></div>{diagram.scope&&<small>{diagram.scope}</small>}</figcaption>
   {diagram.formula&&<p className="report-diagram-formula">{diagram.formula}</p>}
   <List className="report-diagram-nodes" style={{'--diagram-columns':diagram.nodes.length} as React.CSSProperties}>{diagram.nodes.map((n,i)=><li key={n.title} data-node-role={n.role} style={reportRoleStyle(n.role)}>

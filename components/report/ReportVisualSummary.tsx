@@ -1,7 +1,7 @@
 import React from 'react';
 import ReadingDisclosure from '../ReadingDisclosure';
 import DiagnosisIcon from './DiagnosisIcon';
-import {reportReadingPoints} from '@/lib/conciseReport';
+import {reportPhraseKey,reportReadingPoints} from '@/lib/conciseReport';
 import SourceSketch from './PageModelGraphic';
 export {SourceSketch};
 
@@ -15,10 +15,12 @@ export function CompactText({text,summary,verbatim=false,className='',label}:{te
   const points=reportReadingPoints(text);
   const first=points[0]||text.trim();
   const preview=summary || (first.length<=110?first:undefined);
+  const detail=points.length>1&&preview&&reportPhraseKey(preview)===reportPhraseKey(first)?points.slice(1):points;
+  if(detail.length===1&&preview&&reportPhraseKey(detail[0])===reportPhraseKey(preview))return <p className={`report-compact-text ${className}`}>{detail[0]}</p>;
   return <ReadingDisclosure title={label||'상세 설명'} preview={preview} className={`prose-reading ${className}`}>
-    {points.length>1
-      ? <ul className="report-compact-text report-reading-points">{points.map((point,i)=><li key={i}>{point}</li>)}</ul>
-      : <p className="report-compact-text">{text}</p>}
+    {detail.length>1
+      ? <ul className="report-compact-text report-reading-points">{detail.map((point,i)=><li key={i}>{point}</li>)}</ul>
+      : <p className="report-compact-text">{detail[0]||text}</p>}
   </ReadingDisclosure>;
 }
 
@@ -35,7 +37,7 @@ const guides={
 } satisfies Record<string,Step[]>;
 export function VisualSteps({kind,items,label}:{kind?:keyof typeof guides;items?:Step[];label?:string}){
  const steps=items||(kind?guides[kind]:[]);
- return <ol className="report-visual-steps" aria-label={label||'확인 순서'}>{steps.map((step,i)=><li key={step.title}><span className="report-visual-icon"><DiagnosisIcon axis={step.icon}/></span><span className="report-visual-step-number">{String(i+1).padStart(2,'0')}</span><strong>{step.title}</strong><small>{step.detail}</small></li>)}</ol>;
+ return <ol className="report-visual-steps" aria-label={label||'확인 순서'}>{steps.map((step,i)=><li key={step.title}><span className="report-visual-icon" aria-hidden="true"><DiagnosisIcon axis={step.icon}/></span><span className="report-visual-step-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</span><strong>{step.title}</strong><small>{step.detail}</small></li>)}</ol>;
 }
 
 const sourceCards=[

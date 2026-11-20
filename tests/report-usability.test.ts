@@ -13,6 +13,7 @@ import {buildExecutionPlan} from '../lib/reportExecution';
 import {fixture} from './fixtures/report';
 import SourceElementCard from '../components/report/SourceElementCard';
 import ReportLayout from '../components/report/ReportLayout';
+import {CompactText} from '../components/report/ReportVisualSummary';
 import type {IndustryCategory} from '../lib/reportSchema';
 const url='https://example.com/catalog?category=outer';
 const captured=captureSiteEditing(load('<html><head><title>예시 쇼핑몰</title></head><body><main><section id="outer"><h2>아우터 안내</h2><p>사이즈별 실측과 소재를 확인하세요.</p><a id="first" href="/size">상담 문의</a></section><section id="delivery"><h2>배송 안내</h2><a id="second" href="/shipping">상담 문의</a><img src="/outer.jpg" alt="항공점퍼"><p>배송비와 교환-반품 조건을 확인하세요.</p></section></main></body></html>'),url,new Headers());
@@ -112,4 +113,37 @@ test('coverage warnings explain the affected result while archived quick wins ke
  assert.match($('#report-quick-win-0').text(),/모바일에서 버튼을 먼저 확인하세요/);
  assert.ok(buildReportDocument(saved).some(block=>block.text.includes('응답 대기 시간 초과')));
  assert.equal(JSON.stringify(saved),before);
+});
+
+test('checklist guidance reuses an exact saved issue while keeping different evidence and conditions',t=>{
+ const previous=(globalThis as typeof globalThis&{React?:typeof React}).React;
+ Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:previous}));
+ const repeated='메인에서 문의 양식까지 연결하고 수신 기록을 대조하세요.';
+ const sample={...report,criticalIssues:[{title:'상담 경로 보완',problem:'상담 링크가 남아 있습니다.',reason:'연결 주소를 검토하세요.',recommendation:repeated,priority:'high' as const}],checklist:[
+  {id:'same-task',label:'첫 화면 버튼',category:'conversion' as const,currentValue:'버튼 원문은 상담 문의입니다.',diagnosis:'클릭 후 목적지는 따로 확인하세요.',guide:repeated.slice(0,-1),status:'warning' as const},
+  {id:'different-task',label:'모바일 문의',category:'conversion' as const,currentValue:'모바일 버튼을 수집했습니다.',diagnosis:'수신 기록은 확인이 필요합니다.',guide:`${repeated} 24시간 이내 통지 조건을 확인하세요.`,status:'warning' as const},
+ ]};
+ const before=JSON.stringify(sample),$=load(renderToStaticMarkup(React.createElement(ReportLayout,{report:sample})));
+ const rows=$('.report-checklist-rows>article');
+ assert.equal(rows.eq(0).find('.report-evidence-flow a[href="#report-issue-0"]').length,1);
+ assert.equal(rows.find('.guide-proposal').length,0);
+ assert.match(rows.eq(0).text(),/버튼 원문은 상담 문의입니다.*클릭 후 목적지는 따로 확인하세요/);
+ assert.equal(rows.eq(1).find('.report-evidence-flow a[href="#report-issue-0"]').length,0);
+ assert.match(rows.eq(1).find('.report-evidence-flow').text(),/24시간 이내 통지 조건/);
+ assert.ok($('#report-issue-0').text().includes(repeated));
+ assert.equal(JSON.stringify(sample),before);
+});
+
+test('a long passage exposes a named disclosure and reads each sentence once',()=>{
+ const lead='가입 조건을 먼저 확인하세요.';
+ const long='지역별 접수 담당자에게 제출할 날짜와 서류를 확인하고 신청 가능한 일정을 기록하세요.';
+ const later='단, 승인 시점은 개별 안내에 따릅니다.';
+ const text=[lead,...Array.from({length:5},(_,i)=>`${i+1}차는 ${long}`),later].join(' ');
+ const $=load(renderToStaticMarkup(React.createElement(CompactText,{text,label:'가입 상세 안내'})));
+ const summary=$('summary');
+ assert.equal($(`[id="${summary.attr('aria-labelledby')}"]`).text(),'가입 상세 안내');
+ assert.equal($(`[id="${summary.attr('aria-describedby')}"]`).text(),lead);
+ assert.doesNotMatch($('.reading-body').text(),/가입 조건을 먼저 확인하세요/);
+ assert.match($('.reading-body').text(),/5차는 지역별 접수 담당자/);
+ assert.match($('.reading-body').text(),/단, 승인 시점은 개별 안내/);
 });

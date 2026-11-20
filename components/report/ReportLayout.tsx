@@ -3,6 +3,7 @@ import {SiteGuideProvider,SiteGuidebookOverview} from './SiteGuidebook';
 import PlatformApplicationPanel from './PlatformApplicationPanel';
 import CompetitorLandscape,{ProductCollection} from './CompetitorLandscape';
 import {ReportWorkspace,ReportNavigation,ReportSections} from './ReportWorkspace';
+import ReportJumpLink from './ReportJumpLink';
 import SiteContentOverview from './SiteContentOverview';
 import ReportHeader from './ReportHeader';
 import ReportRetentionNotice from './ReportRetentionNotice';
@@ -76,9 +77,9 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
   const placeReview=useMemo(()=>buildHospitalPlaceReview(report.siteDiagnostics),[report.siteDiagnostics]);
   const localPlaceReview=useMemo(()=>buildLocalPlaceReview(report.siteDiagnostics),[report.siteDiagnostics]);
   const sources=useMemo(()=>buildSourceLibrary(report),[report]);
-  const diagrams=useMemo(()=>buildReportDiagrams(report,data,sources),[report,data,sources]);
-  const briefs=useMemo(()=>buildSectionBriefs(report,data,sources),[report,data,sources]);
   const execution=useMemo(()=>buildExecutionPlan(report,data),[report,data]);
+  const diagrams=useMemo(()=>buildReportDiagrams(report,data,sources,execution),[report,data,sources,execution]);
+  const briefs=useMemo(()=>buildSectionBriefs(report,data,sources),[report,data,sources]);
   const pageEdits=useMemo(()=>buildPageEdits(report),[report]);
   const issueTasks=new Map(execution.tasks.filter(task=>task.group==='핵심 개선').map(task=>[task.id,task.anchor]));
   const searchTarget=report.pageEvidence?.finalUrl||report.url;
@@ -92,10 +93,13 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     {productContextInScope&&<section id="report-scope-product-originals" className="report-card" aria-label="상품 정보 보완"><h3>공개 경로에서 확인한 상품 정보</h3><ProductCollection context={productContextInScope}/></section>}
   </>;
   return <SiteGuideProvider report={report}><ReportWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`}><div className="report-v2 report-focused report-continuous" id="report-area">
-    <div className="report-opening-radar" id="report-top"><ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview} featured siteName={report.meta?.siteName||report.meta?.domain||report.url}/></div>
-    <ReportHeader report={report} data={data} actions={actions} topAnchor={false}/>
+    <div className="report-opening-radar" id="report-top">
+      <nav className="report-opening-links" aria-label="보고서 빠른 이동" data-hide-on-export><ReportJumpLink id="report-toc">보고서 목차로 이동</ReportJumpLink>{execution.first.length>0&&<ReportJumpLink id="report-view-overview-priority">우선 할 일 바로 보기</ReportJumpLink>}</nav>
+      <ScoreRadar diagnosis={report.diagnosis} plan={execution} review={report.evidenceReview} featured siteName={report.meta?.siteName||report.meta?.domain||report.url}/>
+    </div>
+    <ReportHeader report={report} data={data} firstTaskCount={execution.first.length} actions={actions} topAnchor={false}/>
     <ReportNavigation chapters={chapters}/><ReportReadingKey/>
-    <Chapter id="overview" number="01" title="홈페이지에서 무엇부터 확인할까요?" note="현재 페이지가 전하는 내용과 고객 질문을 살펴보세요. 급한 작업은 ‘우선 할 일’에서 바로 확인할 수 있습니다.">
+    <Chapter id="overview" number="01" title="홈페이지에서 무엇부터 확인할까요?" note="고객이 홈페이지에서 읽을 수 있는 내용을 살펴보세요. 답이 부족한 질문과 먼저 확인할 작업도 정리했습니다.">
       <ReportSections chapter="overview" diagrams={diagrams} briefs={briefs} items={[
         {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
         ...(report.serviceStrategy?[{id:'overview-services',label:report.serviceStrategy.industry==='noncommerce'?'고객·목적별 전략':'서비스·고객별 전략',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="segments"/>}]:[]),
@@ -106,7 +110,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         ...(report.diagnosisBaseline?[{id:'overview-comparison',label:'이전 결과 비교',children:<DiagnosisComparisonPanel report={report}/>}]:[]),
       ]}/>
     </Chapter>
-    <Chapter id="geo" number="02" title="AI가 답한 내용과 연결한 출처" note="브랜드 이름이 나왔는지, 우리 페이지가 출처로 연결됐는지 확인하세요.">
+    <Chapter id="geo" number="02" title="AI가 답한 내용과 연결한 출처" note="질문별 답변과 실제 출처를 볼 수 있습니다. 답변 속 업체명과 서비스 안내가 우리 정보와 일치하는지도 확인하세요.">
       <ReportSections chapter="geo" diagrams={diagrams} briefs={briefs} items={[
         ...(report.serviceStrategy?.briefing?[{id:'geo-logistics-briefing',label:'네이버 AI 브리핑 대응',children:<LogisticsBriefingPanel plan={report.serviceStrategy.briefing}/>}]:[]),
         ...(report.serviceStrategy?.briefingPlan?[{id:'geo-noncommerce-briefing',label:'업종별 AI 브리핑 대응',children:<NonCommerceBriefingPanel plan={report.serviceStrategy.briefingPlan}/>}]:[]),
@@ -118,7 +122,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         ...(report.geoBaseline?[{id:'geo-comparison',label:'이전 관측 비교',children:<GeoComparisonPanel report={report}/>}]:[]),
       ]}/>
     </Chapter>
-    <Chapter id="search" number="03" title="검색 결과와 홈페이지 바로 다듬기" note="검색 제목과 설명, 첫 화면, 버튼을 살펴보세요. 실제 값을 수정할 위치도 확인할 수 있습니다.">
+    <Chapter id="search" number="03" title="검색 결과와 홈페이지 바로 다듬기" note="바꾸려는 문구를 원문과 비교하세요. 검색엔진 기준, 제작 도구의 수정 위치, 직접 점검할 항목도 확인할 수 있습니다.">
       <ReportSections chapter="search" diagrams={diagrams} briefs={briefs} items={[
         {id:'search-platforms',label:'플랫폼별 적용',children:<PlatformApplicationPanel report={report}/>},
         {id:'search-edits',label:'페이지 문구 수정',children:<PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
@@ -129,7 +133,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         {id:'search-official',label:'검색엔진별 기준',children:<><OfficialSeoPanel audit={report.officialSeoAudit} targetUrl={report.url}/>{productPages.map(page=><ProductOfferAuditCard key={page.url} audit={page.productOffer} url={page.url}/>)}</>},
         {id:'search-technical',label:'페이지·기술 점검',children:<SiteDiagnosticsPanel audit={report.siteDiagnostics}/>},
         {id:'search-scope',label:'수집·분석 범위',children:scope},
-        ...(report.checklist?.length?[{id:'search-checklist',label:'기본 체크리스트',children:<DiagnosisChecklist checklist={report.checklist}/>}]:[]),
+        ...(report.checklist?.length?[{id:'search-checklist',label:'기본 체크리스트',children:<DiagnosisChecklist checklist={report.checklist} issues={report.criticalIssues}/>}]:[]),
       ]}/>
     </Chapter>
     <Chapter id="competition" number="04" title="비교 후보와 우리 페이지의 차이" note="먼저 같은 고객을 대상으로 하는지 확인하세요. 그다음 제목·설명·첫 화면을 비교하세요.">
