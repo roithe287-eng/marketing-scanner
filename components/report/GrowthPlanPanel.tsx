@@ -10,9 +10,11 @@ import React,{useMemo,useState} from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {buildGrowthPlan,growthBrief,GROWTH_STATUS,type GrowthArea} from '@/lib/growthPlan';
 import {GROWTH_CONCEPTS,GROWTH_SOURCES,GROWTH_TITLE,GROWTH_UPDATES} from '@/lib/growthKnowledge';
+import {reportGoal} from '@/lib/reportGoal';
 
 export default function GrowthPlanPanel({report}:{report:MarketingReport}) {
   const plan=useMemo(()=>buildGrowthPlan(report),[report]);
+  const goal=reportGoal(report.sitePurpose);
   const [filter,setFilter]=useState<'all'|GrowthArea>('all');
   const [copyState,setCopyState]=useState(''),[fallback,setFallback]=useState('');
   const filtered=plan.tasks.filter(t=>filter==='all'||t.areas.includes(filter));
@@ -37,8 +39,8 @@ export default function GrowthPlanPanel({report}:{report:MarketingReport}) {
     </details>}))}/></div>
     <span className="sr-only" role="status">{copyState?'작업 지시서를 복사했습니다.':fallback?'복사가 제한되어 직접 복사할 내용을 표시합니다.':''}</span>
     {fallback&&<label className="growth-copy-fallback">직접 선택해서 복사하세요<textarea readOnly value={fallback} rows={10}/></label>}
-    <ReadingDisclosure title="검색 유입부터 실제 문의·구매까지의 지표 보기"><div className="growth-concepts">{GROWTH_CONCEPTS.map(c=><article key={c.id} data-area={c.id}><span>{c.id}</span><h4>{c.title}</h4><p>{c.text}</p><small>확인할 지표</small><strong>{c.metric}</strong></article>)}</div>
-    <ol className="growth-path" aria-label="사이트 개선과 측정의 연결"><li><span aria-hidden="true">01</span><strong>읽을 수 있는 페이지</strong><p>접근·색인 확인</p></li><li><span aria-hidden="true">02</span><strong>선택할 이유가 있는 제목</strong><p>노출·CTR 관찰</p></li><li><span aria-hidden="true">03</span><strong>근거가 있는 답변</strong><p>AI 노출·인용 관측</p></li><li><span aria-hidden="true">04</span><strong>완료할 수 있는 행동</strong><p>문의·구매 확인</p></li></ol></ReadingDisclosure>
+    <ReadingDisclosure title={goal?`검색 유입부터 ${goal.label}까지의 지표 보기`:'검색 유입부터 실제 문의·구매까지의 지표 보기'}><div className="growth-concepts">{GROWTH_CONCEPTS.map(c=><article key={c.id} data-area={c.id}><span>{c.id}</span><h4>{c.title}</h4><p>{c.text}</p><small>확인할 지표</small><strong>{c.metric}</strong></article>)}</div>
+    <ol className="growth-path" aria-label="사이트 개선과 측정의 연결"><li><span aria-hidden="true">01</span><strong>읽을 수 있는 페이지</strong><p>접근·색인 확인</p></li><li><span aria-hidden="true">02</span><strong>선택할 이유가 있는 제목</strong><p>노출·CTR 관찰</p></li><li><span aria-hidden="true">03</span><strong>근거가 있는 답변</strong><p>AI 노출·인용 관측</p></li><li><span aria-hidden="true">04</span><strong>완료할 수 있는 행동</strong><p>{goal?.label||'문의·구매 확인'}</p></li></ol></ReadingDisclosure>
     <details className="growth-official-updates"><summary>최신 공식 가이드로 바로잡은 내용</summary><div>{GROWTH_UPDATES.map(u=><article key={u.title}><h4>{u.title}</h4><p>{u.text}</p><a href={GROWTH_SOURCES[u.source].url} target="_blank" rel="noopener noreferrer">공식 근거 ↗</a></article>)}</div></details>
   </section>;
 }

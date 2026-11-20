@@ -5,7 +5,7 @@ import type {LocalPlaceEvidence} from './localPlaceSchema';
 import {PLACE_DETECTION_ORDER,placeSector} from './localPlaceCatalog';
 import {ownBusinessRole,isContextOnlyEvidence,isSecondarySection,classificationText,purposeSchemaTypes,providerBody} from './websiteIdentity';
 import {z} from 'zod';
-import {detectFortuneService,fortuneTopic,fortuneDigitalProfile,fortuneConsultationProfile} from './fortuneService';
+import {detectFortuneService,firstPartyFortuneTools,fortuneTopic,fortuneDigitalProfile,fortuneConsultationProfile} from './fortuneService';
 import {logisticsQuestions} from './logisticsQuestions';
 import type {ExtractedWebsiteData} from './extractWebsite';
 
@@ -121,10 +121,11 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const all=[primary,...units.map(u=>classificationText(u.text)),...documents.filter(d=>!identity&&d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
   const merchantDocs=documents.filter(d=>d.source!=='search_excerpt');
   const serviceActions=data.siteEditing?data.siteEditing.elements.filter(e=>e.kind==='cta'&&!['header','nav','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)).map(e=>e.text):[...data.ctaButtons||[],...data.buttons||[]];
+  const tools=fortuneTopic.test(primary)?firstPartyFortuneTools(data.finalUrl||data.url,data.siteEditing?.elements):[];
   const fortune=detectFortuneService({
     url:data.finalUrl||data.url,headings,description:data.description||data.ogDescription||'',
     body:[providerBody(data),...merchantDocs.flatMap(d=>d.sections.map(s=>s.text))].join('\n'),
-    actions:serviceActions,
+    actions:serviceActions,linkedTools:new Set(tools.map(tool=>tool.href?.split('#')[0])).size>=2&&new Set(tools.map(tool=>tool.text.trim())).size>=2,
   });
   let id:BusinessContext['id']|undefined;
   const logistics=/해외\s*이사|귀국\s*이사|국제\s*운송|국제\s*물류|포워딩|freight\s*(?:forward|service)|international\s*(?:moving|relocation)/i;

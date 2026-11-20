@@ -6,6 +6,7 @@ import {buildDiagnosisComparison} from './diagnosisComparison';
 import {buildGeoComparison} from './geoComparison';
 import {readinessItems} from './reportVisuals';
 import {buildExecutionPlan,workOwners} from './reportExecution';
+import {reportGoal} from './reportGoal';
 
 export type DiagramIcon='firstView'|'cta'|'copywriting'|'trust'|'conversionFlow'|'adLanding'|'mobileUx'|'seo';
 export type DiagramNode={title:string;detail:string;icon:DiagramIcon;role:ReportRole;value?:string;target?:{id:string;label:string}};
@@ -55,6 +56,14 @@ export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,s
  const observation=data.obs;
  const diagnosisComparison=buildDiagnosisComparison(report);
  const geoComparison=buildGeoComparison(report);
+ const goal=reportGoal(report.sitePurpose);
+ if(goal){
+   result['overview-observations'].nodes[1].detail=goal.start;
+   result['actions-guide'].nodes[2].title=goal.label;
+   result['actions-guide'].nodes[2].detail=goal.check;
+   result['actions-kpi'].nodes[0].title=`목표 · ${goal.label}`;
+   result['actions-kpi'].nodes[0].detail='같은 기간에 이 행동까지 이어지기를 바라는 방문 횟수입니다.';
+ }
  if(review){
    set('overview-observations',0,review.assessed?`${review.assessed}개 중 ${review.passed}개 충족`:'판정 가능한 HTML 항목 없음');
    if(review.unknown>0)set('overview-observations',1,`HTML 미확인 ${review.unknown}개`);

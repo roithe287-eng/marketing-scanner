@@ -7,6 +7,7 @@ import {CopyWork} from './ExecutionWorkflow';
 import {observationQuestionAnchor} from '@/lib/reportVisuals';
 import {Guidebook} from './SiteGuidebook';
 import DiagnosisIcon from './DiagnosisIcon';
+import {reportGoal} from '@/lib/reportGoal';
 import {contentBrief,insightNotes,sourceReferenceGuide,messageThemes,type ReportInsights} from '@/lib/reportInsights';
 
 function Heading({label,title,note}:{label:string;title:string;note?:string}) {return <div className="report-card-heading"><p className="report-eyebrow">{label}</p><h3>{title}</h3>{note&&<CompactText className="report-note" text={note} summary={label==='SOURCE DIRECTORY'?'AI 답변이 인용한 외부 링크입니다. 경쟁사 여부는 별도 확인이 필요합니다.':label==='BRAND ANSWER REVIEW'?'브랜드를 언급한 답변의 업체명·서비스·출처를 대조하세요.':label==='MESSAGE COVERAGE'?'제목·설명의 표현 비교입니다. 미탐지는 서비스 부재를 뜻하지 않습니다.':undefined}/>}{label==='QUESTION → PAGE'&&<VisualSteps kind="questions"/>}</div>;}
@@ -14,13 +15,14 @@ function Empty({children}:{children:React.ReactNode}) {return <p className="repo
 function Link({url,children}:{url:string;children:React.ReactNode}) {return <a className="report-source-link" href={url} target="_blank" rel="noopener noreferrer">{children} ↗</a>;}
 export function CollectionCoverage({data}:{data:ReportInsights}) {return <article className="report-card" aria-label="데이터 수집 현황"><Heading label="DATA COVERAGE" title="어디까지 확인했나요?" note="현재 보고서에 저장된 범위입니다. 항목별 확인 범위가 다르면 미확인 상태를 함께 표시합니다."/><div className="report-four-grid">{data.coverage.map((c,i)=><div className="report-stat" key={c.label}><div className="report-stat-top"><DiagnosisIcon axis={i===0?'firstView':i===1?'seo':i===2?'trust':'adLanding'}/><span className="report-pill">{c.state}</span></div><h4>{c.label}</h4><strong>{c.value}</strong><p>{c.detail}</p></div>)}</div></article>;}
 export function ConversionPath({data}:{data:ReportInsights}) {
+  const goal=reportGoal(data.sitePurpose);
   if(data.evidenceReview)return <article id="report-conversion-verification" className="report-card" aria-label="전환 흐름 직접 확인">
     <Heading label="CONVERSION REVIEW" title="고객이 목표 행동을 끝까지 할 수 있나요?" note={`확인할 목표는 ${data.sitePurpose?.goal.label||'페이지의 다음 행동'}입니다. 휴대폰에서 진단한 주소를 열어 고객처럼 이용해 보세요.`}/>
     <VisualSteps label="직접 확인할 고객 동선" items={[
       {title:'첫 화면 읽기',detail:'누구를 위한 페이지인지 확인하세요.',icon:'firstView'},
       {title:'결정에 필요한 정보 찾기',detail:'대상·이용 조건·근거를 찾아보세요.',icon:'trust'},
-      {title:'목표 행동까지 이동',detail:'버튼 문구와 열린 화면이 맞는지 확인하세요.',icon:'cta'},
-      {title:'마지막 화면 확인',detail:'목표가 끝났음을 화면이나 실제 기록으로 확인하세요.',icon:'conversionFlow'},
+      {title:'목표 행동까지 이동',detail:goal?.start||'버튼 문구와 열린 화면이 맞는지 확인하세요.',icon:'cta'},
+      {title:goal?.label||'마지막 화면 확인',detail:goal?.check||'목표가 끝났음을 화면이나 실제 기록으로 확인하세요.',icon:'conversionFlow'},
     ]}/>
     <p className="report-note">어느 단계에서 막혔는지 화면과 함께 기록하세요. 방문 대비 완료율과 이탈 원인은 분석 계정에서 별도로 확인합니다.</p>
   </article>;
