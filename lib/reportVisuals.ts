@@ -1,5 +1,7 @@
 import {activeCitation} from './activeCitation';
 import type {Discoverability, LlmCitationQuestionResult as Row, LlmCitationTest} from './reportSchema';
+export function observationQuestionAnchor(id:number) {return `report-ai-question-${id}`; }
+export function citationActionAnchor(index:number) {return `report-ai-action-${index+1}`; }
 export const engines=['chatgpt'] as const;
 export const engineNames={chatgpt:'OpenAI'};
 export const observationStates={

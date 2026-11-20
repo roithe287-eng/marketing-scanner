@@ -43,7 +43,7 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
       ? `참고할 외부 출처 ${data.eligibleSources.length}개 · 연결된 질문과 원문을 함께 확인하세요.`
       : '인용 출처를 분류할 수 있는 답변 기록이 없습니다.',
     'geo-readiness': ready.length
-      ? `콘텐츠 준비도 ${ready.length}개 항목 · 실제 AI 인용 결과는 ‘실제 AI 답변’에서 확인하세요.`
+      ? `콘텐츠 준비도 ${ready.length}개 항목 · 페이지에서 확인한 정보와 더 작성할 항목을 살펴보세요.`
       : '우리 페이지가 질문에 답할 내용과 근거를 갖추었는지 확인하세요.',
     'geo-comparison': '이전과 현재의 같은 질문을 대조해 브랜드 언급과 자사 출처의 변화를 확인하세요.',
     'search-platforms': `${editingPlatform(report).label} · 사용 중인 제작 도구에서 실제 수정 위치를 확인하세요.`,
@@ -53,10 +53,10 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
       : '이 보고서에서 확인할 수 있는 원문·링크 기록이 없습니다.',
     'search-keywords': firstGap ? `제목·설명에서 먼저 검토할 표현 · ${firstGap.keyword}` : '본문의 단어 빈도와 제목·설명에 실제로 쓰인 표현을 대조하세요.',
     'search-naver': naver?.mode === 'diagnosis'
-      ? `점검 ${naver.checks.length}개 · 조치 필요 ${naver.checks.filter(c=>c.status==='action').length}개`
+      ? `네이버 검색·광고·상품·API 점검 ${naver.checks.length}개입니다. 조치할 항목이 ${naver.checks.filter(c=>c.status==='action').length}개 있습니다.`
       : '현재 기준으로 저장된 네이버 점검 기록이 없습니다.',
     'search-official': official?.mode === 'diagnosis'
-      ? `점검 ${official.checks.length}개 · 조치 필요 ${official.checks.filter(c=>c.status==='action').length}개`
+      ? `공식 검색 기준 ${official.checks.length}개 중 보완할 항목은 ${official.checks.filter(c=>c.status==='action').length}개입니다. 엔진별 적용 조건을 비교하세요.`
       : '현재 기준의 공통 검색 점검 기록이 없습니다.',
     'search-technical': audit
       ? `수집한 페이지 ${audit.pages.length}개 · 기술 점검 결과 ${audit.findings.length}개`
@@ -77,7 +77,7 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
     'actions-schedule': `즉시 ${schedule.immediately.length}개 · 이번 주 ${schedule.thisWeek.length}개 · 이번 달 ${schedule.thisMonth.length}개`,
     'actions-kpi': '현재 완료율을 기준으로 목표에 필요한 방문 수를 계산하세요.',
     'actions-geo': data.questions.length
-      ? `관측 질문 ${data.questions.length}개 · 자사 답변 근거를 보강할 과제를 확인하세요.`
+      ? `관측 질문 ${data.questions.length}개를 바탕으로 수정할 페이지와 다시 확인할 질문을 정하세요.`
       : '자사 페이지에 질문·답변·근거를 준비하고 같은 질문으로 다시 확인하세요.',
   };
 }

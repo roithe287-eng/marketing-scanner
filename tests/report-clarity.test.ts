@@ -80,3 +80,29 @@ test('missing H1 explains why a comparison cannot be displayed and what to check
  const $=load(renderToStaticMarkup(React.createElement(PageEditPreview,{report:r})));
  assert.match($('.work-before-after').text(),/비교할 원문이 확보되지 않아/);assert.match($('.work-before-after').text(),/스크립트·이미지/);assert.match($('.work-before-after').text(),/HTML의 H1을 함께 확인/);
 });
+
+test('AI answers are stored in the question detail once and keep evidence links from the review and source views',async t=>{
+ const {default:ReportLayout}=await import('../components/report/ReportLayout');
+ const previous=(globalThis as typeof globalThis&{React?:typeof React}).React;
+ Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:previous}));
+ const first=row({question:'첫 질문',status:'ok',citationVerified:false,responseText:'첫 질문의 원문'});
+ const review=row({question:'두 번째 질문',responseText:'두 번째 질문의 온전한 답변 원문'});
+ const saved=report([first,review]);
+ saved.llmCitationTest!.actionPlan=[{question:review.question,journey:'비교',accuracy:'needs_review',action:'research_page',evidence:'우선 다시 확인할 출처',nextStep:'고객 질문을 설명할 상세 페이지를 수정하세요.'}];
+ const before=JSON.stringify(saved);
+ const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report:saved})));
+ assert.equal($('#report-ai-question-1').length,1);
+ assert.equal($('#report-ai-question-2[hidden]').length,1);
+ assert.match($('#report-ai-question-1 summary').first().text(),/자사 출처 판정 불가/);
+ assert.match($('#report-ai-question-2').text(),/두 번째 질문의 온전한 답변 원문/);
+ assert.equal($('[aria-controls="report-ai-question-2"]').length,1);
+ assert.equal($('#report-view-geo-brand a[href="#report-ai-question-2"]').length,1);
+ assert.equal($('#report-view-geo-sources a[href="#report-ai-question-2"]').length,1);
+ assert.doesNotMatch($('#report-view-geo-brand').text(),/두 번째 질문의 온전한 답변 원문/);
+ assert.ok($('#report-view-geo-observations a[href="#report-ai-question-actions"]').length);
+ assert.equal($('#report-view-actions-geo #report-ai-question-actions').length,1);
+ assert.match($('#report-ai-question-actions').text(),/고객 질문을 설명할 상세 페이지를 수정하세요/);
+ assert.equal($('#report-view-actions-geo .report-geo-focus a[href="#report-ai-action-1"]').length,1);
+ assert.doesNotMatch($('#report-view-actions-geo .report-geo-focus').text(),/고객 질문을 설명할 상세 페이지를 수정하세요/);
+ assert.equal(JSON.stringify(saved),before);
+});

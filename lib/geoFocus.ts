@@ -2,7 +2,7 @@ import {activeCitation} from './activeCitation';
 import type { MarketingReport } from './reportSchema';
 import { safeHttpUrl } from './citationMeasurement';
 
-export type GeoTask = {id: string; title: string; evidence: string; nextStep: string; completion: string; targetUrl?: string};
+export type GeoTask = {id: string; title: string; evidence: string; nextStep: string; completion: string; targetUrl?: string; question?: string};
 export function buildGeoFocus(report: MarketingReport) {
   const citation = report.llmCitationTest?activeCitation(report.llmCitationTest):null;
   if (citation?.measurementVersion !== 2) return null;
@@ -17,7 +17,7 @@ export function buildGeoFocus(report: MarketingReport) {
     completion: '원문과 실제 정보의 일치 여부를 확인하고 변경 내용을 기록', targetUrl: own.url});
   const uncited = measured.find(row => !row.cited && !(row.sources || []).some(source => source.ownership === 'own'));
   const action = uncited && citation.actionPlan?.find(item => item.question === uncited.question && item.action !== 'retry');
-  if (uncited) tasks.push({id: 'answer-question', title: '자사 출처가 없는 질문에 직접 답변 보완',
+  if (uncited) tasks.push({id: 'answer-question', question:uncited.question, title: '자사 출처가 없는 질문에 직접 답변 보완',
     evidence: `“${uncited.question}”의 검색·출처 판정은 완료됐지만 자사 출처를 확인하지 못했습니다.`,
     nextStep: action?.nextStep || `사이트 내 관련 페이지를 먼저 찾고 “${uncited.question}”의 직접 답변·적용 조건·확인 가능한 근거를 보완하세요.`,
     completion: '관련 페이지의 위치와 답변·적용 조건·근거·업데이트 날짜를 확인',
@@ -31,7 +31,7 @@ export function buildGeoFocus(report: MarketingReport) {
     const retry = {id: 'restore-measurement', title: '실패·미확인 관측을 복구하고 다시 확인',
       evidence: measured.length === 0 ? '출처 판정이 완료된 응답이 없어 콘텐츠의 인용 여부를 확정할 수 없습니다.'
         : `${engines.join('·')}에서 실패·검색 미확인 ${failed.length}건이 있습니다. 이 응답으로 인용 여부를 판단하지 않습니다.`,
-      nextStep: '아래 엔진별 오류 안내에 따라 호출 상태를 확인한 후, 같은 질문으로 다시 측정하세요.',
+      nextStep: 'AI 답변의 오류 안내에서 원인을 확인하세요. 조건을 점검한 뒤 같은 질문으로 다시 측정하세요.',
       completion: '정상 답변과 검색 출처 판정이 가능한 응답을 확보'};
     if (measured.length === 0) tasks.unshift(retry); else tasks.splice(Math.min(2, tasks.length), 0, retry);
   }
