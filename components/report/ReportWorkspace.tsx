@@ -2,7 +2,7 @@
 import React,{createContext,useContext,useEffect,useState} from 'react';
 import {revealReportTarget} from './ReportJumpLink';
 import ReadingDisclosure from '../ReadingDisclosure';
-import ReportSectionDiagram from './ReportSectionDiagram';
+import ReportSectionDiagram,{diagramToggleLabel} from './ReportSectionDiagram';
 import {REPORT_CHAPTERS} from './ReportChapter';
 import type {ReportDiagram} from '@/lib/reportDiagrams';
 
@@ -73,7 +73,7 @@ export function ReportSections({chapter,items,diagrams={},briefs={}}:{chapter:st
  return <div className="report-section-workspace"><nav className="report-section-nav" aria-label={`${chapterLabel} 세부 목차`}>{items.map(item=><a key={item.id} href={`#report-view-${item.id}`} aria-current={selected===item.id?'location':undefined} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(`report-view-${item.id}`))event.preventDefault();}}>{item.label}</a>)}</nav>
   {items.map((item,i)=>{
     const diagram=diagrams[item.id], brief=briefs[item.id];
-    const content=<><div className="report-stack">{item.children}</div>{diagram&&<details className="report-inline-details report-section-reading-guide"><summary>도식으로 확인 순서 보기</summary><ReportSectionDiagram diagram={diagram} id={item.id}/></details>}</>;
+    const content=<><div className="report-stack">{item.children}</div>{diagram&&<details className="report-inline-details report-section-reading-guide"><summary>{diagramToggleLabel(diagram.kind)}</summary><ReportSectionDiagram diagram={diagram} id={item.id}/></details>}</>;
     return <section key={item.id} id={`report-view-${item.id}`} data-report-panel={item.id}
       data-visual-treatment={diagram?'guide':'embedded'} aria-label={item.label} className="report-section-panel">
       {brief

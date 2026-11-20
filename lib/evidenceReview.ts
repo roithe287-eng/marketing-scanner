@@ -110,7 +110,12 @@ export function finalizeReportEvidence(report:MarketingReport,data:ExtractedWebs
   };
 }
 
-export function evidenceScoreText(report:MarketingReport){const e=report.evidenceReview;return e?`HTML 기본 항목 ${e.passed}/${e.assessed}개 충족${e.score===null?'':` · ${e.score}%`}`:`AI 참고 평가 ${report.overallScore}/100 · 세부 배점 미검증`;}
+export function evidenceScoreText(report:MarketingReport){
+  const review=report.evidenceReview;
+  if(!review)return `AI 참고 평가 ${report.overallScore}/100 · 세부 배점 미검증`;
+  if(!review.assessed)return `HTML 기본 항목 판정 보류 · 확인 필요 ${review.unknown}개`;
+  return `HTML 기본 항목 ${review.passed}/${review.assessed}개 충족${review.score===null?'':` · ${review.score}%`}`;
+}
 
 /** Prefer observed crawl problems to stylistic advice or unmeasured UX assumptions. */
 export function evidencePriorities(report:MarketingReport){

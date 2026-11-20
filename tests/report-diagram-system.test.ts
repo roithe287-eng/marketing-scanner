@@ -12,6 +12,8 @@ import {buildSourceLibrary} from '../lib/reportContent';
 import {serviceReviewReport} from './fixtures/service-review-report';
 import {visualReviewReport} from './fixtures/visual-review-report';
 import {fixture} from './fixtures/report';
+import {radarReviewReport} from './fixtures/radar-review-report';
+import type {MarketingReport} from '../lib/reportSchema';
 import type {PageSketchKind} from '../lib/reportPlainLanguage';
 
 test('every result section has a diagram or an integrated page model without changing saved evidence',t=>{
@@ -25,6 +27,11 @@ test('every result section has a diagram or an integrated page model without cha
    assert.equal(el.children('.report-section-divider,.section-reading').length,1);
    const fold=el.children('.section-reading');
    if(fold.length){assert.ok(fold.find('>summary .reading-preview').text().trim());assert.equal(fold.attr('open'),id==='overview-questions'?'open':undefined);}
+  }
+  for(const el of $('.report-section-diagram').toArray()){
+   const figure=$(el);
+   for(const attr of ['aria-labelledby','aria-describedby'])assert.ok($(`[id="${figure.attr(attr)}"]`).length);
+   for(const a of figure.find('a[href^="#"]').toArray())assert.equal($(`[id="${$(a).attr('href')!.slice(1)}"]`).length,1);
   }
   assert.equal($('.report-reading-key [data-reading-role]').length,5);
   assert.deepEqual($('.report-nav a[data-chapter-link]').toArray().map(el=>$(el).attr('data-chapter-link')),['overview','geo','search','competition','actions']);
@@ -53,6 +60,11 @@ test('branch, comparison and calculation relationships stay explicit and escaped
  const $=load(renderToStaticMarkup(React.createElement(ReportSectionDiagram,{diagram:input,id:'test'})));
  assert.equal($('script,img').length,0);assert.ok($.text().includes(input.title));
  assert.equal($('ol>li').length,3);assert.equal($('svg.report-diagram-connector[aria-hidden=true]').length,2);
+ assert.match($('.report-diagram-formula').text(),/필요한 유입 수 = 목표 완료 수 ÷ 현재 완료율/);
+ assert.match($('.report-diagram-example').text(),/1,500\.2회라면 1,501회/);
+ const branches=load(renderToStaticMarkup(React.createElement(ReportSectionDiagram,{diagram:diagrams['geo-observations'],id:'branch-test'})));
+ assert.equal(branches('ul>li').length,3);
+ assert.equal(branches('.report-diagram-connector').length,0);
 });
 
 test('all nine page models use independent scalable vector geometry and no external images',()=>{
@@ -66,4 +78,29 @@ test('all nine page models use independent scalable vector geometry and no exter
   assert.ok($('path,rect,circle').length>0,type);scenes.add(html);
  }
  assert.equal(scenes.size,types.length);
+});
+
+
+test('data-driven diagrams keep different eligible denominators and identify unavailable observations',()=>{
+ const row=fixture.llmCitationTest!.results[0];
+ const report={...fixture,llmCitationTest:{...fixture.llmCitationTest!,results:[row,{...row,question:'다른 질문의 답변',brandMentioned:true,cited:false,status:'unverified' as const,searchUsed:false,citationVerified:false,sources:[]}]}};
+ const data=buildReportInsights(report),diagrams=buildReportDiagrams(report,data);
+ assert.deepEqual(diagrams['geo-observations'].nodes.map(node=>node.value),['2건','2건 중 1건','1건 중 0건']);
+ assert.deepEqual(diagrams['geo-questions'].nodes.map(node=>node.value),['1개 질문','0개 질문','1개 질문']);
+ const missing:MarketingReport={...fixture,llmCitationTest:null};
+ const guide=buildReportDiagrams(missing,buildReportInsights(missing));
+ assert.equal(guide['geo-observations'].scope,'결과 읽는 법');
+ assert.ok(guide['geo-observations'].nodes.every(node=>node.value===undefined));
+});
+
+test('reports with no assessable HTML show a hold in the header and reading guide',t=>{
+ const previous=(globalThis as typeof globalThis&{React?:typeof React}).React;
+ Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:previous}));
+ const source=radarReviewReport();
+ const report={...source,sitePurpose:undefined,evidenceReview:{...source.evidenceReview!,assessed:0,passed:0,score:null,unknown:6}};
+ const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
+ assert.match($('.report-hero-score').text(),/판정 보류/);
+ assert.equal($('.report-score-dial').length,0);
+ assert.match($('[data-report-diagram="overview-observations"]').text(),/판정 가능한 HTML 항목 없음/);
+ assert.doesNotMatch($('#report-view-overview-observations').text(),/0개 중 0개/);
 });
