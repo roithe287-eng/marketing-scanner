@@ -45,7 +45,7 @@ for(const item of sectorCases)test(`URL-backed sector classification, report, qu
   assert.doesNotMatch(JSON.stringify(questions),/장바구니|배송|재고|반품|구매 전/);
   const report=MarketingReportSchema.parse(JSON.parse(JSON.stringify(finalizeReportEvidence({...fixture,url:data.url,pageEvidence:capturePageEvidence(data),answerContentPlan:plan},data))));
   const before=JSON.stringify(report),$=render(report);
-  assert.equal($('.sector-check').length,6);assert.equal($('.sector-journey>div').length,3);assert.equal($('.report-hero-score').length,0);
+  assert.equal($('.sector-check').length,6);assert.equal($('ol.sector-journey>li').length,3);assert.equal($('.report-hero-score').length,0);
   assert.match($('.report-hero-purpose').text(),new RegExp(sector.label.replace(/[·]/g,'.')));
   for(const c of sector.checks){assert.ok($('.sector-check-grid').text().includes(c.label));for(const e of c.evidence)assert.ok($('.sector-check-grid').text().includes(e.text));}
   assert.equal($('#report-view-overview-main .report-radar').length,0);assert.equal($('#report-view-overview-questions .answer-content').length,1);
