@@ -24,7 +24,8 @@ export function buildSectionBriefs(report: MarketingReport, data: ReportInsights
       ? `${answers.mode==='ai-assisted'?'추천 질문':'질문 가이드'} ${answers.questions.length}개 · ${answers.questions[0].question}`
       : '고객이 묻는 내용과 페이지에서 바로 확인할 수 있는 답을 살펴보세요.',
     'overview-observations': review
-      ? `기준을 판정한 HTML 항목 ${review.assessed}개 중 ${review.passed}개를 충족했습니다. 미확인 ${review.unknown}개는 별도입니다.`
+      ? review.assessed?`판정한 HTML 항목 ${review.assessed}개 중 ${review.passed}개가 기준을 충족했습니다. 미확인 ${review.unknown}개는 별도입니다.`
+        : `판정 가능한 HTML 항목이 없습니다. 직접 확인할 항목은 ${review.unknown}개입니다.`
       : '페이지 진단을 방문부터 문의·구매까지의 흐름에 맞춰 확인하세요.',
     'overview-comparison': '이전 진단과 현재 진단을 같은 항목끼리 대조해 수정 결과를 확인하세요.',
     'geo-observations': !obs

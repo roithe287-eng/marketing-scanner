@@ -14,7 +14,7 @@ function Empty({children}:{children:React.ReactNode}) {return <p className="repo
 function Link({url,children}:{url:string;children:React.ReactNode}) {return <a className="report-source-link" href={url} target="_blank" rel="noopener noreferrer">{children} ↗</a>;}
 export function CollectionCoverage({data}:{data:ReportInsights}) {return <article className="report-card" aria-label="데이터 수집 현황"><Heading label="DATA COVERAGE" title="어디까지 확인했나요?" note="현재 보고서에 저장된 범위입니다. 항목별 확인 범위가 다르면 미확인 상태를 함께 표시합니다."/><div className="report-four-grid">{data.coverage.map((c,i)=><div className="report-stat" key={c.label}><div className="report-stat-top"><DiagnosisIcon axis={i===0?'firstView':i===1?'seo':i===2?'trust':'adLanding'}/><span className="report-pill">{c.state}</span></div><h4>{c.label}</h4><strong>{c.value}</strong><p>{c.detail}</p></div>)}</div></article>;}
 export function ConversionPath({data}:{data:ReportInsights}) {
-  if(data.evidenceReview)return <article className="report-card" aria-label="전환 흐름 직접 확인">
+  if(data.evidenceReview)return <article id="report-conversion-verification" className="report-card" aria-label="전환 흐름 직접 확인">
     <Heading label="CONVERSION REVIEW" title="고객이 목표 행동을 끝까지 할 수 있나요?" note={`확인할 목표는 ${data.sitePurpose?.goal.label||'페이지의 다음 행동'}입니다. 휴대폰에서 진단한 주소를 열어 고객처럼 이용해 보세요.`}/>
     <VisualSteps label="직접 확인할 고객 동선" items={[
       {title:'첫 화면 읽기',detail:'누구를 위한 페이지인지 확인하세요.',icon:'firstView'},
