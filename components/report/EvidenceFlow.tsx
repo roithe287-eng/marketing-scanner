@@ -2,6 +2,13 @@ import {CompactText} from './ReportVisualSummary';
 import React from 'react';
 import type {ReportRole} from '@/lib/reportRoles';
 import {RoleLabel,reportRoleStyle} from './ReportRole';
+import {reportReadingPoints} from '@/lib/conciseReport';
+
+export function LongReadingText({text}:{text:string}) {
+  const points=reportReadingPoints(text);
+  if(points.length<=1)return <p className="report-compact-text">{points[0]||text}</p>;
+  return <ul className="report-compact-text report-reading-points">{points.map((point,index)=><li key={index}>{point}</li>)}</ul>;
+}
 
 /** Fit parallel facts to the available container width without hiding any values. */
 export default function EvidenceFlow({items,label='근거와 실행 흐름'}:{items:{label:string;content:React.ReactNode;role?:ReportRole;kicker?:string}[];label?:string}) {
