@@ -85,12 +85,22 @@ test('developer handoffs close each of the four PDF groups with actual, linked r
     const members=sections.filter(section=>section.group===group),handoff=members.at(-1)!;
     assert.equal(members.filter(section=>section.id.startsWith('developer-handoff-')).length,1);
     assert.match(handoff.title,/^개발자 전달 사항/);
-    const fields=handoff.blocks.filter(block=>/^(확인 근거|수정 위치|수정 요청|완료 기준): /u.test(block.text));
-    assert.equal(fields.length,handoff.blocks.filter(block=>block.kind==='subheading').length*4);
+    const tasks=handoff.blocks.filter(block=>block.kind==='subheading');
+    assert.equal(handoff.blocks.find(block=>block.indexHeading)?.text,`수정 목차 · ${tasks.length}개 작업`);
+    for(const task of tasks){
+      const start=handoff.blocks.indexOf(task),fields=handoff.blocks.slice(start+1,start+7);
+      assert.deepEqual(fields.map(block=>block.text.split(':')[0]),['확인 근거','수정 위치','실행 순서','기대효과','검증 지표','완료 기준']);
+      assert.match(fields[2].text,/1\. [\s\S]+\n2\. /u);
+      assert.ok(handoff.blocks.some(block=>block.targetId===task.anchor&&block.text===task.text));
+      const taskPage=pages.find(page=>page.anchors?.includes(task.anchor!))!;
+      const top=taskPage.anchorOffsets?.[task.anchor!];
+      assert.ok(top!==undefined&&top>=82,task.text);
+      assert.ok(taskPage.lines.some(line=>line.y>=top&&line.text==='확인 근거:'),task.text);
+    }
     assert.ok(handoff.blocks.some(block=>block.targetId&&sections.some(section=>section.id===block.targetId)));
     const openingPage=pages.find(page=>page.anchors?.includes(handoff.id))!;
-    assert.ok(openingPage.lines.some(line=>line.text==='확인 근거:'),'the directory lands beside the first request');
-    assert.ok(openingPage.lines.some(line=>line.text==='완료 기준:'),'the first complete request fits on the opening page');
+    assert.ok(openingPage.lines.some(line=>line.text.startsWith('수정 목차')),'the section lands beside its work index');
+    assert.ok(openingPage.lines.some(line=>line.targetId===tasks[0].anchor),'the first local link fits the index opening');
   }
 });
 
@@ -100,7 +110,11 @@ test('developer verification uses the site purpose and marks unconfirmed operati
     const diagnosis=sections.find(section=>section.id==='developer-handoff-01')!.blocks.map(block=>block.text).join(' ');
     const verification=sections.find(section=>section.id==='developer-handoff-04')!.blocks.map(block=>block.text).join(' ');
     assert.ok(diagnosis.includes(goal));assert.ok(verification.includes(goal));
-    assert.match(verification,/실제 완료 건수는 이 PDF에서 확인할 수 없습니다/);
+    assert.match(verification,/실제 완료 건수와 이벤트 수신 상태는 이 PDF에서 확인할 수 없습니다/);
     assert.doesNotMatch(verification,/구매 완료|결제 이벤트/);
+    const edits=sections.find(section=>section.id==='developer-handoff-03')!.blocks.map(block=>block.text).join(' ');
+    assert.match(edits,/<head>/u);
+    assert.match(edits,/meta\[name="description"\]/u);
+    assert.match(edits,/수집 HTML 선택자/u);
   }
 });
