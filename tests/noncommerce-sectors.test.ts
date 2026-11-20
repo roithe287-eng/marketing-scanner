@@ -47,7 +47,13 @@ for(const item of sectorCases)test(`URL-backed sector classification, report, qu
   const before=JSON.stringify(report),$=render(report);
   assert.equal($('.sector-check').length,6);assert.equal($('ol.sector-journey>li').length,3);assert.equal($('.report-hero-score').length,0);
   assert.match($('.report-hero-purpose').text(),new RegExp(sector.label.replace(/[·]/g,'.')));
-  for(const c of sector.checks){assert.ok($('.sector-check-grid').text().includes(c.label));for(const e of c.evidence)assert.ok($('.sector-check-grid').text().includes(e.text));}
+  for(const [index,c] of sector.checks.entries()){
+    const check=$('.sector-check-grid .sector-check').eq(index);
+    assert.ok(check.text().includes(c.label));
+    const next=check.find('a[href^="#report-purpose-check-"]').attr('href');
+    const quotations=next?$(next).find('a[href^="#report-purpose-source-"]').toArray().map(link=>$($(link).attr('href')!).find('blockquote').text()):check.find('blockquote').toArray().map(quote=>$(quote).text());
+    for(const e of c.evidence)assert.ok(quotations.some(quote=>quote.includes(e.text)));
+  }
   assert.equal($('#report-view-overview-main .report-radar').length,0);assert.equal($('#report-view-overview-questions .answer-content').length,1);
   const blocks=buildReportDocument(report);for(const c of sector.checks){for(const e of c.evidence)assert.ok(blocks.some(b=>b.text.includes(e.text)));}
   const summary=buildReportSummaryPage(report,measure);assert.ok(summary.lines.some(l=>l.text.includes(sector.label)));
