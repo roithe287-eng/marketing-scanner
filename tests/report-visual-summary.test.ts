@@ -12,14 +12,14 @@ import {buildReportDocument} from '../lib/reportDocument';
 import {visualReviewReport} from './fixtures/visual-review-report';
 import {PDF_PAGE,type PdfTextStyle} from '../lib/pdfLayout';
 
-test('long explanations remove adjacent repetition while preserving facts and limits inside a disclosure',()=>{
+test('long explanations preserve each fact in the lead or detailed disclosure',()=>{
  const text='https://example.org/a.b 페이지에서 2.5%를 관측했다는 설명입니다. '+ '확인할 위치와 작업 내용이 이어지는 문장입니다. '.repeat(12)+'실제 전환율을 측정한 결과는 아닙니다.';
  const excerpt=reportExcerpt(text);
  assert.ok(excerpt.startsWith('https://example.org/a.b'));assert.ok(excerpt.includes('2.5%'));
  assert.ok(excerpt.includes('실제 전환율을 측정한 결과는 아닙니다.'));assert.ok(excerpt.length<text.length);
  const $=load(renderToStaticMarkup(React.createElement(CompactText,{text})));
- assert.equal($('.report-reading-points li').length,3);assert.equal($('details:not([open])').length,1);
- assert.match($('.report-compact-text').text(),/https:\/\/example.org\/a.b/);assert.match($('.report-compact-text').text(),/2.5%/);assert.match($('.report-compact-text').text(),/실제 전환율을 측정한 결과는 아닙니다/);
+ assert.equal($('.report-reading-points li').length,2);assert.equal($('details:not([open])').length,1);
+ assert.match($('.reading-preview').text(),/https:\/\/example.org\/a.b/);assert.match($('.reading-preview').text(),/2.5%/);assert.match($('.report-compact-text').text(),/실제 전환율을 측정한 결과는 아닙니다/);
  const original=load(renderToStaticMarkup(React.createElement(CompactText,{text,verbatim:true})));
  assert.equal(original('.report-compact-text').text(),text);
  const summary=load(renderToStaticMarkup(React.createElement(CompactText,{text,summary:excerpt})));
