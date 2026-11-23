@@ -1,5 +1,6 @@
 "use client";
 import React,{useState} from 'react';
+import ReadingDisclosure from './ReadingDisclosure';
 import type {MarketingReport} from '@/lib/reportSchema';
 import {safeHttpUrl} from '@/lib/citationMeasurement';
 import CompetitorDeepDiveModal from '@/components/CompetitorDeepDiveModal';
@@ -21,7 +22,7 @@ export default function CompetitorComparison({competitorAnalysis:storedAnalysis,
             후보별 수집 자료
           </p>
           {/* Give the complete saved titles and descriptions enough reading width. */}
-          <div className="competitor-cards grid gap-4 grid-cols-1 lg:grid-cols-2 items-start">
+          <div className="competitor-cards report-competitor-list">
             {competitors.map((comp,index) => (
               <div
                 key={comp.rank}
@@ -46,65 +47,62 @@ export default function CompetitorComparison({competitorAnalysis:storedAnalysis,
                 <h4 className="font-black text-base leading-snug">
                   {comp.metaTitle || comp.title}
                 </h4>
-                {comp.relevance && <div className="mt-3 rounded-lg border bg-neutral-50 p-3">
-                  <p className="text-xs font-bold">{comp.relevance === 'keyword_match' ? '검색어 관련 신호 확인' : '서비스 일치 검토 필요'}</p>
-                  <p className="mt-1 text-xs text-jm-gray leading-6">{comp.selectionEvidence}</p>
-                  {comp.searchRank && <p className="mt-2 text-xs text-jm-gray">네이버 웹문서 검색 응답에서 {comp.searchRank}번째 항목</p>}
-                </div>}
-                {!comp.metaDescription && comp.description && <div className="mt-3 rounded-lg bg-neutral-50 p-3"><p className="font-bold">네이버 검색 요약 · 좌표 계산에서는 제외</p><p>{comp.description}</p></div>}
-                {comp.metaDescription && (
-                  <div className="mt-2"><p className="text-sm font-semibold">수집한 메타 설명</p><p className="text-sm text-jm-gray leading-7">{comp.metaDescription}</p></div>
-                )}
-                {comp.h1 && (
-                  <div className="mt-3 rounded-lg bg-jm-light-gray px-3 py-2">
-                    <p className="text-[10px] font-black tracking-wider text-jm-gray">
-                      페이지 대표 제목 (H1)
-                    </p>
-                    <p className="mt-0.5 text-xs leading-5 font-medium">
-                      {comp.h1}
-                    </p>
-                  </div>
-                )}
-                {comp.keyMessage && (
-                  <div className="mt-3 rounded-xl bg-gradient-to-br from-jm-red/[0.08] to-jm-red/[0.04] p-3 border-l-4 border-jm-red">
-                    <p className="text-[10px] font-black tracking-wider text-jm-red">
-                      AI가 해석한 핵심 메시지
-                    </p>
-                    <CompactText className="mt-1 text-sm leading-7" text={comp.keyMessage} verbatim/>
-                  </div>
-                )}
-                {comp.differentiation && reportPhraseKey(comp.differentiation)!==reportPhraseKey(comp.keyMessage) && (
-                  <div className="mt-3 rounded-xl bg-jm-light-gray p-3">
-                    <p className="text-[10px] font-black tracking-wider text-jm-gray">
-                      AI가 해석한 차별점
-                    </p>
-                    <CompactText className="mt-1 text-sm leading-7" text={comp.differentiation} verbatim/>
-                  </div>
-                )}
-                {comp.ctaTexts && comp.ctaTexts.length > 0 && (
-                  <div className="mt-3">
-                    <p className="text-[10px] font-black tracking-wider text-jm-gray">
-                      고객이 누르는 버튼
-                    </p>
-                    <div className="mt-2 flex flex-wrap gap-1">
-                      {comp.ctaTexts.map((cta, i) => (
-                        <span
-                          key={i}
-                          className="inline-block rounded-full bg-jm-black px-2 py-0.5 text-[10px] font-bold text-white"
-                        >
-                          {cta}
-                        </span>
-                      ))}
+                {comp.relevance && <p className="report-competitor-relevance">{comp.relevance === 'keyword_match' ? '검색어 관련 신호 확인' : '서비스 일치 검토 필요'}</p>}
+                {comp.fetchError && <p className="mt-2 report-note">페이지 수집 미완료. 저장된 자료는 원문과 대조해 확인하세요.</p>}
+                {(comp.metaDescription||comp.description||comp.h1||comp.keyMessage||comp.differentiation||comp.ctaTexts?.length||(comp.relevance&&(comp.selectionEvidence||comp.searchRank))) ? <ReadingDisclosure title="수집 문구와 비교 근거" className="report-supporting-detail">
+                  {comp.relevance && (comp.selectionEvidence||comp.searchRank) ? <div className="report-competitor-selection">
+                    {comp.selectionEvidence && <p className="text-sm text-jm-gray leading-6">{comp.selectionEvidence}</p>}
+                    {comp.searchRank && <p className="mt-2 text-sm text-jm-gray">네이버 웹문서 검색 응답에서 {comp.searchRank}번째 항목</p>}
+                  </div> : null}
+                  {!comp.metaDescription && comp.description && <div className="mt-3 rounded-lg bg-neutral-50 p-3"><p className="font-bold">네이버 검색 요약 · 좌표 계산에서는 제외</p><p>{comp.description}</p></div>}
+                  {comp.metaDescription && (
+                    <div className="mt-2"><p className="text-sm font-semibold">수집한 메타 설명</p><p className="text-sm text-jm-gray leading-7">{comp.metaDescription}</p></div>
+                  )}
+                  {comp.h1 && (
+                    <div className="mt-3 rounded-lg bg-jm-light-gray px-3 py-2">
+                      <p className="text-[10px] font-black tracking-wider text-jm-gray">
+                        페이지 대표 제목 (H1)
+                      </p>
+                      <p className="mt-0.5 text-xs leading-5 font-medium">
+                        {comp.h1}
+                      </p>
                     </div>
-                  </div>
-                )}
-                {comp.fetchError && (
-                  <p className="mt-3 text-[10px] text-jm-gray italic">
-                    페이지 수집 미완료. 저장된 자료는 원문과 대조해 확인하세요.
-                  </p>
-                )}
+                  )}
+                  {comp.keyMessage && (
+                    <div className="mt-3 rounded-xl bg-gradient-to-br from-jm-red/[0.08] to-jm-red/[0.04] p-3 border-l-4 border-jm-red">
+                      <p className="text-[10px] font-black tracking-wider text-jm-red">
+                        AI가 해석한 핵심 메시지
+                      </p>
+                      <CompactText className="mt-1 text-sm leading-7" text={comp.keyMessage} verbatim/>
+                    </div>
+                  )}
+                  {comp.differentiation && reportPhraseKey(comp.differentiation)!==reportPhraseKey(comp.keyMessage) && (
+                    <div className="mt-3 rounded-xl bg-jm-light-gray p-3">
+                      <p className="text-[10px] font-black tracking-wider text-jm-gray">
+                        AI가 해석한 차별점
+                      </p>
+                      <CompactText className="mt-1 text-sm leading-7" text={comp.differentiation} verbatim/>
+                    </div>
+                  )}
+                  {comp.ctaTexts && comp.ctaTexts.length > 0 && (
+                    <div className="mt-3">
+                      <p className="text-[10px] font-black tracking-wider text-jm-gray">
+                        고객이 누르는 버튼
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {comp.ctaTexts.map((cta, i) => (
+                          <span
+                            key={i}
+                            className="inline-block rounded-full bg-jm-black px-2 py-0.5 text-[10px] font-bold text-white"
+                          >
+                            {cta}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </ReadingDisclosure> : null}
 
-                {/* v45-W2: 딥다이브 버튼 */}
                 <button
                   type="button"
                   aria-label={`${comp.domain} 페이지 상세 분석`}

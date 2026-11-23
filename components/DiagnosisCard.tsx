@@ -1,5 +1,6 @@
 import {RoleBox} from './report/ReportRole';
 import React from 'react';
+import ReadingDisclosure from './ReadingDisclosure';
 import {Guidebook} from './report/SiteGuidebook';
 import type {MarketingReport} from '@/lib/reportSchema';
 import EvidenceFlow,{LongReadingText} from './report/EvidenceFlow';
@@ -17,8 +18,12 @@ export default function DiagnosisCard({issue,index,taskAnchor}:{issue:MarketingR
     <div className="report-issue-heading"><span className="report-index">{String(index+1).padStart(2,'0')}</span><h3>{issue.title}</h3><span className={`report-pill ${issue.priority==='high'?'danger':issue.priority==='medium'?'warning':''}`}>{issue.evidenceStatus==='review'?'근거 재확인':labels[issue.priority]}</span></div>
     {issue.evidenceNote&&<p className="report-note text-amber-800 mb-3">{issue.evidenceNote}</p>}
     <EvidenceFlow label="핵심 이슈의 사실·해석·수정 방향" items={items}/>
-    {(issue.badExample||issue.goodExample)&&<div className="report-copy-pair">{issue.badExample&&<RoleBox role="current" label="현재 예시" kicker="AS-IS"><p>{issue.badExample}</p></RoleBox>}{issue.goodExample&&<RoleBox role="proposal" label="개선 예시 · 적용 전 확인" kicker="TO-BE · 제안"><p>{issue.goodExample}</p></RoleBox>}</div>}
-    {taskAnchor?<p className="report-related-link"><ReportJumpLink id={taskAnchor}>이 이슈의 수정 위치와 완료 기준</ReportJumpLink></p>:<Guidebook title={issue.title} current={issue.badExample} evidence={issue.problem} proposal={issue.goodExample||issue.recommendation}/>}
-    {issue.exampleNote&&<p className="report-note mt-4">{issue.exampleNote}</p>}
+    {taskAnchor&&<p className="report-related-link"><ReportJumpLink id={taskAnchor}>이 이슈의 수정 위치와 완료 기준</ReportJumpLink></p>}
+    {(issue.badExample||issue.goodExample||issue.exampleNote||!taskAnchor)&&<ReadingDisclosure
+      title={taskAnchor?'현재·개선 예시':'예시와 적용 방법'} className="report-supporting-detail">
+      {(issue.badExample||issue.goodExample)&&<div className="report-copy-pair">{issue.badExample&&<RoleBox role="current" label="현재 예시" kicker="AS-IS"><p>{issue.badExample}</p></RoleBox>}{issue.goodExample&&<RoleBox role="proposal" label="개선 예시 · 적용 전 확인" kicker="TO-BE · 제안"><p>{issue.goodExample}</p></RoleBox>}</div>}
+      {!taskAnchor&&<Guidebook title={issue.title} current={issue.badExample} evidence={issue.problem} proposal={issue.goodExample||issue.recommendation}/>}
+      {issue.exampleNote&&<p className="report-note mt-4">{issue.exampleNote}</p>}
+    </ReadingDisclosure>}
   </article>;
 }

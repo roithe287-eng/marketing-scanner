@@ -1,4 +1,5 @@
 "use client";
+import ReadingDisclosure from '../ReadingDisclosure';
 import {SiteGuideProvider,SiteGuidebookOverview} from './SiteGuidebook';
 import PlatformApplicationPanel from './PlatformApplicationPanel';
 import CompetitorLandscape,{ProductCollection} from './CompetitorLandscape';
@@ -62,7 +63,6 @@ import Disclaimer from '@/components/Disclaimer';
 import GrowthPlanPanel from './GrowthPlanPanel';
 import GrowthKpiPanel from './GrowthKpiPanel';
 import {REPORT_CHAPTERS as chapters,ReportChapter as Chapter} from './ReportChapter';
-function Disclosure({title,note,children}:{title:string;note:string;children:React.ReactNode}) {return <details open className="report-disclosure"><summary><span><strong>{title}</strong><small>{note}</small></span><b aria-hidden="true">+</b></summary><div className="report-legacy">{children}</div></details>;}
 export default function ReportLayout({report:storedReport,actions,clinicWebAllowed=true,searchEvidenceAllowed=false,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;clinicWebAllowed?:boolean;searchEvidenceAllowed?:boolean;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
   const report=useMemo(()=>reportForPresentation(storedReport),[storedReport]);
   const expiry=Math.min(...[report.sharedRetention?.expiresAt,report.diagnosisBaseline?.expiresAt,report.geoBaseline?.expiresAt].filter((v):v is number=>typeof v==='number'));
@@ -89,8 +89,9 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
   const productContextInScope=showProductCollection(report.sitePurpose)?report.productContext||undefined:undefined;
   const scope=<>
     <ReportCoverageWarnings warnings={report.analysisWarnings}/>
-    {report.sitePurpose&&<Disclosure title="페이지 목적별 상세 점검" note="대상·제공 범위·다음 행동의 근거"><WebsitePurposePanel purpose={report.sitePurpose}/></Disclosure>}
-    <Disclosure title="수집 근거와 측정 범위" note="관측값과 실제 화면 확인 항목"><ReportEvidenceGuide report={report}/><CollectionCoverage data={data}/></Disclosure>
+    <ReportEvidenceGuide report={report}/>
+    {report.sitePurpose&&<ReadingDisclosure defaultOpen title="페이지 목적별 상세 점검" preview="대상·제공 범위·다음 행동의 근거"><WebsitePurposePanel purpose={report.sitePurpose}/></ReadingDisclosure>}
+    <ReadingDisclosure title="수집 근거와 측정 범위" preview="관측값과 실제 화면 확인 항목"><CollectionCoverage data={data}/></ReadingDisclosure>
     {productContextInScope&&<section id="report-scope-product-originals" className="report-card" aria-label="상품 정보 보완"><h3>공개 경로에서 확인한 상품 정보</h3><ProductCollection context={productContextInScope}/></section>}
   </>;
   return <SiteGuideProvider report={report}><ReportWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`}><div className="report-v2 report-focused report-continuous" id="report-area">

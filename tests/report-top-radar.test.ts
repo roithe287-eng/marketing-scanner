@@ -45,7 +45,17 @@ test('HTML evidence remains below the radar and never replaces or supplies its A
  const report=radarReviewReport(),$=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
  assert.equal(report.evidenceReview!.score,100);
  assert.equal($('#report-view-overview-observations .report-evidence-review').length,1);
- for(const criterion of report.evidenceReview!.criteria)assert.ok($('.report-evidence-review').text().includes(criterion.evidence));
+ const review=report.evidenceReview!,rows=$('.report-evidence-row');
+ assert.equal(rows.length,review.axes.length);
+ rows.each((index,row)=>{
+  const next=$(row).find('.report-evidence-next'),evidence=next.children('details');
+  assert.equal(next.children('.report-compact-text').text(),review.axes[index].nextStep);
+  assert.equal(evidence.attr('open'),undefined);
+  assert.equal(evidence.find('.report-compact-text').text(),review.axes[index].evidence);
+ });
+ const method=$('.report-evidence-review>details');
+ assert.equal(method.attr('open'),undefined);
+ for(const criterion of review.criteria)assert.ok(method.text().includes(criterion.evidence));
  assert.match($('.report-evidence-review').text(),/미측정/);
  assert.notEqual($('.diagnosis-radar-average').text(),'100','the HTML fulfillment percentage is not the radar average');
 });

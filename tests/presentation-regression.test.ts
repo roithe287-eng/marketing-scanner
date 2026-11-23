@@ -49,6 +49,9 @@ test('shared report keeps all five chapters, eight directions and complete issue
   assert.equal($('.report-copy-fallback textarea[readonly]').length,0);
   assert.ok($('button[aria-label="운영 수정안 복사"]').length);
   assert.equal($('#report-execution-board').length,1);assert.equal($('.report-backlog-distribution').length,0);assert.ok($('.work-task-list>details').length>0);
+  assert.equal($('#report-page-edits .work-edit-content > details.report-supporting-detail:not([open])').length,1);
+  assert.ok($('#report-execution-board .work-detail > details.report-supporting-detail:not([open])').length);
+  assert.ok($('#report-growth-plan .growth-action-body > details.report-supporting-detail:not([open])').length);
   assert.equal(JSON.stringify(report),before);
 });
 test('Naver graphic uses criteria counts for legacy reports, without invented current status',()=>{
@@ -84,8 +87,11 @@ test('long explanations and procedures remain complete in responsive parallel ca
 test('competitor cards expose complete saved descriptions, headings and every CTA',()=>{
   const competitor={rank:1,title:'제목',link:'https://example.org',domain:'example.org',description:'검색 설명',metaTitle:long+'제목 끝',metaDescription:long+'설명 끝',h1:long+'H1 끝',ctaTexts:Array.from({length:15},(_,i)=>`저장된 CTA ${i+1}`),keyMessage:long+'메시지 끝',differentiation:long+'차이 끝'};
   const $=load(renderToStaticMarkup(React.createElement(CompetitorComparison,{ourUrl:fixture.url,competitorAnalysis:{searchKeyword:'검증',competitors:[competitor]}})));
-  const card=$('.competitor-card');
-  for(const value of [competitor.metaTitle,competitor.metaDescription,competitor.h1,competitor.keyMessage,competitor.differentiation,...competitor.ctaTexts])assert.ok(card.text().includes(value),value);
+  const card=$('.competitor-card'),detail=card.find('.report-supporting-detail');
+  assert.equal(card.children('h4').text(),competitor.metaTitle);
+  assert.equal(detail.attr('open'),undefined);
+  for(const value of [competitor.metaDescription,competitor.h1,competitor.keyMessage,competitor.differentiation,...competitor.ctaTexts])assert.ok(detail.text().includes(value),value);
+  assert.ok(card.children('button').length,'the analysis action is available without opening the evidence');
   assert.equal(card.find('[class*="line-clamp"],[class~="truncate"]').length,0);
 });
 

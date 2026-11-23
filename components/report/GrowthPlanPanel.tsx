@@ -30,11 +30,24 @@ export default function GrowthPlanPanel({report}:{report:MarketingReport}) {
     <div className="report-filter-row" role="group" aria-label="실행 가이드 관점 필터">{(['all','SEO','GEO','AEO'] as const).map(f=><button type="button" key={f} aria-pressed={filter===f} onClick={()=>setFilter(f)}>{f==='all'?'전체 작업':f==='SEO'?'검색 유입 (SEO)':f==='GEO'?'AI 인용 (GEO)':'질문 답변 (AEO)'}</button>)}<span role="status">{filtered.length}개 작업</span></div>
     <div className="growth-actions"><ReportItemPanels id="growth-tasks" label="실행 가이드 선택" items={filtered.map((task,i)=>({id:task.id,label:task.title,children:<details open className="growth-action" key={task.id}>
       <summary><span className="growth-action-index">{String(i+1).padStart(2,'0')}</span><span><span className="growth-action-meta">{task.channel} · {task.areas.join(' / ')}</span><strong>{task.title}</strong><small>{task.owner}</small></span><span className={`report-pill ${task.status==='action'?'warning':''}`}>{GROWTH_STATUS[task.status]}</span></summary>
-      <div className="growth-action-body"><div className="report-role-pair"><RoleBox role="current" label="이 URL에서 확인한 근거" kicker="AS-IS"><CompactText text={task.evidence}/></RoleBox><RoleBox role="proposal" label="적용 목표 / 작성 틀" kicker="TO-BE · 제안"><CompactText text={task.toBe}/></RoleBox></div><RoleBox role="location" label="어디를 수정하나요?"><CompactText text={task.location}/></RoleBox>
-        <h5>이 순서대로 진행하세요</h5><ol className="growth-steps">{task.steps.map((step,n)=><li key={step}><span>{n+1}</span><p>{step}</p></li>)}</ol>
-        <RoleBox role="proposal" label="사이트에서 기대하는 변화"><CompactText text={task.change}/></RoleBox>
-        <Guidebook compact title={task.title} evidence={task.evidence} instructions={task.steps} topic={growthGuideTopic(task.id)} proposal={task.toBe}/><div className="report-role-pair"><RoleBox role="verify" label="변화를 확인할 지표"><p>{task.kpi}</p></RoleBox><RoleBox role="verify" label="완료 확인"><CompactText text={task.verify}/></RoleBox></div>
-        <div className="growth-action-footer"><div>{task.sources.map(id=><a href={GROWTH_SOURCES[id].url} key={id} target="_blank" rel="noopener noreferrer">{GROWTH_SOURCES[id].title} ↗</a>)}</div><button type="button" className="report-secondary-button" onClick={()=>copy(task.id)}>{copyState===task.id?'작업 지시서 복사됨':'담당자용 작업 지시서 복사'}</button></div>
+      <div className="growth-action-body">
+        <div className="report-role-pair">
+          <RoleBox role="proposal" label="적용 목표 / 작성 틀" kicker="TO-BE · 제안"><CompactText text={task.toBe}/></RoleBox>
+          <RoleBox role="location" label="어디를 수정하나요?"><CompactText text={task.location}/></RoleBox>
+        </div>
+        <div className="report-role-pair">
+          <RoleBox role="verify" label="변화를 확인할 지표"><p>{task.kpi}</p></RoleBox>
+          <RoleBox role="verify" label="완료 확인"><CompactText text={task.verify}/></RoleBox>
+        </div>
+        <ReadingDisclosure title="확인 근거·실행 순서·공식 문서" className="report-supporting-detail">
+          <RoleBox role="current" label="이 URL에서 확인한 근거" kicker="AS-IS"><CompactText text={task.evidence} verbatim/></RoleBox>
+          <h5>이 순서대로 진행하세요</h5>
+          <ol className="growth-steps">{task.steps.map((step,n)=><li key={step}><span>{n+1}</span><p>{step}</p></li>)}</ol>
+          <RoleBox role="proposal" label="사이트에서 기대하는 변화"><CompactText text={task.change} verbatim/></RoleBox>
+          <Guidebook compact title={task.title} evidence={task.evidence} instructions={task.steps} topic={growthGuideTopic(task.id)} proposal={task.toBe}/>
+          <div className="naver-sources">{task.sources.map(id=><a href={GROWTH_SOURCES[id].url} key={id} target="_blank" rel="noopener noreferrer">{GROWTH_SOURCES[id].title} ↗</a>)}</div>
+        </ReadingDisclosure>
+        <div className="growth-action-footer"><button type="button" className="report-secondary-button" onClick={()=>copy(task.id)}>{copyState===task.id?'작업 지시서 복사됨':'담당자용 작업 지시서 복사'}</button></div>
       </div>
     </details>}))}/></div>
     <span className="sr-only" role="status">{copyState?'작업 지시서를 복사했습니다.':fallback?'복사가 제한되어 직접 복사할 내용을 표시합니다.':''}</span>
