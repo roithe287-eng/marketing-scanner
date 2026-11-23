@@ -2,7 +2,7 @@
 
 import {useEffect, useState} from 'react';
 import {requestJson} from '@/lib/client/request';
-import {firstLandingCard, landingTips, type LandingActivity, type LandingCard} from '@/lib/landingActivity';
+import {firstLandingCard, landingCards, type LandingActivity, type LandingCard} from '@/lib/landingActivity';
 
 const POLL_MS = 15_000;
 const ROTATE_MS = 8_000;
@@ -10,7 +10,7 @@ const LAST_CARD = 'scanner:landing:last-card';
 const formatter = new Intl.NumberFormat('ko-KR');
 
 function LandingCarousel({reviews}: {reviews: LandingCard[]}) {
-  const cards = [...reviews, ...landingTips];
+  const cards = landingCards(reviews);
   const [activeId, setActiveId] = useState<string>();
   const [paused, setPaused] = useState(false);
   const [hovering, setHovering] = useState(false);
@@ -18,12 +18,12 @@ function LandingCarousel({reviews}: {reviews: LandingCard[]}) {
   const [reducedMotion, setReducedMotion] = useState(false);
   const activeIndex = cards.findIndex(card => card.id === activeId);
   const active = cards[Math.max(0, activeIndex)];
-  const heading = reviews.length ? '이용 후기·활용 팁' : '진단 활용 팁';
+  const heading = reviews.length ? '이용 후기' : '업종별 이용 후기 예시';
 
   useEffect(() => {
     let previous: string | null = null;
     try { previous = localStorage.getItem(LAST_CARD); } catch {}
-    setActiveId(firstLandingCard([...reviews, ...landingTips], previous));
+    setActiveId(firstLandingCard(landingCards(reviews), previous));
   }, [reviews]);
 
   useEffect(() => {
@@ -66,13 +66,17 @@ function LandingCarousel({reviews}: {reviews: LandingCard[]}) {
       if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
     }}>
     <h2 id="scanner-carousel-title">{heading}</h2>
-    <div className="scanner-carousel-content" aria-live={auto ? 'off' : 'polite'}>
-      {reviews.length > 0 && <span className="scanner-carousel-kind">{active.kind === 'review' ? '이용 후기' : '활용 팁'}</span>}
-      <h3>{active.title}</h3>
-      {active.kind === 'review'
-        ? <figure><blockquote>{active.text}</blockquote><figcaption>{active.byline}{active.sourceUrl && <> <a href={active.sourceUrl} target="_blank" rel="noopener noreferrer">후기 원문 보기</a></>}</figcaption></figure>
-        : <p>{active.text}</p>}
-    </div>
+    <figure className="scanner-carousel-content" aria-live={auto ? 'off' : 'polite'}>
+      <div className="scanner-carousel-meta">
+        {active.industry && <span className="scanner-carousel-industry">{active.industry}</span>}
+        {active.kind === 'example' && <span className="scanner-carousel-example">예시</span>}
+      </div>
+      <blockquote>
+        <p className="scanner-carousel-quote">“{active.title}”</p>
+        <p className="scanner-carousel-text">{active.text}</p>
+      </blockquote>
+      {active.kind === 'review' && <figcaption>{active.byline}{active.sourceUrl && <> <a href={active.sourceUrl} target="_blank" rel="noopener noreferrer">후기 원문 보기</a></>}</figcaption>}
+    </figure>
     <div className="scanner-carousel-controls">
       <button type="button" aria-label="이전 카드" onClick={() => move(-1)}>이전</button>
       <span aria-label={`${cards.length}개 중 ${Math.max(0, activeIndex) + 1}번째 카드`}>{Math.max(0, activeIndex) + 1} / {cards.length}</span>
@@ -125,24 +129,32 @@ export default function LandingActivityPanel() {
     };
   }, []);
 
+  const totals = [
+    {label:'누적 URL 호출', value:activity?.requested, unit:'회'},
+    {label:'누적 진단 완료', value:activity?.completed, unit:'건'},
+  ];
   return <div className="scanner-live-grid">
-    <section className="scanner-live-card" aria-labelledby="scanner-live-title">
+    <section className="scanner-live-card scanner-live-ledger" aria-labelledby="scanner-live-title">
       <h2 id="scanner-live-title">실시간 진단 현황</h2>
       <p className="scanner-live-state" data-live={loadState === 'ready'}>
         {loadState === 'ready' ? '15초마다 자동 확인' : loadState === 'loading' ? '집계 확인 중' : activity ? '마지막으로 확인한 집계' : '잠시 후 집계를 다시 확인합니다'}
       </p>
       <dl className="scanner-live-totals">
-        <div><dt>누적 URL 호출</dt><dd>{activity ? formatter.format(activity.requested) : '–'}<small>회</small></dd></div>
-        <div><dt>누적 진단 완료</dt><dd>{activity ? formatter.format(activity.completed) : '–'}<small>건</small></dd></div>
+        {totals.map(({label, value, unit}) => {
+          const formatted = value === undefined ? '–' : formatter.format(value);
+          return <div key={label}><dt>{label}</dt><dd data-wide={formatted.length > 6}><strong>{formatted}</strong><small>{unit}</small></dd></div>;
+        })}
       </dl>
       <p className="scanner-live-scope">완료 건수는 종합 진단 기준</p>
-      <h3 className="scanner-live-recent-title">최근 3일 진단 완료 URL</h3>
-      {activity?.recent.length
-        ? <ul className="scanner-live-recent">{activity.recent.map((label, index) => <li key={`${index}-${label}`}>{label}</li>)}</ul>
-        : activity && <p className="scanner-live-empty">최근 3일 내 완료된 진단이 없습니다.</p>}
+      <div className="scanner-live-history">
+        <h3 className="scanner-live-recent-title">최근 3일 진단 완료 URL</h3>
+        {activity?.recent.length
+          ? <ul className="scanner-live-recent">{activity.recent.map((label, index) => <li key={`${index}-${label}`}>{label}</li>)}</ul>
+          : <p className="scanner-live-empty">{activity ? '최근 3일 내 완료된 진단이 없습니다.' : '—'}</p>}
+      </div>
     </section>
     {reviews
       ? <LandingCarousel reviews={reviews}/>
-      : <section className="scanner-live-card scanner-carousel" aria-busy="true"><h2>진단 활용 팁</h2></section>}
+      : <section className="scanner-live-card scanner-carousel" aria-busy="true"><h2>업종별 이용 후기 예시</h2></section>}
   </div>;
 }
