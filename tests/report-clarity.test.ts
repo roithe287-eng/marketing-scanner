@@ -63,11 +63,19 @@ test('empty review states distinguish collection failure, missing mention and al
 });
 test('keyword categories are visible together with links to each section start',t=>{
  const prior=(globalThis as typeof globalThis & {React?:typeof React}).React;Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:prior}));
- const r:MarketingReport={...fixture,keywordFrequency:{totalTokens:100,uniqueSingles:2,uniquePhrases:1,singles:[word('fepl'),word('광고')],phrases:[word('광고 운영')]}};
+ const singles=[word('fepl'),{...word('패키지'),count:26,inTitle:true},word('광고'),word('서비스'),word('지원'),word('운영')];
+ const r:MarketingReport={...fixture,keywordFrequency:{totalTokens:150,uniqueSingles:singles.length,uniquePhrases:1,singles,phrases:[word('광고 운영')]}};
  const $=load(renderToStaticMarkup(React.createElement(KeywordWorkspace,{report:r,data:buildReportInsights(r)})));
  assert.equal($('.keyword-workspace-nav a').length,3);assert.equal($('.keyword-workspace > div[hidden]').length,0);assert.equal($('.keyword-workspace h3').length,1);
  for(const a of $('.keyword-workspace-nav a').toArray())assert.equal($($(a).attr('href')!).length,1);
- assert.equal($('.keyword-table tbody tr').length,2);assert.equal($('.report-rewrite-card').length,2);assert.match($('.keyword-frequency').text(),/브랜드명·상품 코드/);
+ assert.equal($('.keyword-table tbody tr').length,singles.length);
+ assert.match($('.keyword-frequency').text(),/브랜드명·상품 코드/);
+ const rows=$('.keyword-rewrite-list li');
+ assert.deepEqual(rows.map((_,row)=>$(row).find('h5').text()).get(),['패키지','fepl','광고','서비스','지원','운영']);
+ assert.match(rows.first().find('.keyword-rewrite-cells').text(),/수집한 제목에 있음 · 검색 설명에 없음.*검색 설명에 자연스럽게 넣으세요/);
+ assert.match(rows.eq(1).find('.keyword-rewrite-cells').text(),/의미 확인/);
+ assert.equal(rows.find('details:not([open])').length,singles.length);
+ assert.equal(rows.find('.report-execution-guide').length,0);
 });
 test('metadata and short duplicate copy never offer a generic page-opening fallback',()=>{
  const element:PageElement={key:'title',kind:'title',tag:'title',selector:'head > title',text:'저장된 검색 제목',truncated:false,heading:'',order:0,anchor:'not-visible'};
