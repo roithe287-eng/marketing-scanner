@@ -101,6 +101,7 @@ const reviewSchema = z.object({
   title: z.string().trim().min(1).max(70),
   text: z.string().trim().min(1).max(240),
   byline: z.string().trim().min(1).max(40),
+  industry: z.string().trim().min(1).max(24).optional(),
   sourceUrl: z.string().url().max(512).refine(value => {
     if (!URL.canParse(value)) return false;
     const url = new URL(value);

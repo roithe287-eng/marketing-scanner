@@ -4,7 +4,7 @@ import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {load} from 'cheerio';
 import LandingHero from '../components/LandingHero';
-import {firstLandingCard, landingTips} from '../lib/landingActivity';
+import {firstLandingCard, landingCards} from '../lib/landingActivity';
 import {maskActivityTarget, publicLandingReviews} from '../lib/saas/landingActivity';
 
 Object.assign(globalThis,{React});
@@ -65,13 +65,16 @@ test('landing targets keep only a masked registrable label or a storefront platf
 });
 
 test('review configuration keeps valid public entries and the next visit starts on another card',()=>{
-  const review={title:'보고서 검토',text:'첫 화면에서 바꿀 문장을 정리했습니다.',byline:'공개 승인 별칭',sourceUrl:'https://example.com/review'};
+  const review={title:'보고서 검토',text:'첫 화면에서 바꿀 문장을 정리했습니다.',byline:'공개 승인 별칭',industry:'교육 서비스',sourceUrl:'https://example.com/review'};
   assert.deepEqual(publicLandingReviews('[]'),[]);
   const reviews=publicLandingReviews(JSON.stringify([
     {...review,sourceUrl:'invalid'}, {...review,sourceUrl:'javascript:alert(1)'},
     {...review,sourceUrl:'https://user:pass@example.com/'}, review, review,
   ]));
   assert.deepEqual(reviews,[{...review,id:'review-0',kind:'review'}]);
-  assert.equal(firstLandingCard([...reviews,...landingTips],null,()=>0),'review-0');
-  assert.equal(firstLandingCard([...reviews,...landingTips],'review-0',()=>0),landingTips[0].id);
+  const cards=landingCards(reviews);
+  assert.equal(firstLandingCard(cards,null,()=>0),'review-0');
+  assert.equal(firstLandingCard(cards,'review-0',()=>0),landingCards([])[0].id);
+  assert.ok(landingCards([]).every(card=>card.kind==='example'&&card.industry));
+  assert.deepEqual(landingCards([...reviews,{...reviews[0],id:'review-1'}]).map(card=>card.kind),['review','review']);
 });
