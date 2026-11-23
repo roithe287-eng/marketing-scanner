@@ -21,6 +21,7 @@ import "./report-platforms.css";
 import "./report-color-balance.css";
 import "./report-plain-language.css";
 import "./landing-gate.css";
+import "./landing-activity.css";
 import "./landing-result-preview.css";
 import "./report-diagrams.css";
 import "./report-opening-radar.css";

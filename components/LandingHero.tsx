@@ -3,6 +3,7 @@ import UrlForm from '@/components/UrlForm';
 import LandingReportFeatures from '@/components/LandingReportFeatures';
 import LandingSectorPreview from '@/components/LandingSectorPreview';
 import LandingPricing from '@/components/LandingPricing';
+import LandingActivityPanel from '@/components/LandingActivity';
 
 type Props = { onSubmit: (url: string, questions?: string[], baselineId?: string) => void; loading: boolean; allowed?: boolean; checking?: boolean; compact?: boolean };
 const capabilities = [
@@ -43,6 +44,7 @@ export default function LandingHero({ onSubmit, loading, allowed = false, checki
           {capabilities.map(item=><li key={item.number}><span className="scanner-gate-number">{item.number}</span><CapabilityIcon kind={item.kind}/><h2>{item.title}</h2><p>{item.detail}</p></li>)}
         </ol>}
       </div>
+      {!compact && <LandingActivityPanel />}
       {!compact && <div className="scanner-gate-details">
         <LandingReportFeatures />
         <LandingSectorPreview />

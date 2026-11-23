@@ -11,6 +11,7 @@ import {canReadClinicWebsite} from '@/lib/clinicPlaceInsights';
 import ReportLayout from '@/components/report/ReportLayout';
 import BrandHeader from "@/components/BrandHeader";
 import LandingHero from "@/components/LandingHero";
+import LandingActivityPanel from "@/components/LandingActivity";
 import DownloadReportButton from "@/components/DownloadReportButton";
 import ShareButton from "@/components/ShareButton";
 import {requestJson,RequestError} from '@/lib/client/request';
@@ -133,6 +134,7 @@ export default function HomePage() {
         <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'} compact/>
       </details> : <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'} compact={loading}/>}
       {access.kind==='error'&&<p role="alert" className="jm-container access-error">{access.message}</p>}
+      {singleUsed&&!hasReport&&!loading&&<div className="jm-container scanner-live-account"><LandingActivityPanel /></div>}
 
       {/* Loading */}
       {loading && (
