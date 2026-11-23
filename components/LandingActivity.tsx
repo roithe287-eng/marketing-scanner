@@ -2,27 +2,28 @@
 
 import {useEffect, useState} from 'react';
 import {requestJson} from '@/lib/client/request';
-import {firstLandingCard, landingCards, type LandingActivity, type LandingCard} from '@/lib/landingActivity';
+import {firstLandingCard, landingCards, landingCheckWindow, type LandingActivity, type LandingCard} from '@/lib/landingActivity';
 
-const ROTATE_MS = 8_000;
+const ROTATE_MS = 2_000;
+const MANUAL_HOLD_MS = 3_000;
 const LAST_CARD = 'scanner:landing:last-card';
 const formatter = new Intl.NumberFormat('ko-KR');
 type LandingData = {activity: LandingActivity | null; reviews: LandingCard[]};
 
 function LandingCarousel({reviews}: {reviews: LandingCard[]}) {
   const cards = landingCards(reviews);
-  const [activeId, setActiveId] = useState<string>();
-  const [hovering, setHovering] = useState(false);
-  const [focused, setFocused] = useState(false);
+  const [selection, setSelection] = useState<{id: string; delay: number}>();
+  const [readingSource, setReadingSource] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const activeId = selection?.id;
   const activeIndex = cards.findIndex(card => card.id === activeId);
   const active = cards[Math.max(0, activeIndex)];
-  const heading = reviews.length ? '이용 후기' : '업종별 이용 후기 예시';
+  const heading = cards.some(card => card.kind === 'review') ? '업종별 이용 후기' : '업종별 이용 후기 예시';
 
   useEffect(() => {
     let previous: string | null = null;
     try { previous = localStorage.getItem(LAST_CARD); } catch {}
-    setActiveId(firstLandingCard(landingCards(reviews), previous));
+    setSelection({id:firstLandingCard(landingCards(reviews), previous),delay:ROTATE_MS});
   }, [reviews]);
 
   useEffect(() => {
@@ -39,33 +40,37 @@ function LandingCarousel({reviews}: {reviews: LandingCard[]}) {
   }, []);
 
   function move(step: number) {
-    setActiveId(cards[(Math.max(0, activeIndex) + step + cards.length) % cards.length].id);
+    setSelection(previous => {
+      const index = cards.findIndex(card => card.id === previous?.id);
+      const next = (Math.max(0, index) + step + cards.length) % cards.length;
+      return {id:cards[next].id,delay:MANUAL_HOLD_MS};
+    });
   }
 
-  const auto = !hovering && !focused && !reducedMotion;
+  const auto = !readingSource && !reducedMotion;
   const nextId = cards[(Math.max(0, activeIndex) + 1) % cards.length].id;
   useEffect(() => {
-    if (!auto || !activeId) return;
-    const timer = window.setTimeout(() => {
-      if (!document.hidden) setActiveId(nextId);
-    }, ROTATE_MS);
-    const resume = () => {
-      if (!document.hidden) setActiveId(nextId);
-    };
-    document.addEventListener('visibilitychange', resume);
+    if (!auto || !selection) return;
+    let timer: number | undefined;
+    function schedule() {
+      window.clearTimeout(timer);
+      if (document.hidden) return;
+      timer = window.setTimeout(() => {
+        setSelection({id:nextId,delay:ROTATE_MS});
+      }, selection?.delay ?? ROTATE_MS);
+    }
+    schedule();
+    document.addEventListener('visibilitychange', schedule);
     return () => {
       window.clearTimeout(timer);
-      document.removeEventListener('visibilitychange', resume);
+      document.removeEventListener('visibilitychange', schedule);
     };
-  }, [activeId, nextId, auto]);
+  }, [selection, nextId, auto]);
 
-  return <section className="scanner-live-card scanner-carousel" aria-labelledby="scanner-carousel-title"
-    onMouseEnter={() => setHovering(true)} onMouseLeave={() => setHovering(false)}
-    onFocus={() => setFocused(true)} onBlur={event => {
-      if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
-    }}>
+  return <section className="scanner-live-card scanner-carousel" aria-labelledby="scanner-carousel-title">
     <h2 id="scanner-carousel-title">{heading}</h2>
-    <figure className="scanner-carousel-content" aria-live={auto ? 'off' : 'polite'}>
+    <figure className="scanner-carousel-content" aria-live={auto && selection?.delay !== MANUAL_HOLD_MS ? 'off' : 'polite'}
+      onFocus={() => setReadingSource(true)} onBlur={() => setReadingSource(false)}>
       <div className="scanner-carousel-meta">
         {active.industry && <span className="scanner-carousel-industry">{active.industry}</span>}
         {active.kind === 'example' && <span className="scanner-carousel-example">예시</span>}
@@ -88,15 +93,42 @@ export default function LandingActivityPanel() {
   const [data, setData] = useState<LandingData | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    void requestJson<LandingData>('/api/landing-activity', {signal: controller.signal, cache:'no-store'}, 8_000)
-      .then(result => {
-        if (!controller.signal.aborted) setData(result);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setData({activity:null,reviews:[]});
-      });
-    return () => controller.abort();
+    let request: AbortController | undefined;
+    let timer: number | undefined;
+    let lastWindow: number | undefined;
+
+    function check() {
+      window.clearTimeout(timer);
+      if (document.hidden) return;
+      const now = Date.now();
+      const {start, next} = landingCheckWindow(now);
+      if (lastWindow !== start) {
+        lastWindow = start;
+        request?.abort();
+        const controller = new AbortController();
+        request = controller;
+        void requestJson<LandingData>('/api/landing-activity', {signal:controller.signal,cache:'no-store'}, 8_000)
+          .then(result => {
+            if (controller.signal.aborted) return;
+            setData(previous => ({
+              activity:result.activity ?? previous?.activity ?? null,
+              reviews:previous && JSON.stringify(previous.reviews) === JSON.stringify(result.reviews) ? previous.reviews : result.reviews,
+            }));
+          })
+          .catch(() => {
+            if (!controller.signal.aborted) setData(previous => previous ?? {activity:null,reviews:[]});
+          });
+      }
+      timer = window.setTimeout(check, next - now);
+    }
+
+    check();
+    document.addEventListener('visibilitychange', check);
+    return () => {
+      window.clearTimeout(timer);
+      request?.abort();
+      document.removeEventListener('visibilitychange', check);
+    };
   }, []);
 
   const totals = [
