@@ -1,8 +1,6 @@
 export type LandingActivity = {
   requested: number;
   completed: number;
-  recent: string[];
-  checkedAt: number;
 };
 
 export type LandingCard = {

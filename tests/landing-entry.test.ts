@@ -5,7 +5,7 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {load} from 'cheerio';
 import LandingHero from '../components/LandingHero';
 import {firstLandingCard, landingCards} from '../lib/landingActivity';
-import {maskActivityTarget, publicLandingReviews} from '../lib/saas/landingActivity';
+import {publicLandingReviews} from '../lib/saas/landingActivity';
 
 Object.assign(globalThis,{React});
 const render=(props:Partial<React.ComponentProps<typeof LandingHero>>={})=>load(renderToStaticMarkup(
@@ -55,13 +55,12 @@ test('retry entry retains the real form without duplicating the marketing page',
   assert.equal($('#scanner-live-title').length,0);
 });
 
-test('landing targets keep only a masked registrable label or a storefront platform',()=>{
-  assert.equal(maskActivityTarget('private.shop.customer.co.kr/path/secret?key=hidden'),'c••••.co.kr');
-  assert.equal(maskActivityTarget('smartstore.naver.com/secret-store-id'),'스마트스토어 · ••••');
-  assert.equal(maskActivityTarget('brand.naver.com/private-brand'),'브랜드스토어 · ••••');
-  assert.equal(maskActivityTarget('xn--s39a94a.kr'),'••••.kr');
-  assert.equal(maskActivityTarget('203.0.113.8'),'••••');
-  assert.equal(maskActivityTarget('[2001:db8::42]'),'••••');
+test('the landing snapshot shows only the cumulative call and completion labels',()=>{
+  const $=render();
+  const panel=$('[aria-labelledby="scanner-live-title"]');
+  assert.equal(panel.find('h2').text(),'누적 진단 현황');
+  assert.deepEqual(panel.find('dt').toArray().map(element=>$(element).text()),['URL 호출','진단 완료']);
+  assert.doesNotMatch(panel.text(),/자동 확인|최근 3일|실시간/);
 });
 
 test('review configuration keeps valid public entries and the next visit starts on another card',()=>{

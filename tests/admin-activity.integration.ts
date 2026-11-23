@@ -30,43 +30,27 @@ before(async()=>{
   bridge=await startRedisBridge();process.env.UPSTASH_REDIS_REST_URL=bridge.url;process.env.UPSTASH_REDIS_REST_TOKEN='local-test-token';process.env.VERCEL='1';process.env.VERCEL_ENV='preview';process.env.ALLOWED_IPS='203.0.113.10';
 });
 after(async()=>bridge?.close());
-test('public landing counts retained requests and completes, and returns only the latest masked targets',async()=>{
+test('public landing reads only the lifetime request and completion totals across account batches',async()=>{
   const namespace=key('landing-test:');
   const now=Date.now();
-  const ids=Array.from({length:41},(_,index)=>'test-account-'+index);
+  const ids=Array.from({length:101},(_,index)=>'test-account-'+index);
   const pipeline=db().pipeline();
   ids.forEach((member,score)=>pipeline.zadd(namespace+'accounts',{score,member}));
-  const first=ids[0],last=ids[40];
+  const first=ids[0],last=ids[100];
   for(const [id,requested,completed] of [[first,5,2],[last,10,4],[NETWORK_ACTIVITY_ID,2,1]] as const){
     pipeline.hset(namespace+'activity-total:'+id,{analyze_started:requested,analyze_success:completed,analyze_failed:1,analyze_limited:10});
   }
-  const add=(id:string,at:number,target:string,action='analyze_success')=>{
-    const day=activityDay(at);
-    pipeline.hincrby(namespace+`activity-counts:${id}:${day}`,action,1);
-    pipeline.zadd(namespace+`activity:${id}:${day}`,{score:at,member:JSON.stringify({
-      id:'private-record-id',accountId:id,at,target,action,ip:'203.0.113.250',
-    })});
-  };
-  add(first,now-2000,'private.customer.co.kr/secret?q=private');
-  add(first,now-3000,'legacy.example.com');
-  add(last,now-1000,'smartstore.naver.com/private-store-id');
-  add(NETWORK_ACTIVITY_ID,now-4000,'brand.naver.com/private-brand-id');
-  add(last,now-200,'hidden-failure.com','analyze_failed');
-  add(last,now-300,'hidden-limited.com','analyze_limited');
-  add(last,now-4*86400000,'hidden-expired.com');
+  pipeline.hset(namespace+`activity-counts:${first}:${activityDay(now)}`,{analyze_success:1});
+  pipeline.zadd(namespace+`activity:${first}:${activityDay(now)}`,{score:now,member:JSON.stringify({
+    at:now,action:'analyze_success',target:'private.customer.co.kr/secret?q=private',
+  })});
   await pipeline.exec();
 
-  const snapshot=await readLandingActivity(namespace);
-  assert.equal(snapshot.requested,17);
-  assert.equal(snapshot.completed,7);
-  assert.deepEqual(snapshot.recent,['스마트스토어 · ••••','c••••.co.kr','e••••.com']);
-  assert.doesNotMatch(JSON.stringify(snapshot),/private|203\.0\.113\.250|hidden-|test-account/);
+  assert.deepEqual(await readLandingActivity(namespace),{requested:17,completed:7});
 
   await db().zrem(namespace+'accounts',first);
-  const afterRemoval=await readLandingActivity(namespace);
-  assert.equal(afterRemoval.requested,12);
-  assert.equal(afterRemoval.completed,5);
-  assert.deepEqual(afterRemoval.recent,['스마트스토어 · ••••','브랜드스토어 · ••••']);
+  await db().hincrby(namespace+'activity-total:'+last,'analyze_success',1);
+  assert.deepEqual(await readLandingActivity(namespace),{requested:12,completed:6});
 });
 test('owner setup requires the secret and registered network; creation is exactly once',async()=>{
   const secret=token();process.env.SAAS_SETUP_TOKEN_HASH=digest(secret);process.env.SAAS_SETUP_EXPIRES_AT=String(Date.now()+600000);
