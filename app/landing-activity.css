@@ -1,194 +1,148 @@
 .scanner-live-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr);
-  gap: 18px;
-  max-width: 1120px;
-  margin: 58px auto 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  max-width: 880px;
+  margin: 42px auto 0;
 }
-.scanner-live-account { padding-bottom: 60px; }
+.scanner-live-account { padding-bottom: 46px; }
 .scanner-live-card {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
   min-width: 0;
-  padding: 30px clamp(20px, 3vw, 38px) 26px;
-  border-radius: 20px;
+  padding: 14px;
+  border: 1px solid #d7e0eb;
+  border-top: 3px solid #28466a;
+  border-radius: 13px;
+  background: #fafbfd;
+  box-shadow: 0 3px 0 #e8edf4;
+  color: #182a44;
   text-align: center;
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
 .scanner-live-card h2 {
   margin: 0;
-  font-size: clamp(1.3rem, 2vw, 1.6rem);
-  font-weight: 790;
-  line-height: 1.3;
-  letter-spacing: -.055em;
-}
-.scanner-live-ledger {
-  color: #f4f8ff;
-  background: radial-gradient(ellipse at 75% 0%, #234a7b 0%, transparent 68%),
-    linear-gradient(145deg, #111c32, #142a49);
-}
-.scanner-live-state {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
-  margin: 8px 0 0;
-  color: #ccd9ec;
-  font-size: .82rem;
-  font-weight: 520;
-  line-height: 1.5;
-}
-.scanner-live-state[data-live=true]::before {
-  content: '';
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: #80e4c7;
+  font-size: 1.05rem;
+  font-weight: 780;
+  line-height: 1.35;
+  letter-spacing: -.04em;
 }
 .scanner-live-totals {
   display: grid;
+  flex: 1;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  margin: 27px 0 0;
+  gap: 6px;
+  min-height: 117px;
+  margin: 0;
+  padding: 6px;
+  border: 1px solid #dce5ef;
+  border-radius: 9px;
+  background: #edf2f8;
 }
 .scanner-live-totals > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
   min-width: 0;
-  padding: 0 clamp(5px, 1.4vw, 16px);
+  padding: 8px 5px;
+  border: 1px solid #d7e0ed;
+  border-radius: 6px;
+  background: linear-gradient(#f8fbff, #e8eff8);
 }
-.scanner-live-totals > div + div { border-left: 1px solid #ffffff29; }
-.scanner-live-totals dt {
-  color: #dae7fc;
-  font-size: clamp(.84rem, 1.3vw, 1rem);
+.scanner-live-totals dt, .scanner-live-empty {
+  color: #435777;
+  font-size: .84rem;
   font-weight: 650;
-  line-height: 1.4;
 }
 .scanner-live-totals dd {
   display: flex;
   flex-wrap: wrap;
-  align-items: baseline;
   justify-content: center;
-  column-gap: 8px;
-  min-height: 1em;
-  margin: 6px 0 0;
-  color: #fff;
-  font-size: clamp(2.5rem, 6.1vw, 5.6rem);
-  font-weight: 850;
+  align-items: baseline;
+  column-gap: 4px;
+  margin: 0;
+  color: #172d4a;
+  font-size: clamp(2.25rem, 4.3vw, 3.5rem);
+  font-weight: 840;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -.075em;
+  letter-spacing: -.06em;
   line-height: 1;
 }
-.scanner-live-totals dd[data-wide=true] { font-size: clamp(1.6rem, 4.1vw, 3.65rem); }
-.scanner-live-totals > div:last-child dd { color: #9bdcff; }
+.scanner-live-totals dd[data-wide=true] { font-size: clamp(1.4rem, 2.9vw, 2.4rem); }
+.scanner-live-totals > div:last-child dd { color: #1c508c; }
 .scanner-live-totals strong { font-weight: inherit; }
-.scanner-live-totals small { font-size: clamp(.8rem, 1.3vw, 1rem); font-weight: 650; letter-spacing: 0; }
-.scanner-live-scope {
-  margin: 12px 0 0;
-  color: #bbcae1;
-  font-size: .78rem;
-  line-height: 1.5;
-}
-.scanner-live-history {
-  display: grid;
-  justify-items: center;
-  gap: 7px;
-  margin-top: 21px;
-  padding-top: 16px;
-  border-top: 1px solid #ffffff26;
-}
-.scanner-live-recent-title { margin: 0; color: #e5eefc; font-size: .85rem; font-weight: 720; }
-.scanner-live-empty { margin: 0; color: #bbcae1; font-size: .82rem; }
-.scanner-live-recent {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 6px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.scanner-live-recent li {
-  padding: 4px 10px;
-  border: 1px solid #ffffff35;
-  border-radius: 20px;
-  background: #ffffff0a;
-  color: #e5eefc;
-  font-size: .82rem;
-}
-.scanner-carousel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  border: 1px solid #d9e4f2;
-  background: linear-gradient(156deg, #eff5fc, #fff 68%);
-  color: #15243b;
-}
+.scanner-live-totals small { font-size: .82rem; font-weight: 660; letter-spacing: 0; }
+.scanner-live-empty { margin: 0; }
 .scanner-carousel-content {
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  min-height: 214px;
+  min-height: 121px;
   margin: 0;
-  padding: 16px 0 19px;
+  padding: 9px 12px;
+  border: 1px solid #dce5ef;
+  border-radius: 9px;
+  background: #edf2f8;
 }
 .scanner-carousel-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: #3b5271;
-  font-size: .84rem;
+  gap: 6px;
+  color: #435777;
+  font-size: .75rem;
   font-weight: 650;
 }
 .scanner-carousel-industry {
-  border-radius: 20px;
-  background: #e0eaf9;
+  padding: 3px 8px;
+  border-radius: 5px;
+  background: #dce8f7;
   color: #244778;
-  padding: 4px 11px;
-  font-weight: 740;
+  font-weight: 730;
 }
-.scanner-carousel blockquote { margin: 10px 0 0; }
+.scanner-carousel blockquote { margin: 6px 0 0; }
 .scanner-carousel-quote {
+  max-width: 26ch;
   margin: 0 auto;
-  max-width: 21ch;
-  font-size: clamp(1.4rem, 2.35vw, 2.03rem);
-  line-height: 1.26;
-  font-weight: 820;
-  letter-spacing: -.06em;
+  font-size: clamp(1rem, 1.55vw, 1.25rem);
+  font-weight: 810;
+  line-height: 1.3;
+  letter-spacing: -.048em;
   text-wrap: balance;
 }
 .scanner-carousel-text {
-  margin: 10px auto 0;
-  max-width: 42ch;
-  color: #40546d;
-  font-size: .95rem;
-  line-height: 1.65;
+  max-width: 41ch;
+  margin: 5px auto 0;
+  color: #435777;
+  font-size: .84rem;
+  line-height: 1.45;
 }
-.scanner-carousel figcaption { margin-top: 8px; color: #455b77; font-size: .82rem; }
-.scanner-carousel figcaption a { margin-left: 6px; color: #244778; text-decoration: underline; }
-.scanner-carousel-controls { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 5px; }
-.scanner-carousel-controls span { min-width: 40px; color: #455b77; font-size: .82rem; font-variant-numeric: tabular-nums; }
+.scanner-carousel figcaption { margin-top: 5px; color: #435777; font-size: .78rem; }
+.scanner-carousel figcaption a { margin-left: 5px; color: #244778; text-decoration: underline; }
+.scanner-carousel-controls { display: flex; justify-content: center; align-items: center; gap: 5px; }
+.scanner-carousel-controls span { min-width: 38px; color: #435777; font-size: .76rem; font-variant-numeric: tabular-nums; }
 .scanner-carousel-controls button {
-  min-height: 44px;
-  padding: 6px 11px;
-  border: 1px solid #d5e0ee;
-  border-radius: 7px;
-  background-color: #fff;
+  min-height: 33px;
+  padding: 4px 10px;
+  border: 1px solid #d6e0ed;
+  border-radius: 5px;
+  background: #fff;
   color: #244778;
-  font-size: .82rem;
+  font-size: .77rem;
   font-weight: 680;
 }
-.scanner-carousel-controls button:hover { background-color: #edf3fc; }
+.scanner-carousel-controls button:hover { background: #edf2f8; }
 .scanner-carousel-controls button:focus-visible,
 .scanner-carousel figcaption a:focus-visible { outline: 2px solid #2459c0; outline-offset: 2px; }
 
-@media (max-width: 720px) {
-  .scanner-live-grid { grid-template-columns: 1fr; gap: 12px; margin-top: 37px; }
-  .scanner-live-card { padding: 24px 16px 20px; border-radius: 16px; }
-  .scanner-live-totals { margin-top: 22px; }
-  .scanner-live-totals dd { column-gap: 5px; font-size: clamp(2.6rem, 11vw, 4.5rem); }
-  .scanner-live-totals dd[data-wide=true] { font-size: clamp(1.6rem, 6.6vw, 3rem); }
-  .scanner-live-history { margin-top: 16px; padding-top: 13px; }
-  .scanner-carousel-content { min-height: 180px; }
+@media (max-width: 640px) {
+  .scanner-live-grid { grid-template-columns: 1fr; gap: 10px; margin-top: 29px; }
+  .scanner-live-card { padding: 11px; }
+  .scanner-live-totals { min-height: 88px; }
 }
