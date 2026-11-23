@@ -4,6 +4,8 @@ import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {load} from 'cheerio';
 import LandingHero from '../components/LandingHero';
+import {firstLandingCard, landingTips} from '../lib/landingActivity';
+import {maskActivityTarget, publicLandingReviews} from '../lib/saas/landingActivity';
 
 Object.assign(globalThis,{React});
 const render=(props:Partial<React.ComponentProps<typeof LandingHero>>={})=>load(renderToStaticMarkup(
@@ -50,4 +52,26 @@ test('retry entry retains the real form without duplicating the marketing page',
   assert.equal($('#scanner-url').length,1);
   assert.equal($('.scanner-gate-details, .scanner-entry-links, .scanner-gate-art, h1').length,0);
   assert.equal($('#scanner-heading').text(),'다른 웹사이트 진단하기');
+  assert.equal($('#scanner-live-title').length,0);
+});
+
+test('landing targets keep only a masked registrable label or a storefront platform',()=>{
+  assert.equal(maskActivityTarget('private.shop.customer.co.kr/path/secret?key=hidden'),'c••••.co.kr');
+  assert.equal(maskActivityTarget('smartstore.naver.com/secret-store-id'),'스마트스토어 · ••••');
+  assert.equal(maskActivityTarget('brand.naver.com/private-brand'),'브랜드스토어 · ••••');
+  assert.equal(maskActivityTarget('xn--s39a94a.kr'),'••••.kr');
+  assert.equal(maskActivityTarget('203.0.113.8'),'••••');
+  assert.equal(maskActivityTarget('[2001:db8::42]'),'••••');
+});
+
+test('review configuration keeps valid public entries and the next visit starts on another card',()=>{
+  const review={title:'보고서 검토',text:'첫 화면에서 바꿀 문장을 정리했습니다.',byline:'공개 승인 별칭',sourceUrl:'https://example.com/review'};
+  assert.deepEqual(publicLandingReviews('[]'),[]);
+  const reviews=publicLandingReviews(JSON.stringify([
+    {...review,sourceUrl:'invalid'}, {...review,sourceUrl:'javascript:alert(1)'},
+    {...review,sourceUrl:'https://user:pass@example.com/'}, review, review,
+  ]));
+  assert.deepEqual(reviews,[{...review,id:'review-0',kind:'review'}]);
+  assert.equal(firstLandingCard([...reviews,...landingTips],null,()=>0),'review-0');
+  assert.equal(firstLandingCard([...reviews,...landingTips],'review-0',()=>0),landingTips[0].id);
 });
