@@ -4,7 +4,7 @@ import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {load} from 'cheerio';
 import LandingHero from '../components/LandingHero';
-import {firstLandingCard, landingCards} from '../lib/landingActivity';
+import {firstLandingCard, landingCards, landingCheckWindow} from '../lib/landingActivity';
 import {publicLandingReviews} from '../lib/saas/landingActivity';
 
 Object.assign(globalThis,{React});
@@ -72,8 +72,26 @@ test('review configuration keeps valid public entries and the next visit starts 
   ]));
   assert.deepEqual(reviews,[{...review,id:'review-0',kind:'review'}]);
   const cards=landingCards(reviews);
-  assert.equal(firstLandingCard(cards,null,()=>0),'review-0');
-  assert.equal(firstLandingCard(cards,'review-0',()=>0),landingCards([])[0].id);
-  assert.ok(landingCards([]).every(card=>card.kind==='example'&&card.industry));
-  assert.deepEqual(landingCards([...reviews,{...reviews[0],id:'review-1'}]).map(card=>card.kind),['review','review']);
+  assert.equal(cards.length,24);
+  assert.equal(firstLandingCard(cards,null,()=>0),cards[0].id);
+  assert.equal(firstLandingCard(cards,cards[0].id,()=>0),cards[1].id);
+  assert.deepEqual(cards.filter(card=>card.industry==='교육 서비스').map(card=>card.kind),['review','example']);
+  const examples=landingCards([]);
+  assert.ok(examples.every(card=>card.kind==='example'&&card.industry));
+  assert.equal(new Set(examples.map(card=>card.id)).size,24);
+  const groups=Object.groupBy(examples,card=>card.industry!);
+  assert.equal(Object.keys(groups).length,12);
+  assert.ok(Object.values(groups).every(pair=>pair?.length===2));
+  const approvedPair=landingCards([...reviews,{...reviews[0],id:'review-1'}]);
+  assert.equal(approvedPair.length,24);
+  assert.deepEqual(approvedPair.filter(card=>card.industry==='교육 서비스').map(card=>card.kind),['review','review']);
+});
+
+test('the landing refresh changes windows at 08:00 Korea time',()=>{
+  const today=Date.parse('2026-11-24T08:00:00+09:00');
+  const yesterday=Date.parse('2026-11-23T08:00:00+09:00');
+  const tomorrow=Date.parse('2026-11-25T08:00:00+09:00');
+  assert.deepEqual(landingCheckWindow(today-1),{start:yesterday,next:today});
+  assert.deepEqual(landingCheckWindow(today),{start:today,next:tomorrow});
+  assert.deepEqual(landingCheckWindow(tomorrow-1),{start:today,next:tomorrow});
 });
