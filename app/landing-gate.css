@@ -53,7 +53,7 @@
 .scanner-gate-capabilities svg { flex-shrink:0; color:#12161c; margin-bottom:13px; }
 .scanner-gate-capabilities h2 { font-size:25px; font-weight:800; line-height:1.45; letter-spacing:-.045em; word-break:keep-all; }
 .scanner-gate-capabilities p { margin:8px 0 0; color:#545d6b; font-size:15px; line-height:1.6; letter-spacing:-.025em; word-break:keep-all; }
-.scanner-gate-details { max-width:1120px; margin:84px auto 0; padding-top:44px; border-top:1px solid #e7ebf1; }
+.scanner-gate-details { max-width:1120px; margin:34px auto 0; padding-top:30px; border-top:1px solid #e7ebf1; }
 .scanner-landing--gate .scanner-report-features { margin-top:0; }
 .scanner-landing--gate .scanner-feature-card { border-color:#e0e5ed; box-shadow:none; }
 .scanner-landing--gate .scanner-feature-card>div:first-child { background-color:#f6f8fb; }
@@ -115,7 +115,7 @@
   .scanner-gate-capabilities svg { width:27px; height:27px; margin-bottom:10px; }
   .scanner-gate-capabilities h2 { font-size:clamp(15px,4vw,20px); letter-spacing:-.055em; }
   .scanner-gate-capabilities p { font-size:12px; margin-top:6px; }
-  .scanner-gate-details { margin-top:48px; padding-top:30px; }
+  .scanner-gate-details { margin-top:24px; padding-top:22px; }
   .scanner-gate-preview { margin-top:30px; }
 }
 @media(max-width:359px) {
