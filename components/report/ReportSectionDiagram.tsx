@@ -2,6 +2,7 @@ import React from 'react';
 import DiagnosisIcon from './DiagnosisIcon';
 import ReportJumpLink from './ReportJumpLink';
 import {reportRoleStyle} from './ReportRole';
+import ReportMeasureTrack from './ReportMeasureTrack';
 import type {ReportDiagram} from '@/lib/reportDiagrams';
 
 const roleNames={current:'현재 근거',review:'해석·조건',proposal:'수정 제안',location:'적용 위치',verify:'완료 확인'};
@@ -22,12 +23,12 @@ export default function ReportSectionDiagram({diagram,id}:{diagram:ReportDiagram
  const List=ordered?'ol':'ul';
  const captionId=`report-diagram-caption-${id}`;
  const footnoteId=`report-diagram-note-${id}`;
- return <figure id={`report-diagram-${id}`} className="report-section-diagram" data-report-diagram={id} data-diagram-kind={diagram.kind} aria-labelledby={captionId} aria-describedby={footnoteId}>
-  <figcaption id={captionId}><div><span className="report-diagram-kicker">{kindNames[diagram.kind]}</span><strong>{diagram.title}</strong></div>{diagram.scope&&<small>{diagram.scope}</small>}</figcaption>
+ return <figure id={`report-diagram-${id}`} className="report-section-diagram" data-report-diagram={id} data-diagram-kind={diagram.kind} data-diagram-inline={diagram.inline||undefined} aria-labelledby={captionId} aria-describedby={footnoteId}>
+  <figcaption id={captionId}><div>{!diagram.inline&&<span className="report-diagram-kicker">{kindNames[diagram.kind]}</span>}<strong>{diagram.title}</strong></div>{diagram.scope&&!diagram.inline&&<small>{diagram.scope}</small>}</figcaption>
   {diagram.formula&&<p className="report-diagram-formula">{diagram.formula}</p>}
   <List className="report-diagram-nodes" style={{'--diagram-columns':diagram.nodes.length} as React.CSSProperties}>{diagram.nodes.map((n,i)=><li key={n.title} data-node-role={n.role} style={reportRoleStyle(n.role)}>
-   <div className="report-diagram-node-top"><span className="report-diagram-node-icon" aria-hidden="true"><DiagnosisIcon axis={n.icon}/></span>{(diagram.kind==='flow'||diagram.kind==='cycle')&&<span aria-hidden="true" className="report-diagram-node-index">{String(i+1).padStart(2,'0')}</span>}<span className="report-diagram-node-role">{roleNames[n.role]}</span></div>
-   <div className="report-diagram-node-copy"><strong>{n.title}</strong>{n.value&&<span className="report-diagram-value">{n.value}</span>}<p>{n.detail}</p></div>
+   <div className="report-diagram-node-top"><span className="report-diagram-node-icon" aria-hidden="true"><DiagnosisIcon axis={n.icon}/></span>{!diagram.inline&&<span className="report-diagram-node-role">{roleNames[n.role]}</span>}</div>
+   <div className="report-diagram-node-copy"><strong>{n.title}</strong>{n.value&&<span className="report-diagram-value">{n.value}</span>}{n.measure&&<ReportMeasureTrack {...n.measure}/>} {(!diagram.inline||!n.value)&&<p>{n.detail}</p>}</div>
    {n.target&&<ReportJumpLink id={n.target.id} className="report-diagram-link">{n.target.label}</ReportJumpLink>}
    {i+1<diagram.nodes.length&&ordered&&<Connector kind={diagram.kind} index={i}/>}
   </li>)}</List>

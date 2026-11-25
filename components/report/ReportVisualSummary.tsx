@@ -37,7 +37,8 @@ const guides={
 } satisfies Record<string,Step[]>;
 export function VisualSteps({kind,items,label}:{kind?:keyof typeof guides;items?:Step[];label?:string}){
  const steps=items||(kind?guides[kind]:[]);
- return <ol className="report-visual-steps" aria-label={label||'확인 순서'}>{steps.map((step,i)=><li key={step.title}><span className="report-visual-icon" aria-hidden="true"><DiagnosisIcon axis={step.icon}/></span><span className="report-visual-step-number" aria-hidden="true">{String(i+1).padStart(2,'0')}</span><strong>{step.title}</strong><small>{step.detail}</small></li>)}</ol>;
+ if(!steps.length)return null;
+ return <ol className="report-visual-steps" style={{'--step-columns':steps.length} as React.CSSProperties} role="list" aria-label={label||'확인 순서'}>{steps.map(step=><li key={step.title}><span className="report-visual-icon" aria-hidden="true"><DiagnosisIcon axis={step.icon}/></span><strong>{step.title}</strong><small>{step.detail}</small></li>)}</ol>;
 }
 
 const sourceCards=[

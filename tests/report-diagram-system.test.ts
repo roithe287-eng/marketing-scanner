@@ -27,15 +27,24 @@ test('every result section has a diagram or an integrated page model without cha
    assert.ok(el.find('[data-report-diagram], [data-page-model]').length>0,`missing section diagram: ${id}`);
    assert.equal(el.children('.report-section-divider,.section-reading').length,1);
    const fold=el.children('.section-reading');
-   if(fold.length){assert.ok(fold.find('>summary .reading-preview').text().trim());assert.equal(fold.attr('open'),id==='overview-questions'?'open':undefined);}
+   if(fold.length){
+    if(el.attr('data-visual-treatment')==='inline')assert.match(fold.children('summary').text(),/상세 보기/);
+    else assert.ok(fold.find('>summary .reading-preview').text().trim());
+    assert.equal(fold.attr('open'),id==='overview-questions'?'open':undefined);
+   }
   }
   for(const el of $('.report-section-diagram').toArray()){
    const figure=$(el);
    for(const attr of ['aria-labelledby','aria-describedby'])assert.ok($(`[id="${figure.attr(attr)}"]`).length);
    for(const a of figure.find('a[href^="#"]').toArray())assert.equal($(`[id="${$(a).attr('href')!.slice(1)}"]`).length,1);
    const entry=figure.parent();
-   assert.equal(entry.children('summary').attr('aria-controls'),figure.attr('id'));
-   assert.equal(entry.next().hasClass('report-stack'),true,'the optional diagram control precedes the detailed body');
+   if(figure.attr('data-diagram-inline')){
+    assert.equal(entry.attr('data-visual-treatment'),'inline');
+    assert.ok(figure.next().hasClass('section-reading'),'the measured diagram stays visible while details are closed');
+   }else{
+    assert.equal(entry.children('summary').attr('aria-controls'),figure.attr('id'));
+    assert.equal(entry.next().hasClass('report-stack'),true,'the optional diagram control precedes the detailed body');
+   }
   }
   assert.equal($('.report-reading-key [data-reading-role]').length,5);
   assert.deepEqual($('.report-nav a[data-chapter-link]').toArray().map(el=>$(el).attr('data-chapter-link')),['overview','geo','search','competition','actions']);
@@ -96,11 +105,36 @@ test('data-driven diagrams keep different eligible denominators and identify una
  const report={...fixture,llmCitationTest:{...fixture.llmCitationTest!,results:[row,{...row,question:'다른 질문의 답변',brandMentioned:true,cited:false,status:'unverified' as const,searchUsed:false,citationVerified:false,sources:[]}]}};
  const data=buildReportInsights(report),diagrams=buildReportDiagrams(report,data);
  assert.deepEqual(diagrams['geo-observations'].nodes.map(node=>node.value),['2건','2건 중 1건','1건 중 0건']);
+ assert.equal(diagrams['geo-observations'].inline,true);
+ assert.deepEqual(diagrams['geo-observations'].nodes.map(node=>node.measure),[undefined,{count:1,total:2},{count:0,total:1}]);
  assert.deepEqual(diagrams['geo-questions'].nodes.map(node=>node.value),['1개 질문','0개 질문','1개 질문']);
  const missing:MarketingReport={...fixture,llmCitationTest:null};
  const guide=buildReportDiagrams(missing,buildReportInsights(missing));
  assert.equal(guide['geo-observations'].scope,'결과 읽는 법');
+ assert.equal(guide['geo-observations'].inline,undefined);
  assert.ok(guide['geo-observations'].nodes.every(node=>node.value===undefined));
+});
+
+test('result infographics use visible counts, meaningful scales, and working detail targets',t=>{
+ const previous=(globalThis as typeof globalThis&{React?:typeof React}).React;
+ Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:previous}));
+ const row=fixture.llmCitationTest!.results[0];
+ const report:MarketingReport={...fixture,llmCitationTest:{...fixture.llmCitationTest!,results:[row,{
+   ...row,question:'출처를 판정할 수 없었던 질문',brandMentioned:true,cited:false,status:'unverified',searchUsed:false,citationVerified:false,sources:[],
+ }]}};
+ const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
+ const cards=$('.report-outcome-visuals>a');
+ assert.equal(cards.length,4);
+ for(const card of cards.toArray())assert.equal($($(card).attr('href')!).length,1);
+ const ai=cards.filter('[data-outcome=geo]');
+ assert.match(ai.text(),/브랜드 언급2건 중 1건/);
+ assert.match(ai.text(),/자사 인용1건 중 0건/);
+ assert.deepEqual(ai.find('.report-measure-track>i').map((_,el)=>$(el).attr('style')).get(),['width:50%','width:0%']);
+ assert.equal($('[data-report-panel=geo-observations]>[data-diagram-inline=true] .report-measure-track').length,2);
+ const missing=load(renderToStaticMarkup(React.createElement(ReportLayout,{report:{...report,llmCitationTest:null,siteDiagnostics:undefined}})));
+ assert.match(missing('.report-outcome-visuals [data-outcome=geo]').text(),/관측 자료 없음/);
+ assert.equal(missing('.report-outcome-visuals .report-measure-track').length,0);
+ assert.match(missing('.report-outcome-visuals [data-outcome=search]').text(),/수집한 페이지 자료 없음/);
 });
 
 test('reports with no assessable HTML show a hold in the header and reading guide',t=>{

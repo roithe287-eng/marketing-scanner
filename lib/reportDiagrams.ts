@@ -9,8 +9,8 @@ import {buildExecutionPlan,workOwners} from './reportExecution';
 import {reportGoal} from './reportGoal';
 
 export type DiagramIcon='firstView'|'cta'|'copywriting'|'trust'|'conversionFlow'|'adLanding'|'mobileUx'|'seo';
-export type DiagramNode={title:string;detail:string;icon:DiagramIcon;role:ReportRole;value?:string;target?:{id:string;label:string}};
-export type ReportDiagram={title:string;note:string;kind:'flow'|'compare'|'branch'|'cycle'|'equation';nodes:DiagramNode[];scope?:string;formula?:string;example?:string};
+export type DiagramNode={title:string;detail:string;icon:DiagramIcon;role:ReportRole;value?:string;measure?:{count:number;total:number};target?:{id:string;label:string}};
+export type ReportDiagram={title:string;note:string;kind:'flow'|'compare'|'branch'|'cycle'|'equation';nodes:DiagramNode[];scope?:string;formula?:string;example?:string;inline?:boolean};
 const node=(title:string,detail:string,icon:DiagramIcon,role:ReportRole='current'):DiagramNode=>({title,detail,icon,role});
 const diagram=(title:string,nodes:DiagramNode[],note:string,kind:ReportDiagram['kind']='flow'):ReportDiagram=>({title,nodes,note,kind});
 
@@ -66,6 +66,8 @@ export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,s
  }
  if(review){
    set('overview-observations',0,review.assessed?`${review.assessed}개 중 ${review.passed}개 충족`:'판정 가능한 HTML 항목 없음');
+   result['overview-observations'].inline=true;
+   if(review.assessed)result['overview-observations'].nodes[0].measure={count:review.passed,total:review.assessed};
    if(review.unknown>0)set('overview-observations',1,`HTML 미확인 ${review.unknown}개`);
    link('overview-observations',0,'report-html-observations','항목별 HTML 근거 보기');
    link('overview-observations',1,'report-conversion-verification','직접 확인할 순서 보기');
@@ -78,10 +80,14 @@ export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,s
    set('geo-observations',0,`${observation.total}건`);
    set('geo-observations',1,observation.mentionTotal?`${observation.mentionTotal}건 중 ${observation.mentionCount}건`:'언급 판정 자료 없음');
    set('geo-observations',2,observation.sourceTotal?`${observation.sourceTotal}건 중 ${observation.sourceCount}건`:'출처 판정 자료 없음');
+   result['geo-observations'].inline=true;
+   result['geo-observations'].nodes[1].measure={count:observation.mentionCount,total:observation.mentionTotal};
+   result['geo-observations'].nodes[2].measure={count:observation.sourceCount,total:observation.sourceTotal};
  }
  if(data.questions.length){
    const kinds=['인용 페이지','입력 페이지 검토','재측정 후 연결'] as const;
    kinds.forEach((kind,i)=>set('geo-questions',i,`${data.questions.filter(question=>question.kind===kind).length}개 질문`));
+   result['geo-questions'].inline=true;
  }
  if(data.reviewSummary.verified){
    set('geo-brand',0,`내용 대조 ${data.reviews.length}건`);
@@ -93,6 +99,7 @@ export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,s
  if(geoComparison){
    set('geo-comparison',0,`${geoComparison.matched}쌍`);
    set('geo-comparison',1,`${geoComparison.excluded}쌍`);
+   result['geo-comparison'].inline=true;
  }
  link('search-edits',0,'report-edit-title','검색 제목 수정안 보기');
  link('search-edits',1,'report-edit-hero','대표 제목 수정안 보기');
@@ -109,6 +116,7 @@ export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,s
    set('search-naver',0,`${checks.filter(c=>c.status==='observed').length}개 확인`);
    set('search-naver',1,`${checks.filter(c=>c.status==='manual').length}개 확인 필요`);
    set('search-naver',2,`${checks.filter(c=>c.status==='action').length}개 조치 필요`);
+   result['search-naver'].inline=checks.length>0;
  }
  link('search-official',0,'report-search-document-library','적용 조건과 공식 문서 열기');
  if(report.checklist?.length){
@@ -119,6 +127,7 @@ export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,s
    set('search-technical',0,`${report.siteDiagnostics.pages.length}개 HTML`);
    set('search-technical',1,`${report.siteDiagnostics.findings.length}개 점검`);
    set('search-technical',2,`${report.siteDiagnostics.crawlers.length}개 봇 정책`);
+   result['search-technical'].inline=report.siteDiagnostics.pages.length>0;
  }
  if(concernCount){
    set('search-scope',1,`${concernCount}개 항목`);
@@ -131,18 +140,26 @@ export function buildReportDiagrams(report:MarketingReport,data:ReportInsights,s
    set('competition-map',2,`${data.competitorCount-comparable}곳`);
    if(data.competitorCount)link('competition-map',1,'report-view-competition-messages','제목·설명 표현 비교 보기');
  }
+ if(data.messageRows.some(row=>!row.isOwn&&row.available)&&data.messageRows.some(row=>row.isOwn&&row.available)){
+   const matches=data.messageRows.find(row=>row.isOwn)?.cells.filter(cell=>cell.match).length||0;
+   set('competition-messages',0,`자사 표현 ${matches}개 유형`);
+   set('competition-messages',1,`비교 가능 ${data.messageRows.filter(row=>!row.isOwn&&row.available).length}곳`);
+   result['competition-messages'].inline=true;
+ }
  if(!data.tasks.length)result['overview-priority']=diagram('과제가 생기면 이 순서로 실행합니다',[node('근거 확인','먼저 현재 페이지 기록을 확인','firstView'),node('할 일과 담당','실제 권한에 맞게 작업을 정리','copywriting','proposal'),node('완료 확인','적용 결과와 같은 항목을 대조','trust','verify')],'현재 저장된 보완 항목은 없습니다. 실행 방법을 설명하는 개념도입니다.');
  for(const [i,owner] of workOwners.entries()){
    const tasks=execution.tasks.filter(task=>task.owner===owner.id);
    set('actions-board',i,`${tasks.length}개 항목`);
    if(tasks.length)link('actions-board',i,tasks[0].anchor,`${owner.label} 항목 열기`);
  }
+ result['actions-board'].inline=execution.tasks.length>0;
  set('actions-issues',0,`${report.criticalIssues.length}개 이슈`);
  for(const [i,key] of (['immediately','thisWeek','thisMonth'] as const).entries()){
    const tasks=report.priorityRoadmap[key];
    set('actions-schedule',i,`${tasks.length}개 항목`);
    if(tasks.length)link('actions-schedule',i,`report-roadmap-${key}-0`,'첫 작업 확인');
  }
+ result['actions-schedule'].inline=Object.values(report.priorityRoadmap).some(tasks=>tasks.length>0);
  result['actions-kpi'].formula='필요한 유입 수 = 목표 완료 수 ÷ 현재 완료율';
  result['actions-kpi'].example='필요한 유입은 정수로 올림합니다. 계산값이 1,500.2회라면 1,501회를 목표로 잡습니다.';
  link('actions-kpi',2,'report-simple-kpi','내 숫자로 계산하기');

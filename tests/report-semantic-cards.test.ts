@@ -77,13 +77,17 @@ test('sections show a brief before opening their evidence and copy instructions'
    for(const el of folds.toArray()){
      const fold=$(el);
      assert.equal(fold.attr('open'),fold.parent().attr('data-report-panel')==='overview-questions'?'open':undefined);
-     assert.ok(fold.children('summary').find('.reading-preview').text().trim());
+     const lead=fold.parent().attr('data-visual-treatment')==='inline'
+       ? fold.prev('[data-diagram-inline=true]').find('figcaption').text()
+       : fold.children('summary').find('.reading-preview').text();
+     assert.ok(lead.trim());
      assert.ok(fold.children('.reading-body').text().trim());
      assert.equal(fold.find('>summary button,>summary a').length,0);
    }
  }
  assert.equal($('#report-view-search-sources>.section-reading .source-library').length,1);
- assert.equal($('#report-view-geo-observations>.section-reading .reading-preview').text().includes('브랜드 언급'),true);
+ assert.match($('#report-view-geo-observations>[data-diagram-inline=true]').text(),/우리 이름이 나왔는지/);
+ assert.match($('#report-view-geo-observations>.section-reading>.reading-body').text(),/브랜드 언급/);
  assert.equal($('.source-library').length,1);assert.ok($('.source-browser-list button').length<=8);assert.ok($('.source-pagination').length);
  assert.equal($('.guide-source-context,.guide-selector,.guide-source-grid').length,0);
  assert.equal($('.naver-copy-preview,.report-copy-fallback').length,0,'duplicate fallback instructions appear only after a failed copy');
