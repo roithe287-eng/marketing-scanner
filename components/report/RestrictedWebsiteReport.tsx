@@ -8,7 +8,7 @@ export default function RestrictedWebsiteReportView({report}:{report:RestrictedW
       <p className="report-eyebrow">COLLECTION STATUS</p>
       <h1 className="mt-3 text-2xl font-black md:text-3xl">원문 수집이 제한되어<br/>{report.sources.length?'공개 검색자료를 확인했습니다.':'전체 진단을 보류했습니다.'}</h1>
       <a href={report.url} target="_blank" rel="noopener noreferrer" className="mt-4 block break-all text-sm font-bold underline underline-offset-4">{report.url} ↗</a>
-      <p className="mt-5 text-sm leading-7 text-jm-gray">{reason}{report.httpStatus?` (HTTP ${report.httpStatus})`:''}으로 페이지 HTML을 읽지 못했습니다. 검색 요약은 참고자료이며 현재 화면·버튼·회원가입 동작을 검증한 결과가 아닙니다.</p>
+      <p className="mt-5 text-sm leading-7 text-jm-gray">원문 수집 제한 사유는 {reason}{report.httpStatus?` (HTTP ${report.httpStatus})`:''}입니다. 검색 요약은 참고자료이며 현재 화면·버튼·회원가입 동작을 검증한 결과가 아닙니다.</p>
       <div className="mt-6 grid gap-3 sm:grid-cols-3">{['종합·SEO 점수 산정 안 함','미확인 기능 감점 안 함','정상 진단 이용 횟수 차감 안 함'].map(text=><p key={text} className="rounded-xl bg-slate-50 p-4 text-center text-sm font-bold">{text}</p>)}</div>
     </section>
     <section className="jm-card p-6 md:p-10" aria-label="공개 검색자료">
