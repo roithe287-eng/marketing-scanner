@@ -35,7 +35,12 @@ test('checklist distribution reflects stored states and never marks missing text
   const checklist=[{category:'seo' as const,id:'1',label:'첫 번째 항목',status:'pass' as const,currentValue:long,diagnosis:'관측 근거',guide:'가이드'},{category:'content' as const,id:'2',label:'두 번째 항목',status:'warning' as const,currentValue:'',diagnosis:'',guide:''},{category:'trust' as const,id:'3',label:'세 번째 항목',status:'fail' as const,currentValue:'',diagnosis:'진단',guide:'수정'}];
   const $=load(renderToStaticMarkup(React.createElement(DiagnosisChecklist,{checklist})));
   assert.equal($('.report-checklist-rows>article').length,3);
-  for(const state of ['pass','warning','fail'])assert.equal($(`.report-checklist-stats [data-state="${state}"] strong`).text(),'1개');
+  assert.equal($('.report-distribution-track i').length,3);
+  const widths=$('.report-distribution-track i').map((_,el)=>parseFloat(($(el).attr('style')||'').replace('width:',''))).get();
+  assert.ok(Math.abs(widths.reduce((sum,width)=>sum+width,0)-100)<1e-8);
+  assert.equal($('.report-distribution-key button:disabled').length,2);
+  assert.equal($('.report-distribution-key button').first().attr('aria-controls'),$('.report-checklist-rows').attr('id'));
+  for(const state of ['pass','warning','fail'])assert.equal($(`.report-distribution-key [data-state="${state}"] strong`).text(),'1개');
   assert.ok($.text().includes(long));assert.ok($.text().includes('저장된 가이드가 없습니다.'));
 });
 test('shared report keeps all five chapters, eight directions and complete issue text after layout changes',t=>{

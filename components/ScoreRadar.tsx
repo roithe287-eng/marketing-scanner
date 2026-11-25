@@ -21,9 +21,14 @@ export default function ScoreRadar({diagnosis,plan,review,featured=false,siteNam
   const target=task?.anchor||(['seo','mobileUx'].includes(current.key)?'report-growth-plan':'report-page-edits');
   const selectAndShow=(key:string)=>{setSelected(key);revealReportTarget(detailId);};
   return <section className={`report-card report-radar${featured?' report-radar-featured':''}`} aria-label="8개 영역 진단 인포그래픽">
-    <div className="report-card-heading"><p className="report-eyebrow">{unmeasured?'MARKETING RADAR · 평가 보류':'MARKETING RADAR · AI 참고 평가'}</p><h3>{featured?<>우리 사이트의 <span className="report-type-highlight">8개 영역 진단</span></>:'강점과 빈틈, 다음 행동까지'}</h3>{featured&&siteName&&<p className="report-radar-site">{siteName}</p>}<p className="report-note">{unmeasured?'원문 수집 제한으로 점수·등급 평가를 보류했습니다. 미수집을 사이트의 결함이나 낮은 점수로 해석하지 않습니다. 아래의 업종별 확인 과제와 수집 범위를 확인하세요.':'수집 문서에 대한 AI 참고 평가입니다. 실제 전환율·모바일 동작을 측정한 점수가 아닙니다. 영역을 누르면 개선 방향을 확인할 수 있습니다.'}</p></div>
+    <div className="report-card-heading"><p className="report-eyebrow">{unmeasured?'MARKETING RADAR · 평가 보류':'MARKETING RADAR · AI 참고 평가'}</p><h3>{featured?<>우리 사이트의 <span className="report-type-highlight">8개 영역 진단</span></>:'강점과 빈틈, 다음 행동까지'}</h3>{featured&&siteName&&<p className="report-radar-site">{siteName}</p>}<p className="report-note">{unmeasured?'원문 수집 제한으로 점수·등급 평가를 보류했습니다. 미수집을 사이트의 결함이나 낮은 점수로 해석하지 않습니다. 아래의 업종별 확인 과제와 수집 범위를 확인하세요.':'수집 문서에 대한 AI 참고 평가입니다. 실제 전환율·모바일 동작을 측정한 점수가 아닙니다. 차트의 영역명이나 아래 카드를 선택하면 개선 방법을 볼 수 있습니다.'}</p></div>
     <div className="report-radar-layout">
-      <div className="report-radar-chart"><div className="report-radar-chart-heading"><strong>우리 사이트의 진단 지도</strong><span>{unmeasured?'8개 축 · 미측정':'8개 축 · AI 참고 점수'}</span></div><DiagnosisRadarGraphic scores={scores.map(s=>s.score)} selected={selectedIndex} reference unmeasured={unmeasured}/><p className="report-note">{unmeasured?'원문 확인 후 각 영역을 다시 평가합니다.':'중심에서 바깥으로 갈수록 점수가 높습니다. 가운데 숫자는 8개 참고 점수의 평균입니다.'}</p></div>
+      <div className="report-radar-chart"><div className="report-radar-chart-heading"><strong>우리 사이트의 진단 지도</strong><span>{unmeasured?'8개 축 · 미측정':'8개 축 · AI 참고 점수'}</span></div><DiagnosisRadarGraphic scores={scores.map(s=>s.score)} selected={selectedIndex} reference unmeasured={unmeasured} controlsId={detailId} onAxisSelect={index=>setSelected(scores[index].key)}/><p className="report-note">{unmeasured?'원문 확인 후 각 영역을 다시 평가합니다.':'중심에서 바깥으로 갈수록 점수가 높습니다. 가운데 숫자는 8개 참고 점수의 평균입니다.'}</p></div>
+    <div className="report-axis-grid" role="group" aria-label="진단 영역 선택">{scores.map(s=><button type="button" key={s.key} aria-pressed={current.key===s.key} aria-controls={detailId} onClick={()=>setSelected(s.key)} className="report-axis" style={{'--axis-color':s.color,'--axis-surface':s.surface} as CSSProperties}>
+      <span className="report-axis-icon" aria-hidden="true"><DiagnosisIcon axis={s.key}/></span><span className="report-axis-title">{s.label}</span>
+      <span className="report-axis-scoreline"><strong>{unmeasured?'미측정':s.score}{!unmeasured&&<small>/100</small>}</strong><span className="report-axis-grade">{unmeasured?'평가 보류':scoreGrade(s.score)}</span></span>
+      {!unmeasured&&<span className="report-meter" aria-hidden="true"><i style={{width:`${s.score}%`,background:s.color}}/></span>}
+    </button>)}</div>
       <div className="report-axis-detail" id={detailId} style={{'--axis-color':current.color,'--axis-surface':current.surface} as CSSProperties}>
         <div className="report-axis-detail-heading"><div><span className="report-pill">{unmeasured?'선택한 영역 · 미측정':'선택한 영역 · AI 참고'}</span><h4 aria-live="polite">{current.label}</h4></div><strong className="report-selected-score">{unmeasured?'미측정':current.score}{!unmeasured&&<small>/100</small>}</strong></div>
         {currentReview&&<p className="report-radar-scope">{currentReview.status==='unmeasured'?'실제 화면·동작은 별도 확인이 필요합니다.':'원문에서 확인한 항목입니다. 현재 운영 화면에서도 같은 조건인지 확인하세요.'}</p>}
@@ -31,11 +36,6 @@ export default function ScoreRadar({diagnosis,plan,review,featured=false,siteNam
         <ReportJumpLink className="report-next-action" id={target}>{task?`${task.title} · 수정 방법 열기`:'이 영역의 수정 방법 열기'}</ReportJumpLink>
       </div>
     </div>
-    <div className="report-axis-grid" role="group" aria-label="진단 영역 선택">{scores.map(s=><button type="button" key={s.key} aria-pressed={current.key===s.key} aria-controls={detailId} onClick={()=>setSelected(s.key)} className="report-axis" style={{'--axis-color':s.color,'--axis-surface':s.surface} as CSSProperties}>
-      <span className="report-axis-icon" aria-hidden="true"><DiagnosisIcon axis={s.key}/></span><span className="report-axis-title">{s.label}</span>
-      <span className="report-axis-scoreline"><strong>{unmeasured?'미측정':s.score}{!unmeasured&&<small>/100</small>}</strong><span className="report-axis-grade">{unmeasured?'평가 보류':scoreGrade(s.score)}</span></span>
-      {!unmeasured&&<span className="report-meter" aria-hidden="true"><i style={{width:`${s.score}%`,background:s.color}}/></span>}
-    </button>)}</div>
     {!featured&&!unmeasured&&<><div className="report-priority-heading"><h4>먼저 검토할 3개 영역</h4><span>점수가 낮은 순서 · 동점은 표시 순서 기준</span></div>
     <ol className="report-priority-trio">{ordered.slice(0,3).map((s,i)=><li key={s.key}><span>{String(i+1).padStart(2,'0')}</span><div><strong>{s.label} · {s.score}점</strong><p>{s.action}</p></div><button type="button" onClick={()=>selectAndShow(s.key)} aria-controls={detailId} aria-label={`${s.label} 개선 방법 열기`}>개선 방법 열기 →</button></li>)}</ol></>}
   </section>;

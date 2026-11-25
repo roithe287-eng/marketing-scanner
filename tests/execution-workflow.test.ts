@@ -1,3 +1,5 @@
+import {load} from 'cheerio';
+import ReportLayout from '../components/report/ReportLayout';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import React from 'react';
@@ -5,13 +7,31 @@ import {renderToStaticMarkup} from 'react-dom/server';
 import {fixture} from './fixtures/report';
 import {MarketingReportSchema,type MarketingReport} from '../lib/reportSchema';
 import {buildExecutionPlan,buildPageEdits,changedText,executionBrief} from '../lib/reportExecution';
-import {buildDiagnosisComparison,createDiagnosisBaseline} from '../lib/diagnosisComparison';
+import {buildDiagnosisComparison,comparisonGroups,createDiagnosisBaseline} from '../lib/diagnosisComparison';
 import {buildReportDocument} from '../lib/reportDocument';
 import {layoutPdfPages,type PdfTextStyle} from '../lib/pdfLayout';
 import {PageEditPreview,TodayWork,ExecutionBoard} from '../components/report/ExecutionWorkflow';
 const page=(date:string)=>({version:1 as const,requestedUrl:fixture.url,finalUrl:fixture.url,capturedAt:date,title:'서비스 제목',description:'실제 설명',h1:[] as string[],h2:[],ctaButtons:['상담 문의'],bodyText:'실제 본문',bodyTruncated:false});
 const before:MarketingReport={...fixture,pageEvidence:page('2026-10-01T01:00:00Z'),diagnosisMethod:'same',checklist:[{id:'old',category:'content',label:'내용 확인',status:'warning',currentValue:'기존의 부족한 설명',diagnosis:'보완',guide:'조건을 추가하세요.'}],criticalIssues:[{title:'사라진 이슈',problem:'이전의 문제',reason:'근거',recommendation:'확인',priority:'high'}]};
 const current:MarketingReport={...before,pageEvidence:{...page('2026-10-05T01:00:00Z'),h1:['실제 대표 제목']},criticalIssues:[],checklist:[{...before.checklist![0],id:'new-generated-id',status:'pass',currentValue:'조건 포함'},{...before.checklist![0],id:'another',label:'새로운 점검',currentValue:'새 관측'}],diagnosis:{...fixture.diagnosis,seo:80},diagnosisBaseline:createDiagnosisBaseline(before,'prior123')};
+test('recheck offers one editable connection only to an eligible viewer and groups actual change records',t=>{
+ const original=(globalThis as typeof globalThis&{React?:typeof React}).React;
+ Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:original}));
+ const render=(report:MarketingReport,editable:boolean)=>load(renderToStaticMarkup(React.createElement(ReportLayout,{report,onComparisonChange:editable?()=>{}:undefined})));
+ const $=render(current,false);
+ assert.equal($('#report-recheck .work-baseline-form').length,0);
+ const changes=buildDiagnosisComparison(current)!;
+ for(const group of comparisonGroups){
+   const count=changes.items.filter(item=>item.group===group.id).length;
+   assert.equal($(`#report-recheck .report-distribution-key [data-state="${group.id}"] strong`).text(),count+'개');
+ }
+ assert.equal($('#report-recheck .work-change-groups details[open]').length,0);
+ assert.equal(render(before,true)('#report-recheck .work-baseline-form').length,1);
+ assert.equal(render(before,false)('#report-recheck').length,0);
+ const blocked=render({...current,diagnosisBaseline:{...current.diagnosisBaseline!,url:'https://other.example/'}},false);
+ assert.equal(blocked('#report-recheck .report-distribution').length,0);
+});
+
 test('same-page comparison distinguishes pass transitions from missing issues and preserves actual scores',()=>{
  const c=buildDiagnosisComparison(current)!;
  assert.equal(c.blocked,'');assert.equal(c.axes.find(a=>a.key==='seo')!.delta,10);

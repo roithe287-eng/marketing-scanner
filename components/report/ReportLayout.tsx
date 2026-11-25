@@ -115,7 +115,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
         ...(report.sitePurpose?.sector||report.siteDiagnostics?.medicalAudit?[{id:'overview-sector',label:'업종별 확인',children:<>{report.sitePurpose&&<NonCommerceSectorPanel purpose={report.sitePurpose}/>}<MedicalAuditPanel audit={report.siteDiagnostics?.medicalAudit}/></>}]:[]),
         {id:'overview-observations',label:'영역별 근거',children:<>{report.evidenceReview&&<EvidenceReviewPanel review={report.evidenceReview}/>}<ConversionPath data={data}/></>},
-        ...(report.diagnosisBaseline?[{id:'overview-comparison',label:'이전 결과 비교',children:<DiagnosisComparisonPanel report={report}/>}]:[]),
+        ...(report.diagnosisBaseline||onComparisonChange?[{id:'overview-comparison',label:'이전 결과 비교',children:<DiagnosisComparisonPanel report={report} onChange={onComparisonChange}/>}]:[]),
       ]}/>
     </Chapter>
     <Chapter id="geo" number="02" title="AI가 답한 내용과 연결한 출처" note="질문별 답변과 실제 출처를 볼 수 있습니다. 답변 속 업체명과 서비스 안내가 우리 정보와 일치하는지도 확인하세요.">

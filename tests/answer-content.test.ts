@@ -80,8 +80,10 @@ test('briefing questions have real link targets and only display attributable pa
   assert.equal(active.find('.briefing-query h4').text(),q.question);
   assert.equal(active.find('.briefing-answer-text').text(),q.draft);
   assert.equal(active.find('.briefing-excerpt a').attr('href'),'https://example.org/guide');
-  assert.equal($('.briefing-related a').length,2);
-  for(const link of $('.briefing-related a').toArray())assert.equal($($(link).attr('href')!).length,1);
+  assert.equal($('.question-status-map a').length,plan.questions.length);
+  assert.equal($('.question-status-map [aria-current=true]').attr('href'),'#answer-questions-1');
+  assert.deepEqual($('.question-status-label').map((_,el)=>$(el).attr('data-status')).get(),plan.questions.map(q=>q.status));
+  for(const link of $('.question-status-map a').toArray())assert.equal($($(link).attr('href')!).length,1);
   q.evidence[0].url='javascript:alert(1)';
   assert.equal(render()('.briefing-reader [data-report-item]:not([hidden]) .briefing-excerpt a').length,0);
   q.evidence=[];q.draft='';
