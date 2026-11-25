@@ -1,5 +1,6 @@
 import {INDUSTRY_LABELS} from './industryCategory';
 export {INDUSTRY_LABELS} from './industryCategory';
+import {industryDocuments,isIndustryOverview} from './industrySourceScope';
 import {isEditorialPage} from './pageRole';
 import {retailFamilies} from './retailOffer';
 import {placeSector} from './localPlaceCatalog';
@@ -10,7 +11,7 @@ import { ExtractedWebsiteData } from "./extractWebsite";
 import { IndustryCategory } from "./reportSchema";
 import {analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
 import {sameSite} from './siteIdentity';
-import type {IndustryDecision,IndustryEvidence} from './industryDecisionSchema';
+import type {IndustryDecision,IndustryEvidence,IndustryOfferPage} from './industryDecisionSchema';
 import {isSecondarySection,isOtherBranch} from './websiteIdentity';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
 
@@ -130,8 +131,9 @@ function providerClaims(row:IndustryEvidence){
 }
 
 /** Authorize industry-specific output from first-party statements and products only. */
-export function reviewIndustry(data:IndustryInput):IndustryDecision{
-  const sourceUrl=data.finalUrl||data.url;
+export function reviewIndustry(input:IndustryInput):IndustryDecision{
+  const sourceUrl=input.finalUrl||input.url;
+  const data={...input,businessDocuments:industryDocuments(sourceUrl,input.businessDocuments)};
   if(!sameSite(sourceUrl,data.url)&&!sameSite(data.url,sourceUrl))return {status:'review',reason:'redirected',sourceUrl,evidence:[]};
   if(data.collectionNotice)return {status:'review',reason:'restricted',sourceUrl,evidence:[]};
   const purpose=analyzeWebsitePurpose(data);
@@ -152,9 +154,21 @@ export function reviewIndustry(data:IndustryInput):IndustryDecision{
       if(!headings.some(row=>row.text.includes(text.trim())||text.trim()===row.text))add('body',text);
     }
   }
-  for(const doc of data.businessDocuments||[]){
+  const offerPages=new Map<IndustryOfferPage['category'],IndustryOfferPage>();
+  const overview=isIndustryOverview(sourceUrl);
+  for(const doc of data.businessDocuments){
     if(doc.source==='search_excerpt'||doc.url===sourceUrl||isOtherBranch(doc.title,place?.branch)||isSecondarySection(doc.title,'',doc.url))continue;
-    for(const section of doc.sections.filter(s=>!isSecondarySection(s.heading,s.text,doc.url)).slice(0,4))add('document',section.text,doc.url);
+    const sections=doc.sections.filter(s=>!isSecondarySection(s.heading,s.text,doc.url)).slice(0,4);
+    for(const section of sections)add('document',section.text,doc.url);
+    if(overview&&!isIndustryOverview(doc.url)&&doc.title.trim()){
+      const fromTitle=new Set(providerClaims({field:'title',text:doc.title,url:doc.url}).map(comparableCategory));
+      const categories=[...new Set(sections.flatMap(s=>directIndustries(s.text)).map(comparableCategory))];
+      const category=categories[0];
+      const titleSupports=category&&(!fromTitle.size?matchingHints(classificationText(doc.title),concreteHints(category)).length>0:fromTitle.has(category));
+      if(categories.length===1&&category!=='etc'&&titleSupports&&!offerPages.has(category)){
+        offerPages.set(category,{category,url:doc.url,title:doc.title.trim().slice(0,160)});
+      }
+    }
   }
   const inventory=[...data.productDiscovery?.sources||[],...data.productContext?.sources||[]];
   for(const product of inventory)add('product',product.name,product.url);
@@ -178,6 +192,7 @@ export function reviewIndustry(data:IndustryInput):IndustryDecision{
   const conflict=lead.size>1||confirmed.size>1||allClaims.size>1&&!corroborated;
   if(conflict&&!purpose.community){
     const evidence=rows.filter(row=>providerClaims(row).length).slice(0,4);
+    if(offerPages.size>=2)return {status:'review',reason:'multiple_offers',sourceUrl,evidence,offerPages:[...offerPages.values()].slice(0,4)};
     return {status:'review',reason:'conflicting',sourceUrl,evidence};
   }
   const specialists=[...purpose.business?.evidence||[],...purpose.sector?.evidence||[],...purpose.community?.evidence||[]];

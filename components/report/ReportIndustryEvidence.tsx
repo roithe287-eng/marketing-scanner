@@ -3,6 +3,7 @@ import type {MarketingReport} from '@/lib/reportSchema';
 import {safeHttpUrl} from '@/lib/citationMeasurement';
 import {sameSite} from '@/lib/siteIdentity';
 import ReportJumpLink from './ReportJumpLink';
+import {INDUSTRY_LABELS} from '@/lib/industryCategory';
 import {industryReviewMessage} from '@/lib/industryDecisionSchema';
 import {isSecondarySection} from '@/lib/websiteIdentity';
 
@@ -15,12 +16,20 @@ export default function ReportIndustryEvidence({report,linkToPurpose=false}:{rep
     const pageType=review.status==='page_type';
     const held=review.status==='review';
     const original=safeHttpUrl(review.sourceUrl);
+    const multiple=held&&review.reason==='multiple_offers';
+    const offerPages=multiple?review.offerPages?.filter(offer=>sameSite(offer.url,review.sourceUrl))||[]:[];
     return <section className="industry-original" aria-label="업종과 분석 범위">
       <dl className="industry-decision" data-industry-status={review.status}>
-        <div><dt>{pageType?'URL 유형':'업종 판정'}</dt><dd>{held?'업종 확인 필요':review.label}</dd></div>
+        <div><dt>{pageType?'URL 유형':'업종 판정'}</dt><dd>{held?(multiple?'여러 사업 영역 확인':'업종 확인 필요'):review.label}</dd></div>
         <div><dt>{confirmed?'페이지 목적':'적용 범위'}</dt><dd>{pageType?'콘텐츠·검색 점검':confirmed?(report.sitePurpose?.goal.label||'업종별 점검'):'공통 페이지 점검'}</dd></div>
       </dl>
       {held&&<p className="industry-review-note">{industryReviewMessage[review.reason]}</p>}
+      {!!offerPages.length&&<ul className="industry-offer-pages" aria-label="확인한 사업별 상세 주소">
+        {offerPages.map(offer=>{const url=safeHttpUrl(offer.url);return url?<li key={`${offer.category}:${offer.url}`}>
+          <a href={url} target="_blank" rel="noopener noreferrer"><strong>{INDUSTRY_LABELS[offer.category]}</strong><span>{offer.title} ↗</span></a>
+        </li>:null;})}
+      </ul>}
+      {confirmed&&!!review.serviceSpecialties?.length&&<p className="industry-review-note"><strong>확인한 세부 서비스</strong> · {review.serviceSpecialties.join(' / ')}</p>}
       {(held&&review.reason==='redirected'&&original)&&<p className="industry-review-note"><a href={original} target="_blank" rel="noopener noreferrer">최종 주소 열기 · {new URL(original).host} ↗</a></p>}
       {review.evidence.length>0&&<details><summary>{confirmed?'업종 판단 근거 보기':pageType?'URL 유형 판정 근거 보기':'수집한 페이지 문구 보기'}</summary>
         <dl>{review.evidence.map(item=>{const url=safeHttpUrl(item.url);return <div key={item.text}>

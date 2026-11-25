@@ -428,3 +428,9 @@
 .industry-review-note{text-align:center;color:#415972;font-size:13px;margin:0 0 9px;overflow-wrap:anywhere}
 .industry-review-note a,.industry-evidence-link{text-decoration:underline;text-underline-offset:3px}
 .industry-evidence-link{margin-inline-start:8px;display:inline-block}
+
+.industry-offer-pages{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,170px),1fr));gap:8px;list-style:none;padding:0;margin:0 0 10px;text-align:center}
+.industry-offer-pages>li{min-width:0;display:grid}
+.industry-offer-pages a{display:grid;align-content:center;gap:3px;padding:10px;border:1px solid #d5e4eb;border-radius:10px;background:#f6fafc;min-width:0;overflow-wrap:anywhere}
+.industry-offer-pages strong{font-size:14px;color:#163b57}
+.industry-offer-pages span{font-size:12px;color:#36566f;text-decoration:underline;text-underline-offset:2px}
