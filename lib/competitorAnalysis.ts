@@ -245,7 +245,8 @@ export async function analyzeCompetitors(siteData: {
     ]);
     const business=analyzeBusinessContext({...base,businessDocuments,productContext})||initialBusiness;
     const businessKeywords=[...new Set([...(initialBusiness?.id===business?.id?initialBusiness?.keywords||[]:[]),...business?.keywords||[]])];
-    const scope=initialScope.kind==='unknown'?buildCompetitionScope({...base,productContext,businessDocuments}):initialScope;
+    const needsScope=initialScope.kind==='unknown'||(initialScope.profile==='commerce'&&business?.id==='hairpieces_wigs');
+    const scope=needsScope?buildCompetitionScope({...base,productContext,businessDocuments}):initialScope;
     if(scope.profile==='fortune_consultation'&&scope.area&&!scope.nationwide){
       businessKeywords.unshift(...businessKeywords.map(k=>scope.area+' '+k));
     }
@@ -286,7 +287,7 @@ export async function analyzeCompetitors(siteData: {
     const attemptedKeywords=[searchQuery(keyword)];
     let response = await searchNaverWeb(searchQuery(keyword), 30);
     let selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce,scope);
-    if (selection.candidates.length === 0 && keywordSource === "ai") {
+    if (selection.candidates.length === 0 && (keywordSource === "ai" || scope.profile === 'hairpieces_wigs')) {
       const fallbackKeyword = marketKeywordCandidates(querySite).find(k=>k.keyword!==keyword)?.keyword;
       if (fallbackKeyword && fallbackKeyword !== keyword) {
         attemptedKeywords.push(searchQuery(fallbackKeyword));

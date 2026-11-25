@@ -38,12 +38,13 @@ test('agent-specific noindex and parameterized directives are interpreted withou
   assert.deepEqual(googleDirectives([],'yeti: nofollow, max-snippet: 0, noindex'),[]);
   assert.deepEqual(googleDirectives([],'max-snippet: -1, noindex'),['max-snippet:-1','noindex']);
 });
-test('Google, Naver and OpenAI path findings remain independent; unsupported encoded paths are unknown',()=>{
+test('Google, Naver and OpenAI path findings remain independent for UTF-8 paths',()=>{
   const robots='User-agent: *\nAllow: /\nUser-agent: Googlebot\nDisallow: /service\nUser-agent: OAI-SearchBot\nAllow: /service\nUser-agent: GPTBot\nDisallow: /';
   assert.equal(evaluateRobots(robots,'Googlebot','/service').allowed,false);
   assert.equal(evaluateRobots(robots,'Yeti','/service').allowed,true);
   assert.equal(evaluateRobots(robots,'OAI-SearchBot','/service').allowed,true);
-  assert.equal(evaluateRobots(robots,'Googlebot','/%EC%98%88').allowed,null);
+  assert.equal(evaluateRobots(robots,'Googlebot','/%EC%98%88').allowed,true);
+  assert.equal(evaluateRobots(robots,'Googlebot','/service/%EC%98%88').allowed,false);
   const plan=buildGrowthPlan(report);
   assert.equal(plan.tasks.find(t=>t.id==='google-crawl')?.status,'action');
   assert.equal(plan.tasks.find(t=>t.id==='naver-crawl')?.status,'observed');

@@ -6,6 +6,7 @@ import {nonCommercePlaybook} from './nonCommercePlaybook';
 import {classificationText,offeringClauses,ownBusinessRole,providerIdentity,providerBody,isContextOnlyEvidence} from './websiteIdentity';
 import {fortuneTopic,fortuneRemote,fortuneVisit} from './fortuneService';
 import {SKI_DESTINATIONS,seasonalProfile} from './seasonalPlaceCatalog';
+import {hairGoodsFacets,hairGoodsProducts,hairGoodsTopic} from './hairGoods';
 
 export const CompetitionScopeSchema=z.object({
   version:z.literal(1),sourceUrl:z.string().url().max(4000),
@@ -20,6 +21,7 @@ type Input=Partial<ExtractedWebsiteData>&{url:string;localPlaceEvidence?:LocalPl
 const profiles:Record<string,string>={agency:'광고·제작 대행',software:'소프트웨어',manufacturing:'제조',home:'시공·생활 서비스',medical:'병의원',legal:'법률',education:'교육',commerce:'상품 판매',restaurant:'식당',cafe:'카페',lodging:'숙박',rental:'대여',veterinary:'동물병원',pet_care:'반려동물 돌봄',pet_store:'반려동물 매장'};
 const localProfiles=new Set(['medical','legal','professional','accounting','home','home_service','restaurant','cafe','lodging','rental','veterinary','pet_care','pet_store','beauty','education','fitness','automotive','real_estate','retail','culture','event','welfare','living','funeral','pharmacy']);
 const facetRules:Record<string,[string,RegExp][]>={
+  hairpieces_wigs:hairGoodsFacets,
   fortune_digital:[['사주·만세력',/사주|만세력|명리학/],['운세',/운세/],['궁합',/궁합/],['타로',/타로/],['점성술',/점성술/]],
   fortune_consultation:[['사주·명리',/사주|철학관|명리|역술/],['타로',/타로/],['신점',/신점/],['점성술',/점성술/]],
   custom_apparel:[['단체복',/단체복|과잠|유니폼/],['자수·프린팅',/자수|프린팅/]],
@@ -51,6 +53,11 @@ function areaOf(text:string):string{
 function providerSpecialties(profile:string,data:Input):string[]{
   const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
   const facets=facetRules[profile]||[];
+  if(profile==='hairpieces_wigs'){
+    const products=hairGoodsProducts([...(data.productDiscovery?.sources||[]),...(data.productContext?.sources||[])],data.finalUrl||data.url);
+    const merchandise=[identity,...products.map(p=>classificationText(p.name))].join('\n');
+    return facets.filter(([,match])=>match.test(merchandise)).map(([label])=>label);
+  }
   const primary=facets.filter(([,re])=>re.test(headings));
   const metadataFacets=primary.length&&!profile.startsWith('fortune_')?primary:facets.filter(([,re])=>re.test(identity));
   // Brand-only metadata may omit the actual service. Use scoped first-party
@@ -71,7 +78,8 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
   const role=ownBusinessRole(data),book=nonCommercePlaybook(purpose,identity,place);
   const kind=purpose.kind==='unknown'&&!['agency','software','manufacturing','home','education'].includes(role||'')&&/쇼핑몰|공식몰|전문몰|온라인몰|스토어|\bshop\b|\bstore\b/i.test(identity)?'commerce':purpose.kind;
-  let profile=purpose.business?.id==='custom_apparel'?'custom_apparel':kind==='commerce'?'commerce':role==='manufacturing'?'manufacturing':book.local&&place?place.sector:purpose.business?.id||book.industry||book.id;
+  const business=purpose.business?.id;
+  let profile=business==='hairpieces_wigs'||business==='custom_apparel'?business:kind==='commerce'?'commerce':role==='manufacturing'?'manufacturing':book.local&&place?place.sector:business||book.industry||book.id;
   if(profile.startsWith('place_'))profile=profile.slice(6);
   if(profile==='organization'&&role==='manufacturing')profile=role;
   const specialties=providerSpecialties(profile,data);
@@ -122,6 +130,7 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
 /** A client noun cannot be the whole query for a provider with a clear role. */
 export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean{
   if(!scope)return true;
+  if(scope.profile==='hairpieces_wigs')return hairGoodsTopic.test(query)&&!/모발\s*이식|탈모\s*(?:약|치료|클리닉)|두피\s*시술/.test(query);
   if(scope.profile.startsWith('fortune_'))return (fortuneTopic.test(query)||/^궁합$/.test(query.trim()))&&!(scope.profile==='fortune_digital'&&/상담|점집|철학관/.test(query));
   if(!['insurance','finance','unknown','service','mixed'].includes(scope.profile)&&/^(?:(?:자동차|차량|여행|배상책임)\s*)?보험(?:\s*(?:가입|상담|보장|보장\s*분석))?$/.test(query.trim()))return false;
   if(scope.profile==='medical'&&/^(?:호주산?\s*)?(?:영양제|건강식품|건강기능식품)$/.test(query.trim()))return false;

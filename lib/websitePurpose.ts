@@ -143,7 +143,9 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const goalLabel=business?.goalLabel||(fortuneOverview&&goalKey==='read'?'운세 안내 열람':actionLabels[goalKey]);
   const evidence=(business?business.evidence:structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?(matched[candidate].length?matched[candidate]:place?[{text:short(place.identity),locator:'입력 페이지 업체 정보'}]:units):units).slice(0,commerce?6:8).map(original);
   if(commerce&&evidence.length<8)evidence.push(...purchase.slice(0,8-evidence.length));
-  const pricingPattern=business?.industry==='fortune'?fortunePricing:/가격|비용|요금|견적|유료|무료|수강료|구독료|수수료|참가비|pricing|fees|\bcost\b/i;
+  const pricingPattern=business?.industry==='fortune'?fortunePricing:business?.id==='hairpieces_wigs'
+    ?/판매\s*가|소비자\s*가|상품\s*가격|옵션\s*추가금|\d[\d,]*\s*원/
+    :/가격|비용|요금|견적|유료|무료|수강료|구독료|수수료|참가비|pricing|fees|\bcost\b/i;
   const pricingObserved=checkUnits.some(u=>pricingPattern.test(u.text));
   const pricingApplies=commerce||['service','education','unknown'].includes(kind)||(kind==='organization'&&pricingObserved)||(kind==='content'&&units.some(u=>/구독료|유료\s*구독/.test(u.text)))||(kind==='public_service'&&units.some(u=>/신청\s*수수료|참가비/.test(u.text)));
   const checks:WebsitePurpose['checks']=[];

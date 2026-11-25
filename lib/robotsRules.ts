@@ -21,9 +21,24 @@ export type RobotsObservation = {
 };
 type Rule={allow:boolean;path:string};
 export type RobotsAgent='Yeti'|'Ads-Naver'|'Googlebot'|'OAI-SearchBot'|'JinjjaScanner'|'Google-Extended'|'GPTBot'|'ChatGPT-User'|'Claude-SearchBot'|'ClaudeBot'|'Claude-User'|'PerplexityBot'|'Perplexity-User';
+function normalizedRobotsPath(value:string,requested=false):string|null {
+  try {
+    if(/[\x00-\x1f\x7f]/.test(value))return null;
+    const encoded=value.replace(/[^\x00-\x7f]+/gu,text=>encodeURIComponent(text));
+    // Keep encoded ASCII separators, controls and aliases under manual review.
+    if(requested&&/%[0-7][0-9a-f]/i.test(encoded))return null;
+    // Validate UTF-8 without changing path separators or wildcard syntax.
+    decodeURIComponent(encoded);
+    return encoded.replace(/%([0-9a-f]{2})/gi,(match,hex)=>{
+      const char=String.fromCharCode(parseInt(hex,16));
+      return /[A-Za-z0-9._~-]/.test(char)?char:match.toUpperCase();
+    });
+  } catch { return null; }
+}
+
 /** Evaluate the requested path, preserving case. Specific agent groups override '*'.
  * Ads-Naver intentionally ignores the general wildcard group (NAVER advertising FAQ).
- * Unsupported percent-encoded rules are left for manual inspection rather than guessed.
+ * Literal Unicode and valid UTF-8 encoded octets compare in one form.
  */
 export function evaluateRobots(text:string,agent:RobotsAgent,path:string):{allowed:boolean|null;rule:string;explicit:boolean} {
   const groups:{agents:string[];rules:Rule[]}[]=[];
@@ -39,15 +54,16 @@ export function evaluateRobots(text:string,agent:RobotsAgent,path:string):{allow
   }
   const specific=groups.filter(g=>g.agents.includes(agent.toLowerCase()));
   const selected=specific.length?specific:agent==='Ads-Naver'?[]:groups.filter(g=>g.agents.includes('*'));
-  const rules=selected.flatMap(g=>g.rules).map(r=>({...r,path:r.path.replace(/%([0-9a-f]{2})/gi,(match,hex)=>{const c=String.fromCharCode(parseInt(hex,16));return /[A-Za-z0-9._~-]/.test(c)?c:match.toUpperCase();})}));
-  // Unrelated Shopify %2B filter rules cannot make every ASCII product/page unknown.
-  // Non-ASCII rules and encoded requested paths retain the prior conservative review state.
-  if(rules.some(r=>/%(?:[89a-f][0-9a-f])|[^\x20-\x7e]/i.test(r.path))||/%[0-9a-f]{2}|[^\x20-\x7e]/i.test(path)) return {allowed:null,rule:'인코딩 경로는 관리 도구에서 확인',explicit:specific.length>0};
+  const target=normalizedRobotsPath(path,true);
+  const rules=selected.flatMap(g=>g.rules).map(r=>({...r,original:r.path,path:normalizedRobotsPath(r.path)}));
+  if(target===null||rules.some(r=>r.path===null))return {allowed:null,rule:'인코딩 경로는 관리 도구에서 확인',explicit:specific.length>0};
+  const length=(value:string)=>value.replace(/%[0-9A-F]{2}/g,' ').replace(/[*$]/g,'').length;
   const matching=rules.filter(r=>{
-    const end=r.path.endsWith('$');const raw=end?r.path.slice(0,-1):r.path;
+    const rulePath=r.path!;
+    const end=rulePath.endsWith('$');const raw=end?rulePath.slice(0,-1):rulePath;
     const pattern=raw.split('*').map(p=>p.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('.*');
-    return new RegExp(`^${pattern}${end?'$':''}`).test(path);
-  }).sort((a,b)=>b.path.replace(/[*$]/g,'').length-a.path.replace(/[*$]/g,'').length||Number(b.allow)-Number(a.allow));
+    return new RegExp(`^${pattern}${end?'$':''}`).test(target);
+  }).sort((a,b)=>length(b.path!)-length(a.path!)||Number(b.allow)-Number(a.allow));
   const winner=matching[0];
-  return {allowed:!winner||winner.allow,rule:winner?`${winner.allow?'Allow':'Disallow'}: ${winner.path}`:'대상 경로에 적용되는 차단 규칙 없음',explicit:specific.length>0};
+  return {allowed:!winner||winner.allow,rule:winner?`${winner.allow?'Allow':'Disallow'}: ${winner.original}`:'대상 경로에 적용되는 차단 규칙 없음',explicit:specific.length>0};
 }

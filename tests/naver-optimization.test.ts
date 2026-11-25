@@ -37,7 +37,12 @@ test('Yeti specifics override wildcard; Ads-Naver ignores wildcard and honors ex
   assert.equal(evaluateRobots(text,'Ads-Naver','/old/public').allowed,true);
   assert.equal(evaluateRobots(text,'Ads-Naver','/old/public/x').allowed,false);
   assert.equal(evaluateRobots('User-agent: Yeti\nDisallow: /Case','Yeti','/case').allowed,true);
-  assert.equal(evaluateRobots('User-agent: Yeti\nDisallow: /%EB%8B%A4','Yeti','/').allowed,null);
+  const korean='User-agent: Yeti\nDisallow: /상품/\nAllow: /상품/%EA%B3%B5%EA%B0%9C$';
+  assert.equal(evaluateRobots(korean,'Yeti','/%ec%83%81%ed%92%88/%ea%b3%b5%ea%b0%9c').allowed,true);
+  assert.equal(evaluateRobots(korean,'Yeti','/상품/비공개').allowed,false);
+  assert.equal(evaluateRobots('User-agent: Yeti\nDisallow: /%EB%8B%A4','Yeti','/').allowed,true);
+  assert.equal(evaluateRobots(korean,'Yeti','/상품%2F비공개').allowed,null);
+  assert.equal(evaluateRobots(korean,'Yeti','/상품/%ea%b3').allowed,null);
 });
 test('robots network failure, server failure, HTML response and 404 remain distinguishable',async(t)=>{
   const mock=t.mock.method(globalThis,'fetch',async()=>new Response('missing',{status:404}));

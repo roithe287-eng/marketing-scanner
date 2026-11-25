@@ -15,6 +15,8 @@ import {isConsentBoilerplate} from './contentBoilerplate';
 import {publicBusinessSections} from './publicBusinessSections';
 import {fortunePersonalData,fortuneTopic} from './fortuneService';
 import {pageRegion} from './pageRegions';
+import {hairGoodsIdentity} from './hairGoods';
+import {classificationText} from './websiteIdentity';
 
 // Researched public URLs are discovery hints, never pre-written findings or score overrides.
 const researchPaths:Record<string,string[]>={
@@ -33,6 +35,9 @@ export const hasBusinessResearch=(url:string)=>{try{return !!researchPaths[host(
 export function captureBusinessLinks(html:string,url:string):string[]{
   const $=cheerio.load(html),groups=new Map<number,string[]>();
   restoreStreamedHtml($);
+  const headings=$('title,h1').map((_,el)=>$(el).text()).get().join('\n');
+  const hairStore=hairGoodsIdentity(url,headings,classificationText(headings),[],[]);
+  const hairGuides=new Map<number,string>();
   const fortune=fortuneTopic.test($('title,h1').text()+' '+($('meta[name="description"]').attr('content')||''));
   $('a[href]').slice(0,500).each((_,el)=>{
     const a=$(el),raw=a.attr('href')||'',target=ownPublicUrl(raw,url);
@@ -41,6 +46,12 @@ export function captureBusinessLinks(html:string,url:string):string[]{
     if((!refundPath&&/policy/i.test(target.pathname))||/(?:logout|delete|remove|unsubscribe|write|modify|edit|submit|download|privacy|review|testimonial|account|\/my(?:\/|$)|\/results?(?:\/|$)|checkout|payment|login)/i.test(target.pathname)||/\.(?:pdf|zip|png|jpe?g|mp4)$/i.test(target.pathname))return;
     if([...target.searchParams.keys()].some(k=>/token|auth|session|email|phone|password|action|mode/i.test(k)))return;
     const label=clean(a.text()||a.find('img[alt]').attr('alt'),100),text=label+' '+target.pathname;
+    if(hairStore&&!/협찬|도매/.test(label)){
+      const topic=/(?:컬러|칼라|색상)\s*(?:차트|표|샘플)/.test(label)?0
+        :/구매\s*가이드|착용\s*(?:가이드|방법|법)|관리\s*가이드/.test(label)?1
+          :/교환|반품|이용\s*안내\s*FAQ/i.test(label)?2:/A\s*\/\s*S/i.test(label)?3:-1;
+      if(topic>=0&&!hairGuides.has(topic))hairGuides.set(topic,target.href);
+    }
     const fortuneGroup=fortune&&(
       /서비스\s*상세정보|service-info/i.test(text)?0:
       /환불\s*(?:정책|안내)|(?:^|[\/_-])refund(?:[\/_-]|$)/i.test(text)?2:
@@ -51,7 +62,7 @@ export function captureBusinessLinks(html:string,url:string):string[]{
     if(group!==null&&label.length<=70)groups.set(group,[...new Set([...groups.get(group)||[],target.href])]);
   });
   const ordered=[0,1,2].flatMap(i=>[0,1,2,3,4].flatMap(key=>(groups.get(key)||[]).slice(i,i+1)));
-  return [...new Set(ordered)].slice(0,12);
+  return [...new Set([...[0,1,2,3].flatMap(topic=>hairGuides.get(topic)||[]),...ordered])].slice(0,12);
 }
 
 /** Only public catalogue fields from a known declarative payload; no general state walk or execution. */
@@ -109,9 +120,9 @@ export async function collectRestrictedBusinessEvidence(url:string):Promise<Busi
 }
 
 /** Same-site, robots-aware, bounded supplemental collection; failures never erase primary observations. */
-export async function collectBusinessDocuments(url:string,options:{seed?:BusinessDocument;robots?:RobotsObservation;productLinks?:string[];links?:string[];nonCommerce?:boolean;budgetMs?:number}={}):Promise<BusinessDocument[]>{
+export async function collectBusinessDocuments(url:string,options:{seed?:BusinessDocument;robots?:RobotsObservation;productLinks?:string[];links?:string[];nonCommerce?:boolean;commerceGuides?:boolean;budgetMs?:number}={}):Promise<BusinessDocument[]>{
   const documents:BusinessDocument[]=options.seed?[options.seed]:[];
-  if(!hasBusinessResearch(url)&&!options.nonCommerce)return documents;
+  if(!hasBusinessResearch(url)&&!options.nonCommerce&&!options.commerceGuides)return documents;
   try{await withBudget(options.budgetMs??6000,async()=>{
     const base=publicUrl(url),rules=new Map<string,Promise<RobotsObservation>>();
     if(options.robots)rules.set(base.origin,Promise.resolve(options.robots));
@@ -137,12 +148,13 @@ export async function collectBusinessDocuments(url:string,options:{seed?:Busines
     };
     let paths=researchPaths[host(base)]||options.links||[];
     if(host(base)==='sdfkorea.com')paths=[...paths,...options.productLinks?.slice(0,2)||[]];
-    paths=[...new Set(paths)].filter(p=>ownPublicUrl(p,url)?.href!==base.href&&!!ownPublicUrl(p,url)).slice(0,host(base)==='pumyang.com'?8:options.nonCommerce?7:3);
+    if(options.commerceGuides)paths=[...paths.slice(0,3),...(options.productLinks||[]).slice(0,2)];
+    paths=[...new Set(paths)].filter(p=>ownPublicUrl(p,url)?.href!==base.href&&!!ownPublicUrl(p,url)).slice(0,host(base)==='pumyang.com'?8:options.nonCommerce?7:options.commerceGuides?5:3);
     // Bound per-site concurrency while keeping the existing overall deadline.
     const pending=[...paths];
     await Promise.all(Array.from({length:Math.min(3,paths.length)},async()=>{
       while(pending.length){budgetSignal()?.throwIfAborted();const path=pending.shift()!;const doc=await read(path);if(doc&&!budgetSignal()?.aborted)documents.push(doc);}
     }));
   });}catch{/* The input document still describes the original collection scope. */}
-  return documents.slice(0,host(publicUrl(url))==='pumyang.com'?9:options.nonCommerce?8:4);
+  return documents.slice(0,host(publicUrl(url))==='pumyang.com'?9:options.nonCommerce?8:options.commerceGuides?6:4);
 }
