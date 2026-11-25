@@ -30,7 +30,7 @@ export default function ReportDistribution({title, groups, selection, onSelect, 
         data-tone={group.tone} data-muted={!!selected && selected.id !== group.id}
         style={{width: `${group.count / total * 100}%`}}/>)}
     </div>
-    <div className="report-distribution-key" role="group" aria-label={title + ' 필터'}>
+    <div className="report-distribution-key" style={{'--group-columns':groups.length} as React.CSSProperties} role="group" aria-label={title + ' 필터'}>
       {groups.map(group => <button type="button" key={group.id} data-state={group.id} data-tone={group.tone}
         aria-pressed={group.id === selection} aria-controls={controls} disabled={group.count === 0}
         onClick={() => onSelect(group.id === selection ? null : group.id)}>

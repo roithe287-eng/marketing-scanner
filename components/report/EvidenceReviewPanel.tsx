@@ -13,7 +13,7 @@ export default function EvidenceReviewPanel({review}:{review:EvidenceReview}) {
       <h3>확인한 사실과 더 확인할 부분</h3>
       <p className="report-note">{review.assessed ? `판정한 HTML 기본 항목 ${review.assessed}개 중 ${review.passed}개가 기준을 충족했습니다.` : 'HTML 기본 항목 판정을 보류했습니다.'} 미확인 {review.unknown}개입니다. 실제 화면과 전환은 아래 안내에 따라 직접 확인하세요.</p>
     </div>
-    {review.criteria.length>0&&<nav className="report-criterion-map" aria-label="HTML 항목별 판정 근거">
+    {review.criteria.length>0&&<nav className="report-criterion-map" style={{'--group-columns':review.criteria.length} as React.CSSProperties} aria-label="HTML 항목별 판정 근거">
       {review.criteria.map((item,i)=><a key={item.id} href={`#${criterionId}-${i}`} data-status={item.status}>
         <strong>{item.label}</strong><span>{criterionLabels[item.status]}</span>
       </a>)}

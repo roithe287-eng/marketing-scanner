@@ -23,7 +23,7 @@ export default function ReportItemPanels({id,label,items,briefing=false,selectio
  if(briefing)return <div className="briefing-reader" data-page-model="briefing">
    {items.length>1&&<nav className="question-status-map" aria-label="질문별 답변 준비 상태">
      <div className="question-status-heading"><strong>어떤 질문에 답할 근거가 있나요?</strong><span>고객 질문 {items.length}개</span></div>
-     <ul>{items.map((item,i)=>{
+     <ul style={{'--question-columns':Math.min(4,items.length)} as React.CSSProperties}>{items.map((item,i)=>{
        const target=id+'-'+(i+1);
        return <li key={item.id}><a href={'#'+target} aria-controls={target} aria-current={active===item.id?'true':undefined}
          onClick={event=>{

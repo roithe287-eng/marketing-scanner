@@ -13,22 +13,25 @@ export default function SmartstoreReport({report}:{report:Report}) {
       <span className="smartstore-tag">{platform} · 제한 분석</span>
       <h1 id="smartstore-result-title">{platform} 공개 정보 확인 결과</h1>
       <p className="smartstore-result-url">{report.url}</p>
-      <div className="smartstore-notice"><strong><span aria-hidden="true">⚠️ </span>{platform} · 콘텐츠 분석 대부분 제한</strong><p>{SMARTSTORE_NOTICE}</p></div>
+
       <dl className="smartstore-facts">
         <div><dt>업체 식별자</dt><dd>{report.storeId}</dd></div>
         <div><dt>분석 대상</dt><dd>{report.productId?`상품 ${report.productId}`:'스토어 홈'}</dd></div>
         <div><dt>공개 정보 관측</dt><dd>{report.observations.length}개 항목</dd></div>
       </dl>
       <nav className="store-result-shortcuts" aria-label="스토어 결과 바로가기">
-        <a href="#store-observed-metadata">{report.observations.length?'확인한 원문 보기':'수집 범위 보기'}</a>
+        <a href={report.observations.length?'#store-observed-metadata':'#store-collection-coverage'}>{report.observations.length?'확인한 원문 보기':'수집 범위 보기'}</a>
         <a href="#store-manual-checklist">판매자 점검 목록 보기</a>
       </nav>
+      <details className="store-coverage-note">
+        <summary>{platform} 분석 범위와 제한 사유</summary><p>{SMARTSTORE_NOTICE}</p>
+      </details>
       <p className="smartstore-time">확인 시각 · {new Date(report.observedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} (한국시간)</p>
     </header>
     <aside className="store-report-legend" aria-label="결과 읽는 방법"><span><i className="store-live-dot"/>실제 관측 · 확인한 정보</span><span><i className="store-manual-dot"/>직접 입력 · 계산 도구</span><span><i className="store-locked-dot"/>미적용 · 블러 처리된 예시</span><p>확인 불가능한 항목을 0점이나 개선 필요로 표시하지 않습니다.</p></aside>
     <nav className="report-nav" aria-label="보고서 목차">{REPORT_CHAPTERS.map(([id,label],i)=><a key={id} href={`#report-${id}`}><span>{String(i+1).padStart(2,'0')}</span>{label}</a>)}</nav>
     <Chapter id="overview" number="01" title="먼저 파악할 핵심" note="입력한 스토어와 실제 확인 범위를 먼저 살펴보세요.">
-      <article className="report-card" data-store-section="coverage" data-applicability="observed">
+      <article id="store-collection-coverage" className="report-card" data-store-section="coverage" data-applicability="observed">
         <span className="store-live-label">수집 범위 확인</span>
         <h3>{report.status==='observed'?'공개 페이지에서 확인한 항목':'페이지 콘텐츠 확인이 제한되었습니다'}</h3>
         <p role="status" className="smartstore-reason">{report.reason}</p>
