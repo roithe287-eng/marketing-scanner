@@ -11,6 +11,14 @@ export function buildCompetitorDocument(report:MarketingReport):ReportBlock[] {
   const {analysis,rows,own}=model,r=analysis.research;
   if(analysis.ourSite?.scope)add('body',`비교 기준: ${competitionScopeLabel(analysis.ourSite.scope)}`);
   if(r?.selectionMessage)add('body',r.selectionMessage);
+  if(r?.provider==='official_wig_stores'){
+    add('subheading','같은 상품군을 판매하는 공식몰');
+    for(const store of analysis.competitors){
+      add('body',[store.title,store.selectionEvidence].filter(Boolean).join(' · '));
+      add('body',store.link,safeHttpUrl(store.link)||undefined);
+    }
+    return b;
+  }
   if(r?.productContext){const p=r.productContext;add('subheading',`자사 상품 원문 추가 확인 · 표본 ${p.sources.length}개`);add('body',p.note);add('body',`수집 상태: ${p.status} · URL 발견 경로: ${p.discovery} · HTML 수집 시도 ${p.attemptedPages}개. 검색 요약은 AI 입력이나 상품 근거로 사용하지 않습니다.`);for(const s of p.sources){add('body',`${s.name} · ${s.kind==='catalog_product'?'공개 상품 목록':'상품 원문'} · ${s.categories.join(' / ')}`);add('body',s.url,safeHttpUrl(s.url)||undefined);}}
   if((analysis.filtering?.policyVersion??0)<3)add('body','이전 선정 기준의 보고서입니다. 채용·기업정보 등 명확히 관련 없는 페이지는 비교에서 제외했으며, 최신 상품·서비스 관련성 검증은 URL 재진단이 필요합니다.');
   add('subheading','검색 메시지 포지셔닝');add('body',POSITION_NOTE);add('body',POSITION_SIZE_NOTE);add('body',COMPETITOR_API_NOTE);add('body',COMPETITOR_KEYWORD_NOTE);

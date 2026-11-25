@@ -2,7 +2,7 @@ import {CompetitionScopeSchema} from './competitionScope';
 import {z} from 'zod';
 import {OwnProductContextSchema} from './ownProductSchema';
 export const CompetitorResearchSchema=z.object({
-  version:z.literal(2),capturedAt:z.string(),provider:z.literal('naver_web'),requestedCount:z.number().int().nonnegative(),
+  version:z.literal(2),capturedAt:z.string(),provider:z.enum(['naver_web','official_wig_stores']),requestedCount:z.number().int().nonnegative(),
   returnedCount:z.number().int().nonnegative(),apiStart:z.number().int().positive(),totalDocuments:z.number().int().nonnegative().nullable(),
   searchVolumeStatus:z.literal('not_measured'),keywordReason:z.string(),
   keywordEvidence:z.array(z.object({field:z.string(),text:z.string(),matched:z.array(z.string())})),

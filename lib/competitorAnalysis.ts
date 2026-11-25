@@ -1,7 +1,7 @@
 import {restoreStreamedHtml} from './streamedHtml';
 import {captureCommunityContext} from './communityContext';
 import {SKI_DESTINATIONS} from './seasonalPlaceCatalog';
-import {buildCompetitionScope,eligibleMetadata,type CompetitionScope} from './competitionScope';
+import {buildCompetitionScope,competitionMismatch,eligibleMetadata,type CompetitionScope} from './competitionScope';
 import {captureSiteEditing} from './captureSiteEditing';
 import {captureLocalPlaceEvidence} from './localPlaceEvidence';
 import {captureProductSeed} from './productDiscovery';
@@ -11,6 +11,10 @@ import type {CommunityContext} from './communityContext';
 import {analyzeBusinessContext} from './businessContext';
 import {collectBusinessDocuments} from './businessResearch';
 import {searchNaverWeb} from './naverWebSearch';
+import {naverReportSearchAllowed} from './naverReportPolicy';
+import {observeRobots} from './observeRobots';
+import {evaluateRobots} from './robotsRules';
+import {getScannerContactUrl} from './siteConfig';
 import {collectOwnProductContext} from './ownProductSources';
 import type {OwnProductContext} from './ownProductSchema';
 import {websiteHttp} from './security/safeFetch';
@@ -68,12 +72,23 @@ const BROWSER_HEADERS = {
  * - 인코딩 자동 감지
  * - H1, H2, CTA 버튼, 본문 일부까지 수집
  */
-async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
+async function fetchCompetitorMeta(competitor: Competitor, officialStore=false): Promise<void> {
   try {
+    const headers={...BROWSER_HEADERS};
+    if(officialStore){
+      headers['User-Agent']=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
+      const target=new URL(competitor.link);
+      const policy=await observeRobots(target.href,headers['User-Agent'],'manual');
+      const missing=policy.status==='missing'&&[404,410].includes(policy.httpStatus||0);
+      if(!missing&&(policy.status!=='ok'||evaluateRobots(policy.text||'','JinjjaScanner',target.pathname+target.search).allowed!==true)){
+        competitor.fetchError='공식몰의 원문 수집 허용 여부를 확인하지 못함';
+        return;
+      }
+    }
     const res = await websiteHttp.fetch(competitor.link, {
-      headers: BROWSER_HEADERS,
+      headers,
       cache: "no-store",
-      redirect: "follow",
+      redirect: officialStore ? "manual" : "follow",
       signal: AbortSignal.timeout(8000),
     });
 
@@ -82,6 +97,11 @@ async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
       return;
     }
 
+    if(officialStore&&(/\b(?:noindex|none)\b/i.test(res.headers.get('x-robots-tag')||'')||
+      !/^(?:text\/html|application\/xhtml\+xml)(?:;|$)/i.test(res.headers.get('content-type')||''))){
+      competitor.fetchError='공개 HTML 원문을 검증할 수 없음';
+      return;
+    }
     const buffer = await res.arrayBuffer();
     const bytes = new Uint8Array(buffer);
 
@@ -126,7 +146,7 @@ async function fetchCompetitorMeta(competitor: Competitor): Promise<void> {
 export function captureCompetitorPage(html:string,url:string,headers=new Headers()){
   const $=cheerio.load(html);
   restoreStreamedHtml($);
-  if($('meta[name="robots" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')))return {finalUrl:url,fetchError:'페이지 검색 수집 제한'};
+  if($('meta[name="robots" i],meta[name="JinjjaScanner" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')))return {finalUrl:url,fetchError:'페이지 검색 수집 제한'};
   const metaTitle=$('title').first().text().trim().slice(0,600),metaDescription=$('meta[name="description" i]').attr('content')?.trim().slice(0,1600)||'';
   const siteEditing=captureSiteEditing($,url,headers);
   const place=captureLocalPlaceEvidence(html,url);
@@ -218,6 +238,47 @@ function extractKeywordFallback(siteData:QuerySite):string {
   return marketKeywordCandidates(siteData)[0]?.keyword||'';
 }
 
+// Public first-party storefronts with overlapping hair goods ranges. Each scan
+// still verifies product families against the current store HTML.
+const wigStorefronts = [
+  {title:'아미모',link:'https://www.amimo.co.kr/'},
+  {title:'가발나라',link:'https://gabalnara.com/',aliases:['https://gabalnara.co.kr/']},
+  {title:'핑크에이지',link:'https://www.pinkage.co.kr/'},
+  {title:'픽앤웨어',link:'https://www.picknwear.co.kr/'},
+];
+
+async function compareWigStores(site:QuerySite&{url:string;title:string;description:string;h1:string[]},scope:CompetitionScope):Promise<CompetitorAnalysisResult>{
+  const domain=new URL(site.url).hostname.replace(/^www\./,'');
+  const ownFacets=scope.specialties;
+  const candidates:Competitor[]=wigStorefronts
+    .filter(store=>![store.link,...store.aliases||[]].some(link=>[site.url,scope.sourceUrl].some(url=>sameSite(link,url)||sameSite(url,link))))
+    .map(({title,link})=>({title,link,domain:new URL(link).hostname.replace(/^www\./,''),description:'',rank:0}));
+  const targets=ownFacets.length?candidates:[];
+  await Promise.all(targets.map(candidate=>fetchCompetitorMeta(candidate,true)));
+  const excluded:ExcludedCandidate[]=[];
+  const competitors=targets.flatMap(candidate=>{
+    const actualScope=candidate.scope;
+    const overlap=ownFacets.filter(facet=>actualScope?.specialties.includes(facet));
+    const mismatch=actualScope&&competitionMismatch(scope,actualScope);
+    if(candidate.fetchError||actualScope?.profile!=='hairpieces_wigs'||mismatch||!overlap.length){
+      excluded.push({title:candidate.title,link:candidate.link,domain:candidate.domain,reason:candidate.fetchError||mismatch||'공식몰 원문에서 같은 상품군을 확인하지 못함'});
+      return [];
+    }
+    return [{...candidate,matchedTerms:overlap,relevanceBasis:'page_content' as const,selectionEvidence:`공통 상품군 · ${overlap.join(' / ')}`}];
+  }).sort((a,b)=>b.matchedTerms.length-a.matchedTerms.length).map((candidate,index)=>({...candidate,rank:index+1}));
+  const searchKeyword=ownFacets[0]||'';
+  return {
+    searchKeyword,keywordSource:'fallback',competitors,
+    ourSite:{scope,url:site.url,domain,title:site.title,metaDescription:site.description,h1:site.h1[0]||''},
+    filtering:{policyVersion:3,reviewedCount:candidates.length,metadataCheckedCount:targets.length,excluded},
+    research:{version:2,provider:'official_wig_stores',capturedAt:new Date().toISOString(),requestedCount:targets.length,returnedCount:0,apiStart:1,totalDocuments:null,
+      searchVolumeStatus:'not_measured',keywordReason:'자사와 공식몰 원문 양쪽에서 확인한 상품군으로 비교합니다.',keywordEvidence:[],alternatives:[],attemptedKeywords:[],
+      eligibleCount:targets.length,budgetDeferredCount:0,successfulPages:targets.filter(c=>!c.fetchError).length,selectedCount:competitors.length,
+      selectionStatus:competitors.length?'matched':ownFacets.length?'no_relevant_candidates':'insufficient_source',
+      selectionMessage:competitors.length?'양쪽 원문에서 같은 상품군이 확인된 공식몰입니다.':ownFacets.length?'공개 원문에서 상품군이 겹치는 공식몰을 확인하지 못했습니다.':'자사에서 확인한 상품군이 부족합니다. 헤어피스나 가발의 상품 상세 URL로 진단해 보세요.'},
+  };
+}
+
 export async function analyzeCompetitors(siteData: {
   scope?:CompetitionScope;
   communityContext?:CommunityContext;
@@ -235,6 +296,8 @@ export async function analyzeCompetitors(siteData: {
     const rawSite=siteData;
     siteData={...siteData,title:eligibleMetadata(siteData.title),ogTitle:eligibleMetadata(siteData.ogTitle),description:eligibleMetadata(siteData.description),ogDescription:eligibleMetadata(siteData.ogDescription),h1:siteData.h1.map(eligibleMetadata),h2:siteData.h2?.filter(h=>!isSecondarySection(h,''))};
     const initialScope=siteData.scope&&sameSite(siteData.scope.sourceUrl,siteData.url)?siteData.scope:buildCompetitionScope(siteData);
+    if(initialScope.profile==='hairpieces_wigs'&&initialScope.kind==='commerce')return await compareWigStores(rawSite,initialScope);
+    if(!naverReportSearchAllowed())return null;
     // Known service journeys use service evidence rather than a product collection attempt.
     const base={...siteData,finalUrl:siteData.url,h2:siteData.h2||[],bodyText:siteData.bodyText||''};
     const initialBusiness=analyzeBusinessContext({...base,description:base.description||base.bodyText.slice(0,500)});
@@ -247,6 +310,7 @@ export async function analyzeCompetitors(siteData: {
     const businessKeywords=[...new Set([...(initialBusiness?.id===business?.id?initialBusiness?.keywords||[]:[]),...business?.keywords||[]])];
     const needsScope=initialScope.kind==='unknown'||(initialScope.profile==='commerce'&&business?.id==='hairpieces_wigs');
     const scope=needsScope?buildCompetitionScope({...base,productContext,businessDocuments}):initialScope;
+    if(scope.profile==='hairpieces_wigs'&&scope.kind==='commerce')return await compareWigStores(rawSite,scope);
     if(scope.profile==='fortune_consultation'&&scope.area&&!scope.nationwide){
       businessKeywords.unshift(...businessKeywords.map(k=>scope.area+' '+k));
     }
@@ -287,7 +351,7 @@ export async function analyzeCompetitors(siteData: {
     const attemptedKeywords=[searchQuery(keyword)];
     let response = await searchNaverWeb(searchQuery(keyword), 30);
     let selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce,scope);
-    if (selection.candidates.length === 0 && (keywordSource === "ai" || scope.profile === 'hairpieces_wigs')) {
+    if (selection.candidates.length === 0 && keywordSource === "ai") {
       const fallbackKeyword = marketKeywordCandidates(querySite).find(k=>k.keyword!==keyword)?.keyword;
       if (fallbackKeyword && fallbackKeyword !== keyword) {
         attemptedKeywords.push(searchQuery(fallbackKeyword));
@@ -297,7 +361,7 @@ export async function analyzeCompetitors(siteData: {
         selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce,scope);
       }
     }
-    const candidates: Competitor[] = selection.candidates.map(c=>({...c,searchRank:c.searchRank+response.start-1}));
+    const candidates: Competitor[] = selection.candidates.map(c=>({...c,searchRank:(c.searchRank||1)+response.start-1}));
     // Each fetch has its own eight-second timeout. Await all before taking a snapshot.
     await Promise.all(candidates.map(candidate => fetchCompetitorMeta(candidate)));
     const competitors = finalizeSearchCandidates(candidates, keyword, selection.excluded, 5,commerce,scope,ourDomain);

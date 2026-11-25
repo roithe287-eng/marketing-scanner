@@ -11,6 +11,7 @@ import ReportRetentionNotice from './ReportRetentionNotice';
 import ReportEvidenceGuide from './ReportEvidenceGuide';
 import ReportCoverageWarnings from './ReportCoverageWarnings';
 import WebsitePurposePanel from './WebsitePurposePanel';
+import {WigPurchaseJourney,WigStoreComparison} from './WigReportPanels';
 import NonCommerceSectorPanel from './NonCommerceSectorPanel';
 import {showProductCollection} from '@/lib/websitePurpose';
 import AnswerContentPanel from './AnswerContentPanel';
@@ -86,6 +87,8 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
   const searchTarget=report.pageEvidence?.finalUrl||report.url;
   const productPages=report.siteDiagnostics?.pages.filter(page=>page.productOffer).slice(0,3)||[];
   if(expired)return <section className="report-card" role="status"><h2 className="text-xl font-bold">보고서 보관 기간이 만료되었습니다</h2><p className="mt-3">이 결과에 포함된 보관·비교 자료는 더 이상 열람할 수 없습니다. 새 진단으로 현재 상태를 확인해 주세요.</p><a className="jm-button mt-4" href="/">새로 진단하기</a></section>;
+  const wigPurpose=report.sitePurpose?.business?.id==='hairpieces_wigs'?report.sitePurpose:undefined;
+  const wigComparison=report.competitorAnalysis?.research?.provider==='official_wig_stores'?report.competitorAnalysis:undefined;
   const productContextInScope=showProductCollection(report.sitePurpose)?report.productContext||undefined:undefined;
   const scope=<>
     <ReportCoverageWarnings warnings={report.analysisWarnings}/>
@@ -103,7 +106,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     <ReportNavigation chapters={chapters}/><ReportReadingKey/>
     <Chapter id="overview" number="01" title="홈페이지에서 무엇부터 확인할까요?" note="고객이 홈페이지에서 읽을 수 있는 내용을 살펴보세요. 답이 부족한 질문과 먼저 확인할 작업도 정리했습니다.">
       <ReportSections chapter="overview" diagrams={diagrams} briefs={briefs} items={[
-        {id:'overview-main',label:'홈페이지 내용',children:<SiteContentOverview report={report}/>},
+        {id:'overview-main',label:'홈페이지 내용',defaultOpen:!!wigPurpose,embedded:!!wigPurpose,children:<>{wigPurpose&&<WigPurchaseJourney purpose={wigPurpose}/>}<SiteContentOverview report={report}/></>},
         ...(report.serviceStrategy?[{id:'overview-services',label:report.serviceStrategy.industry==='noncommerce'?'고객의 선택 기준':'서비스·고객별 전략',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="segments" purpose={report.sitePurpose}/>}]:[]),
         {id:'overview-questions',label:placeReview||localPlaceReview?'플레이스·고객 질문':'고객 질문·답변',children:<>{localPlaceReview&&<LocalPlacePanel key={localPlaceReview.page.url} review={localPlaceReview}/>}<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst placeReview={placeReview} clinicWebAllowed={clinicWebAllowed}/></>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
@@ -140,7 +143,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
     </Chapter>
     <Chapter id="competition" number="04" title="비교 후보와 우리 페이지의 차이" note="먼저 같은 고객을 대상으로 하는지 확인하세요. 그다음 제목·설명·첫 화면을 비교하세요.">
       <ReportSections chapter="competition" diagrams={diagrams} briefs={briefs} items={[
-        {id:'competition-map',label:'후보 선정과 비교 지도',children:<>{(competitorLoading||report.competitorStatus?.status==='pending')&&<p className="report-empty" role="status">경쟁사 정보를 수집 중입니다.</p>}<CompetitorStatusNotice report={report} onRetry={onRetry} candidateDetailsAvailable={!!report.competitorAnalysis}/><CompetitorLandscape report={report} productContextInScope={productContextInScope} linkToCandidateCards/></>},
+        {id:'competition-map',label:wigPurpose?'가발·헤어피스 경쟁사':'후보 선정과 비교 지도',defaultOpen:!!wigPurpose,embedded:!!wigComparison,children:<>{(competitorLoading||report.competitorStatus?.status==='pending')&&<p className="report-empty" role="status">경쟁사 정보를 수집 중입니다.</p>}<CompetitorStatusNotice report={report} onRetry={onRetry} candidateDetailsAvailable={!!report.competitorAnalysis}/>{wigComparison?<WigStoreComparison analysis={wigComparison}/>:<CompetitorLandscape report={report} productContextInScope={productContextInScope} linkToCandidateCards/>}</>},
         {id:'competition-messages',label:'제목·설명 표현 비교',children:<MessageMap data={data}/>},
         ...(report.competitorAnalysis&&(data.competitorCount>0||report.competitorAnalysis.filtering)?[{id:'competition-pages',label:'후보별 페이지 자료',children:<CompetitorComparison competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/>}]:[]),
         ...(!report.evidenceReview&&report.industryBenchmark?[{id:'competition-benchmark',label:'업종 표본',children:<IndustryBenchmarkCard benchmark={report.industryBenchmark}/>}]:[]),

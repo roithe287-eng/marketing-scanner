@@ -66,18 +66,18 @@ export function ReportWorkspace({children}:{children:React.ReactNode}){
  return <WorkspaceContext.Provider value={selection}>{children}</WorkspaceContext.Provider>;
 }
 export function useReportSelection(){return useContext(WorkspaceContext);}
-export function ReportSections({chapter,items,diagrams={},briefs={}}:{chapter:string;briefs?:Record<string,string>;items:{id:string;label:string;children:React.ReactNode}[];diagrams?:Record<string,ReportDiagram>}){
+export function ReportSections({chapter,items,diagrams={},briefs={}}:{chapter:string;briefs?:Record<string,string>;items:{id:string;label:string;children:React.ReactNode;defaultOpen?:boolean;embedded?:boolean}[];diagrams?:Record<string,ReportDiagram>}){
  const selection=useReportSelection();
  const selected=selection?.chapter===chapter?selection.panels[chapter]||items[0]?.id:undefined;
  const chapterLabel=REPORT_CHAPTERS.find(([id])=>id===chapter)?.[1]||chapter;
  return <div className="report-section-workspace"><nav className="report-section-nav" aria-label={`${chapterLabel} 세부 목차`}>{items.map(item=><a key={item.id} href={`#report-view-${item.id}`} aria-current={selected===item.id?'location':undefined} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(`report-view-${item.id}`))event.preventDefault();}}>{item.label}</a>)}</nav>
   {items.map((item,i)=>{
-    const diagram=diagrams[item.id], brief=briefs[item.id];
+    const diagram=item.embedded?undefined:diagrams[item.id], brief=briefs[item.id];
     const content=<>{diagram&&<details className="report-inline-details report-section-reading-guide report-section-diagram-entry"><summary aria-controls={`report-diagram-${item.id}`} aria-label={`${diagramToggleLabel(diagram.kind)} · ${item.label}`}>{diagramToggleLabel(diagram.kind)}</summary><ReportSectionDiagram diagram={diagram} id={item.id}/></details>}<div className="report-stack">{item.children}</div></>;
     return <section key={item.id} id={`report-view-${item.id}`} data-report-panel={item.id}
       data-visual-treatment={diagram?'guide':'embedded'} aria-label={item.label} className="report-section-panel">
       {brief
-        ? <ReadingDisclosure defaultOpen={item.id==='overview-questions'} title={item.label} index={String(i+1).padStart(2,'0')} preview={brief} className="section-reading">{content}</ReadingDisclosure>
+        ? <ReadingDisclosure defaultOpen={item.defaultOpen||item.id==='overview-questions'} title={item.label} index={String(i+1).padStart(2,'0')} preview={brief} className="section-reading">{content}</ReadingDisclosure>
         : <><div className="report-section-divider"><span>{String(i+1).padStart(2,'0')}</span><strong>{item.label}</strong><i aria-hidden="true"/></div>{content}</>}
     </section>;
   })}

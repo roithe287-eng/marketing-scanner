@@ -1,4 +1,5 @@
 import {naverReportSearchAllowed} from '@/lib/naverReportPolicy';
+import {sameSite} from '@/lib/siteIdentity';
 import {CompetitionScopeSchema} from '@/lib/competitionScope';
 import {CommunityContextSchema} from '@/lib/communityContext';
 import {withBudget} from '@/lib/runtime/budget';
@@ -29,7 +30,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!naverReportSearchAllowed()) {
+    const scope=hints.scope;
+    const wigStores=scope?.profile==='hairpieces_wigs'&&scope.kind==='commerce'&&sameSite(scope.sourceUrl,url);
+    if (!wigStores&&!naverReportSearchAllowed()) {
       return NextResponse.json(
         {
           message: "이 보고서에서는 외부 검색 API를 이용한 자동 경쟁사 조회를 제공하지 않습니다.",

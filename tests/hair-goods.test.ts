@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import { buildAnswerContentPlan } from '../lib/answerContent';
 import { citationFallbackQuestions } from '../lib/analyzeCitation';
 import { captureBusinessLinks, collectBusinessDocuments } from '../lib/businessResearch';
-import { captureCompetitorPage } from '../lib/competitorAnalysis';
+import { analyzeCompetitors, captureCompetitorPage } from '../lib/competitorAnalysis';
 import { buildCompetitionScope, competitionMismatch, scopeAllowsKeyword } from '../lib/competitionScope';
 import { extractWebsite } from '../lib/extractWebsite';
 import { classifyIndustryFromEvidence } from '../lib/industryClassifier';
@@ -11,6 +11,12 @@ import { defaultPositionIndustry, positionProfile } from '../lib/industryPositio
 import { websiteHttp } from '../lib/security/safeFetch';
 import { analyzeWebsitePurpose, purposePrompt } from '../lib/websitePurpose';
 import { fixture } from './fixtures/report';
+import {createElement} from 'react';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {WigPurchaseJourney,WigStoreComparison} from '../components/report/WigReportPanels';
+import {MarketingReportSchema} from '../lib/reportSchema';
+import {commercialSearchSnapshot} from '../lib/naverReportPolicy';
+import {buildCompetitorDocument} from '../lib/competitorDocument';
 
 const url='https://hair-shop.example/';
 const response=(html:string)=>new Response(html,{headers:{'content-type':'text/html; charset=utf-8'}});
@@ -85,4 +91,44 @@ test('hair goods competition uses merchant offerings, excluding clinics, guide p
   }
   const comparable=buildCompetitionScope({url:'https://second.example/',title:'인모 부분가발·헤어피스 쇼핑몰',description:'똑딱이 헤어피스를 온라인 판매합니다.'});
   assert.equal(competitionMismatch(own,comparable),undefined);
+});
+
+
+test('official wig comparison verifies shared product families and preserves links without the search API',async t=>{
+  const target='https://www.picknwear.co.kr/';
+  const own={url:target,title:'가상몰 | 가발·헤어피스 전문몰',description:'똑딱이 헤어피스와 앞머리가발을 판매합니다.',ogTitle:'',h1:['헤어피스 전문몰'],keywords:''};
+  const checked:string[]=[];
+  t.mock.method(websiteHttp,'fetch',async(input:string|URL,options:RequestInit)=>{
+    const source=new URL(input);
+    checked.push(source.href);
+    assert.match(new Headers(options.headers).get('User-Agent')||'',/^JinjjaScanner\//);
+    assert.equal(options.redirect,'manual');
+    if(source.pathname==='/robots.txt')return new Response(source.hostname==='www.pinkage.co.kr'?'User-agent: *\nDisallow: /':'User-agent: *\nAllow: /');
+    if(source.hostname==='www.amimo.co.kr')return response('<title>붙임머리·탑커버 전문 쇼핑몰</title><meta name="description" content="앞머리가발과 붙임머리 판매"><main><h1>붙임머리·앞머리가발</h1></main>');
+    if(source.hostname==='gabalnara.com')return response('<title>합성모 통가발 쇼핑몰</title><main><h1>통가발만 판매</h1></main>');
+    assert.fail(source.href);
+  });
+  const analysis=await analyzeCompetitors(own);
+  assert.ok(analysis);
+  assert.equal(analysis.research.provider,'official_wig_stores');
+  assert.deepEqual(analysis.competitors.map(c=>[c.link,c.matchedTerms,c.searchRank]),[
+    ['https://www.amimo.co.kr/',['헤어피스','부분가발'],undefined],
+  ]);
+  assert.ok(!checked.includes(target));
+  assert.ok(!checked.includes('https://www.pinkage.co.kr/'));
+  assert.equal(analysis.filtering.excluded.length,2);
+  const report=MarketingReportSchema.parse({...fixture,url:target,competitorAnalysis:analysis});
+  assert.equal(commercialSearchSnapshot(report).competitorAnalysis?.competitors[0].link,'https://www.amimo.co.kr/');
+  const blocks=buildCompetitorDocument(report);
+  assert.ok(blocks.some(block=>block.href==='https://www.amimo.co.kr/'));
+  assert.ok(blocks.every(block=>!block.text.includes('네이버 웹문서')));
+  const card=renderToStaticMarkup(createElement(WigStoreComparison,{analysis:report.competitorAnalysis!}));
+  assert.match(card,/aria-label="아미모 공식몰 열기"[^>]*>|href="https:\/\/www.amimo.co.kr\/"/);
+  assert.doesNotMatch(card,/href="https:\/\/(gabalnara|www.pinkage)/);
+  const purpose=analyzeWebsitePurpose({...own,finalUrl:target,h2:[],bodyText:'길이 연장용 인모 헤어피스를 온라인 판매합니다.'});
+  const flow=renderToStaticMarkup(createElement(WigPurchaseJourney,{purpose}));
+  assert.match(flow,/제품 고르기.*옵션 비교.*색상과 착용.*구매와 교환/);
+  assert.match(flow,/wig-status-observed/);
+  assert.match(flow,/wig-status-review/);
+  assert.match(flow,/#report-view-search-scope/);
 });
