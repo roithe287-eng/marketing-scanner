@@ -1,3 +1,4 @@
+import {isEditorialPage} from './pageRole';
 import {keywordList} from './industryLanguage';
 import {apparelProfile,customApparelIdentity} from './customApparel';
 import {hairGoodsIdentity,hairGoodsProducts,hairGoodsProfile,hairGoodsTopic} from './hairGoods';
@@ -103,7 +104,7 @@ type Input=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'
 
 /** Infer from current merchant text. A known domain alone never produces a diagnosis. */
 export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
-  if(purposeSchemaTypes(data).some(t=>/^(Article|BlogPosting|NewsArticle|Course)$/i.test(t)))return;
+  if(isEditorialPage(data)||purposeSchemaTypes(data).some(t=>/^(Course|EducationalOccupationalProgram)$/i.test(t)))return;
   const role=ownBusinessRole(data);
   const apparel=(!role||role==='retail'||role==='manufacturing')&&customApparelIdentity([data.title,...data.h1||[]].join(' '),data.description||data.ogDescription||'',providerBody(data));
   if(role&&role!=='retail'&&!apparel)return;

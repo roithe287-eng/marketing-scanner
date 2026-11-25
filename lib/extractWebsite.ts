@@ -1,3 +1,4 @@
+import {readWebsiteSchema} from './websiteSchema';
 import {restoreStreamedHtml} from './streamedHtml';
 import {websiteHttp} from './security/safeFetch';
 import { blocksAllCrawling, evaluateRobots, type RobotsObservation } from "./robotsRules";
@@ -518,28 +519,7 @@ export async function extractWebsite(
 
   // ===== v26: 네이버 AI 광고 준비도 점검용 데이터 추출 =====
 
-  // 1. JSON-LD schema.org 파싱
-  const jsonLdSchemas: any[] = [];
-  let jsonLdErrors = 0;
-  function collectSchema(value:unknown,depth=0):void {
-    if(depth>20 || jsonLdSchemas.length>=2000 || !value || typeof value!=="object") return;
-    if(Array.isArray(value)){value.forEach(v=>collectSchema(v,depth+1));return;}
-    const obj=value as Record<string,unknown>;
-    if(obj["@type"])jsonLdSchemas.push(obj);
-    Object.values(obj).forEach(v=>collectSchema(v,depth+1));
-  }
-  $('script[type="application/ld+json"]').each((_, el) => {
-    const raw = $(el).contents().text().trim();
-    if (!raw) return;
-    try {
-      const parsed = JSON.parse(raw);
-      if(!parsed || typeof parsed !== "object") {jsonLdErrors++;return;}
-      collectSchema(parsed);
-    } catch { jsonLdErrors++; }
-  });
-
-  // 2. @type 목록 추출
-  const schemaTypes: string[] = [];
+  const {jsonLdSchemas,schemaTypes,jsonLdErrors}=readWebsiteSchema($);
   let schemaHasDescription = false;
   let schemaHasName = false;
   let schemaHasPrice = false;
@@ -547,9 +527,6 @@ export async function extractWebsite(
 
   function inspectSchemaObject(obj: any) {
     if (!obj || typeof obj !== "object") return;
-    const t = obj["@type"];
-    if (typeof t === "string") schemaTypes.push(t);
-    else if (Array.isArray(t)) for (const x of t) if (typeof x === "string") schemaTypes.push(x);
     if (typeof obj.name === "string" && obj.name.trim().length > 0) schemaHasName = true;
     if (typeof obj.description === "string" && obj.description.trim().length > 0)
       schemaHasDescription = true;

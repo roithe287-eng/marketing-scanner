@@ -43,7 +43,7 @@ export function purposeSchemaTypes(data:{schemaTypes?:string[];jsonLdSchemas?:un
     const value=typeof ref==='string'?ref:ref&&typeof ref==='object'?String((ref as Record<string,unknown>)['@id']||(ref as Record<string,unknown>).url||''):'';
     if(value)return canonical(value)===target;
     const name=String(item.headline||item.name||'').replace(/\s/g,'');
-    return !name||headings.includes(name);
+    return !!name&&headings.includes(name);
   });
   const scoped=selected.flatMap(item=>Array.isArray(item['@type'])?item['@type']:[item['@type']]).filter((t):t is string=>typeof t==='string').map(t=>t.replace(/^https?:\/\/schema.org\//,''));
   return (data.schemaTypes||[]).map(t=>t.replace(/^https?:\/\/schema.org\//,'')).filter(t=>!/^(?:Article|BlogPosting|NewsArticle|TechArticle|ScholarlyArticle|Course|EducationalOccupationalProgram)$/.test(t)||scoped.includes(t));

@@ -11,6 +11,7 @@ import {NonCommerceSectorSchema,analyzeNonCommerceSector,sectorActionPattern} fr
 import {BusinessContextSchema,analyzeBusinessContext,businessPrompt} from './businessContext';
 import {firstPartyFortuneTools,fortuneStart,fortunePricing,hasFortuneOverview} from './fortuneService';
 import {medicalPrompt} from './medicalAudit';
+import {isEditorialPage} from './pageRole';
 import {industryReviewMessage} from './industryDecisionSchema';
 import {CommunityContextSchema,communityChecks} from './communityContext';
 
@@ -61,7 +62,8 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
     const c=data.communityContext,checks=communityChecks(c),goal=checks.find(check=>check.id==='goal')!;
     return WebsitePurposeSchema.parse({version:1,kind:'content',label:c.pageType==='discussion'?'커뮤니티·게시글형':'커뮤니티·정보 포털형',sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence:c.evidence,community:c,goal:{key:'read',label:'게시글 탐색·회원 참여',observed:goal.status==='observed',evidence:goal.evidence},pricingObserved:false,checks,note:c.note});
   }
-  const business=analyzeBusinessContext(data);
+  const editorial=isEditorialPage(data);
+  const business=editorial?undefined:analyzeBusinessContext(data);
   const elements=(data.siteEditing?.elements||[]).filter(e=>!['nav','header','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href));
   const units:{text:string;locator:string}[]=[];
   const add=(text:string,locator:string)=>{const value=short(text);if(value&&!units.some(u=>u.text===value))units.push({text:value,locator});};
@@ -102,7 +104,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   }
   const articleTypes=purposeSchemaTypes(data).filter(t=>/^(?:Article|BlogPosting|NewsArticle|TechArticle|ScholarlyArticle)$/i.test(t));
   const courseTypes=purposeSchemaTypes(data).filter(t=>/^(?:Course|EducationalOccupationalProgram)$/i.test(t));
-  const structuredKind=articleTypes.length?'content':courseTypes.length?'education':undefined;
+  const structuredKind=editorial?'content':courseTypes.length?'education':undefined;
   const primaryWeight=(u:{locator:string})=>u.locator==='head > title'?16:u.locator==='h1'?12:u.locator==='meta[name="description"]'?10:0;
   const purposeScore=(key:keyof typeof patterns)=>matched[key].reduce((n,u)=>n+primaryWeight(u),0)+Math.min(6,matched[key].filter(u=>u.locator==='h2').length*2)+Math.min(3,matched[key].filter(u=>!primaryWeight(u)&&u.locator!=='h2').length);
   // A secondary training/blog section must not outrank the page's own title,
@@ -143,8 +145,8 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const serviceAction=actions.some(a=>actionPatterns.booking.test(a.text)||actionPatterns.contact.test(a.text)||actionPatterns.application.test(a.text));
   const topicOnly=!candidate||candidate==='service'&&!sector&&!serviceAction;
   const fortuneOverview=!business&&topicOnly&&!providerClaim&&!role&&!commerce&&hasFortuneOverview(fortuneDescription);
-  const declaredIndustry=fortuneOverview?{category:'fortune' as const,evidence:{text:short(fortuneDescription),locator:data.description?'meta[name="description"]':'meta[property="og:description"]'}}:providerClaim;
-  const kind:PurposeKind=business?.kind||(fortuneOverview?'content':commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||declaredKind||(declaredIndustry?'service':'unknown'));
+  const declaredIndustry=editorial?undefined:fortuneOverview?{category:'fortune' as const,evidence:{text:short(fortuneDescription),locator:data.description?'meta[name="description"]':'meta[property="og:description"]'}}:providerClaim;
+  const kind:PurposeKind=editorial?'content':business?.kind||(fortuneOverview?'content':commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||declaredKind||(declaredIndustry?'service':'unknown'));
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
   const provider=sector?.id==='medical_consulting'&&!commerce;
   const fortuneTools=business?.id==='fortune_digital'?firstPartyFortuneTools(data.finalUrl||data.url,ctaElements):[];
@@ -153,7 +155,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const action=business?(actions.some(a=>matchesGoal(a.text))?business.goalKey:undefined):provider?(actions.some(a=>actionPatterns.contact.test(a.text))?'contact':undefined):preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
   const goalKey=business?.goalKey||(provider?'contact':action)||(['content','organization','education','public_service'].includes(kind)?'read':'unknown');
   const goalLabel=business?.goalLabel||(fortuneOverview&&goalKey==='read'?'운세 안내 열람':actionLabels[goalKey]);
-  const evidence=(business?business.evidence:structuredKind?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?(matched[candidate].length?matched[candidate]:place?[{text:short(place.identity),locator:'입력 페이지 업체 정보'}]:units):units).slice(0,commerce?6:8).map(original);
+  const evidence=(business?business.evidence:structuredKind&&(articleTypes.length||courseTypes.length)?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?(matched[candidate].length?matched[candidate]:place?[{text:short(place.identity),locator:'입력 페이지 업체 정보'}]:units):units).slice(0,commerce?6:8).map(original);
   if(commerce&&evidence.length<8)evidence.push(...purchase.slice(0,8-evidence.length));
   const pricingPattern=business?.industry==='fortune'?fortunePricing:business?.id==='hairpieces_wigs'
     ?/판매\s*가|소비자\s*가|상품\s*가격|옵션\s*추가금|\d[\d,]*\s*원/
@@ -194,7 +196,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   else check('price','가격·거래 조건 적용 범위',pricingPattern,pricingApplies&&pricingObserved?'관측한 비용 표현의 적용 대상·포함 범위·추가 협의 조건을 확인하세요.':'이 페이지에는 판매 가격을 필수로 요구하지 않습니다. 별도 유료 신청·거래가 있다면 해당 경로에서 조건을 확인하세요.',pricingApplies);
   const goalEvidence=action?actions.filter(a=>matchesGoal(a.text,action)).slice(0,4):[];
   checks.push({id:'goal',label:`다음 행동 · ${goalLabel}`,status:action?'observed':'review',evidence:goalEvidence.slice(0,3),guide:goalKey==='read'?'본문·출처·관련 자료를 실제로 읽고 이동하는 경로를 확인하세요. 버튼 개수·문의 폼 유무를 성과로 평가하지 않습니다.':`${goalLabel} 경로를 실제로 실행해 연결 대상·준비사항·완료 기준을 확인하세요. 입력 폼이나 완료 화면은 정적 HTML만으로 검증하지 않습니다.`});
-  const explicitLabel=fortuneOverview?'사주·운세 정보 안내형':declaredIndustry&&!sector&&(!place||place.sector==='local')&&!structuredKind&&
+  const explicitLabel=editorial?'정보·콘텐츠형':fortuneOverview?'사주·운세 정보 안내형':declaredIndustry&&!sector&&(!place||place.sector==='local')&&!structuredKind&&
     (!commerce||declaredIndustry.category==='ecommerce')?`${INDUSTRY_LABELS[declaredIndustry.category]} · ${labels[kind]}`:labels[kind];
   const note=fortuneOverview?'검색 설명에서 사주·운세 주제를 확인했습니다. 풀이·상담의 시작 링크와 완료 화면은 확인되지 않았습니다. 도구 페이지나 예약 안내 주소를 입력하면 해당 동선을 따로 진단할 수 있습니다.':undefined;
   return WebsitePurposeSchema.parse({version:1,kind,label:business?.label||explicitLabel,declaredIndustry,sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence,...(sector&&!commerce&&!business?{sector}:{}),...(business?{business}:{}),goal:{key:goalKey,label:goalLabel,observed:!!action,evidence:goalEvidence},pricingObserved,checks,note:business?.note||note||'입력 페이지의 제목·본문·행동 문구로 분류한 목적 후보입니다. 사업 전체의 유형이나 실제 전환 성과를 확정하지 않습니다. 문구 관측은 내용의 정확성·최신성·실제 동작 검증과 구분하며, 미확인은 부재나 감점 사유가 아닙니다.'});

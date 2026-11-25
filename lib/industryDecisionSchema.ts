@@ -1,11 +1,12 @@
 import {z} from 'zod';
 import {IndustryCategorySchema} from './industryCategory';
 
-const fields=z.enum(['title','heading','description','body','product','document']);
+const fields=z.enum(['title','heading','description','body','product','document','action']);
 const evidence=z.object({field:fields,text:z.string().max(240),url:z.string().url().max(4000)});
 const base=z.object({sourceUrl:z.string().url().max(4000),evidence:z.array(evidence).max(4)});
 export const IndustryDecisionSchema=z.discriminatedUnion('status',[
   base.extend({status:z.literal('matched'),category:IndustryCategorySchema.exclude(['etc']),label:z.string().max(120)}),
+  base.extend({status:z.literal('page_type'),kind:z.enum(['editorial','public_service']),label:z.string().max(120)}),
   base.extend({status:z.literal('review'),reason:z.enum(['insufficient','conflicting','redirected','restricted'])}),
 ]);
 export type IndustryDecision=z.infer<typeof IndustryDecisionSchema>;

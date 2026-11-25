@@ -13,5 +13,7 @@ export function nonCommerceOpening(report:MarketingReport){
   const book=nonCommercePlaybook(purpose,providerIdentity(report.pageEvidence||{}),place);
   const label=book.local?book.label:purpose.sector?.label||purpose.business?.label||purpose.label;
   return {topic,goal,purpose:label,questions:report.answerContentPlan?.questions||[],
-    summary:`${topic} 관련 고객 질문과 ${goal}에 필요한 정보를 중심으로, ${label} 업종에 맞는 검색·AI 콘텐츠 개선 방향을 정리했습니다.`};
+    summary:report.industryDecision?.status==='page_type'
+      ?`${topic} 관련 정보를 찾는 사람이 주제와 출처, 다음에 확인할 내용을 쉽게 찾도록 검색·AI 콘텐츠를 점검했습니다.`
+      :`${topic} 관련 고객 질문과 ${goal}에 필요한 정보를 중심으로, ${label} 업종에 맞는 검색·AI 콘텐츠 개선 방향을 정리했습니다.`};
 }

@@ -1,5 +1,8 @@
 import {INDUSTRY_LABELS} from './industryCategory';
 export {INDUSTRY_LABELS} from './industryCategory';
+import {isEditorialPage} from './pageRole';
+import {retailFamilies} from './retailOffer';
+import {placeSector} from './localPlaceCatalog';
 import {directIndustries} from './providerClaims';
 import {keywordList} from './industryLanguage';
 import {providerIdentity,ownBusinessRole,providerBody,classificationText,isExcludedOffering,isContextOnlyEvidence} from './websiteIdentity';
@@ -142,6 +145,7 @@ export function reviewIndustry(data:IndustryInput):IndustryDecision{
   add('title',data.title);
   data.h1.slice(0,4).forEach(text=>add('heading',text));
   add('description',data.description||data.ogDescription);
+  const primary=rows.slice();
   const headings=rows.filter(row=>row.field==='title'||row.field==='heading');
   for(const line of providerBody(data).slice(0,7000).split(/\n+/u).slice(0,24)){
     for(const text of line.split(/(?<=[.!?。])\s+/u).slice(0,5)){
@@ -152,12 +156,21 @@ export function reviewIndustry(data:IndustryInput):IndustryDecision{
     if(doc.source==='search_excerpt'||doc.url===sourceUrl||isOtherBranch(doc.title,place?.branch)||isSecondarySection(doc.title,'',doc.url))continue;
     for(const section of doc.sections.filter(s=>!isSecondarySection(s.heading,s.text,doc.url)).slice(0,4))add('document',section.text,doc.url);
   }
-  for(const product of [...data.productDiscovery?.sources||[],...data.productContext?.sources||[]])add('product',product.name,product.url);
-  const primary=rows.filter(row=>['title','heading','description'].includes(row.field));
+  const inventory=[...data.productDiscovery?.sources||[],...data.productContext?.sources||[]];
+  for(const product of inventory)add('product',product.name,product.url);
+  const publication=isEditorialPage(data);
+  if(!purpose.community&&(publication||purpose.kind==='public_service')&&primary.length){
+    const kind=purpose.kind==='public_service'&&!publication?'public_service':'editorial';
+    const label=kind==='editorial'?'정보·콘텐츠 페이지':'공공·지원 안내';
+    return {status:'page_type',kind,label,sourceUrl,evidence:rows.filter(row=>row.field!=='document'&&row.field!=='product').slice(0,4)};
+  }
+  const shop=purpose.kind==='commerce'&&purpose.goal.key==='purchase'&&purpose.goal.observed&&ownBusinessRole(data)==='retail';
+  if(shop)for(const action of purpose.goal.evidence)add('action',action.text);
+
   const claims=(list:IndustryEvidence[])=>new Set(list.flatMap(row=>[...providerClaims(row)].map(comparableCategory)));
   const lead=claims(headings),confirmed=claims(rows.filter(row=>row.field==='body'||row.field==='document'));
   const allClaims=claims(rows);
-  const candidate=classifyIndustryFromEvidence(data,purpose);
+  const candidate=shop&&!purpose.business?'ecommerce':classifyIndustryFromEvidence(data,purpose);
   const selected=candidate&&comparableCategory(candidate);
   // If headline and substantive copy agree, a stale description may be ignored.
   // A competing service declared in the headline or substantive copy still requires review.
@@ -178,10 +191,16 @@ export function reviewIndustry(data:IndustryInput):IndustryDecision{
     specialistEvidence.length>0&&corroboratingFields.size>=2;
   const explicitProvider=direct.some(row=>row.field!=='description'&&directIndustries(row.text).length>0);
   const placeSupported=!!(place?.sector&&place.sector!=='local'&&place.address&&matched.length);
-  const supported=specialistSupported||verifiedProducts||explicitProvider||corroboratingFields.size>=2||placeSupported;
+  const supported=specialistSupported||shop||verifiedProducts||explicitProvider||corroboratingFields.size>=2||placeSupported;
   if(!candidate||candidate==='etc'||!supported)return {status:'review',reason:'insufficient',sourceUrl,evidence:primary.slice(0,2)};
-  const evidence=[...new Set([...specialistEvidence,...direct,...(verifiedProducts?products:[]),...matched])].slice(0,4);
-  const label=purpose.business?.label||purpose.sector?.label||(purpose.community?'커뮤니티':INDUSTRY_LABELS[candidate]);
+  const actions=rows.filter(row=>row.field==='action');
+  const evidence=[...new Set([...specialistEvidence,...direct,...actions,...(verifiedProducts?products:[]),...matched])].slice(0,4);
+  const families=purpose.kind==='commerce'?retailFamilies(providerIdentity(data),inventory,sourceUrl):[];
+  const local=place&&isNonCommerce(purpose)&&(PLACE_INDUSTRIES[place.sector]===candidate||place.sector==='rental'&&candidate==='automotive')
+    ?place.sector==='rental'&&candidate==='automotive'?'렌터카·차량 대여':placeSector(place.sector).label
+    :undefined;
+  const retail=families.length===1?`${families[0]} 판매`:undefined;
+  const label=purpose.business?.label||purpose.sector?.label||(purpose.community?'커뮤니티':retail||local||INDUSTRY_LABELS[candidate]);
   return {status:'matched',category:candidate,sourceUrl,label,evidence};
 }
 

@@ -1,3 +1,4 @@
+import {readWebsiteSchema} from './websiteSchema';
 import {restoreStreamedHtml} from './streamedHtml';
 import {captureCommunityContext} from './communityContext';
 import {SKI_DESTINATIONS} from './seasonalPlaceCatalog';
@@ -154,10 +155,10 @@ export function captureCompetitorPage(html:string,url:string,headers=new Headers
   const h1=$('h1').first().text().replace(/\s+/g,' ').trim().slice(0,200);
   const ctaTexts=[...new Set(siteEditing.elements.filter(e=>e.kind==='cta'&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)).map(e=>e.text))].slice(0,12);
   const bodySnippet=providerBody({siteEditing}).slice(0,4000);
-  const data={communityContext:captureCommunityContext($,url),url,finalUrl:url,title:metaTitle,description:metaDescription,h1:h1?[h1]:[],h2:[],bodyText:bodySnippet,siteEditing,ctaButtons:ctaTexts,productDiscovery:captureProductSeed(html,url)};
+  const data={...readWebsiteSchema($),communityContext:captureCommunityContext($,url),url,finalUrl:url,title:metaTitle,description:metaDescription,h1:h1?[h1]:[],h2:[],bodyText:bodySnippet,siteEditing,ctaButtons:ctaTexts,productDiscovery:captureProductSeed(html,url)};
   const input={...data,localPlaceEvidence:place};
-  const scope=buildCompetitionScope(input);
   const industry=reviewIndustry(input);
+  const scope=buildCompetitionScope(industry.status==='review'?input:{...input,industryDecision:industry});
   return {finalUrl:url,metaTitle,metaDescription,h1,ctaTexts,bodySnippet,scope,
     ...(industry.status==='review'&&industry.reason==='conflicting'?{fetchError:'후보 원문의 제공 업종 단서가 서로 다름'}:{}),
   };
