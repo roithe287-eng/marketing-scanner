@@ -32,7 +32,7 @@ export default function ScanFeedback({loading, error, restrictedReport, hasPrevi
   return <div className="scanner-scan-feedback scanner-scan-feedback--notice">
     <div role="status">
       <p className="scanner-scan-title">사이트 원문을 읽을 수 없습니다</p>
-      <p>{COLLECTION_REASONS[restrictedReport.reason]}으로 원문 수집이 제한됐습니다.</p>
+      <p>수집 제한 사유 · {COLLECTION_REASONS[restrictedReport.reason]}</p>
       {restrictedReport.sources.length > 0 && <p>참고할 공개 검색자료 {restrictedReport.sources.length}건을 찾았습니다.</p>}
     </div>
     <div className="scanner-scan-actions">
