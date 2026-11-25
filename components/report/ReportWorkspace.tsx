@@ -73,11 +73,16 @@ export function ReportSections({chapter,items,diagrams={},briefs={}}:{chapter:st
  return <div className="report-section-workspace"><nav className="report-section-nav" aria-label={`${chapterLabel} 세부 목차`}>{items.map(item=><a key={item.id} href={`#report-view-${item.id}`} aria-current={selected===item.id?'location':undefined} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(`report-view-${item.id}`))event.preventDefault();}}>{item.label}</a>)}</nav>
   {items.map((item,i)=>{
     const diagram=item.embedded?undefined:diagrams[item.id], brief=briefs[item.id];
-    const content=<>{diagram&&<details className="report-inline-details report-section-reading-guide report-section-diagram-entry"><summary aria-controls={`report-diagram-${item.id}`} aria-label={`${diagramToggleLabel(diagram.kind)} · ${item.label}`}>{diagramToggleLabel(diagram.kind)}</summary><ReportSectionDiagram diagram={diagram} id={item.id}/></details>}<div className="report-stack">{item.children}</div></>;
+    const content=<>
+      {diagram?.inline&&brief&&<p className="report-note">{brief}</p>}
+      {diagram&&!diagram.inline&&<details className="report-inline-details report-section-reading-guide report-section-diagram-entry"><summary aria-controls={`report-diagram-${item.id}`} aria-label={`${diagramToggleLabel(diagram.kind)} · ${item.label}`}>{diagramToggleLabel(diagram.kind)}</summary><ReportSectionDiagram diagram={diagram} id={item.id}/></details>}
+      <div className="report-stack">{item.children}</div>
+    </>;
     return <section key={item.id} id={`report-view-${item.id}`} data-report-panel={item.id}
-      data-visual-treatment={diagram?'guide':'embedded'} aria-label={item.label} className="report-section-panel">
+      data-visual-treatment={diagram?.inline?'inline':diagram?'guide':'embedded'} aria-label={item.label} className="report-section-panel">
+      {diagram?.inline&&<ReportSectionDiagram diagram={diagram} id={item.id}/>}
       {brief
-        ? <ReadingDisclosure defaultOpen={item.defaultOpen||item.id==='overview-questions'} title={item.label} index={String(i+1).padStart(2,'0')} preview={brief} className="section-reading">{content}</ReadingDisclosure>
+        ? <ReadingDisclosure defaultOpen={item.defaultOpen||item.id==='overview-questions'} title={diagram?.inline?`${item.label} 상세 보기`:item.label} index={diagram?.inline?undefined:String(i+1).padStart(2,'0')} preview={diagram?.inline?undefined:brief} className="section-reading">{content}</ReadingDisclosure>
         : <><div className="report-section-divider"><span>{String(i+1).padStart(2,'0')}</span><strong>{item.label}</strong><i aria-hidden="true"/></div>{content}</>}
     </section>;
   })}
