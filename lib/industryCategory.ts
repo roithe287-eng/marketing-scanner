@@ -21,6 +21,9 @@ export const IndustryCategorySchema = z.enum([
   "automotive",
   "parenting",
   "interior",
+  "event",
+  "rental",
+  "business_services",
   "ecommerce",
   "etc",
 ]);
@@ -46,6 +49,9 @@ export const INDUSTRY_LABELS: Record<z.infer<typeof IndustryCategorySchema>,stri
   automotive: "자동차",
   parenting: "육아·교육",
   interior: "인테리어·건축",
+  event: "촬영·웨딩·행사",
+  rental: "렌탈·대여",
+  business_services: "기업 운영 지원",
   ecommerce: "이커머스",
   etc: "기타",
 };

@@ -70,11 +70,12 @@ test('a merchant scan rejects all five reported platforms and retains only a gro
   t.mock.method(globalThis,'fetch',async(input:unknown,init?:RequestInit)=>{
     const url=String(input);
     if(url.includes('api.openai.com')){aiCalls++;assert.doesNotMatch(String(init?.body),/SEARCH_SNIPPET_MARKER/);return Response.json({choices:[{message:{content:'{"keyword":"건강기능식품"}'}}]});}
-    if(url.includes('openapi.naver.com'))return Response.json({items:[...['saramin.co.kr','teamblind.com','wanted.co.kr','thevc.kr','jobplanet.co.kr'].map(h=>item(h,'건강기능식품 회사 채용','SEARCH_SNIPPET_MARKER')),item('shop.test','건강기능식품 전문몰')]});
+    if(url.includes('openapi.naver.com'))return Response.json({items:[...['saramin.co.kr','teamblind.com','wanted.co.kr','thevc.kr','jobplanet.co.kr'].map(h=>item(h,'건강기능식품 회사 채용','SEARCH_SNIPPET_MARKER')),item('shop.example','건강기능식품 전문몰')]});
     if(url.startsWith(own.url))return new Response('',{status:503});
-    pages++;assert.ok(url.includes('shop.test'));return new Response('<title>건강기능식품 전문몰</title><meta name="description" content="비타민과 영양제 온라인 판매">');
+    assert.ok(url.includes('shop.example'));if(url.endsWith('/robots.txt'))return new Response('User-agent: *\nAllow: /');
+    pages++;return new Response('<title>건강기능식품 전문몰</title><meta name="description" content="비타민과 영양제 온라인 판매"><main><button>장바구니</button></main>',{headers:{'content-type':'text/html'}});
   });
-  try{const result=await analyzeCompetitors({...own,bodyText:'건강기능식품과 영양제를 판매하는 온라인몰입니다.'});assert.ok(result);assert.equal(aiCalls,1);assert.equal(pages,1);assert.deepEqual(result.competitors.map(c=>c.domain),['shop.test']);assert.equal(result.filtering.policyVersion,3);assert.equal(result.filtering.excluded.length,5);assert.equal(result.research.selectionStatus,'matched');}
+  try{const result=await analyzeCompetitors({...own,bodyText:'건강기능식품과 영양제를 판매하는 온라인몰입니다.'});assert.ok(result);assert.equal(aiCalls,1);assert.equal(pages,1);assert.deepEqual(result.competitors.map(c=>c.domain),['shop.example']);assert.equal(result.filtering.policyVersion,3);assert.equal(result.filtering.excluded.length,5);assert.equal(result.research.selectionStatus,'matched');}
   finally{keys.forEach((k,i)=>{if(env[i]===undefined)delete process.env[k];else process.env[k]=env[i];});}
 });
 test('old stored reports hide the reported platforms in cards, comparison rows and PDF charts without altering the record',()=>{

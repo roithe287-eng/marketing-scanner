@@ -1,4 +1,5 @@
 import {directIndustries} from './providerClaims';
+import {retailFormats} from './retailOffer';
 import {IndustryCategorySchema,INDUSTRY_LABELS} from './industryCategory';
 import {bareIndustryTag,keywordList} from './industryLanguage';
 import {providerIdentity,ownBusinessRole,isSecondarySection,classificationText,purposeSchemaTypes,isOtherBranch} from './websiteIdentity';
@@ -147,7 +148,8 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const fortuneOverview=!business&&topicOnly&&!providerClaim&&!role&&!commerce&&hasFortuneOverview(fortuneDescription);
   const declaredIndustry=editorial?undefined:fortuneOverview?{category:'fortune' as const,evidence:{text:short(fortuneDescription),locator:data.description?'meta[name="description"]':'meta[property="og:description"]'}}:providerClaim;
   const kind:PurposeKind=editorial?'content':business?.kind||(fortuneOverview?'content':commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||declaredKind||(declaredIndustry?'service':'unknown'));
-  const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
+  const subscriptionStore=kind==='commerce'&&retailFormats(providerIdentity(data)).includes('정기구독');
+  const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:subscriptionStore?['subscribe','purchase','contact']:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
   const provider=sector?.id==='medical_consulting'&&!commerce;
   const fortuneTools=business?.id==='fortune_digital'?firstPartyFortuneTools(data.finalUrl||data.url,ctaElements):[];
   const goalPattern=business?.id==='fortune_consultation'?/예약|(?:상담|전화|카톡|카카오톡|채팅)\s*(?:문의|신청|하기)|^상담$/u:business? actionPatterns[business.goalKey]:undefined;

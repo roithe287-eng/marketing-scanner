@@ -25,7 +25,7 @@ const question=(intent:Question['intent'],text:string,fields:string[],placement:
 // These are review criteria, never claims that a provider actually offers a service.
 // Specific services outrank broader professions only when the submitted page supports them.
 export const SECTOR_PROFILES:Profile[]=[
-  {id:'medical_consulting',label:'병원 컨설팅·마케팅',match:/(?:병원|의료기관)\s*(?:전문\s*)?(?:컨설팅|마케팅|브랜딩)|(?:메디컬|medical)\s*(?:컨설팅|consulting)|병원.{0,12}(?:경영\s*지원|MSO)/i,
+  {id:'medical_consulting',label:'병원 컨설팅·마케팅',match:/(?:병원|의료기관)\s*(?:(?:전문|개원|경영)\s*)?(?:컨설팅|마케팅|브랜딩)|(?:메디컬|medical)\s*(?:컨설팅|consulting)|병원.{0,12}(?:경영\s*지원|MSO)/i,
     journey:sectorJourneys.medical_consulting,
     checks:[
       check('scope','병원 대상 서비스·제공 범위',/개원\s*컨설팅|경영\s*(?:지원|분석|전략)|MSO|병원\s*(?:컨설팅|마케팅|브랜딩)|홈페이지\s*제작|의료\s*서비스\s*교육|CS\s*교육|해외\s*환자\s*유치/i,'개원·경영지원·마케팅·홈페이지 제작·교육 등 원문에서 확인한 업무를 서비스별로 구분하고 대상 병원·산출물·제외 범위를 연결하세요. 진료과나 환자 치료 범위로 바꾸지 않습니다.'),

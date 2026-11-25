@@ -107,18 +107,18 @@ test('logistics competitor pipeline skips product collection and keeps provider 
     const target=String(input);requests.push(target);
     if(target.includes('openapi.naver.com'))return Response.json({items:[
       {title:'해외이사 생활법령',description:'해외이사 법령 안내',link:'https://easylaw.go.kr/'},
-      {title:'해외이사 전문 운송',description:'해외이사 견적과 통관 서비스',link:'https://carrier.test/'},
+      {title:'해외이사 전문 운송',description:'해외이사 견적과 통관 서비스',link:'https://carrier.example/'},
     ]});
     assert.ok(!target.includes('easylaw.go.kr'),'reference sites must not consume the metadata budget');
     if(target.endsWith('/robots.txt'))return new Response('User-agent: *\nAllow: /');
-    if(target.startsWith('https://carrier.test'))return new Response('<title>해외이사 전문 운송</title><meta name="description" content="해외이사 견적과 통관 서비스">');
+    if(target.startsWith('https://carrier.example'))return new Response('<title>해외이사 전문 운송</title><meta name="description" content="해외이사 견적과 통관 서비스"><main><h1>해외이사 전문 운송</h1><p>해외이사를 대행합니다. 국제운송을 제공합니다.</p><button>견적 문의</button></main>',{headers:{'content-type':'text/html'}});
     return new Response(target.includes('/customer/')?quote:target.includes('/oversea/')?processHtml:target.includes('/international/')?freight:home,{headers:{'content-type':'text/html'}});
   };
   t.mock.method(websiteHttp,'fetch',mockFetch);t.mock.method(globalThis,'fetch',mockFetch);
   try{
     const result=await analyzeCompetitors({url,title:'범양해운',ogTitle:'범양해운',description:'범양해운',h1:[],h2:[],keywords:'',bodyText:'안전하고 신속한 해외이사 서비스\n편안하고 빠른 귀국이사 서비스\n화물 운송과 견적 상담'});
     assert.ok(result);assert.equal(result.searchKeyword,'해외이사');assert.equal(result.keywordSource,'fallback');assert.equal(result.research.productContext,undefined);
-    assert.deepEqual(result.competitors.map(c=>c.domain),['carrier.test']);assert.match(result.filtering.excluded[0].reason,/참고 자료/);
+    assert.deepEqual(result.competitors.map(c=>c.domain),['carrier.example']);assert.match(result.filtering.excluded[0].reason,/참고 자료/);
     assert.ok(!requests.some(u=>/sitemap|openapi.naver.com\/v1\/search\/shop/.test(u)),'no product discovery for the service journey');
     const exported=JSON.stringify(buildCompetitorDocument({...fixture,competitorAnalysis:result}));
     assert.match(exported,/해외이사/);assert.doesNotMatch(exported,/자사 상품 원문 추가 확인|면세점 방문/);

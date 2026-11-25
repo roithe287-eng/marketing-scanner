@@ -1,4 +1,4 @@
-import {eligibleMetadata,scopeAllowsKeyword,type CompetitionScope} from './competitionScope';
+import {eligibleMetadata,scopeAllowsKeyword,scopedSearchTerms,type CompetitionScope} from './competitionScope';
 import {providerBody,isSecondarySection,isOtherBranch,classificationText} from './websiteIdentity';
 import {fortuneKeywords} from './fortuneService';
 import {sameSite} from './siteIdentity';
@@ -92,7 +92,7 @@ export function usableMarketKeyword(query:string,site:QuerySite):boolean {
   if(/^(홈|메인|공식|홈페이지|사이트|쇼핑|쇼핑몰|스토어|온라인|인터넷|비즈니스|회사|기업|제품|상품|서비스|플랫폼|브랜드|문의|상담|고객센터|공지사항|로그인|회원가입|이용약관|개인정보|건강|헬스케어|푸드|뷰티|펫|헬스|라이프)$/i.test(q))return false;
   if(/(?:핫딜|pick|매거진|베스트|카테고리|기획전|신상품|추천상품|고객센터)$/i.test(q))return false;
   if(catalogLabel.test(q.replace(/[^\p{L}\p{N}]/gu,'')))return false;
-  const known=marketTerms.some(t=>normalizeSearchText(t)===q)||(site.scope?.profile.startsWith('fortune_')&&fortuneKeywords.some(t=>normalizeSearchText(t)===q));
+  const known=marketTerms.some(t=>normalizeSearchText(t)===q)||scopedSearchTerms(query,site.scope).some(t=>normalizeSearchText(t)===q)||(site.scope?.profile.startsWith('fortune_')&&fortuneKeywords.some(t=>normalizeSearchText(t)===q));
   const aliases=brandAliases(site);
   if(!known&&aliases.some(alias=>alias.length>=2&&(q===alias||q.includes(alias))))return false;
   if(isEmploymentQuery(query)&&!isEmploymentQuery([site.title,site.ogTitle,site.description,site.ogDescription,...site.h1||[]].join(' ')))return false;
@@ -108,10 +108,14 @@ export function marketKeywordCandidates(site:QuerySite){
     return seeds.filter(k=>keywordEvidence(k,site).grounded).map(k=>keywordEvidence(k,site)).slice(0,5);
   }
   const business=(site.businessKeywords||[]).filter(k=>usableMarketKeyword(k,site)).map(k=>keywordEvidence(k,site));
-  const existing=keywordCandidates(site,20),extra=[...marketTerms,...(site.scope?.profile.startsWith('fortune_')?fortuneKeywords:[]),...productKeywordSeeds(site)].filter(t=>keywordEvidence(t,site).grounded).map(t=>keywordEvidence(t,site));
+  const fields=queryFields(site);
+  const fromOffering=[...new Set(scopedSearchTerms(fields.filter(field=>field.label!=='메타 키워드').map(field=>field.text).join('\n'),site.scope))].slice(0,24);
+  const offering=fromOffering.map(t=>keywordEvidence(t,site)).filter(c=>c.grounded);
+  const existing=keywordCandidates(site,20),extra=[...marketTerms,...(site.scope?.profile.startsWith('fortune_')?fortuneKeywords:[]),...productKeywordSeeds(site)].map(t=>keywordEvidence(t,site)).filter(c=>c.grounded);
   const seen=new Set<string>();
-  return [...business,...existing,...extra].filter(c=>usableMarketKeyword(c.keyword,site)).filter(c=>{const k=normalizeSearchText(c.keyword);if(seen.has(k))return false;seen.add(k);return true;})
-    .sort((a,b)=>Number(business.some(c=>c.keyword===b.keyword))-Number(business.some(c=>c.keyword===a.keyword))||b.weightedSupport-a.weightedSupport||b.keyword.length-a.keyword.length).slice(0,5);
+  const priority=new Map([...offering.map(c=>[normalizeSearchText(c.keyword),1] as const),...business.map(c=>[normalizeSearchText(c.keyword),2] as const)]);
+  return [...business,...offering,...existing,...extra].filter(c=>usableMarketKeyword(c.keyword,site)).filter(c=>{const k=normalizeSearchText(c.keyword);if(seen.has(k))return false;seen.add(k);return true;})
+    .sort((a,b)=>(priority.get(normalizeSearchText(b.keyword))||0)-(priority.get(normalizeSearchText(a.keyword))||0)||b.weightedSupport-a.weightedSupport||b.keyword.length-a.keyword.length).slice(0,5);
 }
 export const COMPETITOR_API_NOTE='네이버 웹문서 API의 제한된 응답에서 찾은 비교 후보입니다. 응답 순서는 네이버 통합검색 순위·검색량·매출 순위가 아닙니다.';
 export const COMPETITOR_KEYWORD_NOTE='대표 키워드는 수집된 페이지 제목·설명·주요 제목·본문의 상품·서비스 관련성으로 선택합니다. 회사명 단독 조회와 페이지의 반복 횟수를 시장의 검색 수요로 사용하지 않습니다.';

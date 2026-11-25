@@ -7,7 +7,7 @@ function offers(object:string,action:string):RegExp{
   return new RegExp('(?:'+object+')(?:을|를)?\\s*(?:직접\\s*)?(?:'+action+')(?:합니다|하고\\s*있습니다|해\\s*드립니다|하는\\s*(?:업체|회사|곳)|하는\\s*전문점)','u');
 }
 const claims:Record<Exclude<IndustryCategory,'etc'>,RegExp>={
-  education:offers('교육\\s*과정|강의|수업|직무\\s*교육|학원','운영|진행|개설'),
+  education:offers('교육\\s*과정|강의|수업|직무\\s*교육|학원|유학\\s*상담|어학\\s*연수\\s*과정','운영|진행|개설|제공'),
   medical:offers('외래\\s*진료|건강\\s*검진|환자','시행|진료|제공'),
   commerce:offers('소매\\s*매장|편집숍|직영\\s*매장|오프라인\\s*매장','운영'),
   realestate:offers('부동산|상가|아파트|주택|전월세|매물','중개|분양'),
@@ -26,7 +26,10 @@ const claims:Record<Exclude<IndustryCategory,'etc'>,RegExp>={
   pet:offers('반려견\\s*(?:미용|위탁)|반려동물\\s*돌봄|동물병원|애견호텔','운영|제공|진행'),
   automotive:offers('자동차|차량|중고차','정비|수리|매입'),
   parenting:offers('아이\\s*돌봄|영유아\\s*돌봄|산후\\s*돌봄|육아\\s*코칭','운영|제공|진행'),
-  interior:offers('가구|인테리어|리모델링','제작|시공|설계'),
+  interior:offers('가구|인테리어|리모델링|(?:입주|이사)\\s*청소','제작|시공|설계|제공|진행'),
+  event:offers('웨딩\\s*촬영|가족\\s*사진|행사\\s*촬영|행사\\s*대관|예식','진행|제공|운영|대행|촬영'),
+  rental:offers('(?:정수기|생활\\s*가전|공기청정기|촬영\\s*장비|카메라|행사\\s*장비|사무\\s*기기|공유\\s*오피스|공간|장비)\\s*(?:렌탈|렌털|대여)','제공|운영|진행'),
+  business_services:offers('시설\\s*경비|시설\\s*관리|사업장\\s*보안|건물\\s*관리|인력\\s*파견|헤드헌팅','대행|수행|제공|운영'),
   ecommerce:offers('온라인\\s*(?:쇼핑몰|스토어)|자사몰|공식몰','운영'),
 };
 

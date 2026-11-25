@@ -89,7 +89,9 @@ test('an invalid AI client keyword falls back to the provider role and rejects t
   if(u.includes('openapi.naver.com')){queries.push(new URL(u).searchParams.get('query')||'');return Response.json({items:[{title:'여행사 광고 대행',description:'',link:'https://agency.example/'},{title:'여행사 광고',description:'',link:'https://travel.example/'}]});}
   throw new Error('Unexpected request '+u);
  });
- t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>new Response(String(input).includes('agency.example')?html('나래 광고대행','여행사 광고 제작과 마케팅 대행'):html('나래 여행사','광고 안내 및 여행사 투어 예약')));
+ t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>String(input).endsWith('/robots.txt')
+  ? new Response('User-agent: *\nAllow: /')
+  : new Response(String(input).includes('agency.example')?html('나래 광고대행','여행사 광고 제작과 마케팅 대행','<p>온라인 광고를 대행합니다.</p>'):html('나래 여행사','광고 안내 및 여행사 투어 예약'),{headers:{'content-type':'text/html'}}));
  try{
  const result=await analyzeCompetitors({url,title:'가온 광고대행',ogTitle:'',description:'여행사 광고 제작과 마케팅 대행',h1:['가온 광고대행'],keywords:'여행사,광고대행',bodyText:'광고대행 서비스를 제공합니다.'});
  assert.ok(result);assert.match(result.searchKeyword,/광고|마케팅|대행/);assert.deepEqual(result.competitors.map(c=>c.domain),['agency.example']);assert.ok(queries.every(q=>q!=='여행사'));assert.ok(MarketingReportSchema.safeParse({...fixture,competitorAnalysis:result}).success);

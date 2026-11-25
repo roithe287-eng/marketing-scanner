@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import {publicUrl} from './security/safeFetch';
 import type {OwnProductSource} from './ownProductSchema';
+import {restoreStreamedHtml} from './streamedHtml';
 
 const clean=(v:unknown,max:number)=>typeof v==='string'?v.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,max):'';
 const host=(url:URL)=>url.hostname.toLowerCase().replace(/^www\./,'');
@@ -26,7 +27,11 @@ export function ownProductUrl(value:string,base:string):string|null{
   const scripted=/\/(?:goods_view|item|detail|shopdetail|view)\.(?:php|html)$/i.test(path)&&hasId(keys);
   const imweb=/\/shop_view\/?$/i.test(path)&&hasId(['idx']);
   const slug=/\/(?:goods|products?|items?)\/(?!list(?:[./]|$)|(?:goods|product)_list(?:[./]|$)|categor(?:y|ies)(?:[./]|$)|search(?:[./]|$)|bestseller(?:[./]|$)|event(?:[./]|$)|mdpick(?:[./]|$)|detail\.(?:html|php)$)[^/]+/i.test(path);
-  if(!scripted&&!imweb&&!slug)return null;
+  // Some catalogs link to /<category>/<model> without a /product/ prefix.
+  const category=new URL(base).pathname.match(/^\/categor(?:y|ies)\/([a-z][a-z0-9-]+)\/?$/i)?.[1];
+  const [section,model,...rest]=path.split('/').filter(Boolean);
+  const catalogModel=category===section&&!rest.length&&/^(?=[a-z0-9-]*[a-z])(?=[a-z0-9-]*\d)[a-z0-9-]{5,35}$/i.test(model||'');
+  if(!scripted&&!imweb&&!slug&&!catalogModel)return null;
   for(const key of [...url.searchParams.keys()])if(!keys.includes(key))url.searchParams.delete(key);
   return url.href;
 }
@@ -35,7 +40,13 @@ export type OwnProductSeed={url:string;sources:OwnProductSource[];productLinks:s
 
 /** Parse declarative product data only. Customer, order, review and recommendation state is excluded. */
 export function productSourcesFromHtml(html:string,url:string):OwnProductSource[]{
-  const $=cheerio.load(html),sources:OwnProductSource[]=[],seen=new Set<string>();
+  const $=cheerio.load(html);
+  restoreStreamedHtml($);
+  return collectProductSources($,url);
+}
+
+function collectProductSources($:cheerio.CheerioAPI,url:string):OwnProductSource[]{
+  const sources:OwnProductSource[]=[],seen=new Set<string>();
   const add=(name:unknown,description:unknown,category:unknown,kind:OwnProductSource['kind'],link?:unknown)=>{
     const value=clean(name,300),sourceUrl=typeof link==='string'&&ownProductUrl(link,url)||url;
     const key=kind==='catalog_product'?sourceUrl:sourceUrl+'\n'+value;
@@ -84,7 +95,9 @@ export function productSourcesFromHtml(html:string,url:string):OwnProductSource[
 
 /** Small, public-only seed reused by the main diagnosis; the original HTML is never retained. */
 export function captureProductSeed(html:string,url:string):OwnProductSeed{
-  const $=cheerio.load(html),sources=productSourcesFromHtml(html,url),productLinks:string[]=[],catalogLinks:string[]=[];
+  const $=cheerio.load(html);
+  restoreStreamedHtml($);
+  const sources=collectProductSources($,url),productLinks:string[]=[],catalogLinks:string[]=[];
   $('a[href]').slice(0,500).each((_,el)=>{
     const value=$(el).attr('href')||'',detail=ownProductUrl(value,url);
     if(detail){productLinks.push(detail);return;}

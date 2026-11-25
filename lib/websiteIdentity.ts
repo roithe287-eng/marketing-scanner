@@ -24,7 +24,7 @@ export function ownBusinessRole(data:IdentityInput):OwnBusinessRole|undefined{
     if(/쇼핑몰\s*(?:구축|제작)|광고\s*대행|마케팅\s*(?:대행|에이전시)|홈페이지\s*제작|웹\s*제작|브랜딩\s*(?:대행|스튜디오)/i.test(text))return 'agency';
     if(/소프트웨어|\bSaaS\b|업무\s*솔루션|(?:예약|보험|물류|병원|쇼핑몰)\s*(?:관리\s*)?(?:솔루션|시스템)\s*(?:개발|제공)/i.test(text))return 'software';
     if(/제조\s*(?:기업|업체|회사|전문)|(?:기기|장비|부품|제품|포장재|포장\s*상자|산업재|임플란트).{0,12}(?:제조|생산)|포장\s*(?:상자|용기|박스).{0,8}제작(?:합니다|업체|사)|(?:manufactur(?:er|ing))\b/i.test(text))return 'manufacturing';
-    if(/인테리어|리모델링|(?:청소|소독|방역)\s*(?:전문|서비스|업체)|(?:설계|시공)\s*(?:전문|업체)/i.test(text))return 'home';
+    if(/인테리어|리모델링|(?:청소|소독|방역)\s*(?:전문|서비스|업체)|(?:설계|시공)\s*(?:전문|업체)|해충\s*(?:방제|퇴치)(?!\s*(?:제품|용품|약품|제))/i.test(text))return 'home';
     if(/학원|교습소|자격증\s*(?:교육|과정)|지도자\s*(?:교육|양성)|수강\s*(?:신청|안내)/.test(text))return 'education';
     if(/온라인\s*쇼핑몰|쇼핑몰|온라인\s*(?:판매|스토어)|전문\s*(?:쇼핑몰|판매점)/.test(text))return 'retail';
     // A specific role in the title/H1 outranks client nouns in the description.

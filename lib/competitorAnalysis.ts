@@ -97,13 +97,11 @@ async function fetchPublicCandidate(link:string,followLocalRedirects:boolean){
 
 async function fetchCompetitorMeta(competitor:Competitor,provider:'naver_web'|'public_web'|'official_wig_stores'='naver_web'):Promise<void>{
   try {
-    const result=provider==='naver_web'?{
-      response:await websiteHttp.fetch(competitor.link,{headers:BROWSER_HEADERS,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(8000)}),finalUrl:competitor.link,
-    }:await withBudget(10000,()=>fetchPublicCandidate(competitor.link,provider==='public_web'));
+    const result=await withBudget(10000,()=>fetchPublicCandidate(competitor.link,provider!=='official_wig_stores'));
     const {response:res,finalUrl}=result;
     if(!res.ok){competitor.fetchError=`HTTP ${res.status}`;return;}
-    if(provider!=='naver_web'&&(/\b(?:noindex|none)\b/i.test(res.headers.get('x-robots-tag')||'')||
-      !/^(?:text\/html|application\/xhtml\+xml)(?:;|$)/i.test(res.headers.get('content-type')||''))){
+    if(/\b(?:noindex|none)\b/i.test(res.headers.get('x-robots-tag')||'')||
+      !/^(?:text\/html|application\/xhtml\+xml)(?:;|$)/i.test(res.headers.get('content-type')||'')){
       competitor.fetchError='공개 HTML 원문을 검증할 수 없음';
       return;
     }
@@ -141,7 +139,7 @@ async function fetchCompetitorMeta(competitor:Competitor,provider:'naver_web'|'p
     }
 
     Object.assign(competitor,captureCompetitorPage(html,res.url||finalUrl,res.headers));
-    if(provider==='public_web'&&!competitor.fetchError&&!competitor.verifiedOffering)competitor.fetchError='후보 원문에서 직접 제공하는 상품·서비스를 확인하지 못함';
+    if(provider!=='official_wig_stores'&&!competitor.fetchError&&!competitor.verifiedOffering)competitor.fetchError='후보 원문에서 직접 제공하는 상품·서비스를 확인하지 못함';
 
   } catch (err: any) {
     competitor.fetchError = err?.message || "fetch failed";
@@ -359,7 +357,9 @@ export async function analyzeCompetitors(siteData: {
       return {searchKeyword:'',keywordSource:'fallback',competitors:[],filtering:{policyVersion:3,reviewedCount:0,metadataCheckedCount:0,excluded:[]},
         research:{version:2,provider:canUseNaver?'naver_web':'public_web',capturedAt:new Date().toISOString(),requestedCount:0,returnedCount:0,apiStart:1,totalDocuments:null,
           ...(!skipProductCollection?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:'회사명 외에 판매 상품·서비스를 확인할 원문 근거가 부족해 경쟁사 검색을 보류했습니다.',keywordEvidence:[],alternatives:[],attemptedKeywords:[],eligibleCount:0,budgetDeferredCount:0,successfulPages:0,selectedCount:0,
-          selectionStatus:'insufficient_source',selectionMessage:'메인 HTML과 공개 상품 원문에서 비교할 상품군을 확인하지 못했습니다. 상품이 없거나 사이트에 정보가 부족하다는 판정은 아닙니다. 동적 로딩·접근 제한·검색 API의 수집 범위를 확인해 주세요.'},
+          selectionStatus:'insufficient_source',selectionMessage:scope.kind==='commerce'
+            ?'공개 원문에서 비교할 상품군을 확인하지 못했습니다. 대표 상품이나 카테고리 상세 URL로 다시 진단해 주세요.'
+            :'공개 원문에서 비교할 업무 범위를 확인하지 못했습니다. 제공 서비스가 적힌 상세 URL로 다시 진단해 주세요.'},
         ourSite:{scope,url:siteData.url,domain:ourDomain,title:rawSite.title,metaDescription:rawSite.description,h1:rawSite.h1[0]||''}};
     }
     console.log(`[경쟁사] 키워드: "${keyword}" (${keywordSource})`);
@@ -399,11 +399,11 @@ export async function analyzeCompetitors(siteData: {
       lookupUnavailable=true;
       response={items:[],capturedAt:new Date().toISOString(),start:1,total:null};
     }
-    const selection=selectSearchCandidates(response.items,ourDomain,keyword,8,commerce,scope,provider==='public_web');
+    const selection=selectSearchCandidates(response.items,ourDomain,keyword,8,commerce,scope,true);
     const start=response.start;
     const candidates:Competitor[]=selection.candidates.map(c=>({...c,searchRank:provider==='naver_web'?(c.searchRank||1)+start-1:undefined}));
     await Promise.all(candidates.map(candidate=>fetchCompetitorMeta(candidate,provider)));
-    const competitors=finalizeSearchCandidates(candidates,keyword,selection.excluded,5,commerce,scope,ourDomain,provider==='public_web');
+    const competitors=finalizeSearchCandidates(candidates,keyword,selection.excluded,5,commerce,scope,ourDomain,true);
 
     return {
       searchKeyword: keyword,
