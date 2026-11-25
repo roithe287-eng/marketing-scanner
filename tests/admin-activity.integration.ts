@@ -257,11 +257,12 @@ test('owner creates customers, customers cannot create or promote accounts, and 
   assert.equal((await admin.POST(request('/api/admin',input,ownerToken,'203.0.113.10'))).status,409);
   const forged={...user,id:randomUUID(),role:'admin' as const};await db().set(key('account:'+forged.id),forged);const forgedToken=await createSession(forged);
   await assert.rejects(()=>requireAdmin(request('/api/admin',undefined,forgedToken,'203.0.113.10')),{status:403});
+  assert.equal(await getPrincipal(request('/api/access',undefined,forgedToken)),null);
 });
 test('admin metrics and IPs are private and cannot be requested by customers or cross-site clients',async()=>{
   assert.equal((await admin.GET(request('/api/admin?id='+user.id,undefined,userToken,'203.0.113.10'))).status,403);
-  assert.equal((await admin.GET(request('/api/admin?id='+user.id,undefined,ownerToken))).status,403);
-  const r=await admin.GET(request('/api/admin?id='+user.id,undefined,ownerToken,'203.0.113.10'));assert.equal(r.status,200);assert.match(r.headers.get('cache-control')!,/no-store/);
+  assert.equal((await admin.GET(request('/api/admin?id='+user.id,undefined,ownerToken,'203.0.113.20',{origin:'https://elsewhere.example'}))).status,403);
+  const r=await admin.GET(request('/api/admin?id='+user.id,undefined,ownerToken));assert.equal(r.status,200);assert.match(r.headers.get('cache-control')!,/no-store/);
   const body=await r.json();assert.equal(body.account.id,user.id);assert.equal('passwordHash' in body.account,false);
   const own=await (await access.GET(request('/api/access',undefined,userToken))).json();assert.equal(own.account.id,user.id);assert.equal('activity' in own,false);
   assert.equal((await telemetry.POST(request('/api/activity',{action:'pdf_start',eventId:randomUUID(),scope:'full',url:fixture.url},userToken,'203.0.113.20',{origin:'https://evil.example'}))).status,403);

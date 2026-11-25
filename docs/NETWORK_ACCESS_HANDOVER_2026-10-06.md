@@ -1,6 +1,6 @@
 # Explicit login-free network access — 2026-10-06
 
-The owner explicitly requested login-free Marketing Scanner use from one office IP after PR #60. This supersedes the previous blanket requirement for account login only for that configured network. Do not expand `ALLOWED_IPS` or administrator access.
+The owner explicitly requested login-free Marketing Scanner use from one office IP after PR #60. This supersedes the previous blanket requirement for account login only for that configured network. Signed-in owner administration is independent of this network grant.
 
 ## Behavior
 

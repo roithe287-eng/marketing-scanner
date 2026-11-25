@@ -7,7 +7,6 @@ import {
   privateJson,
   AccessError,
   digest,
-  isInternal,
 } from "@/lib/security/request";
 import { emailSchema } from "@/lib/saas/validation";
 import {
@@ -46,7 +45,7 @@ export async function POST(req: NextRequest) {
       !account ||
       !valid ||
       !isActive(account) ||
-      (account.role === "admin" && (!isInternal(req.headers) || !(await isOwnerAccount(account))))
+      (account.role === "admin" && !(await isOwnerAccount(account)))
     ) {
       if(account) await captureActivity(account.id,'login_failed',req.headers);
       throw new AccessError(

@@ -2,7 +2,6 @@ import { headers, cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import {
   AccessError,
-  isInternal,
   requireSameOrigin,
 } from "../security/request";
 import { Principal } from "./types";
@@ -34,8 +33,7 @@ export async function principalFrom(
   if (!account) return isLoginFreeNetwork(headers) ? { kind: 'internal' } : null;
   // Valid sessions keep their account identity, permissions, and activity tracking.
   // Login-free network access never grants the sole owner's administrator role.
-  if (account.role === "admin" &&
-      (!isInternal(headers) || !(await isOwnerAccount(account)))) return null;
+  if (account.role === "admin" && !(await isOwnerAccount(account))) return null;
   return { kind: "account", account };
 }
 export async function getPrincipal(req?: NextRequest) {
@@ -61,8 +59,6 @@ export async function requireAdmin(req?: NextRequest) {
     throw new AccessError(403,"관리자 화면에서 다시 요청해 주세요.");
   if(req && h.get("origin") && h.get("origin")!==req.nextUrl.origin)
     throw new AccessError(403,"관리자 화면에서 다시 요청해 주세요.");
-  if (!isInternal(h))
-    throw new AccessError(403, "관리자 접근 권한이 없습니다.");
   const account = await sessionAccount(
     req
       ? req.cookies.get(SESSION_COOKIE)?.value
