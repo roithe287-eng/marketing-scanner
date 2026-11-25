@@ -16,7 +16,7 @@ export default function ReportIndustryEvidence({report,linkToPurpose=false}:{rep
     return <section className="industry-original" aria-label="업종과 분석 범위">
       <dl className="industry-decision" data-industry-status={review.status}>
         <div><dt>업종 판정</dt><dd>{confirmed?review.label:'업종 확인 필요'}</dd></div>
-        <div><dt>{confirmed?'페이지 목적':'적용 범위'}</dt><dd>{confirmed?(report.sitePurpose?.goal.observed?report.sitePurpose.goal.label:report.sitePurpose?.label||'업종별 점검'):'공통 페이지 점검'}</dd></div>
+        <div><dt>{confirmed?'페이지 목적':'적용 범위'}</dt><dd>{confirmed?(report.sitePurpose?.goal.label||'업종별 점검'):'공통 페이지 점검'}</dd></div>
       </dl>
       {!confirmed&&<p className="industry-review-note">{industryReviewMessage[review.reason]}</p>}
       {(!confirmed&&review.reason==='redirected'&&original)&&<p className="industry-review-note"><a href={original} target="_blank" rel="noopener noreferrer">최종 주소 열기 · {new URL(original).host} ↗</a></p>}

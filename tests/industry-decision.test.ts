@@ -70,5 +70,8 @@ test('multiple genuine hair products cover a brand-only page without treating a 
   const assessment=reviewIndustry(data);
   assert.equal(assessment.status,'matched');
   assert.ok(assessment.evidence.some(item=>item.url===products[0].url));
+  const view=renderToStaticMarkup(createElement(ReportIndustryEvidence,{report:{...fixture,url,sitePurpose:purpose,industryDecision:assessment}}));
+  assert.equal(view.match(/가발·헤어피스 전문 쇼핑몰/g)?.length,1);
+  assert.match(view,/헤어피스·가발의 옵션 선택과 구매/);
   assert.notEqual(analyzeWebsitePurpose({...data,productContext:{...data.productContext,sources:[...products,{...products[1],url:url+'product/shirt',name:'면 반팔 셔츠'}]}}).business?.id,'hairpieces_wigs');
 });
