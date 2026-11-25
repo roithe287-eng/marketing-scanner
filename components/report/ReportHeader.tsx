@@ -14,7 +14,7 @@ export default function ReportHeader({report,data,firstTaskCount,actions,topAnch
   const review=report.evidenceReview,unmeasured=review?.assessed===0,displayValue=review?review.passed:report.overallScore,displayTotal=review?review.assessed:100,ratio=displayTotal?displayValue/displayTotal:0;
   const outcomes=[
     {id:'geo',target:'report-view-geo-observations',number:'01',title:'실제 AI 답변 확인',detail:'질문별 답변과 연결된 출처',metric:data.obs?.sourceTotal?`출처 판정 ${data.obs.sourceTotal}건 중 자사 인용 ${data.obs.sourceCount}건`:'AI 답변 관측 상태 보기'},
-    {id:'competition',target:'report-view-competition-map',number:'02',title:'비교할 사이트 확인',detail:'선정 기준과 비교 지도',metric:data.competitorCount?`저장된 비교 후보 ${data.competitorCount}곳`:'비교 후보 수집 상태 보기'},
+    {id:'competition',target:'report-view-competition-map',number:'02',title:'경쟁사 URL 보기',detail:'공통 상품·서비스와 원문 링크',metric:data.competitorCount?`저장된 비교 후보 ${data.competitorCount}곳`:'비교 후보 수집 상태 보기'},
     {id:'actions',target:'report-view-overview-priority',number:'03',title:'우선 할 일 확인',detail:'먼저 검토할 위치와 완료 기준',metric:firstTaskCount?`먼저 볼 작업 ${firstTaskCount}개`:'저장된 보완 항목 없음'},
   ];
   return <header className="report-hero" id={topAnchor?'report-top':'report-header'}>

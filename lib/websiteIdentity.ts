@@ -3,8 +3,8 @@ import {industryLanguage,keywordList,bareIndustryTag} from './industryLanguage';
 /** Identity and evidence boundaries shared by the deterministic analysis paths. */
 export type OwnBusinessRole='agency'|'software'|'manufacturing'|'home'|'education'|'retail';
 type IdentityInput={title?:string;description?:string;h1?:string[]};
-const productSoftware=/(?:학습|교육|학원|회계|주문|재고|예약|접수)\s*(?:관리|운영|통합)?\s*(?:솔루션|시스템|프로그램)\s*(?:개발|제공|공급|구축)|(?:ERP|LMS)\s*(?:솔루션|소프트웨어|시스템)\s*(?:개발|제공|공급|구축)/iu;
-const trainingLabel=/개발\s*(?:교육|과정|강의|수업|학원)|수강\s*(?:신청|안내)|커리큘럼/u;
+const productSoftware=/(?:학습|교육|학원|회계|주문|재고|예약|접수)\s*(?:관리|운영|통합)?\s*(?:솔루션|시스템|프로그램)\s*(?:개발|제공|공급|구축)|(?:ERP|LMS)\s*(?:(?:회계|업무|학습|교육)\s*)?(?:솔루션|소프트웨어|시스템)(?:\s*(?:개발|제공|공급|구축))?/iu;
+const trainingLabel=/개발\s*(?:교육|과정|강의|수업|학원)|교육\s*과정|수강\s*(?:신청|안내)|커리큘럼/u;
 const ownLegal=/법무법인|법률사무소|법무사|변호사|세무사|회계사/;
 export function ownBusinessRole(data:IdentityInput):OwnBusinessRole|undefined{
   const headings=classificationText([data.title,...data.h1||[]].filter(v=>v&&!isContextOnlyEvidence('',v)).join('\n'));

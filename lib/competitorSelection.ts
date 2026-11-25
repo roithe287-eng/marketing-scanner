@@ -1,6 +1,7 @@
 import {buildCompetitionScope,competitionMismatch,eligibleMetadata,type CompetitionScope} from './competitionScope';
 import {isContextOnlyEvidence,classificationText} from './websiteIdentity';
 import {queryMatches} from './competitorResearch';
+import {sameSite} from './siteIdentity';
 import {unrelatedPageReason} from './competitorRoles';
 export type SearchItem = { title: string; link: string; description: string };
 export type SearchCandidate = SearchItem & {
@@ -10,6 +11,7 @@ export type SearchCandidate = SearchItem & {
   relevance?: 'keyword_match' | 'needs_review';
   selectionEvidence?: string;
   matchedTerms?: string[];
+  matchedOffer?: string[];
   relevanceBasis?: 'page_metadata' | 'page_content' | 'search_snippet';
 };
 export type ExcludedCandidate = { domain: string; link: string; title: string; reason: string };
@@ -48,12 +50,13 @@ export function nonProviderReason(title: string, query: string, description = ''
 }
 
 const commerceText=/쇼핑몰|공식몰|전문몰|온라인몰|스토어|쇼핑|\bshop\b|\bstore\b|장바구니|바로구매|구매하기|주문하기|구매하러|\bcheckout\b|\badd to cart\b|\bbuy now\b/i;
-export function selectSearchCandidates(items: SearchItem[], ourDomain: string, query: string, limit = 8, preferCommerce=false, ownScope?:CompetitionScope) {
+export function selectSearchCandidates(items: SearchItem[], ourDomain: string, query: string, limit = 8, preferCommerce=false, ownScope?:CompetitionScope, allowDetails=false) {
   const candidates: SearchCandidate[] = [];
   const excluded: ExcludedCandidate[] = [];
   const seen = new Set<string>();
   const own = ourDomain.toLowerCase().replace(/^www\./, '');
-  let eligibleCount=0;
+  const seenUrls=new Set<string>();
+  const details:SearchCandidate[]=[];
   items.forEach((item, i) => {
     let url: URL;
     try { url = new URL(item.link); } catch { return; }
@@ -71,39 +74,58 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
   const coverage=(c:SearchCandidate)=>queryMatches(query,`${c.title} ${c.description}`).matched.length;
   const seller=(c:SearchCandidate)=>Number(commerceText.test(`${c.title} ${c.description}`)||/\/(?:goods|products?)\//i.test(c.link));
   const fit=(c:SearchCandidate)=>ownScope?Number(!competitionMismatch(ownScope,buildCompetitionScope({url:c.link,title:c.title,description:c.description}),false)):0;
-  const unique=candidates.sort((a,b)=>fit(b)-fit(a)||(preferCommerce?seller(b)-seller(a):0)||coverage(b)-coverage(a)||(a.searchRank??0)-(b.searchRank??0)).filter(c=>{if(seen.has(c.domain)){excluded.push({...c,reason:'이미 수집한 도메인의 중복 페이지'});return false;}seen.add(c.domain);return true;});
-  eligibleCount=unique.length;
-  const selected=unique.slice(0,limit).map((c,i)=>({...c,rank:i+1}));
+  const unique=candidates.sort((a,b)=>fit(b)-fit(a)||(preferCommerce?seller(b)-seller(a):0)||coverage(b)-coverage(a)||(a.searchRank??0)-(b.searchRank??0)).filter(c=>{
+    if(seenUrls.has(c.link)){excluded.push({...c,reason:'이미 확인한 주소의 중복 페이지'});return false;}
+    seenUrls.add(c.link);
+    if(seen.has(c.domain)){
+      if(allowDetails&&!details.some(page=>page.domain===c.domain))details.push(c);
+      else excluded.push({...c,reason:'이미 수집한 도메인의 중복 페이지'});
+      return false;
+    }
+    seen.add(c.domain);return true;
+  });
+  const eligibleCount=unique.length+details.length;
+  const selected=[...unique,...details].slice(0,limit).map((c,i)=>({...c,rank:i+1}));
   return {candidates:selected, excluded, reviewedCount: items.length,eligibleCount,budgetDeferredCount:Math.max(0,eligibleCount-selected.length)};
 }
 
-export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?:string;metaDescription?:string;h1?:string;fetchError?:string;ctaTexts?:string[];bodySnippet?:string;finalUrl?:string;scope?:CompetitionScope}>(
-  candidates:T[],query:string,excluded:ExcludedCandidate[],limit=5,requireCommerce=false,ownScope?:CompetitionScope,ourDomain='',
+export function sharedCompetitorOffering(own:CompetitionScope|undefined,candidate:CompetitionScope|undefined):string[]{
+  if(!own||!candidate)return [];
+  const offered=new Set([...candidate.specialties,...candidate.serviceSpecialties||[]]);
+  return [...new Set([...own.specialties,...own.serviceSpecialties||[]])].filter(label=>!label.startsWith('season:')&&offered.has(label)).slice(0,8);
+}
+
+export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?:string;metaDescription?:string;h1?:string;fetchError?:string;ctaTexts?:string[];bodySnippet?:string;finalUrl?:string;canonicalUrl?:string;scope?:CompetitionScope}>(
+  candidates:T[],query:string,excluded:ExcludedCandidate[],limit=5,requireCommerce=false,ownScope?:CompetitionScope,ourDomain='', matchVerifiedScope=false,
 ){
-  const kept:(T&SearchCandidate)[]=[],seen=new Set<string>();
+  const kept:(T&SearchCandidate)[]=[],seen=new Set<string>(),canonicals=new Set<string>();
   for(const candidate of candidates){
     const title=candidate.metaTitle||candidate.title;
     let link=candidate.finalUrl||candidate.link,domain=candidate.domain,reason:string|undefined;
     try{const u=new URL(link);if(!/^https?:$/.test(u.protocol)||u.username||u.password)throw new Error();domain=u.hostname.toLowerCase().replace(/^www\./,'');}catch{reason='후보 최종 URL이 유효하지 않음';}
     const own=[ourDomain,ownScope?.sourceUrl?new URL(ownScope.sourceUrl).hostname.replace(/^www\./,''):''].filter(Boolean);
     if(!reason&&own.some(host=>belongsTo(domain,host)||belongsTo(host,domain)))reason='최종 이동 URL이 자사 도메인';
+    if(!reason&&candidate.canonicalUrl&&ownScope?.sourceUrl&&(sameSite(candidate.canonicalUrl,ownScope.sourceUrl)||sameSite(ownScope.sourceUrl,candidate.canonicalUrl)))reason='대표 URL이 자사 사이트에 해당함';
     if(!reason)reason=excludedPlatformReason(domain);
-    if(!reason&&seen.has(domain))reason='최종 이동 도메인이 다른 후보와 중복';
+    const canonical=candidate.canonicalUrl&&URL.canParse(candidate.canonicalUrl)?new URL(candidate.canonicalUrl).hostname.replace(/^www\./,''):domain;
+    if(!reason&&(seen.has(domain)||canonicals.has(canonical)||seen.has(canonical)||canonicals.has(domain)))reason='대표 또는 최종 도메인이 다른 후보와 중복';
     if(!reason&&isContextOnlyEvidence(title,'',link))reason='고객사 사례·후기 페이지는 해당 업체의 제공 업무로 확정하지 않음';
     if(!reason)reason=unrelatedPageReason({domain,link,title,description:candidate.metaDescription||''},query,ownScope?.kind==='content')||nonProviderReason(title,query,candidate.metaDescription||'');
     const hasPage=!candidate.fetchError&&!!(candidate.metaTitle||candidate.metaDescription||candidate.h1||candidate.bodySnippet);
     const metadata=[candidate.metaTitle,candidate.metaDescription,candidate.h1].map(eligibleMetadata).join(' ');
     const metaMatch=queryMatches(query,metadata),match=queryMatches(query,metadata+' '+classificationText(candidate.bodySnippet||''));
     const matches=match.terms.length>0&&match.matched.length===match.terms.length;
-    if(!reason&&(!hasPage||!matches))reason=!hasPage?'페이지 수집·원문 근거 부족: 검색 요약만으로 경쟁 관계를 확정하지 않음':'후보의 자사 설명 원문에서 대상 상품·서비스 검색어 일치를 확인하지 못함';
-    if(!reason&&requireCommerce&&!commerceText.test([metadata,...candidate.ctaTexts||[]].join(' ')))reason='상품 판매 사이트의 비교에서 쇼핑몰·구매 동작을 원문으로 확인하지 못함';
     const scope=candidate.scope||buildCompetitionScope({url:link,title:candidate.metaTitle||'',description:candidate.metaDescription||'',h1:candidate.h1?[candidate.h1]:[],bodyText:candidate.bodySnippet||'',ctaButtons:candidate.ctaTexts});
+    const overlap=sharedCompetitorOffering(ownScope,scope);
+    if(!reason&&(!hasPage||(!matches&&!(matchVerifiedScope&&overlap.length))))reason=!hasPage?(candidate.fetchError||'페이지 원문 근거 부족'):'후보 원문에서 비교할 상품·서비스 일치를 확인하지 못함';
+    if(!reason&&requireCommerce&&!(matchVerifiedScope&&scope.kind==='commerce')&&!commerceText.test([metadata,...candidate.ctaTexts||[]].join(' ')))reason='후보 원문에서 쇼핑몰·구매 동작을 확인하지 못함';
     if(!reason&&ownScope)reason=competitionMismatch(ownScope,scope);
     if(reason){excluded.push({domain,link,title,reason});continue;}
     seen.add(domain);
-    const relevanceBasis=metaMatch.matched.length===metaMatch.terms.length?'page_metadata' as const:'page_content' as const;
-    kept.push({...candidate,domain,link,scope,relevance:'keyword_match',matchedTerms:match.matched,relevanceBasis,
-      selectionEvidence:`자사 제공 업무 원문에서 “${query}” 확인${ownScope?` · ${scope.label}${ownScope.area?' · 지역 '+scope.area:''}${ownScope.destinations.length?' · 이용 목적지 일치':''}`:''}`});
+    canonicals.add(canonical||domain);
+    const relevanceBasis=matches&&metaMatch.matched.length===metaMatch.terms.length?'page_metadata' as const:'page_content' as const;
+    kept.push({...candidate,domain,link,scope,relevance:'keyword_match',matchedTerms:match.matched,relevanceBasis,...(overlap.length?{matchedOffer:overlap}:{}),
+      selectionEvidence:overlap.length?`공통 상품·서비스 · ${overlap.join(' / ')}`:`업체 원문에서 “${query}” 확인${ownScope?` · ${scope.label}${ownScope.area?' · 지역 '+scope.area:''}${ownScope.destinations.length?' · 이용 목적지 일치':''}`:''}`});
   }
-  return kept.sort((a,b)=>(a.searchRank??0)-(b.searchRank??0)).slice(0,limit).map((c,i)=>({...c,rank:i+1}));
+  return kept.sort((a,b)=>matchVerifiedScope?(b.matchedOffer?.length||0)-(a.matchedOffer?.length||0)||(b.matchedTerms?.length||0)-(a.matchedTerms?.length||0):(a.searchRank??0)-(b.searchRank??0)).slice(0,limit).map((c,i)=>({...c,rank:i+1}));
 }
