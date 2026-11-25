@@ -11,6 +11,7 @@ import {canReadClinicWebsite} from '@/lib/clinicPlaceInsights';
 import ReportLayout from '@/components/report/ReportLayout';
 import BrandHeader from "@/components/BrandHeader";
 import LandingHero from "@/components/LandingHero";
+import ScanFeedback from "@/components/ScanFeedback";
 import LandingActivityPanel from "@/components/LandingActivity";
 import DownloadReportButton from "@/components/DownloadReportButton";
 import ShareButton from "@/components/ShareButton";
@@ -26,10 +27,11 @@ export default function HomePage() {
   const [report, setReport] = useState<MarketingReport | null>(null);
   const [storeReport,setStoreReport]=useState<SmartstoreReport|null>(null);
   const [restrictedReport,setRestrictedReport]=useState<RestrictedWebsiteReport|null>(null);
-  const hasReport=Boolean(report||storeReport||restrictedReport);
+  const hasFullReport = Boolean(report || storeReport);
   const [loading, setLoading] = useState(false);
   const [competitorLoading, setCompetitorLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submittedUrl, setSubmittedUrl] = useState<string>();
   const analysisRun = useRef(0);
   const competitorRequest=useRef<{url:string;hints:unknown;run:number}|null>(null);
 
@@ -82,6 +84,7 @@ export default function HomePage() {
     const current=()=>analysisRun.current===run&&!controller.signal.aborted;
     competitorController.current?.abort();competitorController.current=null;
     if(scrollTimer.current)clearTimeout(scrollTimer.current);
+    setSubmittedUrl(url);
     setLoading(true);setError(null);setCompetitorLoading(false);
     // Keep the last valid report until its replacement has passed validation.
     setReport(prev=>prev?.competitorStatus?.status==='pending'?{...prev,competitorStatus:{status:'unavailable',message:'새 진단을 시작해 이전 경쟁사 분석을 중단했습니다.'}}:prev);
@@ -102,7 +105,6 @@ export default function HomePage() {
         const result=RestrictedWebsiteReportSchema.parse(data);
         if(!current())return;
         setRestrictedReport(result);setStoreReport(null);setReport(null);
-        scrollTimer.current=setTimeout(()=>{if(current())document.getElementById('report-area')?.scrollIntoView({behavior:'smooth',block:'start'});},150);
         return;
       }
       const parsed=MarketingReportSchema.safeParse(data);
@@ -124,45 +126,34 @@ export default function HomePage() {
     }
   }
 
+  const feedback = <ScanFeedback
+    loading={loading}
+    error={error}
+    restrictedReport={restrictedReport}
+    hasPreviousResult={hasFullReport || Boolean(restrictedReport)}
+  />;
+  const entry = <LandingHero
+    onSubmit={handleAnalyze}
+    loading={loading}
+    allowed={allowed}
+    checking={access.kind === 'loading'}
+    compact={hasFullReport}
+    showExamples={!hasFullReport && !restrictedReport}
+    submittedUrl={submittedUrl}
+    feedback={feedback}
+  />;
+
   return (
-    <main className={hasReport && !loading ? "report-page" : "scanner-home-page"}>
-      <BrandHeader landing={!hasReport || loading} accountMenu={<AccessBar access={access} compact />} />
-      {hasReport && !loading && <AccessBar access={access}/>}
+    <main className={hasFullReport ? "report-page" : "scanner-home-page"}>
+      <BrandHeader landing={!hasFullReport} accountMenu={<AccessBar access={access} compact />} />
+      {hasFullReport && <AccessBar access={access}/>}
 
-      {singleUsed&&!loading?<div className="jm-container access-notice"><p>1회 진단권을 사용했습니다.</p>{plan==='single-pdf'&&<a href="/account">보관한 진단 결과 보기</a>}</div>:hasReport && !loading ? <details className="scanner-retry">
+      {singleUsed&&!loading?<div className="jm-container access-notice"><p>1회 진단권을 사용했습니다.</p>{plan==='single-pdf'&&<a href="/account">보관한 진단 결과 보기</a>}</div>:hasFullReport ? <details className="scanner-retry" open={loading || Boolean(error) || undefined}>
         <summary className="jm-container"><span>진단 결과가 준비됐습니다</span><strong>다른 URL 진단하기 <b aria-hidden="true">＋</b></strong></summary>
-        <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'} compact/>
-      </details> : <LandingHero onSubmit={handleAnalyze} loading={loading} allowed={allowed} checking={access.kind==='loading'} compact={loading}/>}
+        {entry}
+      </details> : entry}
       {access.kind==='error'&&<p role="alert" className="jm-container access-error">{access.message}</p>}
-      {singleUsed&&!hasReport&&!loading&&<div className="jm-container scanner-live-account"><LandingActivityPanel /></div>}
-
-      {/* Loading */}
-      {loading && (
-        <section className="jm-container pb-20">
-          <div className="jm-card p-10 text-center" role="status" aria-live="polite">
-            <div className="inline-flex h-12 w-12 items-center justify-center">
-              <div className="h-10 w-10 animate-spin rounded-full border-4 border-jm-light-gray border-t-jm-red" />
-            </div>
-            <p className="mt-4 text-xl font-black">사이트를 분석 중입니다</p>
-            <p className="mt-3 text-jm-gray text-sm">
-              페이지의 마케팅 요소를 수집하고 진단 리포트를 생성하고 있습니다.
-              <br />
-              사이트와 외부 서비스의 응답에 따라 시간이 달라질 수 있습니다.
-            </p>
-          </div>
-        </section>
-      )}
-
-      {/* Error */}
-      {error && !loading && (
-        <section className="jm-container pb-20">
-          <div className="jm-card p-8 text-center border-jm-red">
-            <p className="text-xl font-black text-jm-red">{hasReport?'새 진단을 완료하지 못했습니다':'분석을 완료하지 못했습니다'}</p>
-            <p className="mt-3 text-jm-gray text-sm">{error}</p>
-            {hasReport&&<p className="mt-3 font-semibold">이전에 완료한 진단 결과는 아래에 유지됩니다.</p>}
-          </div>
-        </section>
-      )}
+      {singleUsed&&!hasFullReport&&!restrictedReport&&!loading&&<div className="jm-container scanner-live-account"><LandingActivityPanel /></div>}
 
       {storeReport&&!loading&&<section className="jm-container pb-24"><SmartstoreReportView report={storeReport}/></section>}
       {restrictedReport&&!loading&&<section className="jm-container pb-24"><RestrictedWebsiteReportView report={restrictedReport}/></section>}

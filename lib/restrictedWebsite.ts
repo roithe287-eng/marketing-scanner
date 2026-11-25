@@ -3,14 +3,25 @@ import {z} from 'zod';
 const publicLink=z.string().max(2048).url().refine(value=>{try{const u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;}catch{return false;}});
 export const RestrictedWebsiteReportSchema=z.object({
   kind:z.literal('restricted_website'),version:z.literal(1),url:publicLink,observedAt:z.string().datetime(),
-  reason:z.enum(['forbidden','rate_limited','robots','not_acceptable']),httpStatus:z.number().int().optional(),
+  reason:z.enum(['forbidden','rate_limited','robots','not_acceptable','browser_check']),httpStatus:z.number().int().optional(),
   searchStatus:z.enum(['observed','empty','unavailable']),
   sources:z.array(z.object({url:publicLink,title:z.string().max(300),description:z.string().max(600)})).max(5),
   communityCandidate:z.boolean(),
 });
 export type RestrictedWebsiteReport=z.infer<typeof RestrictedWebsiteReportSchema>;
+export const COLLECTION_REASONS = {
+  forbidden: '사이트 서버의 접근 제한',
+  rate_limited: '사이트의 요청 빈도 제한',
+  robots: '사이트의 robots.txt 수집 규칙',
+  not_acceptable: '사이트가 수집 요청 형식을 허용하지 않는 응답',
+  browser_check: '사이트의 브라우저 확인 절차',
+} satisfies Record<RestrictedWebsiteReport['reason'], string>;
+
 export class WebsiteCollectionError extends Error{
-  constructor(public reason:RestrictedWebsiteReport['reason'],public httpStatus?:number){super(reason==='robots'?'robots.txt에서 공개 페이지 수집을 제한하고 있습니다.':`사이트가 수집 요청을 제한했습니다. HTTP ${httpStatus||403}`);this.name='WebsiteCollectionError';}
+  constructor(public reason:RestrictedWebsiteReport['reason'],public httpStatus?:number){
+    super(`원문 수집 제한 · ${COLLECTION_REASONS[reason]}${httpStatus ? ` (HTTP ${httpStatus})` : ''}`);
+    this.name='WebsiteCollectionError';
+  }
 }
 export const COMMUNITY_REVIEW_AREAS=[
   {title:'게시판 탐색·질문답변',detail:'주제별 게시판, 검색 결과, 글 상세와 관련 글 사이의 이동을 확인합니다.'},

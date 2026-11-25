@@ -1,6 +1,6 @@
 "use client";
 
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {GeoBaselineSchema, DiagnosisBaselineSchema, type DiagnosisBaseline, type GeoBaseline} from '@/lib/reportSchema';
 import {baselineQuestions, comparisonTime, parseReportReference} from '@/lib/geoComparison';
 import {retentionTime} from '@/lib/reportRetention';
@@ -8,9 +8,14 @@ import {isSmartstoreUrl,parseSmartstoreUrl,storePlatformLabel,SMARTSTORE_NOTICE}
 import {requestJson} from '@/lib/client/request';
 import {ReadingToggle} from './ReadingDisclosure';
 
-type Props = {onSubmit:(url:string, geoQuestions?:string[], baselineId?:string)=>void;loading:boolean};
-export default function UrlForm({onSubmit,loading}:Props) {
-  const [url,setUrl]=useState('');
+type Props = {
+  onSubmit:(url:string, geoQuestions?:string[], baselineId?:string)=>void;
+  loading:boolean;
+  submittedUrl?:string;
+  feedback?:ReactNode;
+};
+export default function UrlForm({onSubmit,loading,submittedUrl,feedback}:Props) {
+  const [url,setUrl]=useState(submittedUrl ?? '');
   const smartstore=isSmartstoreUrl(url);
   const [questions,setQuestions]=useState('');
   const [reference,setReference]=useState('');
@@ -50,6 +55,7 @@ export default function UrlForm({onSubmit,loading}:Props) {
       <input id="scanner-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="예: https://example.com" aria-label="분석할 웹사이트 URL" className="scanner-url-input" required disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" enterKeyHint="go" autoComplete="url" autoCapitalize="none" spellCheck={false} aria-describedby={smartstore?'scanner-url-help smartstore-url-notice':'scanner-url-help'}/>
       <button type="submit" disabled={loading||baselineLoading} className={`jm-button scanner-submit${smartstore?' scanner-submit-store':''}`}>{loading?'분석 중...':smartstore?'스토어 제한 분석 시작':baseline?'같은 URL로 재진단·비교':'진단 시작'}<span aria-hidden="true">→</span></button>
     </div>
+    {url.trim() === submittedUrl && feedback}
     <p id="scanner-url-help" className="scanner-url-help">홈페이지·서비스 소개·광고 랜딩·스마트스토어·브랜드스토어 URL을 입력해 주세요.</p>
     {smartstore&&<aside id="smartstore-url-notice" className="smartstore-notice" role="status"><strong><span aria-hidden="true">⚠️ </span>{storePlatformLabel(url)} · 콘텐츠 분석 대부분 제한</strong><p>{SMARTSTORE_NOTICE}</p><p>주소 입력 예: {storePlatformLabel(url)==='브랜드스토어'?'brand.naver.com/dongwon':'smartstore.naver.com/wodkq'} · 상품 주소도 분석 범위는 동일하게 제한됩니다.</p></aside>}
     {!smartstore&&<details className="scanner-advanced">

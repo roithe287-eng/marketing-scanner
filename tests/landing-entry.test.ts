@@ -4,6 +4,7 @@ import React from 'react';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {load} from 'cheerio';
 import LandingHero from '../components/LandingHero';
+import ScanFeedback from '../components/ScanFeedback';
 import {firstLandingCard, landingCards, landingCheckWindow} from '../lib/landingActivity';
 import {publicLandingReviews} from '../lib/saas/landingActivity';
 
@@ -53,6 +54,38 @@ test('retry entry retains the real form without duplicating the marketing page',
   assert.equal($('.scanner-gate-details, .scanner-entry-links, .scanner-gate-art, h1').length,0);
   assert.equal($('#scanner-heading').text(),'다른 웹사이트 진단하기');
   assert.equal($('#scanner-live-title').length,0);
+});
+
+test('progress and restricted-collection notices appear directly below the URL row', () => {
+  const url = 'https://studio.example/';
+  const feedbackProps = {loading: false, error: null, restrictedReport: null, hasPreviousResult: false};
+  const pending = render({
+    allowed: true, loading: true, submittedUrl: url,
+    feedback: React.createElement(ScanFeedback, {...feedbackProps, loading: true}),
+  });
+  assert.match(pending('.scanner-url-row + [role="status"]').text(), /원문을 확인하고 있습니다/);
+
+  const restricted = render({
+    allowed: true, submittedUrl: url,
+    feedback: React.createElement(ScanFeedback, {
+      ...feedbackProps,
+      restrictedReport: {
+        kind: 'restricted_website', version: 1, url, observedAt: new Date().toISOString(),
+        reason: 'browser_check', httpStatus: 200, searchStatus: 'unavailable', sources: [], communityCandidate: false,
+      },
+    }),
+  });
+  const notice = restricted('.scanner-url-row + .scanner-scan-feedback');
+  assert.match(notice.find('[role="status"]').text(), /사이트의 브라우저 확인 절차/);
+  assert.equal(notice.find('a[href="#report-area"]').length, 1);
+  assert.equal(notice.find('a[href="#scanner-collection-guide"]').length, 1);
+  assert.equal(restricted('#scanner-url').val(), url);
+
+  const error = render({
+    allowed: true, compact: true, submittedUrl: url,
+    feedback: React.createElement(ScanFeedback, {...feedbackProps, error: '요청 시간을 초과했습니다.', hasPreviousResult: true}),
+  });
+  assert.match(error('.scanner-url-row + [role="alert"]').text(), /이전 진단 결과/);
 });
 
 test('the landing snapshot shows only the cumulative call and completion labels',()=>{

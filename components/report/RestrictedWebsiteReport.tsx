@@ -1,8 +1,8 @@
 import React from 'react';
-import {COMMUNITY_REVIEW_AREAS,type RestrictedWebsiteReport} from '@/lib/restrictedWebsite';
+import {COLLECTION_REASONS,COMMUNITY_REVIEW_AREAS,type RestrictedWebsiteReport} from '@/lib/restrictedWebsite';
 
 export default function RestrictedWebsiteReportView({report}:{report:RestrictedWebsiteReport}){
-  const reason=report.reason==='robots'?'사이트의 robots.txt 수집 규칙':report.reason==='rate_limited'?'사이트의 요청 빈도 제한':report.reason==='not_acceptable'?'사이트가 수집 요청 형식을 허용하지 않는 응답':'사이트 서버의 접근 제한';
+  const reason=COLLECTION_REASONS[report.reason];
   return <div id="report-area" className="space-y-6 pt-8" aria-label="원문 수집 제한 안내">
     <section className="jm-card p-6 md:p-10">
       <p className="report-eyebrow">COLLECTION STATUS</p>
@@ -27,9 +27,9 @@ export default function RestrictedWebsiteReportView({report}:{report:RestrictedW
       <p className="mt-2 text-sm leading-7 text-jm-gray">메인 검색 요약에서 커뮤니티·포털 성격을 확인했습니다. 아래는 원문을 읽을 수 있을 때 적용할 점검 기준이며, 현재 기능의 유무는 미확인입니다.</p>
       <div className="mt-6 grid gap-4 md:grid-cols-2">{COMMUNITY_REVIEW_AREAS.map((item,index)=><div key={item.title} className="rounded-xl border border-slate-200 p-5"><p className="text-xs font-bold text-jm-gray">0{index+1} · 미확인</p><h3 className="mt-2 font-bold">{item.title}</h3><p className="mt-3 text-sm leading-7 text-jm-gray">{item.detail}</p></div>)}</div>
     </section>}
-    <section className="jm-card p-6 md:p-10">
+    <section id="scanner-collection-guide" className="jm-card scroll-mt-8 p-6 md:p-10">
       <h2 className="text-xl font-black">전체 진단을 진행하려면</h2>
-      <p className="mt-3 text-sm leading-7 text-jm-gray">{report.reason==='rate_limited'?'사이트의 요청 제한이 해제된 후 다시 진단해 주세요.':'사이트 운영자가 공개 페이지에 대한 JinjjaScanner 수집을 허용해야 합니다. 사이트의 robots.txt와 방화벽 접근 정책을 확인한 뒤 같은 URL을 다시 진단해 주세요.'} 원문 접근이 가능하면 게시판·글 상세와 실제 관측 근거를 포함한 보고서를 생성합니다.</p>
+      <p className="mt-3 text-sm leading-7 text-jm-gray">{report.reason==='rate_limited'?'사이트의 요청 제한이 해제된 후 다시 진단해 주세요.':'사이트 운영자가 공개 페이지에 대한 JinjjaScanner 수집을 허용한 뒤 같은 URL을 다시 진단해 주세요. robots.txt와 호스팅 보안 설정을 함께 확인하면 됩니다.'} 원문 접근이 가능하면 페이지 본문과 확인한 근거를 포함한 보고서를 생성합니다.</p>
     </section>
   </div>;
 }
