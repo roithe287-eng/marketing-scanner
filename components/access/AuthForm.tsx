@@ -3,10 +3,13 @@ import { useEffect, useState } from "react";
 import {ACTIVITY_POLICY} from '@/lib/saas/activityTypes';
 export default function AuthForm({
   mode,
+  remoteOnly = false,
 }: {
   mode: "login" | "activate" | "setup" | "recover";
+  remoteOnly?: boolean;
 }) {
   const [invite, setInvite] = useState("");
+  const [startGrant, setStartGrant] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [recoverySent, setRecoverySent] = useState(false);
@@ -16,6 +19,8 @@ export default function AuthForm({
     function readInvite() {
       const token = window.location.hash.slice(1);
       if (!token) return;
+      const remoteGrant = mode === "recover" ? /^start-([\w-]{43})$/.exec(token)?.[1] ?? "" : "";
+      setStartGrant(remoteGrant);
       setInvite(/^[\w-]{43}$/.test(token) ? token : "");
       setError("");
       window.history.replaceState(window.history.state, "", window.location.pathname + window.location.search);
@@ -37,7 +42,7 @@ export default function AuthForm({
         throw new Error("비밀번호 확인이 일치하지 않습니다.");
       const payload = mode === "recover"
         ? requestingRecovery
-          ? { action: "request" }
+          ? { action: "request", ...(startGrant ? { startGrant } : {}) }
           : { action: "reset", token: invite, password: values.password }
         : {
             ...values,
@@ -89,8 +94,11 @@ export default function AuthForm({
       <form onSubmit={submit} className="access-form">
         {recoverySent ? (
           <p role="status" className="access-muted">
-            등록된 관리자 이메일로 링크를 보냈습니다. 15분 이내에 등록된 네트워크에서 열어 주세요.
+            등록된 관리자 이메일로 링크를 보냈습니다.
+            {startGrant ? " 메일에 표시된 만료 시각 전에 링크를 열어 주세요." : " 15분 이내에 등록된 네트워크에서 열어 주세요."}
           </p>
+        ) : remoteOnly && !startGrant ? (
+          <p className="access-muted">외부에서는 전달받은 복구 시작 링크나 관리자 이메일의 재설정 링크를 열어 주세요.</p>
         ) : (
           <button className="jm-button" disabled={busy}>
             {busy ? "보내는 중…" : "재설정 링크 보내기"}
