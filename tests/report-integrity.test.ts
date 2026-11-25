@@ -162,3 +162,12 @@ test('old benchmark and score-derived advertising estimates are withheld from do
     assert.ok(!text.includes('LEGACY_UNVERIFIED'));
     assert.ok(!text.includes('추정 낭비율'));
 });
+
+test('CPA and target budget use only the inputs their formulas require',()=>{
+    const missingSpend=calculateAdBudget({spend:'',conversions:'25',targetCpa:'8000'});
+    assert.deepEqual([missingSpend.cpa,missingSpend.targetSpend,missingSpend.difference],[null,200000,null]);
+    const badTarget=calculateAdBudget({spend:'100000',conversions:'25',targetCpa:'-1'});
+    assert.deepEqual([badTarget.cpa,badTarget.targetSpend,badTarget.difference],[4000,null,null]);
+    const zero=calculateAdBudget({spend:'0',conversions:'25',targetCpa:'8000'});
+    assert.deepEqual([zero.cpa,zero.targetSpend,zero.difference],[0,200000,-200000]);
+});

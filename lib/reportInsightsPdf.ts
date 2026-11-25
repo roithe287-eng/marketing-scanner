@@ -48,7 +48,7 @@ export function buildInsightsPdfPages(report:MarketingReport,measure:TextMeasure
   y=text(insightNotes.stages,48,y,694,12,gray)+26;}
   y=text('데이터 확인 범위',48,y,694,18,ink,700)+12;
   d.coverage.forEach((c,i)=>{const x=48+i*177;rect(x,y,163,136);text(c.label,x+12,y+12,139,13,ink,700);text(c.value,x+12,y+44,139,20,ink,700);text(c.state,x+12,y+83,139,12,gray);text(c.detail,x+12,y+108,139,10,gray);});y+=163;
-  const stats=[['통합 보완',`${d.tasks.length}개`],['고객 질문',d.obs?`${d.questions.length}개`:'미확인'],['출처 URL',`${d.sources.length}개`],['브랜드 답변 대조',d.reviewSummary.verified?`${d.reviews.length}건`:'미확인']];
+  const stats=[['통합 보완',`${d.tasks.length}개`],['고객 질문',d.obs?`${d.questions.length}개`:'미확인'],['출처 URL',d.reviewSummary.verified?`${d.sources.length}개`:'미확인'],['브랜드 답변 대조',d.reviewSummary.verified?`${d.reviews.length}건`:'미확인']];
   stats.forEach(([label,value],i)=>{const x=48+i*177;rect(x,y,163,90,'#f8fafc');text(label,x+12,y+12,139,12,gray);text(value,x+12,y+41,139,24,ink,700);});y+=110;
   text('보완 항목·관측 상태·출처를 함께 검토하세요. 브랜드 답변 대조는 오답 확정이 아닌 검토 제안입니다. 전체 원문과 실행 과제는 뒤의 상세 보고서에 포함됩니다.',48,y,694,12,gray);
   if(d.eligibleSources.length){

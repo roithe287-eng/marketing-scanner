@@ -84,3 +84,18 @@ test('a saved non-commerce report without a question plan gets a useful, truthfu
   assert.match($('#report-overview details').text(),/분석 기록이 없습니다/);
   assert.equal($('.report-hero-score').length,0);
 });
+
+test('one-page non-commerce brief reserves three question slots and keeps all eight questions in the detailed report',async t=>{
+  t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>noncommerceResponse(input));
+  const site=noncommerceCases.find(item=>!['mixed','unknown'].includes(item.kind))!;
+  const data=await extractWebsite(site.url);
+  const plan=buildAnswerContentPlan(data);
+  plan.questions=Array.from({length:8},(_,i)=>({...plan.questions[0],id:'q'+i,question:`고객의 ${i+1}번째 확인 질문입니다.`}));
+  const report=finalizeReportEvidence({...fixture,url:site.url,answerContentPlan:plan},data);
+  const summary=buildReportSummaryPage(report,measure),full=buildReportDocument(report).map(b=>b.text).join(' ');
+  const labels=summary.lines.filter(line=>/^질문 0[1-8]$/.test(line.text));
+  assert.deepEqual(labels.map(line=>line.text),['질문 01','질문 02','질문 03']);
+  assert.ok(labels.every(line=>line.y<514));
+  assert.ok(summary.lines.some(line=>line.text.includes('전체 8개')));
+  for(const question of plan.questions)assert.ok(full.includes(question.question));
+});

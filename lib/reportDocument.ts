@@ -10,7 +10,7 @@ import {buildOfficialSeoDocument} from './officialSeoDocument';
 import {buildSiteDiagnosticsDocument} from './siteDiagnosticsDocument';
 import {buildAnswerContentDocument} from './answerContentDocument';
 import {buildServiceStrategyDocument} from './serviceStrategyDocument';
-import {retentionTime} from './reportRetention';
+import {reportExpiry,retentionTime} from './reportRetention';
 import {activeCitationReport} from './activeCitation';
 import {keywordFrequencyScope,keywordDensityNote} from './keywordFrequencyPresentation';
 import {presentBenchmark} from './benchmarkPresentation';
@@ -47,9 +47,10 @@ Object.assign(values, {not_applicable:'해당 없음',body:'수집 본문',revie
 export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   report=reportForPresentation(activeCitationReport(report));
   const opening=nonCommerceOpening(report);
+  const expiry=reportExpiry(report);
   const blocks:ReportBlock[] = [
     {kind:'title',text:`${report.meta?.siteName || report.meta?.domain || '웹사이트'} 마케팅 진단 리포트`},
-    ...(report.sharedRetention?[{kind:'body' as const,text:`공유 페이지 열람 종료: ${retentionTime(report.sharedRetention.expiresAt)} · 다운로드한 파일은 자동 회수되지 않습니다.`}]:[]),
+    ...(expiry!==null?[{kind:'body' as const,text:`보고서 열람 종료: ${retentionTime(expiry)} · 다운로드한 파일은 자동 회수되지 않습니다.`}]:[]),
     {kind:'body',text:report.url,href:safeHttpUrl(report.url)||undefined},
     ...(!opening?[{kind:'body' as const,text:evidenceScoreText(report)}]:[]),
     {kind:'body',text:opening?.summary||report.oneLineSummary},
@@ -137,7 +138,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
       {kind:'body',text:`자사 출처 인용률: ${comparisonRate(comparison.beforeRate)} → ${comparisonRate(comparison.afterRate)} · 같은 ${comparison.matched}쌍`},
       {kind:'body',text:`브랜드 언급률: ${comparisonRate(comparison.beforeMention)} → ${comparisonRate(comparison.afterMention)} · 같은 ${comparison.mentionCount}쌍`},
       {kind:'body',text:`${comparison.matched}쌍 비교 · ${comparison.excluded}쌍 제외`});
-    if (comparison.matched) blocks.push({kind:'body',text:`새로 인용 ${comparison.gained}건 · 이번에 미확인 ${comparison.lost}건 · 인용 유지 ${comparison.kept}건`});
+    if (comparison.matched) blocks.push({kind:'body',text:comparison.outcomes.map(item=>`${item.label} ${item.count}쌍`).join(' · ')});
     for (const pair of comparison.pairs) {
       blocks.push({kind:'subheading',text:`OpenAI · ${pair.question}`},
         {kind:'body',text:pair.reason?`비교 제외 · ${comparisonReasons[pair.reason]}`:changeLabels[pair.change!]},

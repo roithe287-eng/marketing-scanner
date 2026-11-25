@@ -16,6 +16,12 @@ import {PAGE_EVIDENCE_METADATA_LIMITS} from './pageEvidence';
 /** Reapply candidate policy to saved reports without mutating their observations. */
 export function reportForPresentation(report:MarketingReport):MarketingReport {
   report=applyActionableGuides(reconcileStoredIndustry(report));
+  if(report.evidenceReview?.assessed===0){
+    const summary=report.oneLineSummary.replace(/^HTML 기본 항목 0개 중 0개 충족/,'HTML 기본 항목 판정 보류');
+    const description=report.finalCta.description.replace(/^수집한 HTML 기본 항목 0개 중 0개가 점검 기준을 충족했습니다\./,'HTML 기본 항목의 충족 여부를 판정할 근거가 부족합니다.');
+    if(summary!==report.oneLineSummary||description!==report.finalCta.description)
+      report={...report,oneLineSummary:summary,finalCta:{...report.finalCta,description}};
+  }
   const diagnostics=report.siteDiagnostics;
   if (diagnostics?.medicalAudit?.reviewedOn==='2026-11-04') report={...report,siteDiagnostics:{...diagnostics,medicalAudit:currentPlacePolicy(diagnostics.medicalAudit,!!buildHospitalPlaceReview(diagnostics))}};
   const page=report.pageEvidence;

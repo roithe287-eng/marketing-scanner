@@ -5,6 +5,7 @@ import { savePdfFile, type SavePicker } from '@/lib/savePdfFile';
 import type {PdfPhase, PdfMetrics} from '@/lib/saas/activityTypes';
 import type {PdfScope} from '@/lib/exportReportPdf';
 import type { MarketingReport } from '@/lib/reportSchema';
+import {requestJson,RequestError} from '@/lib/client/request';
 type Props={targetId?:string;report:MarketingReport;direct?:boolean;pending?:boolean;recordActivity?:boolean};
 export default function DownloadReportButton({report,direct=false,pending=false,recordActivity=true}:Props) {
   const [scope,setScope]=useState<PdfScope>('full');
@@ -23,11 +24,10 @@ export default function DownloadReportButton({report,direct=false,pending=false,
     // Retry the identical event ID; the server commits it at most once.
     for(let attempt=0;attempt<2;attempt++){
       try{
-        const r=await fetch('/api/activity',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:signal||AbortSignal.timeout(8000),keepalive:!signal});
-        const data=await r.json();
-        if(!r.ok){if(r.status>=500&&attempt===0)continue;throw Object.assign(new Error(data.message||'이용 권한을 확인하지 못했습니다.'),{noRetry:true});}
-        return data;
-      }catch(error){if(attempt||signal?.aborted||(error as {noRetry?:boolean}).noRetry)throw error;}
+        return await requestJson<{ticket?:string;showWatermark?:boolean}>('/api/activity',{
+          method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal,keepalive:!signal,
+        },8000);
+      }catch(error){if(attempt||signal?.aborted||(error instanceof RequestError&&error.status<500))throw error;}
     }
     throw Error('이용 기록을 전송하지 못했습니다.');
   }
@@ -61,9 +61,9 @@ export default function DownloadReportButton({report,direct=false,pending=false,
       // Account activity endpoints remain authenticated and are never a public gate.
       if(recordActivity){
         const permit=await event({action:'pdf_start',eventId:crypto.randomUUID(),scope,url:report.url,...(report.sharedRetention?.reportId?{reportId:report.sharedRetention.reportId}:{})},controller.signal);
+        if(typeof permit.ticket!=='string')throw new Error('PDF 이용 권한을 확인하지 못했습니다.');
         ticket=permit.ticket;
         showWatermark=permit.showWatermark!==false;
-        if(typeof ticket!=='string')throw new Error('PDF 이용 권한을 확인하지 못했습니다.');
       }
       const {exportReportPdf}=await import('@/lib/exportReportPdf');
       const result=await exportReportPdf(report,text=>{if(!controller.signal.aborted)setProgress(text);},controller.signal,scope,showWatermark);

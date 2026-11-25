@@ -118,3 +118,14 @@ test('developer verification uses the site purpose and marks unconfirmed operati
     assert.match(edits,/수집 HTML 선택자/u);
   }
 });
+
+test('contents and evidence links land at the individual headings on a shared detail page',()=>{
+  const pages=buildReadingPdfPages(['먼저 볼 근거','두 번째 근거'].map((title,i)=>({
+    id:'section-'+i,title,group:'진단 요약',blocks:[{kind:'body',text:'근거 문장 '+i,anchor:'source-'+i}],
+  })),measure);
+  assert.equal(pages.length,1);
+  const page=pages[0];
+  for(const [id,text] of [['section-0','먼저 볼 근거'],['source-0','근거 문장 0'],['section-1','두 번째 근거'],['source-1','근거 문장 1']]){
+    assert.equal(page.anchorOffsets?.[id],page.lines.find(line=>line.text===text)!.y);
+  }
+});

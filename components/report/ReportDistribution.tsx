@@ -13,16 +13,17 @@ type Props = {
   selection: string | null;
   onSelect: (id: string | null) => void;
   controls: string;
+  unit?: string;
 };
 
-export default function ReportDistribution({title, groups, selection, onSelect, controls}: Props) {
+export default function ReportDistribution({title, groups, selection, onSelect, controls, unit='개'}: Props) {
   const total = groups.reduce((sum, group) => sum + group.count, 0);
   if (!total) return null;
   const selected = groups.find(group => group.id === selection);
   return <figure className="report-distribution">
     <figcaption>
       <strong>{title}</strong>
-      <span role="status">{selected ? `${selected.label} ${selected.count}개 표시` : `전체 ${total}개`}</span>
+      <span role="status">{selected ? `${selected.label} ${selected.count}${unit} 표시` : `전체 ${total}${unit}`}</span>
       {selected && <button type="button" aria-controls={controls} onClick={() => onSelect(null)}>전체 보기</button>}
     </figcaption>
     <div className="report-distribution-track" aria-hidden="true">
@@ -35,7 +36,7 @@ export default function ReportDistribution({title, groups, selection, onSelect, 
         aria-pressed={group.id === selection} aria-controls={controls} disabled={group.count === 0}
         onClick={() => onSelect(group.id === selection ? null : group.id)}>
         <span className="report-distribution-label"><i aria-hidden="true"/>{group.label}</span>
-        <strong>{group.count}<small>개</small></strong>
+        <strong>{group.count}<small>{unit}</small></strong>
       </button>)}
     </div>
   </figure>;

@@ -94,3 +94,20 @@ test('PDFs separate content opportunities from evidence counts and omit unsuppor
   assert.equal(evidencePriorities(prioritized)[0].title,check.title);
   assert.equal(evidencePriorities({...prioritized,officialSeoAudit:{...prioritized.officialSeoAudit,targetUrl:'https://other.example'}}).some(c=>c.title===check.title),false);
 });
+
+test('a snapshot without verified observations distinguishes a pending score and missing sources from a measured zero',()=>{
+  const seed=finalizeReportEvidence(input,data);
+  const snapshot={...seed,sitePurpose:undefined,llmCitationTest:null,evidenceReview:{...seed.evidenceReview!,assessed:0,passed:0,unknown:6,score:null},
+    oneLineSummary:'HTML 기본 항목 0개 중 0개 충족 · 확인',finalCta:{...seed.finalCta,description:'수집한 HTML 기본 항목 0개 중 0개가 점검 기준을 충족했습니다. 추가 확인'}};
+  const brief=buildReportSummaryPage(snapshot,measure),visual=buildVisualPdfPages(snapshot,measure);
+  assert.ok(brief.lines.some(line=>line.text==='판정 보류'));
+  assert.ok(!brief.lines.some(line=>line.text.includes('0 / 0')));
+  assert.ok(!visual.some(page=>page.lines.some(line=>line.text==='GEO 한눈에 보기')));
+  const overview=visual.find(page=>page.lines.some(line=>line.text==='핵심 진단 한눈에 보기'))!;
+  const label=overview.lines.find(line=>line.text==='출처 URL')!;
+  const sourceCount=overview.lines.find(line=>line.x===label.x&&line.y>label.y);
+  assert.equal(sourceCount?.text,'미확인');
+  const detail=buildReportDocument(snapshot).map(b=>b.text).join(' ');
+  assert.ok(detail.includes('출처 수를 판정할 수 없습니다'));
+  assert.ok(!detail.includes('0개 중 0개'));
+});

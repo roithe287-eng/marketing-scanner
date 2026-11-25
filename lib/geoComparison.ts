@@ -10,7 +10,7 @@ export const comparisonReasons = {
 } as const;
 type Reason = keyof typeof comparisonReasons;
 export type GeoPair = {key:string;question:string;engine:Row['engine'];before?:Row;after?:Row;reason?:Reason;change?:'gained'|'lost'|'kept'|'absent'};
-export const changeLabels = {gained:'새로 인용',lost:'이번에 미확인',kept:'인용 유지',absent:'양쪽 모두 미인용'} as const;
+export const changeLabels = {gained:'새로 인용',kept:'인용 유지',lost:'이전만 인용',absent:'양쪽 모두 미인용'} as const;
 export function canonicalPage(value:string):string|null {
   try {const u=new URL(value);if (!/^https?:$/.test(u.protocol)||u.username||u.password) return null;u.hash='';return u.href;} catch {return null;}
 }
@@ -60,9 +60,12 @@ export function buildGeoComparison(report:MarketingReport) {
   const matched=pairs.filter(pair=>!pair.reason);
   const rate=(rows:GeoPair[],side:'before'|'after',key:'cited'|'brandMentioned')=>rows.length?Math.round(100*rows.filter(p=>p[side]?.[key]).length/rows.length):null;
   const mentions=matched.filter(pair=>typeof pair.before?.brandMentioned==='boolean'&&typeof pair.after?.brandMentioned==='boolean');
+  const counts={gained:0,kept:0,lost:0,absent:0};
+  for(const pair of matched)if(pair.change)counts[pair.change]++;
+  const outcomes=(Object.keys(counts) as (keyof typeof counts)[]).map(id=>({id,label:changeLabels[id],count:counts[id]}));
   return {baseline,current:after,pairs,matched:matched.length,excluded:pairs.length-matched.length,
     beforeRate:rate(matched,'before','cited'),afterRate:rate(matched,'after','cited'),mentionCount:mentions.length,
     beforeMention:rate(mentions,'before','brandMentioned'),afterMention:rate(mentions,'after','brandMentioned'),
-    gained:matched.filter(p=>p.change==='gained').length,lost:matched.filter(p=>p.change==='lost').length,kept:matched.filter(p=>p.change==='kept').length};
+    ...counts,outcomes};
 }
 export const comparisonRate = (value:number|null) => value===null?'비교 불가':`${value}%`;

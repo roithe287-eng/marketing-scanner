@@ -151,10 +151,12 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
     rect(X,titleEnd+12,W,1,C.line);y=titleEnd+30;
   }
   function ensure(height:number){if(y+height>BOTTOM)newPage();}
+  function anchorAt(id:string,top:number){
+    page.anchors!.push(id);
+    (page.anchorOffsets??={})[id]=top;
+  }
   function mark(block:ReadingBlock){
-    if(!block.anchor)return;
-    page.anchors!.push(block.anchor);
-    if(block.anchor.startsWith('developer-task-'))(page.anchorOffsets??={})[block.anchor]=y;
+    if(block.anchor)anchorAt(block.anchor,y);
   }
   function renderReferences(block:ReadingBlock){
     const refs=block.references!;const gap=8;let x=X,top=y;
@@ -256,12 +258,14 @@ export function buildReadingPdfPages(sections:ReadingSection[],measure:TextMeasu
       ?section.blocks.slice(0,3).reduce((sum,block)=>sum+bodyStartHeight(block),8)
       :section.title==='영역별 점수'?220:followingHeight(section.blocks,0);
     const opening=Math.max(200,lines(section.title,heading).length*heading.lineHeight+59+minContent);
-    if(!page||!sameGroup||y+opening>BOTTOM)newPage();
+    if(!page||!sameGroup||y+opening>BOTTOM){
+      newPage();anchorAt(section.id,82);
+    }
     else{
       y+=22;rect(X,y,W,1,C.line);y+=17;
+      anchorAt(section.id,y);
       y=text(section.title,X,y,W,heading)+20;
     }
-    page.anchors!.push(section.id);
     if(section.title==='영역별 점수'){
       const values=section.blocks.filter(b=>b.kind==='body').map(b=>({b,f:field(b)}));
       if(values.length===8&&values.every(({f})=>f&&/^\s*\d{1,3}\s*$/.test(f.value)&&Number(f.value)<=100)){

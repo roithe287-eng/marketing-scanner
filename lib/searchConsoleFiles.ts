@@ -1,6 +1,9 @@
 export const maxSearchFileBytes=1_000_000;
-export type QueryRow={query:string;impressions:number;clicks:number;position:number};
-export type SearchConsoleSample={rows:QueryRow[];page:string;device:string;scopeKey:string;periodLabel:string};
+export type DateRange={start:string;end:string};
+export type QueryRow={query:string;impressions:number;clicks:number;position:number|null};
+export type SearchConsoleSample={
+  rows:QueryRow[];excludedRows:number;page:string;device:string;scopeKey:string;periodLabel:string;fileRange:DateRange|null;
+};
 
 export function comparableUrl(value:string):string{
   try{const u=new URL(value);if(!/^https?:$/.test(u.protocol)||u.username||u.password)return '';u.hash='';return u.href;}
@@ -34,11 +37,26 @@ export function readCsv(text:string):string[][]{
   return rows;
 }
 const queryNames=['topqueries','queries','query','인기검색어','상위검색어','검색어','인기검색검색어'];
-const count=(value:string|undefined)=>{
-  const clean=value?.trim().replace(/,/g,'')||'';
-  if(!/^\d+(?:\.\d+)?$/.test(clean))return NaN;
-  const n=Number(clean);return Number.isFinite(n)?n:NaN;
-};
+function count(value=''){
+  const raw=value.trim();
+  if(!/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.0+)?$/.test(raw))return NaN;
+  return Number(raw.replace(/,/g,''));
+}
+function day(value:string){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value))return NaN;
+  const time=Date.parse(value+'T00:00:00Z');
+  return Number.isFinite(time)&&new Date(time).toISOString().startsWith(value+'T')?time:NaN;
+}
+function rangeFromFilter(label:string):DateRange|null{
+  const normalized=label.normalize('NFKC').replace(/(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/g,'$1-$2-$3')
+    .replace(/(\d{4})[./]\s*(\d{1,2})[./]\s*(\d{1,2})\.?/g,'$1-$2-$3').trim();
+  const endpoints=normalized.match(/^(\d{4}-\d{1,2}-\d{1,2})(?:\s*(?:~|–|—|-|to|부터)\s*(\d{4}-\d{1,2}-\d{1,2})(?:\s*까지)?)?$/i);
+  if(!endpoints)return null;
+  const iso=(raw:string)=>raw.split('-').map(part=>part.padStart(2,'0')).join('-');
+  const start=iso(endpoints[1]),end=iso(endpoints[2]||endpoints[1]);
+  if(!(day(end)>=day(start)))throw new Error('필터 CSV의 날짜 범위를 확인해 주세요.');
+  return {start,end};
+}
 export function parseSearchConsoleFiles(files:string[],target:string):SearchConsoleSample{
   const tables=files.map(readCsv);
   const queries=tables.find(rows=>queryNames.includes(key(rows[0]?.[0]||'')));
@@ -55,27 +73,40 @@ export function parseSearchConsoleFiles(files:string[],target:string):SearchCons
   const clicksAt=headers.findIndex(h=>['clicks','클릭수','클릭'].includes(h));
   const impressionsAt=headers.findIndex(h=>['impressions','노출수','노출'].includes(h));
   const positionAt=headers.findIndex(h=>['position','게재순위','평균게재순위','순위'].includes(h));
-  if(clicksAt<0||impressionsAt<0||positionAt<0)throw new Error('검색어 CSV에서 노출·클릭·평균 게재순위 열을 찾지 못했습니다.');
+  if(clicksAt<0||impressionsAt<0)throw new Error('검색어 CSV에서 노출·클릭 열을 찾지 못했습니다.');
   const found=new Map<string,QueryRow>();
-  for(const fields of queries.slice(1,20001)){
-    const query=fields[0]?.trim().slice(0,190);
-    const impressions=count(fields[impressionsAt]),clicks=count(fields[clicksAt]),position=count(fields[positionAt]);
-    if(!query||!Number.isInteger(impressions)||!Number.isInteger(clicks)||clicks>impressions||!Number.isFinite(position))continue;
+  let excludedRows=0,totalImpressions=0;
+  for(const fields of queries.slice(1)){
+    const query=fields[0]?.trim();
+    const impressions=count(fields[impressionsAt]),clicks=count(fields[clicksAt]);
+    if(!query||!Number.isSafeInteger(impressions)||!Number.isSafeInteger(clicks)||clicks>impressions){excludedRows++;continue;}
     if(found.has(query))throw new Error('같은 검색어가 여러 번 나옵니다. 서치콘솔 검색어 표를 그대로 내보내 주세요.');
-    found.set(query,{query,impressions,clicks,position});
+    totalImpressions+=impressions;
+    if(!Number.isSafeInteger(totalImpressions))throw new Error('노출 합계를 정확하게 계산할 수 있는 범위를 초과했습니다.');
+    const rawRank=fields[positionAt]?.trim()||'';
+    const rank=/^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(rawRank)?Number(rawRank.replace(/,/g,''))
+      :/^\d+,\d{1,2}$/.test(rawRank)?Number(rawRank.replace(',','.')):NaN;
+    found.set(query,{query,impressions,clicks,position:Number.isFinite(rank)&&rank>0?rank:null});
   }
   if(!found.size)throw new Error('읽을 수 있는 검색어 행이 없습니다.');
   const rawDevice=key(filter('device','기기','기기 유형'));
   const device=({'mobile':'모바일','모바일':'모바일','휴대전화':'모바일','desktop':'데스크톱','데스크톱':'데스크톱','tablet':'태블릿','태블릿':'태블릿'} as Record<string,string>)[rawDevice]||(rawDevice||'전체 기기');
   const ignoredFilters=['page','페이지','date','날짜','기간','device','기기','기기유형','searchtype','검색유형'];
   const scopeKey=JSON.stringify([page,device,...[...props].filter(([k])=>!ignoredFilters.includes(k)).sort(([a],[b])=>a.localeCompare(b))]);
-  return {rows:[...found.values()],page,device,scopeKey,periodLabel:filter('date','날짜','기간')};
+  const periodLabel=filter('date','날짜','기간');
+  return {rows:[...found.values()],excludedRows,page,device,scopeKey,periodLabel,fileRange:rangeFromFilter(periodLabel)};
 }
-export type DateRange={start:string;end:string};
-const day=(v:string)=>/^\d{4}-\d{2}-\d{2}$/.test(v)?Date.parse(v+'T00:00:00Z'):NaN;
-export function comparablePeriods(current:DateRange,previous:DateRange,scope:string,previousScope:string){
+export function periodComparisonIssue(current:DateRange,previous:DateRange,scope:string,previousScope:string){
+  if(scope!==previousScope)return '두 파일의 페이지·검색 유형·기기·국가 등 필터를 맞춰 주세요.';
+  if(!current.start||!current.end||!previous.start||!previous.end)return '두 파일의 실제 시작일과 종료일을 확인해 입력해 주세요.';
   const a=day(current.start),b=day(current.end),c=day(previous.start),d=day(previous.end);
-  return scope===previousScope&&b>=a&&d>=c&&b-a===d-c&&d<a;
+  if(!(b>=a&&d>=c))return '각 기간의 시작일과 종료일을 확인해 주세요.';
+  if(d>=a)return '이전 기간은 최근 기간 시작일 전에 끝나야 합니다.';
+  if(b-a!==d-c)return '두 기간의 일수를 동일하게 맞춰 주세요.';
+  return null;
+}
+export function comparablePeriods(current:DateRange,previous:DateRange,scope:string,previousScope:string){
+  return periodComparisonIssue(current,previous,scope,previousScope)===null;
 }
 export function sampleTotals(sample:SearchConsoleSample){
   const counts=sample.rows.reduce((sum,row)=>({clicks:sum.clicks+row.clicks,impressions:sum.impressions+row.impressions}),{clicks:0,impressions:0});

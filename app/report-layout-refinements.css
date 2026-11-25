@@ -196,10 +196,16 @@
 .search-evidence-dates { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .search-evidence-dates label { display: grid; flex: 1 1 110px; min-width: 0; gap: 3px; font-size: .85rem; }
 .search-evidence-dates input { max-width: 100%; min-width: 0; border: 1px solid var(--jm-border,#dbe5f1); border-radius: 6px; padding: 5px; background: #fff; }
+.search-evidence-file-period { display: grid; justify-items: center; gap: 3px; margin-top: 8px; padding: 8px; border-radius: 8px; background: #f3f6fa; color: #415068; font-size: .8rem; text-align: center; }
+.search-evidence-file-period strong { color: #223454; font-variant-numeric: tabular-nums; }
 .search-meter { background: #e8eef8; height: 7px; border-radius: 10px; overflow: hidden; }
 .search-meter i { display: block; height: 100%; background: var(--scanner-cobalt,#344cca); }
 .search-evidence-card [data-evidence-state="mismatch"] { color: #a8323c; }
 .search-evidence-comparison-row { display: grid; gap: 4px; padding-top: 10px; }
+.search-evidence-comparison-row h5 { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; font-weight: 700; }
+.search-evidence-comparison-row h5 span { font-size: .83rem; color: #334d74; font-variant-numeric: tabular-nums; }
+.search-evidence-comparison-row b { text-align: end; font-variant-numeric: tabular-nums; }
+.search-meter[data-available="false"] { visibility: hidden; }
 .search-evidence-comparison-row > div { display: grid; grid-template-columns: auto minmax(0,1fr) minmax(50px,auto); align-items: center; gap: 8px; font-size: .88rem; }
 .search-evidence-comparison-row > div:nth-child(2) i { background: #657a99; }
 @media(max-width: 620px) {

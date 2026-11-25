@@ -32,9 +32,10 @@ export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer)
   }
   function ensure(height:number,title:string,note:string) {if(y+height>PDF_PAGE.contentBottom)newPage(title,note);}
   const ready=readinessItems(report.discoverability),obs=buildObservationVisual(report.llmCitationTest);
-  if (ready.length || obs) {
+  const showReadiness=ready.length>0&&!report.evidenceReview;
+  if (showReadiness || obs) {
     newPage('GEO 한눈에 보기','페이지 준비도와 AI 답변 관측을 구분해 읽습니다. 모든 원문·출처·개선안은 뒤의 상세 보고서에 포함됩니다.');
-    if(ready.length&&!report.evidenceReview) {
+    if(showReadiness) {
       y=text(`페이지 준비도  ${report.discoverability!.overallScore} / 100`,48,y,694,17,ink,700)+12;
       for(let i=0;i<ready.length;i++) {
         const item=ready[i],x=48+(i%4)*177,top=y+Math.floor(i/4)*152;
@@ -49,7 +50,9 @@ export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer)
       y=text('AI 답변 관측',48,y,694,17,ink,700)+12;
       const cards=[{label:'브랜드 미포함 질문 인용',rate:obs.unbrandedRate,n:obs.unbrandedCount,d:obs.unbrandedTotal,color:blue},{label:'브랜드 포함 질문 인용',rate:obs.brandedRate,n:obs.brandedCount,d:obs.brandedTotal,color:green}];
       cards.forEach((c,i)=>{const x=48+i*355;rect(x,y,339,132,'#f3f5f8');page.shapes.push({kind:'ring',x:x+16,y:y+18,size:94,value:c.rate,color:c.color});const caption=c.rate===null?'—':`${c.rate}%`;text(caption,x+63-measure(caption,style(21,ink,700))/2,y+48,100,21,ink,700);text(c.label,x+126,y+25,195,15,ink,700);text(c.d?`${c.d}건 중 ${c.n}건`:'판정 가능한 관측 없음',x+126,y+61,195,12,gray);});
-      y+=150;y=text(`전체 질문 인용 ${obs.sourceCount}/${obs.sourceTotal}건 · 브랜드 언급 ${obs.mentionCount}/${obs.mentionTotal}건 · 유형 미분류 ${obs.unclassifiedTotal}건`,48,y,694,12,gray)+16;
+      const citations=obs.sourceTotal?`${obs.sourceCount}/${obs.sourceTotal}건`:'판정 가능한 관측 없음';
+      const mentions=obs.mentionTotal?`${obs.mentionCount}/${obs.mentionTotal}건`:'판정 가능한 관측 없음';
+      y+=150;y=text(`전체 질문 인용 ${citations} · 브랜드 언급 ${mentions} · 유형 미분류 ${obs.unclassifiedTotal}건`,48,y,694,12,gray)+16;
       for(const d of obs.distributions) {
         y=text(`${engineNames[d.engine]}  ·  ${d.total}건`,48,y,694,13,ink,700)+7;
         rect(48,y,694,13,'#e5e9ef',4);let x=48;
@@ -81,8 +84,7 @@ export function buildVisualPdfPages(report:MarketingReport,measure:TextMeasurer)
     const total=comparison.matched+comparison.excluded;
     y=text(`${comparison.matched}쌍 비교 · ${comparison.excluded}쌍 제외`,48,y,694,18,ink,700)+16;
     rect(48,y,694,18,'#e5e9ef',5);if(total) {const w=694*comparison.matched/total;if(w)rect(48,y,w,18,green,0);if(w<694)rect(48+w,y,694-w,18,'#e0b764',0);}y+=42;
-    const changes=[['새로 인용',comparison.gained],['이번에 미확인',comparison.lost],['인용 유지',comparison.kept],['양쪽 미인용',comparison.matched-comparison.gained-comparison.lost-comparison.kept]] as const;
-    if(comparison.matched)changes.forEach(([label,count],i)=>{const x=48+i*177;rect(x,y,163,90,'#f3f5f8');text(label,x+12,y+13,139,12,gray);text(`${count}건`,x+12,y+39,139,23,ink,700);});
+    if(comparison.matched)comparison.outcomes.forEach(({label,count},i)=>{const x=48+i*177;rect(x,y,163,90,'#f3f5f8');text(label,x+12,y+13,139,12,gray);text(`${count}쌍`,x+12,y+39,139,23,ink,700);});
     else text('비교 가능한 관측이 없어 변화 수치를 표시하지 않습니다.',48,y,694,14,gray);
     y+=115;text('각 질문의 제외 이유와 이전·현재 답변·출처는 상세 보고서에서 확인할 수 있습니다.',48,y,694,12,gray);
   }

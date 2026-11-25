@@ -6,6 +6,7 @@ import {fixture} from './fixtures/report';
 import {MarketingReportSchema,type MarketingReport,type LlmCitationQuestionResult as Row} from '../lib/reportSchema';
 import {baselineQuestions,buildGeoComparison,parseReportReference} from '../lib/geoComparison';
 import {buildReportDocument} from '../lib/reportDocument';
+import {reportExpiry,retentionTime} from '../lib/reportRetention';
 import GeoComparisonPanel from '../components/GeoComparisonPanel';
 import {analyzeCitation} from '../lib/analyzeCitation';
 import type {ExtractedWebsiteData} from '../lib/extractWebsite';
@@ -108,4 +109,30 @@ test('analysis rejects changed baseline URL, changed questions and expired IDs b
     missing=true;assert.equal((await submit({url:fixture.url,baselineId:'abc123'})).status,422);
     assert.equal(providerCalls,0);
   } finally {globalThis.fetch=original;for (const k of keys) if(saved[k]===undefined) delete process.env[k];else process.env[k]=saved[k];}
+});
+
+test('four citation outcomes account for every comparable pair in the web view and PDF',()=>{
+  const previous=[false,true,true,false,true],current=[true,true,false,false,false];
+  const before=previous.map((cited,i)=>row('상담 질문 번호 '+i,{cited}));
+  const after=current.map((cited,i)=>row(before[i].question,{cited,status:i===4?'timeout':'ok',measuredAt:'2026-10-02'}));
+  const snapshot=report(before,after),comparison=buildGeoComparison(snapshot)!;
+  assert.deepEqual(comparison.outcomes.map(item=>item.count),[1,1,1,1]);
+  assert.equal(comparison.matched,4);assert.equal(comparison.excluded,1);
+  const html=renderToStaticMarkup(React.createElement(GeoComparisonPanel,{report:snapshot}));
+  const document=buildReportDocument(snapshot).map(b=>b.text).join(' ');
+  for(const {label} of comparison.outcomes){assert.ok(html.includes(label));assert.ok(document.includes(label+' 1쌍'));}
+  assert.ok(html.includes('전체 5쌍'));assert.ok(!html.includes('이번에 미확인'));
+});
+
+test('the displayed report deadline follows its earliest baseline even before a new share is saved',()=>{
+  const snapshot=report();
+  const early=Date.UTC(2026,10,26,3),later=early+86400000;
+  snapshot.geoBaseline!.expiresAt=early;
+  assert.equal(reportExpiry(snapshot),early);
+  snapshot.sharedRetention={reportId:'new123',createdAt:early-86400000,expiresAt:later};
+  assert.equal(reportExpiry(snapshot),early);
+  const note=buildReportDocument(snapshot).find(block=>block.text.startsWith('보고서 열람 종료'));
+  assert.ok(note?.text.includes(retentionTime(early)));
+  assert.ok(!note?.text.includes(retentionTime(later)));
+  assert.equal(reportExpiry({}),null);
 });

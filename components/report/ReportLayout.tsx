@@ -8,6 +8,7 @@ import ReportJumpLink from './ReportJumpLink';
 import SiteContentOverview from './SiteContentOverview';
 import ReportHeader from './ReportHeader';
 import ReportRetentionNotice from './ReportRetentionNotice';
+import {reportExpiry} from '@/lib/reportRetention';
 import ReportEvidenceGuide from './ReportEvidenceGuide';
 import ReportCoverageWarnings from './ReportCoverageWarnings';
 import WebsitePurposePanel from './WebsitePurposePanel';
@@ -67,11 +68,11 @@ import GrowthKpiPanel from './GrowthKpiPanel';
 import {REPORT_CHAPTERS as chapters,ReportChapter as Chapter} from './ReportChapter';
 export default function ReportLayout({report:storedReport,actions,clinicWebAllowed=true,searchEvidenceAllowed=false,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;clinicWebAllowed?:boolean;searchEvidenceAllowed?:boolean;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
   const report=useMemo(()=>reportForPresentation(storedReport),[storedReport]);
-  const expiry=Math.min(...[report.sharedRetention?.expiresAt,report.diagnosisBaseline?.expiresAt,report.geoBaseline?.expiresAt].filter((v):v is number=>typeof v==='number'));
+  const expiry=reportExpiry(report);
   const [expired,setExpired]=useState(false);
   useEffect(()=>{
-    const check=()=>setExpired(Number.isFinite(expiry)&&Date.now()>=expiry);
-    check();if(!Number.isFinite(expiry))return;
+    const check=()=>setExpired(expiry!==null&&Date.now()>=expiry);
+    check();if(expiry===null)return;
     const timer=setTimeout(check,Math.max(0,expiry-Date.now()));
     window.addEventListener('pageshow',check);document.addEventListener('visibilitychange',check);
     return()=>{clearTimeout(timer);window.removeEventListener('pageshow',check);document.removeEventListener('visibilitychange',check);};

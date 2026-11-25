@@ -1,5 +1,6 @@
 import {reportForPresentation} from './reportPresentation';
 import {nonCommerceOpening} from './reportOpening';
+import {safeHttpUrl} from './citationMeasurement';
 import {evidencePriorities} from './evidenceReview';
 import {REPORT_NOTICE_SUMMARY,REPORT_NOTICE_URL} from './reportNotice';
 import {diagnosisScores,radarPoint} from './diagnosisVisuals';
@@ -13,7 +14,7 @@ export function buildReportSummaryPage(report:MarketingReport,measure:TextMeasur
   report=reportForPresentation(report);
   const opening=nonCommerceOpening(report);
   const page:VisualPdfPage={lines:[],shapes:[]},ink='#202329',muted='#606875',red='#b9141a';
-  function text(value:string,x:number,y:number,width:number,size=12,weight=400,color=ink,maxLines=2) {
+  function text(value:string,x:number,y:number,width:number,size=12,weight=400,color=ink,maxLines=2,href?:string) {
     const style:PdfTextStyle={size,weight,color,lineHeight:size*1.5};
     const lines=wrapPdfText(value,style,measure,width);
     lines.slice(0,maxLines).forEach((line,i)=>{
@@ -23,41 +24,42 @@ export function buildReportSummaryPage(report:MarketingReport,measure:TextMeasur
         while(parts.length&&measure(parts.join('')+'…',style)>width)parts.pop();
         content=parts.join('')+'…';
       }
-      page.lines.push({...style,text:content,x,y:y+i*style.lineHeight,width:measure(content,style)});
+      page.lines.push({...style,text:content,x,y:y+i*style.lineHeight,width:measure(content,style),href});
     });
   }
   function rect(x:number,y:number,width:number,height:number,color='#f5f6f8',radius=10){page.shapes.push({kind:'rect',x,y,width,height,color,radius});}
   rect(48,48,4,35,red,2);
   text('MARKETING SCANNER · ONE-PAGE BRIEF',64,46,510,10,700,muted,1);
   text('마케팅 진단 · 한 장 요약',64,65,510,25,700,ink,1);
-  text(report.meta?.siteName||report.meta?.domain||report.url,48,110,508,15,700,ink,1);
-  text(report.url,48,138,508,10,400,muted,1);
+  const pageUrl=safeHttpUrl(report.url);
+  text(report.meta?.siteName||report.meta?.domain||(pageUrl?new URL(pageUrl).hostname:'진단 페이지'),48,110,508,15,700,ink,1);
+  text(report.url,48,138,508,10,400,muted,1,pageUrl??undefined);
   if(report.sitePurpose)text(`${report.sitePurpose.sector?.label||report.sitePurpose.label} · 다음 행동: ${report.sitePurpose.goal.label}`,48,156,508,10,600,muted,1);
   if(opening){
-    const blue='#174ca5',teal='#126477';
+    const blue='#174ca5',teal='#126477',questions=opening.questions.slice(0,3);
     rect(590,48,152,110,'#f3f6fc');text('콘텐츠 개선 방향',606,60,120,11,700,teal,1);
-    text(opening.questions.length?`${opening.questions.length}개 고객 질문`:'목적별 가이드',606,84,120,18,700,teal,2);
-    text('페이지 주제 기반',606,133,120,10,400,muted,1);
+    text(questions.length?`대표 질문 ${questions.length}개`:'목적별 가이드',606,84,120,18,700,teal,2);
+    text(questions.length?`전체 ${opening.questions.length}개 · 상세 PDF`:'페이지 주제 기반',606,133,120,10,400,muted,1);
     text('01  주요 주제와 다음 행동',48,178,342,15,700,ink,1);
     text('02  고객이 먼저 궁금해할 질문',422,178,320,15,700,ink,1);
     rect(48,211,342,304,'#f8fafc');rect(48,211,3,304,blue,0);text('대표 키워드·주제',68,232,302,12,700,teal,1);
     text(opening.topic,68,263,302,26,800,blue,3);
     text(`이어질 행동 · ${opening.goal}`,68,391,302,14,700,teal,2);
     text('키워드 → 고객 질문 → 홈페이지 답변',68,463,302,11,600,muted,2);
-    const questions=opening.questions;
     if(questions.length)questions.forEach((q,i)=>{const y=211+i*104;rect(422,y,320,94);text(`질문 0${i+1}`,438,y+9,288,11,700,teal,1);text(q.question,438,y+31,288,13,700,ink,3);});
     else {rect(422,211,320,180);text('고객의 정보 탐색에서 시작하세요',438,230,288,14,700,ink,2);text('대상·제공 범위·이용 방법을 질문으로 정리하고, 실제 원문과 연결해 보세요.',438,282,288,13,400,muted,4);}
     text('03  질문에서 실행으로 · 콘텐츠 보강 방향',48,565,694,16,700,ink,1);
     const cards=questions.length?questions.map(q=>({title:q.question,detail:q.placement,copy:q.draft||q.template,label:q.draft?'원문 기반 답변':'확인 후 채울 작성 틀'})):report.sitePurpose!.checks.filter(c=>c.status!=='not_applicable').slice(0,3).map(c=>({title:c.label,detail:c.guide,copy:'현재 원문과 실제 운영 조건을 연결해 문답을 구성하세요.',label:'작성 방향'}));
     cards.slice(0,3).forEach((c,i)=>{const y=602+i*124;rect(48,y,694,116);text(c.title,64,y+9,662,13,700,ink,1);text(`위치·방향  ${c.detail}`,64,y+33,662,11,400,muted,2);text(`${c.label}  ${c.copy}`,64,y+70,662,11,600,blue,2);});
     text(REPORT_NOTICE_SUMMARY,48,982,694,9.5,400,muted,3);
-    text('콘텐츠 기획 요약 · 관측값·측정 범위는 상세 PDF / '+REPORT_NOTICE_URL,48,1026,694,8,400,muted,1);
-    page.lines[page.lines.length-1].href=REPORT_NOTICE_URL;
+    text('콘텐츠 기획 요약 · 관측값·측정 범위는 상세 PDF / '+REPORT_NOTICE_URL,48,1026,694,8,400,muted,1,REPORT_NOTICE_URL);
     return page;
   }
-  rect(590,48,152,110,'#fff4f4');text(report.evidenceReview?'HTML 기본 항목 충족':'AI 참고 평가',606,60,120,11,700,muted,1);
-  text(report.evidenceReview?`${report.evidenceReview.passed} / ${report.evidenceReview.assessed}개`:`${report.overallScore} / 100`,606,80,120,22,700,red,1);
-  text(report.evidenceReview?'산식·원문 근거 공개':'세부 배점 미검증',606,133,120,10,400,muted,1);
+  const review=report.evidenceReview,held=review?.assessed===0;
+  rect(590,48,152,110,held?'#f3f6fa':'#fff4f4');text(review?'HTML 기본 항목':'AI 참고 평가',606,60,120,11,700,muted,1);
+  const scoreLabel=review?(held?'판정 보류':`${review.passed} / ${review.assessed}개`):`${report.overallScore} / 100`;
+  text(scoreLabel,606,80,120,22,700,held?muted:red,1);
+  text(review?(held?`확인 필요 ${review.unknown}개`:'충족 / 판정 항목'):'세부 배점 미검증',606,133,120,10,400,muted,1);
   text('01  8개 영역 진단',48,178,342,15,700,ink,1);
   text('02  먼저 검토할 3개 영역',422,178,320,15,700,ink,1);
   const scores=diagnosisScores(report.diagnosis),ordered=[...scores].sort((a,b)=>a.score-b.score);
@@ -83,7 +85,6 @@ export function buildReportSummaryPage(report:MarketingReport,measure:TextMeasur
   chosen.forEach((p,i)=>{const y=602+i*124;rect(48,y,694,116);text(`${p.item.keyword} · ${p.kind}`,64,y+10,662,13,700,ink,1);text(`방향  ${p.action}`,64,y+34,662,11,400,muted,2);text(`작성 틀  ${p.template}`,64,y+71,662,11,600,red,2);});
   if(!chosen.length){rect(48,602,694,116);text('저장된 반복 표현 제안이 없습니다.',64,620,662,14,700);text('단어 빈도 데이터가 수집된 보고서에서 대표 TO-BE를 표시합니다.',64,654,662,12,400,muted);}
   text(REPORT_NOTICE_SUMMARY,48,982,694,9.5,400,muted,3);
-  text('대표 항목 요약 · 전체 근거는 상세 PDF / 진단 이용 안내: '+REPORT_NOTICE_URL,48,1026,694,8,400,muted,1);
-  page.lines[page.lines.length-1].href=REPORT_NOTICE_URL;
+  text('대표 항목 요약 · 전체 근거는 상세 PDF / 진단 이용 안내: '+REPORT_NOTICE_URL,48,1026,694,8,400,muted,1,REPORT_NOTICE_URL);
   return page;
 }

@@ -76,7 +76,8 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
     let domain='website';
     try {domain=new URL(report.url).hostname.replace(/[^a-zA-Z0-9-]/g,'_');} catch { /* Older snapshots may contain a bare domain. */ }
     signal?.throwIfAborted();
-    return {pages:pages.length,blob:pdf.output('blob'),filename:`마케팅스캐너_${scope==='summary'?'한장요약_':''}${domain}_${new Date().toISOString().slice(0,10)}.pdf`};
+    const date=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    return {pages:pages.length,blob:pdf.output('blob'),filename:`마케팅스캐너_${scope==='summary'?'한장요약_':''}${domain}_${date}.pdf`};
   } finally {canvas.width=1;canvas.height=1;}
 }
 
