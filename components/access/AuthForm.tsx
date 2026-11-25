@@ -4,13 +4,15 @@ import {ACTIVITY_POLICY} from '@/lib/saas/activityTypes';
 export default function AuthForm({
   mode,
 }: {
-  mode: "login" | "activate" | "setup";
+  mode: "login" | "activate" | "setup" | "recover";
 }) {
   const [invite, setInvite] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [recoverySent, setRecoverySent] = useState(false);
+  const [passwordReset, setPasswordReset] = useState(false);
   useEffect(() => {
-    if (mode !== "activate") return;
+    if (mode !== "activate" && mode !== "recover") return;
     function readInvite() {
       const token = window.location.hash.slice(1);
       if (!token) return;
@@ -30,19 +32,33 @@ export default function AuthForm({
     const f = new FormData(e.currentTarget);
     const values = Object.fromEntries(f);
     try {
-      if (mode !== "login" && values.password !== values.confirm)
+      const requestingRecovery = mode === "recover" && !invite;
+      if (mode !== "login" && !requestingRecovery && values.password !== values.confirm)
         throw new Error("비밀번호 확인이 일치하지 않습니다.");
+      const payload = mode === "recover"
+        ? requestingRecovery
+          ? { action: "request" }
+          : { action: "reset", token: invite, password: values.password }
+        : {
+            ...values,
+            consent: f.get("consent") === "on",
+            ...(mode === "activate" ? { token: invite } : {}),
+          };
       const r = await fetch("/api/" + mode, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...values,
-          consent: f.get("consent") === "on",
-          ...(mode === "activate" ? { token: invite } : {}),
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await r.json();
       if (!r.ok) throw new Error(data.message);
+      if (mode === "recover") {
+        if (requestingRecovery) setRecoverySent(true);
+        else {
+          setInvite("");
+          setPasswordReset(true);
+        }
+        return;
+      }
       const next =
         new URLSearchParams(window.location.search).get("next") || "";
       window.location.assign(
@@ -59,6 +75,31 @@ export default function AuthForm({
     } finally {
       setBusy(false);
     }
+  }
+  if (mode === "recover" && passwordReset) {
+    return (
+      <div className="access-notice">
+        <p role="status">새 비밀번호가 저장되었습니다. 관리자 이메일과 새 비밀번호로 로그인해 주세요.</p>
+        <a className="jm-button" href="/login">로그인</a>
+      </div>
+    );
+  }
+  if (mode === "recover" && !invite) {
+    return (
+      <form onSubmit={submit} className="access-form">
+        {recoverySent ? (
+          <p role="status" className="access-muted">
+            등록된 관리자 이메일로 링크를 보냈습니다. 15분 이내에 등록된 네트워크에서 열어 주세요.
+          </p>
+        ) : (
+          <button className="jm-button" disabled={busy}>
+            {busy ? "보내는 중…" : "재설정 링크 보내기"}
+          </button>
+        )}
+        {error && <p className="access-error" role="alert">{error}</p>}
+        <a href="/login">로그인으로 돌아가기</a>
+      </form>
+    );
   }
   return (
     <form onSubmit={submit} className="access-form">
@@ -81,7 +122,7 @@ export default function AuthForm({
           </label>
         </>
       )}
-      {mode !== "activate" && (
+      {(mode === "login" || mode === "setup") && (
         <label>
           이메일
           <input
@@ -160,13 +201,17 @@ export default function AuthForm({
             ? "로그인"
             : mode === "setup"
               ? "관리자 등록 완료"
-              : "비밀번호 설정하고 시작"}
+              : mode === "recover"
+                ? "새 비밀번호 저장"
+                : "비밀번호 설정하고 시작"}
       </button>
+      {mode === "recover" && <a href="/recover">새 링크 요청하기</a>}
       {mode === "login" && (
         <div className="access-muted"><p>
           승인·계정 복구가 필요하다면 <a href="/inquiry">이용 문의</a>를 남겨
           주세요. 담당자가 본인 확인 후 안내합니다.
-        </p><p>보안과 사용량 관리를 위해 접속 IP와 이용 기록이 수집됩니다. <a href="/privacy">수집 항목·보관기간 확인</a></p></div>
+        </p><p><a href="/recover">관리자 비밀번호 재설정</a></p>
+        <p>보안과 사용량 관리를 위해 접속 IP와 이용 기록이 수집됩니다. <a href="/privacy">수집 항목·보관기간 확인</a></p></div>
       )}
     </form>
   );

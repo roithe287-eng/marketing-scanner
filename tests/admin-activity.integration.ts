@@ -3,7 +3,7 @@ import { test, before, after } from 'node:test';
 import { randomUUID } from 'node:crypto';
 import { NextRequest } from 'next/server';
 import { startRedisBridge } from './helpers/redisBridge';
-import { db,key,token,createSession,createCustomer,activate,getAccount,reserve,usage,updateAccount,deleteAccount,migrateLegacyAudit,saveInquiry } from '../lib/saas/store';
+import { db,key,token,createAdmin,createSession,createCustomer,activate,getAccount,reserve,usage,updateAccount,deleteAccount,migrateLegacyAudit,saveInquiry } from '../lib/saas/store';
 import { SESSION_COOKIE,getPrincipal,requireAdmin } from '../lib/saas/auth';
 import { digest } from '../lib/security/request';
 import { DEFAULT_FEATURES,type Account } from '../lib/saas/types';
@@ -15,6 +15,7 @@ import * as admin from '../app/api/admin/route';
 import * as telemetry from '../app/api/activity/route';
 import * as login from '../app/api/login/route';
 import * as activation from '../app/api/activate/route';
+import * as recovery from '../app/api/recover/route';
 import * as access from '../app/api/access/route';
 import * as share from '../app/api/share/route';
 import {saveSharedReport,listOwnReports} from '../lib/shareStore';
@@ -331,4 +332,84 @@ test('legacy administrator audit records migrate to absolute expiry and do not r
   assert.equal(await migrateLegacyAudit(),1);assert.equal(await db().exists(key('audit')),0);
   assert.ok(Number(await db().ttl(key('audit-day:'+day)))<175*86400);
   assert.equal(await migrateLegacyAudit(),0);
+});
+
+test('owner recovery uses the registered network and owner mailbox, and atomically revokes prior sessions', async t => {
+  const internal = '203.0.113.10';
+  const path = '/api/recover';
+  const start = { action: 'request' };
+  assert.equal((await recovery.POST(request(path, start, '', internal))).status, 403);
+
+  const env = {
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
+    INQUIRY_EMAIL_FROM: process.env.INQUIRY_EMAIL_FROM,
+    INQUIRY_NOTIFY_TO: process.env.INQUIRY_NOTIFY_TO,
+  };
+  try {
+    process.env.VERCEL_ENV = 'production';
+    process.env.RESEND_API_KEY = 'local-mail-test';
+    process.env.INQUIRY_EMAIL_FROM = 'scanner@example.com';
+    process.env.INQUIRY_NOTIFY_TO = 'alerts-only@example.com';
+    const account = await createAdmin({ email: 'recovery-owner@example.com', name: 'Recovery owner', password });
+    const priorSession = await createSession(account);
+    const customer = await createCustomer({ ...grant, email: 'unrelated@example.com', name: 'Customer', company: '' }, account.id);
+    const customerAccount = await activate(customer.invite, password);
+    const customerSession = await createSession(customerAccount);
+    const inquiryId = await saveInquiry({
+      name: 'Inquiry', company: '', email: 'inquiry@example.com', contact: 'Test only',
+      url: 'https://example.com', message: 'Preserve inquiry', services: ['no-agency'], consent: true,
+    });
+    const fetchReal = globalThis.fetch;
+    const links: string[] = [];
+    t.mock.method(globalThis, 'fetch', async (url: Parameters<typeof fetch>[0], options?: RequestInit) => {
+      if (String(url) !== 'https://api.resend.com/emails') return fetchReal(url, options);
+      const mail = JSON.parse(String(options?.body));
+      assert.deepEqual(mail.to, [account.email]);
+      const value = /https:\/\/www\.mktscanner\.com\/recover#([\w-]{43})/.exec(mail.text)?.[1];
+      assert.ok(value);
+      links.push(value);
+      return Response.json({ id: 'local-resend-test' });
+    });
+
+    assert.equal((await recovery.POST(request(path, start))).status, 403);
+    assert.equal((await recovery.POST(request(path, start, '', internal, { origin: 'https://elsewhere.example' }))).status, 403);
+    assert.equal((await recovery.POST(request(path, { ...start, email: 'arbitrary@example.com' }, '', internal))).status, 400);
+    const sent = await recovery.POST(request(path, start, '', internal));
+    assert.deepEqual(await sent.json(), { ok: true });
+    assert.equal((await recovery.POST(request(path, start, '', internal))).status, 429);
+    const expiredKey = key('owner-recovery:' + digest(links[0]));
+    assert.ok(Number(await db().ttl(expiredKey)) > 0 && Number(await db().ttl(expiredKey)) <= 900);
+    await db().pexpire(expiredKey, 1);
+    await new Promise(resolve => setTimeout(resolve, 20));
+
+    const nextPassword = 'new isolated recovery password';
+    const reset = (value: string, ip = internal) => recovery.POST(request(path, {
+      action: 'reset', token: value, password: nextPassword,
+    }, priorSession, ip));
+    assert.equal((await reset(links[0])).status, 400);
+    await db().del(key('rate:owner-recovery-email'));
+    assert.equal((await recovery.POST(request(path, start, '', internal))).status, 200);
+    assert.equal((await reset(links[1], '203.0.113.20')).status, 403);
+    assert.equal((await requireAdmin(request('/api/admin', undefined, priorSession, internal))).id, account.id);
+    const attempts = await Promise.all([reset(links[1]), reset(links[1])]);
+    assert.deepEqual(attempts.map(response => response.status).sort(), [200, 400]);
+    assert.equal(attempts.find(response => response.status === 200)?.cookies.get(SESSION_COOKIE), undefined);
+    assert.equal(await getPrincipal(request('/api/access', undefined, priorSession, internal)), null);
+    assert.equal((await getAccount(account.id))?.version, account.version + 1);
+    assert.deepEqual(await getAccount(customerAccount.id), customerAccount);
+    assert.ok(await getPrincipal(request('/api/access', undefined, customerSession)));
+    assert.equal(await db().exists(key('inquiry:' + inquiryId)), 1);
+    assert.equal((await login.POST(request('/api/login', { email: account.email, password }, '', internal))).status, 401);
+    const signedIn = await login.POST(request('/api/login', { email: account.email, password: nextPassword }, '', internal));
+    assert.equal(signedIn.status, 200);
+    const restored = await requireAdmin(request('/api/admin', undefined, signedIn.cookies.get(SESSION_COOKIE)?.value, internal));
+    assert.equal(restored.id, account.id);
+    assert.equal(links.length, 2);
+  } finally {
+    for (const [name, value] of Object.entries(env)) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
+  }
 });
