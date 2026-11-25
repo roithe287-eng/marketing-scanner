@@ -1,14 +1,21 @@
 'use client';
 import {useRef,useState} from 'react';
-import {comparablePeriods,maxSearchFileBytes,parseSearchConsoleFiles,sampleTotals,searchOpportunities,type DateRange,type SearchConsoleSample} from '@/lib/searchConsoleFiles';
+import {maxSearchFileBytes,parseSearchConsoleFiles,periodComparisonIssue,sampleTotals,searchOpportunities,type DateRange,type SearchConsoleSample} from '@/lib/searchConsoleFiles';
 import {RoleBox} from './ReportRole';
 import ReportJumpLink from './ReportJumpLink';
 
 const format=(v:number|null)=>v===null?'미확인':v.toLocaleString('ko-KR',{maximumFractionDigits:2});
-const pct=(v:number|null)=>v===null?'미확인':format(v)+'%';
+const pct=(v:number|null)=>v===null?'산출 불가':format(v)+'%';
+function delta(before:number|null,now:number|null,unit:string){
+  if(before===null||now===null)return '차이 산출 불가';
+  const difference=now-before;
+  if(!difference)return '변동 없음';
+  if(Math.abs(difference)<0.005)return '0.01'+unit+' 미만 '+(difference>0?'증가':'감소');
+  return (difference>0?'+':'−')+format(Math.abs(difference))+unit;
+}
 const hrefProps={target:'_blank',rel:'noopener noreferrer'};
 type PeriodKey='recent'|'previous';
-type Period={sample?:SearchConsoleSample;range:DateRange;error?:string};
+type Period={sample?:SearchConsoleSample;range:DateRange;loading?:boolean;error?:string};
 const empty={range:{start:'',end:''}};
 const labels:Record<PeriodKey,string>={recent:'최근 기간',previous:'이전 기간'};
 
@@ -21,18 +28,22 @@ export default function SearchConsoleEvidencePanel({target}:{target:string}){
   async function importSample(which:PeriodKey,selected:File[]){
     if(!selected.length)return;
     const revision=++fileRevision.current[which];
+    updatePeriod(which,{sample:undefined,range:empty.range,error:undefined,loading:true});
     try{
       if(selected.length!==2||selected.some(file=>file.size>maxSearchFileBytes))throw Error('검색어 CSV와 필터 CSV, 각각 1MB 이하 파일 2개를 선택해 주세요.');
       const sample=parseSearchConsoleFiles(await Promise.all(selected.map(file=>file.text())),target);
-      if(revision===fileRevision.current[which])updatePeriod(which,{sample,error:undefined});
+      if(revision===fileRevision.current[which])updatePeriod(which,{sample,range:sample.fileRange??empty.range,loading:false});
     }catch(error){
-      if(revision===fileRevision.current[which])updatePeriod(which,{sample:undefined,error:error instanceof Error?error.message:'검색 실적 파일을 읽지 못했습니다.'});
+      if(revision===fileRevision.current[which])updatePeriod(which,{loading:false,error:error instanceof Error?error.message:'검색 실적 파일을 읽지 못했습니다.'});
     }
   }
   const recent=periods.recent.sample,previous=periods.previous.sample;
   const totals=recent?sampleTotals(recent):null;
   const previousTotals=previous?sampleTotals(previous):null;
-  const compare=!!recent&&!!previous&&comparablePeriods(periods.recent.range,periods.previous.range,recent.scopeKey,previous.scopeKey);
+  const issue=recent&&previous
+    ?recent.excludedRows||previous.excludedRows?'제외된 행의 검색어·노출·클릭을 확인한 뒤 두 기간을 다시 비교해 주세요.'
+      :periodComparisonIssue(periods.recent.range,periods.previous.range,recent.scopeKey,previous.scopeKey)
+    :null;
   const opportunities=recent?searchOpportunities(recent):null;
   return <section className="report-card search-evidence-card">
     <details><summary><strong>실제 검색어와 랜딩 성과</strong></summary>
@@ -43,30 +54,37 @@ export default function SearchConsoleEvidencePanel({target}:{target:string}){
           <li>날짜·기기를 선택하고 CSV로 내보냅니다. 압축을 푼 뒤 검색어 CSV와 필터 CSV를 함께 선택하세요.</li>
         </ol><p className="search-evidence-address">{target}</p></RoleBox>
         <div className="search-evidence-upload-grid">
-          {(['recent','previous'] as const).map(which=><fieldset key={which}>
+          {(['recent','previous'] as const).map(which=>{
+            const {sample,range,error,loading}=periods[which];
+            return <fieldset key={which}>
             <legend>{labels[which]}{which==='previous'?' (선택)':''}</legend>
             <label className="search-evidence-file">{labels[which]} 검색어·필터 CSV<input type="file" accept=".csv,text/csv" multiple onChange={e=>{void importSample(which,Array.from(e.currentTarget.files||[]));e.currentTarget.value='';}}/></label>
-            {periods[which].sample&&<p className="report-note">{periods[which].sample!.rows.length}개 검색어 · {periods[which].sample!.device}{periods[which].sample!.periodLabel?' · '+periods[which].sample!.periodLabel:''}</p>}
-            {periods[which].error&&<p className="access-error" role="alert">{periods[which].error}</p>}
-            <div className="search-evidence-dates">{(['start','end'] as const).map(key=><label key={key}>{key==='start'?'시작일':'종료일'}<input type="date" aria-label={labels[which]+' '+(key==='start'?'시작일':'종료일')} value={periods[which].range[key]} onChange={e=>updatePeriod(which,{range:{...periods[which].range,[key]:e.target.value}})}/></label>)}</div>
-          </fieldset>)}
+            {loading&&<p className="report-note" role="status">파일을 읽고 있습니다.</p>}
+            {sample&&<p className="report-note" role="status">집계 {format(sample.rows.length)}개 검색어 · {sample.device}
+              {!!sample.excludedRows&&<strong className="block">검색어·노출·클릭 값 확인 필요 · {format(sample.excludedRows)}행 제외</strong>}</p>}
+            {error&&<p className="access-error" role="alert">{error}</p>}
+            {sample&&(sample.fileRange
+              ?<p className="search-evidence-file-period">파일에 기록된 기간 <strong>{range.start} ~ {range.end}</strong></p>
+              :<><p className="report-note">{sample.periodLabel?'파일의 기간 표기 · '+sample.periodLabel:'파일에 날짜 범위가 없습니다.'} · 실제 날짜 직접 입력</p>
+              <div className="search-evidence-dates">{(['start','end'] as const).map(key=><label key={key}>{key==='start'?'시작일':'종료일'}<input type="date" aria-label={labels[which]+' '+(key==='start'?'시작일':'종료일')} value={range[key]} onChange={e=>updatePeriod(which,{range:{...range,[key]:e.target.value}})}/></label>)}</div></>)}
+          </fieldset>;})}
         </div>
         {totals&&<div className="naver-counts">
           <div data-state="observed"><span>검색어 표본 노출</span><strong>{format(totals.impressions)}</strong></div>
           <div data-state="observed"><span>검색어 표본 클릭</span><strong>{format(totals.clicks)}</strong></div>
           <div data-state="observed"><span>표본 CTR</span><strong>{pct(totals.ctr)}</strong></div>
         </div>}
-        {recent&&previous&&!compare&&<p className="report-note">두 파일의 기기·국가 등 필터를 맞추고 겹치지 않는 같은 길이의 날짜 구간을 입력하면 전후 비교를 표시합니다.</p>}
-        {compare&&totals&&previousTotals&&<div className="search-evidence-compare">
+        {issue&&<p className="report-note" role="status"><strong>기간 비교 보류</strong> · {issue}</p>}
+        {recent&&previous&&!issue&&totals&&previousTotals&&<div className="search-evidence-compare">
           <h4>같은 조건의 기간 비교</h4>
-          <p className="report-note">입력 기준 · {periods.previous.range.start} ~ {periods.previous.range.end} → {periods.recent.range.start} ~ {periods.recent.range.end} · {recent?.device}</p>
+          <p className="report-note">이전 {periods.previous.range.start} ~ {periods.previous.range.end} ({previous.fileRange?'파일':'직접 입력'}) → 최근 {periods.recent.range.start} ~ {periods.recent.range.end} ({recent.fileRange?'파일':'직접 입력'}) · {recent.device}</p>
           {([{key:'impressions',label:'노출'},{key:'clicks',label:'클릭'},{key:'ctr',label:'CTR'}] as const).map(metric=>{
-            const now=totals[metric.key],before=previousTotals[metric.key],peak=Math.max(1,before??0,now??0);
+            const now=totals[metric.key],before=previousTotals[metric.key],peak=metric.key==='ctr'?100:Math.max(1,before??0,now??0);
             const print=metric.key==='ctr'?pct:format;
             return <div key={metric.key} className="search-evidence-comparison-row">
-              <strong>{metric.label}</strong>
+              <h5>{metric.label}<span>{delta(before,now,metric.key==='ctr'?'%p':'회')}</span></h5>
               {([{name:'이전',value:before},{name:'최근',value:now}]).map(row=><div key={row.name}>
-                <span>{row.name}</span><div className="search-meter" aria-hidden="true"><i style={{width:((row.value??0)/peak*100)+'%'}}/></div><b>{print(row.value)}</b>
+                <span>{row.name}</span><div className="search-meter" aria-hidden="true" data-available={row.value!==null}>{row.value!==null&&<i style={{width:(row.value/peak*100)+'%'}}/>}</div><b>{print(row.value)}</b>
               </div>)}
             </div>;
           })}

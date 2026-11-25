@@ -98,7 +98,7 @@ export function buildReportInsights(report:MarketingReport) {
     report.officialSeoAudit?.mode==='diagnosis'
       ? {label:'공식 검색 기준',value:`${report.officialSeoAudit.checks.length}개 점검`,state:'관측·직접 확인 분리',detail:`네이버 ${OFFICIAL_SEO_COVERAGE.naver}개·Google ${OFFICIAL_SEO_COVERAGE.google}개 문서 기준`}
       : {label:'네이버 최적화',value:report.naverOptimization?.mode==='diagnosis'?`${report.naverOptimization.checks.length}개 점검`:'재진단 필요',state:report.naverOptimization?.mode==='diagnosis'?'관측·수동 분리':'기준 업데이트',detail:report.naverOptimization?.mode==='diagnosis'?`관측 확인 ${naverCounts(report.naverOptimization.checks).observed}개 · 계정·적용 범위 별도 확인`:'구버전 점수는 표시하지 않음'},
-    {label:'AI 출처 판정',value:obs?`${obs.sourceTotal} / ${obs.total}건`:'—',state:!obs?'미확인':obs.sourceTotal===obs.total&&obs.total?'판정 완료':obs.sourceTotal?'일부 판정':'판정 불가',detail:'분모는 OpenAI 관측'},
+    {label:'AI 출처 판정',value:obs?.total?`${obs.sourceTotal} / ${obs.total}건`:'—',state:!obs?'미확인':!obs.total?'관측 없음':obs.sourceTotal===obs.total?'판정 완료':obs.sourceTotal?'일부 판정':'판정 불가',detail:'분모는 OpenAI 관측'},
     {label:'경쟁사 수집',value:`${metadataCount} / ${competitors.length}개`,state:report.competitorStatus?.status==='pending'?'진행 중':competitors.length?(metadataCount===competitors.length?'저장됨':'일부 미확인'):'미확인',detail:'후보 중 상세 항목이 있는 사이트'},
   ];
   return {sitePurpose:report.sitePurpose,evidenceReview:report.evidenceReview,obs,sources,eligibleSources,excludedSources,reviews,reviewSummary,reviewExplanation,questions,messageRows,messageOpportunities,stages,gaps,heldKeywords,tasks,coverage,metadataCount,competitorCount:competitors.length};

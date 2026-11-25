@@ -86,3 +86,34 @@ test('ordinary Naver Search API credentials cannot enable a paid report adapter'
   assert.equal(naverReportSearchAllowed(),false);
   await assert.rejects(()=>searchNaverWeb('검색'));
 });
+
+test('valid impressions and clicks survive missing ranks and excluded rows are counted',()=>{
+  const filters='Filter,Value\nSearch type,Web\nPage,'+product;
+  const csv='Top queries,Clicks,Impressions,Position\n가발,2,100,-\n부분가발,1,10,2\n오류,4,1,3\n금액,0,"1,2",1';
+  const data=parseSearchConsoleFiles([csv,filters],product);
+  assert.deepEqual(sampleTotals(data),{clicks:3,impressions:110,ctr:3/110*100});
+  assert.equal(data.rows[0].position,null);
+  assert.equal(data.excludedRows,2);
+  const noRank=parseSearchConsoleFiles(['검색어,클릭,노출\n부분 가발,0,0',filters],product);
+  assert.equal(noRank.rows[0].position,null);
+  assert.equal(sampleTotals(noRank).ctr,null);
+  const formatted=parseSearchConsoleFiles(['Query,Clicks,Impressions,Position\n첫째,1.0,"1,200","1,234.5"\n둘째,0,20,"3,25"',filters],product);
+  assert.deepEqual(formatted.rows.map(r=>[r.clicks,r.impressions,r.position]),[[1,1200,1234.5],[0,20,3.25]]);
+});
+test('all CSV queries within the file limit retain their distinct identifiers',()=>{
+  const prefix='긴 검색어'.repeat(50);
+  const rows=[prefix+' A',prefix+' B',...Array.from({length:20000},(_,i)=>'표본'+i)];
+  const data=parseSearchConsoleFiles(['Query,Clicks,Impressions\n'+rows.map(q=>q+',0,1').join('\n'),'Filter,Value\nSearch type,Web\nPage,'+product],product);
+  assert.equal(data.rows.length,20002);assert.equal(sampleTotals(data).impressions,20002);
+});
+test('absolute filter dates are authoritative and manual dates must be real comparable calendar dates',()=>{
+  const parse=(label:string)=>parseSearchConsoleFiles(['Query,Clicks,Impressions\n표본,1,1','Filter,Value\nSearch type,Web\nPage,'+product+'\nDate,'+label],product);
+  const range={start:'2026-10-01',end:'2026-10-28'};
+  for(const value of ['2026-10-01 - 2026-10-28','2026. 10. 1. ~ 2026. 10. 28.','2026년 10월 1일 부터 2026년 10월 28일 까지'])
+    assert.deepEqual(parse(value).fileRange,range);
+  assert.equal(parse('Last 28 days').fileRange,null);
+  assert.throws(()=>parse('2026-02-31 - 2026-03-15'),/날짜/);
+  assert.throws(()=>parse('2026-10-28 - 2026-10-01'),/날짜/);
+  assert.ok(!comparablePeriods({start:'2026-03-15',end:'2026-03-15'},{start:'2026-02-31',end:'2026-02-31'},'a','a'));
+  assert.ok(!comparablePeriods(range,range,'a','a'));
+});

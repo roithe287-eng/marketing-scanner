@@ -1,5 +1,7 @@
+'use client';
 import {CompactText} from './report/ReportVisualSummary';
-import React from 'react';
+import React,{useId,useState} from 'react';
+import ReportDistribution,{type DistributionGroup} from './report/ReportDistribution';
 import {PairedBars,ComparisonCoverage} from './visuals/ComparisonVisuals';
 import type {LlmCitationQuestionResult, MarketingReport} from '@/lib/reportSchema';
 import {buildGeoComparison,changeLabels,comparisonReasons,comparisonTime,GEO_COMPARISON_NOTE,GEO_COMPARISON_TITLE,observationLabel} from '@/lib/geoComparison';
@@ -15,7 +17,14 @@ function Evidence({row,label}:{row?:LlmCitationQuestionResult;label:string}) {
   </div>;
 }
 export default function GeoComparisonPanel({report}:{report:MarketingReport}) {
+  const controls=useId();
+  const [selected,setSelected]=useState<string|null>(null);
   const result=buildGeoComparison(report);if (!result) return null;
+  const tones={gained:'good',kept:'neutral',lost:'attention',absent:'review'} as const;
+  const groups:DistributionGroup[]=result.outcomes.map(group=>({...group,tone:tones[group.id]}));
+  if(result.excluded)groups.push({id:'excluded',label:'비교 제외',count:result.excluded,tone:'action'});
+  const selection=groups.some(group=>group.id===selected&&group.count>0)?selected:null;
+  const visible=result.pairs.filter(pair=>!selection||selection===(pair.reason?'excluded':pair.change));
   return <section aria-label={GEO_COMPARISON_TITLE} className="report-geo-comparison jm-card mt-6 p-5 md:p-7">
     <p className="text-xs font-bold text-jm-red">GEO COMPARISON</p><h2 className="mt-2 text-xl font-black md:text-2xl">{GEO_COMPARISON_TITLE}</h2>
     <CompactText className="mt-3 text-sm leading-7 text-jm-gray" text={GEO_COMPARISON_NOTE}/>
@@ -25,8 +34,8 @@ export default function GeoComparisonPanel({report}:{report:MarketingReport}) {
       <PairedBars label="브랜드 언급률" before={result.beforeMention} after={result.afterMention} count={result.mentionCount}/>
       <ComparisonCoverage matched={result.matched} excluded={result.excluded}/>
     </div>
-    {result.matched>0 ? <p className="mt-4 text-sm leading-6">새로 인용 {result.gained}건 · 이번에 미확인 {result.lost}건 · 인용 유지 {result.kept}건</p> : <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm leading-7">비교 가능한 관측이 없습니다. 제외 이유를 확인하고, 이번 결과를 공유해 다음 측정의 기준으로 사용할 수 있습니다.</p>}
-    <div className="mt-5 space-y-3">{result.pairs.map(pair=><details open key={pair.key} className="rounded-xl border p-4">
+    {result.matched>0 ? <ReportDistribution title="질문별 자사 인용 변화" unit="쌍" groups={groups} selection={selection} onSelect={setSelected} controls={controls}/> : <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm leading-7">비교 가능한 관측이 없습니다. 제외 이유를 확인하고, 이번 결과를 공유해 다음 측정의 기준으로 사용할 수 있습니다.</p>}
+    <div id={controls} className="mt-5 space-y-3">{visible.map(pair=><details key={pair.key} className="rounded-xl border p-4">
       <summary className="cursor-pointer text-sm leading-7"><span className="mr-2 font-bold">OpenAI</span><span className="break-words">{pair.question}</span><span className="mt-1 block text-xs text-jm-gray">{pair.reason?`비교 제외 · ${comparisonReasons[pair.reason]}`:changeLabels[pair.change!]} · 이전·현재 답변과 출처 보기</span></summary>
       <div className="mt-4 grid gap-3 md:grid-cols-2"><Evidence row={pair.before} label="이전"/><Evidence row={pair.after} label="현재"/></div>
     </details>)}</div>

@@ -13,7 +13,16 @@ export function calculateSimpleGoal(input:SimpleGoalInputs){
   if(values.opportunities!==null&&values.completed!==null&&values.completed>values.opportunities)errors.completed='완료 횟수가 전체 횟수보다 큽니다. 같은 기간의 수치인지 확인하세요.';
   const valid=!Object.keys(errors).length;
   const rate=valid&&values.opportunities&&values.completed!==null?values.completed/values.opportunities:null;
-  const required=valid&&values.targetCompleted!==null?(values.targetCompleted===0?0:rate?Math.ceil(values.targetCompleted/rate):null):null;
+  let required:number|null=null;
+  if(valid&&values.targetCompleted===0)required=0;
+  else if(valid&&values.targetCompleted!==null&&values.opportunities!==null&&values.completed){
+    // Divide integer counts directly so an exact target cannot round up one extra visit.
+    const completed=BigInt(values.completed);
+    const numerator=BigInt(values.targetCompleted)*BigInt(values.opportunities);
+    const visits=(numerator+completed-BigInt(1))/completed;
+    if(visits<=BigInt(Number.MAX_SAFE_INTEGER))required=Number(visits);
+    else errors.targetCompleted='필요 횟수가 정확히 표시할 수 있는 범위를 초과합니다. 목표를 낮춰 주세요.';
+  }
   return {values,errors,rate,required,additional:required!==null&&values.opportunities!==null?required-values.opportunities:null};
 }
 const names:Record<keyof KpiInputs,string>={impressions:'현재 노출수',clicks:'현재 클릭수',sessions:'현재 세션 수',converted:'현재 전환 세션 수',targetImpressions:'목표 노출수',targetCtr:'목표 CTR',targetSessions:'목표 세션 수',targetCvr:'목표 세션 전환율'};

@@ -147,3 +147,12 @@ test('a long passage exposes a named disclosure and reads each sentence once',()
  assert.match($('.reading-body').text(),/5차는 지역별 접수 담당자/);
  assert.match($('.reading-body').text(),/단, 승인 시점은 개별 안내/);
 });
+
+test('integer goal inputs never add a phantom visit at an exact target and reject unsafe outputs',()=>{
+  for(let visits=1;visits<=60;visits++){
+    for(let completed=1;completed<=visits;completed++)
+      assert.equal(calculateSimpleGoal({opportunities:String(visits),completed:String(completed),targetCompleted:String(completed)}).required,visits);
+  }
+  const huge=calculateSimpleGoal({opportunities:'1000000000000',completed:'1',targetCompleted:'1000000000000'});
+  assert.equal(huge.required,null);assert.ok(huge.errors.targetCompleted);
+});

@@ -22,7 +22,7 @@ export function buildInsightsDocument(report:MarketingReport):ReportBlock[] {
   d.reviews.forEach(r=>{add('subheading',`${r.engine} · ${r.question}`);add('body','업체명 → 서비스 내용 → 출처 업체를 대조하세요. 답변 전문은 뒤의 GEO 상세에 보존됩니다.');r.sources.forEach(s=>add('body',s.title||s.url,s.url));});
   add('heading','AI 출처 검토함');add('body',insightNotes.sources);
   if(d.eligibleSources.length){add('subheading',sourceReferenceGuide.title);add('body',sourceReferenceGuide.purpose);add('body',sourceReferenceGuide.examples);add('body',sourceReferenceGuide.check);}
-  if(!d.eligibleSources.length)add('body','자사몰·대형몰 등을 제외한 검토 대상 출처가 없습니다.');
+  if(!d.eligibleSources.length)add('body',d.reviewSummary.verified?'자사몰·대형몰 등을 제외한 검토 대상 출처가 없습니다.':'검색·출처 확인이 완료된 답변이 없어 출처 수를 판정할 수 없습니다.');
   d.eligibleSources.forEach(s=>{add('subheading',s.title);add('body',s.url,s.url);add('body',`${s.ownership==='own'?'자사':s.ownership==='external'?'외부':'도메인 미확인'} · ${s.observations.length}건의 관측 · ${s.questions.length}개 질문`);s.questions.forEach(q=>add('body',q));});
   if(d.excludedSources.length){add('subheading',`목록에서 제외한 출처 · ${d.excludedSources.length}개`);d.excludedSources.forEach(s=>{add('body',`${s.domain} · ${s.reason} · ${s.observations.length}건의 관측`,s.url);s.questions.forEach(q=>add('body',q));});}
   add('heading','경쟁사 메시지 비교 지도');add('body',insightNotes.messages);

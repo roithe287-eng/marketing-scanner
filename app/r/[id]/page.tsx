@@ -20,5 +20,5 @@ export default async function SharedReportPage({params}:{params:Promise<{id:stri
   const h=await headers();
   if(principal?.kind==='account'&&!h.get('next-router-prefetch')&&!/prefetch/i.test(h.get('purpose')||h.get('sec-purpose')||''))
     await captureActivity(principal.account.id,'report_view',h,{reportId:id,target:targetHost(report.url)});
-  return <SharedReportView report={report} shareId={id} canSave={canSave} privateReport={!publicReport} clinicWebAllowed={canReadClinicWebsite(principal)}/>;
+  return <SharedReportView key={id} report={report} shareId={id} canSave={canSave} privateReport={!publicReport} clinicWebAllowed={canReadClinicWebsite(principal)}/>;
 }

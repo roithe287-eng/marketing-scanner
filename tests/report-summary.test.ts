@@ -34,3 +34,11 @@ test('template highlighting retains literal wording without a duplicate generic 
  assert.equal((html.match(/class="report-wirezone report-wirezone-/g)||[]).length,0);
  const text=html.replace(/<[^>]+>/g,'');for(const p of buildKeywordRewrites(frequency).singles)assert.ok(text.includes(p.template));
 });
+
+test('a long input page URL remains a clickable original in the one-page PDF',()=>{
+ const url='https://example.com/service/'+'long-path-'.repeat(25)+'?view=all';
+ const page=buildReportSummaryPage({...fixture,url},measure);
+ assert.equal(page.lines.find(line=>line.y===110)?.text,'example.com');
+ const address=page.lines.find(line=>line.y===138)!;
+ assert.ok(address.text.endsWith('…'));assert.equal(address.href,url);
+});
