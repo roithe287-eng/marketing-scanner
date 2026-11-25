@@ -39,6 +39,7 @@ function correctedSector(page:DiagnosticPage,capturedBody:readonly string[]=[]){
 
 /** Repair editorial outputs from the original capture, without network calls or new measurements. */
 export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
+  if(report.industryDecision)return report;
   const page=report.pageEvidence, diagnostics=report.siteDiagnostics;
   if(!page||canonicalPage(page.requestedUrl)!==canonicalPage(report.url)||!sameSite(page.finalUrl,report.url))return report;
   const root=diagnostics?.pages.find(p=>canonicalPage(p.url)===canonicalPage(page.finalUrl));

@@ -42,6 +42,7 @@ export function positionProfile(category:PositionCategory){const specs:Spec[]=is
  return {id:category,label:POSITION_INDUSTRIES[category],criteria:specs.map(([id,label,pattern,description],index)=>{const editorial=positionEditorial(category,index);return {id,label,description,editorial,examples:pattern.split('|').map(term=>term.includes('\\d')?'금액 표기 (예: 10,000원)':term),pattern:new RegExp(pattern,'i'),weight:25,action:editorial.verify,template:editorial.description};})};}
 const scopeCategories:Record<string,PositionCategory>={retail:'commerce',finance:'finance',pharmacy:'pharmacy',insurance:'finance',rehabilitation:'legal',property_sales:'realestate',startup:'consulting',franchise:'consulting',custom_apparel:'manufacturing',medical:'medical',veterinary:'pet',pet_care:'pet',pet_store:'pet',agency:'consulting',medical_consulting:'consulting',software:'it_service',manufacturing:'manufacturing',education:'education',international_logistics:'logistics',fortune_digital:'fortune',fortune_consultation:'fortune',legal:'legal',accounting:'legal',professional:'legal',home:'interior',home_service:'interior',restaurant:'food',cafe:'food',beauty:'beauty',rental:'rental',lodging:'travel',hospitality:'travel',travel:'travel',travel_booking:'travel',fitness:'sports',automotive:'automotive',real_estate:'realestate',community:'media',content:'media'};
 export function defaultPositionIndustry(report:MarketingReport):{category:PositionCategory;basis:string} {
+ if(report.industryDecision?.status==='review')return {category:'etc',basis:'자사 제공 업무 확인 필요'};
  if(report.sitePurpose?.business?.id==='custom_apparel')return {category:'manufacturing',basis:'홈페이지 원문에서 확인한 단체복 주문제작'};
  if(report.sitePurpose?.business?.id==='hairpieces_wigs')return {category:'hairpieces_wigs',basis:'홈페이지 원문에서 확인한 가발·헤어피스 상품군'};
  const scope=report.competitorAnalysis?.ourSite?.scope;
@@ -57,6 +58,7 @@ export function defaultPositionIndustry(report:MarketingReport):{category:Positi
  if(report.sitePurpose?.business?.industry==='logistics')return {category:'logistics',basis:'현재 원문에 근거한 국제물류 업종 분류'};
  const declared=report.sitePurpose?.declaredIndustry;
  if(declared)return {category:declared.category,basis:'입력 페이지에서 직접 제공한다고 명시한 업무'};
+ if(report.industryDecision?.status==='matched')return {category:report.industryDecision.category,basis:'자사 상품·서비스 원문 확인'};
  const saved=report.industryBenchmark?.category;if(saved&&saved!=='etc')return {category:saved,basis:'저장된 업종 분류'};
  const page=report.pageEvidence,our=report.competitorAnalysis?.ourSite;
  const title=classificationText([page?.title,...page?.h1||[],our?.title].filter(Boolean).join('\n'));

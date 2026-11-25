@@ -3,6 +3,7 @@ import {readinessItems} from './reportVisuals';
 import {reportForPresentation} from './reportPresentation';
 import {nonCommerceOpening} from './reportOpening';
 import {evidenceScoreText} from './evidenceReview';
+import {industryReviewMessage} from './industryDecisionSchema';
 import {showProductCollection} from './websitePurpose';
 import {buildOfficialSeoDocument} from './officialSeoDocument';
 import {buildSiteDiagnosticsDocument} from './siteDiagnosticsDocument';
@@ -61,6 +62,11 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
 
     }
     blocks.push(...buildAnswerContentDocument(report,true));
+  }
+  if(report.industryDecision){
+    const industry=report.industryDecision;
+    blocks.push({kind:'heading',text:'업종과 분석 범위'},{kind:'body',text:industry.status==='matched'?industry.label:industryReviewMessage[industry.reason]});
+    for(const item of industry.evidence)blocks.push({kind:'body',text:item.text,href:safeHttpUrl(item.url)||undefined});
   }
   if(report.sitePurpose){const p=report.sitePurpose;blocks.push({kind:'heading',text:'페이지 목적별 분석'},{kind:'body',text:`분류 후보: ${p.label} · 다음 행동 후보: ${p.goal.label}`},{kind:'body',text:`원문 ${p.sourceUrl} · 수집 ${p.capturedAt||'미기록'}`});for(const c of p.checks){blocks.push({kind:'subheading',text:c.label+' · '+({observed:'원문 신호 확인',review:'추가 확인',not_applicable:'해당 없음'}[c.status])});for(const e of c.evidence)blocks.push({kind:'body',text:`원문: ${e.text} · 위치: ${e.locator}`});}}
   if(report.sitePurpose?.community){const c=report.sitePurpose.community;blocks.push({kind:'subheading',text:`커뮤니티 공개 페이지 표본 ${c.pages.length}개`});for(const page of c.pages)blocks.push({kind:'body',text:`${page.pageType} · ${page.title} · ${page.url}`,href:safeHttpUrl(page.url)||undefined});for(const attempt of c.attempts.filter(a=>a.status!=='observed'))blocks.push({kind:'body',text:`추가 확인 필요: ${attempt.url} · ${attempt.note}`});}

@@ -13,6 +13,7 @@ import {NaverOptimizationSchema} from './naverSchema';
 import {SearchSignalsSchema} from './growthSchema';
 import {CompetitorResearchSchema,CompetitorOwnSiteSchema} from './competitorSchema';
 import {OwnProductContextSchema} from './ownProductSchema';
+import {IndustryDecisionSchema} from './industryDecisionSchema';
 import {WebsitePurposeSchema} from './websitePurpose';
 import {ServiceStrategySchema} from './serviceStrategy';
 
@@ -381,6 +382,7 @@ export type DiagnosisCheck=z.infer<typeof DiagnosisCheckSchema>;
 
 export const MarketingReportSchema = z.object({
   sitePurpose:WebsitePurposeSchema.optional(),
+  industryDecision:IndustryDecisionSchema.optional(),
   evidenceReview:EvidenceReviewSchema.optional(),
   sharedRetention:z.object({reportId:z.string().regex(/^[A-Za-z0-9]{4,12}$/),createdAt:z.number().finite(),expiresAt:z.number().finite()}).optional(),
   scoringMethod:z.literal("ai-axes-mean-v1").optional(),

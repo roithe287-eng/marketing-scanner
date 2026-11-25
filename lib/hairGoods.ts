@@ -13,12 +13,13 @@ export function hairGoodsProducts(sources: OwnProductSource[], url: string) {
 
 export function hairGoodsIdentity(url: string, headings: string, primary: string, products: OwnProductSource[], actions: string[]) {
   const headline = classificationText(headings);
-  if (!hairGoodsTopic.test(primary) || /탈모\s*클리닉|모발\s*이식\s*(?:병원|센터)|미용실|헤어샵|가발\s*학원/.test(headline)) {
+  if (/탈모\s*클리닉|모발\s*이식\s*(?:병원|센터)|미용실|헤어샵|가발\s*학원/.test(headline)) {
     return false;
   }
   try {
     if (/(?:^|\/)(?:article|board|blog|magazine|community)(?:\/|[.]|$)/i.test(new URL(url).pathname)) return false;
   } catch { return false; }
+  if (!hairGoodsTopic.test(primary))return new Set(products.map(product=>product.name.trim())).size>=2;
   if (hairGoodsTopic.test(headline) && storeIdentity.test(headline)) return true;
   if (hairGoodsTopic.test(headline) && /구매\s*가이드|착용\s*가이드|칼럼|비교\s*후기/.test(headline) && products.length === 0) {
     return false;
