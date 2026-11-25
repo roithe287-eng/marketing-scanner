@@ -20,6 +20,35 @@ test('HTTP denial stops public extraction without host or protocol retries',asyn
     assert.deepEqual(requests,[url+'robots.txt',url]);mock.mock.restore();
   }
 });
+
+test('browser checks stop collection even when the origin returns HTTP 200', async t => {
+  const challenge = '<script src="/cupid.js"></script><script>document.cookie="CUPID=example";location.href="/?ckattempt=1";</script>';
+  const requests: string[] = [];
+  let page = new Response(`<html><body>${challenge}</body></html>`, {headers: {'content-type': 'text/html'}});
+  t.mock.method(websiteHttp, 'fetch', async (input: string | URL) => {
+    requests.push(String(input));
+    return String(input).endsWith('/robots.txt')
+      ? new Response('User-agent: *\nAllow: /', {headers: {'content-type': 'text/plain'}})
+      : page;
+  });
+  await assert.rejects(extractWebsite(url), (error: unknown) =>
+    error instanceof WebsiteCollectionError && error.reason === 'browser_check' && error.httpStatus === 200,
+  );
+  assert.deepEqual(requests, [url + 'robots.txt', url]);
+
+  requests.length = 0;
+  page = new Response('Browser check', {status: 503, headers: {'cf-mitigated': 'challenge'}});
+  await assert.rejects(extractWebsite(url), (error: unknown) =>
+    error instanceof WebsiteCollectionError && error.reason === 'browser_check' && error.httpStatus === 503,
+  );
+  assert.deepEqual(requests, [url + 'robots.txt', url]);
+
+  page = new Response(`<html><head><title>Studio</title></head><body><h1>공간 디자인 스튜디오</h1>${challenge}</body></html>`, {headers: {'content-type': 'text/html'}});
+  const result = await extractWebsite(url);
+  assert.equal(result.title, 'Studio');
+  assert.match(result.bodyText, /공간 디자인 스튜디오/);
+});
+
 test('restricted report uses same-site display-only excerpts without fabricated observations or scores',async t=>{
   const priorId=process.env.NAVER_CLIENT_ID,priorSecret=process.env.NAVER_CLIENT_SECRET;
   process.env.NAVER_CLIENT_ID='test';process.env.NAVER_CLIENT_SECRET='test';

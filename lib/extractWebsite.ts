@@ -176,6 +176,20 @@ type FetchAttempt = {
   durationMs: number;
 };
 
+async function rejectRestrictedResponse(response: Response | null) {
+  if (!response) return;
+  const status = response.status;
+  const reason = response.headers.get("cf-mitigated") === "challenge" ? "browser_check"
+    : status === 403 ? "forbidden"
+    : status === 406 ? "not_acceptable"
+    : status === 429 ? "rate_limited"
+    : null;
+  if (reason) {
+    await response.body?.cancel();
+    throw new WebsiteCollectionError(reason, status);
+  }
+}
+
 // v46-W2: 리다이렉트 수동 추적 (네이버 수집 진단 대응 — hop 수·자기 자신 리다이렉트 감지)
 // fetch redirect:'follow'는 체인 정보를 숨기므로 'manual'로 직접 따라간다 (최대 6회)
 async function tryFetch(startUrl: string): Promise<FetchAttempt> {
@@ -330,10 +344,7 @@ export async function extractWebsite(
   }
 
   // An explicit denial is not a transport error: do not retry through another host/protocol.
-  if(res&&[403,406,429].includes(res.status)){
-    await res.body?.cancel();
-    throw new WebsiteCollectionError(res.status===429?'rate_limited':res.status===406?'not_acceptable':'forbidden',res.status);
-  }
+  await rejectRestrictedResponse(res);
 
   // 2차: www. 추가해서 재시도
   if (!res || !res.ok) {
@@ -357,10 +368,7 @@ export async function extractWebsite(
     }
   }
 
-  if(res&&[403,406,429].includes(res.status)){
-    await res.body?.cancel();
-    throw new WebsiteCollectionError(res.status===429?'rate_limited':res.status===406?'not_acceptable':'forbidden',res.status);
-  }
+  await rejectRestrictedResponse(res);
 
   // 3차: http로 다운그레이드 시도
   if (!res || !res.ok) {
@@ -391,8 +399,8 @@ export async function extractWebsite(
     );
   }
 
+  await rejectRestrictedResponse(res);
   if (!res.ok) {
-    if([403,406,429].includes(res.status)){await res.body?.cancel();throw new WebsiteCollectionError(res.status===429?'rate_limited':res.status===406?'not_acceptable':'forbidden',res.status);}
     throw new Error(
       `웹사이트 응답 오류: HTTP ${res.status}. 사이트가 외부 접근을 차단하고 있을 수 있습니다.`
     );
@@ -419,6 +427,23 @@ export async function extractWebsite(
     );
   }
 
+  const $ = cheerio.load(html);
+  // This host can send a script-only browser check with HTTP 200.
+  const hasCheckScript = $('script[src]').toArray().some(script =>
+    /(?:^|\/)cupid\.js(?:[?#]|$)/i.test($(script).attr('src') ?? ''),
+  );
+  const redirectsAfterBrowserCheck = hasCheckScript && $('script:not([src])').toArray().some(script => {
+    const code = $(script).text();
+    return /\bdocument\.cookie\s*=\s*['"]CUPID=/i.test(code) && /[?&]ckattempt=\d+/i.test(code);
+  });
+  if (redirectsAfterBrowserCheck) {
+    const body = $('body').clone();
+    body.find('script, style, noscript').remove();
+    if (!body.text().trim() && !body.find('img, video, iframe').length) {
+      throw new WebsiteCollectionError('browser_check', res.status);
+    }
+  }
+
   const finalUrl = res.url || fetchedUrl;
   const productDiscovery=captureProductSeed(html,finalUrl);
   const diagnosticSeed=captureSiteDiagnosticSeed(html,finalUrl);
@@ -426,7 +451,6 @@ export async function extractWebsite(
   const businessDocuments=[captureBusinessDocument(html,finalUrl)];
   const businessLinks=captureBusinessLinks(html,finalUrl);
   const robots = new URL(finalUrl).origin === new URL(url).origin ? initialRobots : await observeRobots(finalUrl, SCANNER_UA);
-  const $ = cheerio.load(html);
   restoreStreamedHtml($);
   const communityContext=captureCommunityContext($,finalUrl);
   const officialSeoEvidence=collectOfficialSeoEvidence($,finalUrl,res.headers);

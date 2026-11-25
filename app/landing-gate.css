@@ -38,6 +38,14 @@
 .scanner-gate-entry .scanner-submit-store { background:#8b2530; }
 .scanner-gate-entry .scanner-submit-store:hover { background:#74202a; }
 .scanner-gate-entry .scanner-url-help { margin:13px 0 0; padding:0 6px; color:#616a78; font-size:12px; line-height:1.7; text-align:center; word-break:keep-all; }
+.scanner-scan-feedback { box-sizing:border-box; margin-top:12px; padding:15px 18px; border:1px solid #d8dfe9; border-radius:13px; background:#fff; color:#4c586b; font-size:13px; line-height:1.65; word-break:keep-all; overflow-wrap:anywhere; }
+.scanner-scan-feedback--loading { display:flex; align-items:center; gap:12px; background:#f6f9ff; }
+.scanner-scan-feedback--notice { border-color:#e7d8c6; background:#fffcf7; }
+.scanner-scan-title { color:#16253b; font-size:15px; font-weight:750; }
+.scanner-scan-feedback p + p { margin-top:3px; }
+.scanner-scan-spinner { flex:none; width:22px; height:22px; border:2px solid #dbe7fa; border-top-color:#1745d1; border-radius:50%; }
+.scanner-scan-actions { display:flex; flex-wrap:wrap; gap:0 18px; margin-top:3px; }
+.scanner-scan-actions a { display:inline-flex; align-items:center; min-height:44px; color:#244778; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
 .scanner-gate-entry .scanner-access-steps { justify-content:center; margin:15px 0 0; color:#616a78; font-size:12px; line-height:1.7; }
 .scanner-gate-entry .scanner-advanced { margin-top:10px; border:0; background:#fff; border-radius:10px; }
 .scanner-gate-entry .scanner-advanced>summary { display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:10px 12px;color:#586274;font-size:13px;list-style:none;cursor:pointer; }
