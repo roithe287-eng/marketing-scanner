@@ -12,6 +12,9 @@ import {sameSite} from './siteIdentity';
 import type {CommunityContext} from './communityContext';
 import {analyzeBusinessContext} from './businessContext';
 import {collectBusinessDocuments} from './businessResearch';
+import {publicCompetitorSearchAvailable,searchPublicCompetitorLinks} from './publicCompetitorSearch';
+import {serviceSpecialties} from './serviceSpecialties';
+import {industryDocuments} from './industrySourceScope';
 import {searchNaverWeb} from './naverWebSearch';
 import {naverReportSearchAllowed} from './naverReportPolicy';
 import {observeRobots} from './observeRobots';
@@ -19,7 +22,8 @@ import {evaluateRobots} from './robotsRules';
 import {getScannerContactUrl} from './siteConfig';
 import {collectOwnProductContext} from './ownProductSources';
 import type {OwnProductContext} from './ownProductSchema';
-import {websiteHttp} from './security/safeFetch';
+import {withBudget} from './runtime/budget';
+import {publicUrl,websiteHttp} from './security/safeFetch';
 import {marketKeywordCandidates,usableMarketKeyword,keywordEvidence,queryMatches,type QuerySite} from "./competitorResearch";
 import type {z} from "zod";
 import type {CompetitorResearchSchema} from "./competitorSchema";
@@ -42,6 +46,9 @@ export type Competitor = SearchCandidate & {
   h2?: string[];
   ctaTexts?: string[];
   bodySnippet?: string;
+  sourceExcerpt?: string;
+  verifiedOffering?: boolean;
+  canonicalUrl?:string;
   fetchError?: string;
 };
 
@@ -68,38 +75,34 @@ const BROWSER_HEADERS = {
   "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
 };
 
-/**
- * 경쟁사 사이트 깊이 있는 메타 + 콘텐츠 수집
- * - 타임아웃 8초
- * - 인코딩 자동 감지
- * - H1, H2, CTA 버튼, 본문 일부까지 수집
- */
-async function fetchCompetitorMeta(competitor: Competitor, officialStore=false): Promise<void> {
+const crawlerHeaders={...BROWSER_HEADERS,'User-Agent':`JinjjaScanner/1.0 (+${getScannerContactUrl()})`};
+
+async function fetchPublicCandidate(link:string,followLocalRedirects:boolean){
+  let target=publicUrl(link);
+  for(let hop=0;hop<3;hop++){
+    const policy=await observeRobots(target.href,crawlerHeaders['User-Agent'],'manual');
+    const missing=policy.status==='missing'&&[404,410].includes(policy.httpStatus||0);
+    if(!missing&&(policy.status!=='ok'||evaluateRobots(policy.text||'','JinjjaScanner',target.pathname+target.search).allowed!==true)){
+      throw new Error('후보 사이트의 공개 원문 수집 허용 여부를 확인하지 못함');
+    }
+    const response=await websiteHttp.fetch(target.href,{headers:crawlerHeaders,cache:'no-store',redirect:'manual',signal:AbortSignal.timeout(8000)});
+    const location=response.headers.get('location');
+    if(!followLocalRedirects||![301,302,303,307,308].includes(response.status)||!location)return {response,finalUrl:target.href};
+    const next=publicUrl(new URL(location,target).href);
+    if(!sameSite(next.href,link)&&!sameSite(link,next.href))throw new Error('다른 도메인으로 이동한 후보 URL');
+    target=next;
+  }
+  throw new Error('후보의 최종 URL 확인 제한');
+}
+
+async function fetchCompetitorMeta(competitor:Competitor,provider:'naver_web'|'public_web'|'official_wig_stores'='naver_web'):Promise<void>{
   try {
-    const headers={...BROWSER_HEADERS};
-    if(officialStore){
-      headers['User-Agent']=`JinjjaScanner/1.0 (+${getScannerContactUrl()})`;
-      const target=new URL(competitor.link);
-      const policy=await observeRobots(target.href,headers['User-Agent'],'manual');
-      const missing=policy.status==='missing'&&[404,410].includes(policy.httpStatus||0);
-      if(!missing&&(policy.status!=='ok'||evaluateRobots(policy.text||'','JinjjaScanner',target.pathname+target.search).allowed!==true)){
-        competitor.fetchError='공식몰의 원문 수집 허용 여부를 확인하지 못함';
-        return;
-      }
-    }
-    const res = await websiteHttp.fetch(competitor.link, {
-      headers,
-      cache: "no-store",
-      redirect: officialStore ? "manual" : "follow",
-      signal: AbortSignal.timeout(8000),
-    });
-
-    if (!res.ok) {
-      competitor.fetchError = `HTTP ${res.status}`;
-      return;
-    }
-
-    if(officialStore&&(/\b(?:noindex|none)\b/i.test(res.headers.get('x-robots-tag')||'')||
+    const result=provider==='naver_web'?{
+      response:await websiteHttp.fetch(competitor.link,{headers:BROWSER_HEADERS,cache:'no-store',redirect:'follow',signal:AbortSignal.timeout(8000)}),finalUrl:competitor.link,
+    }:await withBudget(10000,()=>fetchPublicCandidate(competitor.link,provider==='public_web'));
+    const {response:res,finalUrl}=result;
+    if(!res.ok){competitor.fetchError=`HTTP ${res.status}`;return;}
+    if(provider!=='naver_web'&&(/\b(?:noindex|none)\b/i.test(res.headers.get('x-robots-tag')||'')||
       !/^(?:text\/html|application\/xhtml\+xml)(?:;|$)/i.test(res.headers.get('content-type')||''))){
       competitor.fetchError='공개 HTML 원문을 검증할 수 없음';
       return;
@@ -137,7 +140,8 @@ async function fetchCompetitorMeta(competitor: Competitor, officialStore=false):
       html = new TextDecoder("utf-8", { fatal: false }).decode(bytes);
     }
 
-    Object.assign(competitor,captureCompetitorPage(html,res.url||competitor.link,res.headers));
+    Object.assign(competitor,captureCompetitorPage(html,res.url||finalUrl,res.headers));
+    if(provider==='public_web'&&!competitor.fetchError&&!competitor.verifiedOffering)competitor.fetchError='후보 원문에서 직접 제공하는 상품·서비스를 확인하지 못함';
 
   } catch (err: any) {
     competitor.fetchError = err?.message || "fetch failed";
@@ -145,7 +149,7 @@ async function fetchCompetitorMeta(competitor: Competitor, officialStore=false):
 }
 
 /** Candidate facts are parsed from its own fetched page, never from the search snippet. */
-export function captureCompetitorPage(html:string,url:string,headers=new Headers()):Pick<Competitor,'finalUrl'|'metaTitle'|'metaDescription'|'h1'|'ctaTexts'|'bodySnippet'|'scope'|'fetchError'>{
+export function captureCompetitorPage(html:string,url:string,headers=new Headers()):Pick<Competitor,'finalUrl'|'metaTitle'|'metaDescription'|'h1'|'ctaTexts'|'bodySnippet'|'scope'|'fetchError'|'sourceExcerpt'|'verifiedOffering'|'canonicalUrl'>{
   const $=cheerio.load(html);
   restoreStreamedHtml($);
   if($('meta[name="robots" i],meta[name="JinjjaScanner" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')))return {finalUrl:url,fetchError:'페이지 검색 수집 제한'};
@@ -159,7 +163,10 @@ export function captureCompetitorPage(html:string,url:string,headers=new Headers
   const input={...data,localPlaceEvidence:place};
   const industry=reviewIndustry(input);
   const scope=buildCompetitionScope(industry.status==='review'?input:{...input,industryDecision:industry});
-  return {finalUrl:url,metaTitle,metaDescription,h1,ctaTexts,bodySnippet,scope,
+  const canonical=$('link[rel~="canonical" i]').first().attr('href');
+  const canonicalUrl=canonical&&URL.canParse(canonical,url)?new URL(canonical,url).href:undefined;
+  const sourceExcerpt=(industry.evidence.find(item=>item.field==='body'||item.field==='product')?.text||metaDescription||h1||metaTitle).replace(/\s+/g,' ').trim().slice(0,240);
+  return {finalUrl:url,metaTitle,metaDescription,h1,ctaTexts,bodySnippet,scope,sourceExcerpt,canonicalUrl,verifiedOffering:industry.status==='matched',
     ...(industry.status==='review'&&industry.reason==='conflicting'?{fetchError:'후보 원문의 제공 업종 단서가 서로 다름'}:{}),
   };
 }
@@ -260,7 +267,7 @@ async function compareWigStores(site:QuerySite&{url:string;title:string;descript
     .filter(store=>![store.link,...store.aliases||[]].some(link=>[site.url,scope.sourceUrl].some(url=>sameSite(link,url)||sameSite(url,link))))
     .map(({title,link})=>({title,link,domain:new URL(link).hostname.replace(/^www\./,''),description:'',rank:0}));
   const targets=ownFacets.length?candidates:[];
-  await Promise.all(targets.map(candidate=>fetchCompetitorMeta(candidate,true)));
+  await Promise.all(targets.map(candidate=>fetchCompetitorMeta(candidate,'official_wig_stores')));
   const excluded:ExcludedCandidate[]=[];
   const competitors=targets.flatMap(candidate=>{
     const actualScope=candidate.scope;
@@ -270,7 +277,7 @@ async function compareWigStores(site:QuerySite&{url:string;title:string;descript
       excluded.push({title:candidate.title,link:candidate.link,domain:candidate.domain,reason:candidate.fetchError||mismatch||'공식몰 원문에서 같은 상품군을 확인하지 못함'});
       return [];
     }
-    return [{...candidate,matchedTerms:overlap,relevanceBasis:'page_content' as const,selectionEvidence:`공통 상품군 · ${overlap.join(' / ')}`}];
+    return [{...candidate,matchedOffer:overlap,matchedTerms:overlap,relevanceBasis:'page_content' as const,selectionEvidence:`공통 상품군 · ${overlap.join(' / ')}`}];
   }).sort((a,b)=>b.matchedTerms.length-a.matchedTerms.length).map((candidate,index)=>({...candidate,rank:index+1}));
   const searchKeyword=ownFacets[0]||'';
   return {
@@ -303,7 +310,8 @@ export async function analyzeCompetitors(siteData: {
     siteData={...siteData,title:eligibleMetadata(siteData.title),ogTitle:eligibleMetadata(siteData.ogTitle),description:eligibleMetadata(siteData.description),ogDescription:eligibleMetadata(siteData.ogDescription),h1:siteData.h1.map(eligibleMetadata),h2:siteData.h2?.filter(h=>!isSecondarySection(h,''))};
     const initialScope=siteData.scope&&sameSite(siteData.scope.sourceUrl,siteData.url)?siteData.scope:buildCompetitionScope(siteData);
     if(initialScope.profile==='hairpieces_wigs'&&initialScope.kind==='commerce')return await compareWigStores(rawSite,initialScope);
-    if(!naverReportSearchAllowed())return null;
+    const canUseNaver=naverReportSearchAllowed();
+    if(!canUseNaver&&!publicCompetitorSearchAvailable())return null;
     // Known service journeys use service evidence rather than a product collection attempt.
     const base={...siteData,finalUrl:siteData.url,h2:siteData.h2||[],bodyText:siteData.bodyText||''};
     const initialBusiness=analyzeBusinessContext({...base,description:base.description||base.bodyText.slice(0,500)});
@@ -312,19 +320,24 @@ export async function analyzeCompetitors(siteData: {
       skipProductCollection?Promise.resolve({status:'not_observed' as const,discovery:'input_page' as const,attemptedPages:0,sources:[],commerce:false,note:siteData.communityContext?'커뮤니티는 게시글 탐색·회원 참여를 확인합니다.':'서비스의 이용 조건과 상담·예약 경로를 확인합니다.'}):collectOwnProductContext(siteData.url),
       collectBusinessDocuments(siteData.url,{budgetMs:6000}),
     ]);
-    const business=analyzeBusinessContext({...base,businessDocuments,productContext})||initialBusiness;
+    const scopedDocuments=industryDocuments(initialScope.sourceUrl,businessDocuments);
+    const business=analyzeBusinessContext({...base,businessDocuments:scopedDocuments,productContext})||initialBusiness;
     const businessKeywords=[...new Set([...(initialBusiness?.id===business?.id?initialBusiness?.keywords||[]:[]),...business?.keywords||[]])];
     const needsScope=initialScope.kind==='unknown'||(initialScope.profile==='commerce'&&business?.id==='hairpieces_wigs');
-    const scope=needsScope?buildCompetitionScope({...base,productContext,businessDocuments}):initialScope;
+    const scope=needsScope?buildCompetitionScope({...base,productContext,businessDocuments:scopedDocuments}):initialScope;
     if(scope.profile==='hairpieces_wigs'&&scope.kind==='commerce')return await compareWigStores(rawSite,scope);
     if(scope.profile==='fortune_consultation'&&scope.area&&!scope.nationwide){
       businessKeywords.unshift(...businessKeywords.map(k=>scope.area+' '+k));
     }
-    const querySite:QuerySite={...siteData,scope,productSources:productContext.sources,businessDocuments,businessKeywords};
+    const querySite:QuerySite={...siteData,scope,productSources:productContext.sources,businessDocuments:scopedDocuments,businessKeywords};
     // Source labels describe the path actually used; business rules are not AI output.
     let keyword:string|null|undefined=(siteData.communityContext?marketKeywordCandidates(querySite)[0]?.keyword:undefined)||businessKeywords.find(k=>usableMarketKeyword(k,querySite));
     let keywordSource:"ai"|"fallback"='fallback';
-    if(!keyword){keyword=await extractKeywordWithAI(querySite);if(keyword)keywordSource='ai';}
+    if(!keyword&&!canUseNaver&&scope.serviceSpecialties?.length){
+      const subjects=new Set(scope.serviceSpecialties);
+      keyword=marketKeywordCandidates(querySite).find(candidate=>serviceSpecialties(scope.profile,candidate.keyword).some(subject=>subjects.has(subject)))?.keyword;
+    }
+    if(!keyword&&canUseNaver){keyword=await extractKeywordWithAI(querySite);if(keyword)keywordSource='ai';}
     if(keyword&&!usableMarketKeyword(keyword,querySite))keyword=null;
     if(productContext?.sources.length&&!business){
       const nameSupport=(q:string)=>productContext!.sources.filter(p=>{const m=queryMatches(q,p.name);return m.terms.length>0&&m.matched.length===m.terms.length;}).length;
@@ -344,7 +357,7 @@ export async function analyzeCompetitors(siteData: {
 
     if (!keyword || keyword.length < 2) {
       return {searchKeyword:'',keywordSource:'fallback',competitors:[],filtering:{policyVersion:3,reviewedCount:0,metadataCheckedCount:0,excluded:[]},
-        research:{version:2,provider:'naver_web',capturedAt:new Date().toISOString(),requestedCount:0,returnedCount:0,apiStart:1,totalDocuments:null,
+        research:{version:2,provider:canUseNaver?'naver_web':'public_web',capturedAt:new Date().toISOString(),requestedCount:0,returnedCount:0,apiStart:1,totalDocuments:null,
           ...(!skipProductCollection?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:'회사명 외에 판매 상품·서비스를 확인할 원문 근거가 부족해 경쟁사 검색을 보류했습니다.',keywordEvidence:[],alternatives:[],attemptedKeywords:[],eligibleCount:0,budgetDeferredCount:0,successfulPages:0,selectedCount:0,
           selectionStatus:'insufficient_source',selectionMessage:'메인 HTML과 공개 상품 원문에서 비교할 상품군을 확인하지 못했습니다. 상품이 없거나 사이트에 정보가 부족하다는 판정은 아닙니다. 동적 로딩·접근 제한·검색 API의 수집 범위를 확인해 주세요.'},
         ourSite:{scope,url:siteData.url,domain:ourDomain,title:rawSite.title,metaDescription:rawSite.description,h1:rawSite.h1[0]||''}};
@@ -352,34 +365,54 @@ export async function analyzeCompetitors(siteData: {
     console.log(`[경쟁사] 키워드: "${keyword}" (${keywordSource})`);
 
     // Inspect more search items without increasing the eight-page collection budget.
-    const commerce=productContext.commerce===true&&business?.id!=='duty_free'&&business?.kind!=='service';
+    const commerce=(scope.kind==='commerce'||productContext.commerce===true)&&business?.id!=='duty_free'&&business?.kind!=='service';
     const searchQuery=(term:string)=>{const destination=scope.destinations.length?scope.destinations.map(id=>SKI_DESTINATIONS.find(d=>d.id===id)?.label).filter(Boolean)[0]:'';const region=destination||scope.area;const local=region&&!term.includes(region)?`${region} ${term}`:term;return commerce?`${local} 쇼핑몰`:local;};
     const attemptedKeywords=[searchQuery(keyword)];
-    let response = await searchNaverWeb(searchQuery(keyword), 30);
-    let selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce,scope);
-    if (selection.candidates.length === 0 && keywordSource === "ai") {
-      const fallbackKeyword = marketKeywordCandidates(querySite).find(k=>k.keyword!==keyword)?.keyword;
-      if (fallbackKeyword && fallbackKeyword !== keyword) {
-        attemptedKeywords.push(searchQuery(fallbackKeyword));
-        response = await searchNaverWeb(searchQuery(fallbackKeyword), 30);
-        keyword = fallbackKeyword;
-        keywordSource = "fallback";
-        selection = selectSearchCandidates(response.items, ourDomain, keyword, 8,commerce,scope);
+    let provider:'naver_web'|'public_web'=canUseNaver?'naver_web':'public_web';
+    let response:Awaited<ReturnType<typeof searchNaverWeb>>|undefined;
+    let lookupUnavailable=false;
+    const availableAlternatives=()=>marketKeywordCandidates(querySite).filter(k=>k.keyword!==keyword);
+    if(canUseNaver){
+      try{
+        response=await searchNaverWeb(searchQuery(keyword),30);
+        if(keywordSource==='ai'&&!selectSearchCandidates(response.items,ourDomain,keyword,8,commerce,scope).candidates.length){
+          const alternative=availableAlternatives()[0]?.keyword;
+          if(alternative){
+            attemptedKeywords.push(searchQuery(alternative));
+            response=await searchNaverWeb(searchQuery(alternative),30);
+            keyword=alternative;
+            keywordSource='fallback';
+          }
+        }
+      }catch{
+        response=undefined;
+        if(publicCompetitorSearchAvailable())provider='public_web';
       }
     }
-    const candidates: Competitor[] = selection.candidates.map(c=>({...c,searchRank:(c.searchRank||1)+response.start-1}));
-    // Each fetch has its own eight-second timeout. Await all before taking a snapshot.
-    await Promise.all(candidates.map(candidate => fetchCompetitorMeta(candidate)));
-    const competitors = finalizeSearchCandidates(candidates, keyword, selection.excluded, 5,commerce,scope,ourDomain);
+    const limit=provider==='public_web'?24:30;
+    if(provider==='public_web'){
+      const alternatives=availableAlternatives().slice(0,2).map(candidate=>searchQuery(candidate.keyword));
+      attemptedKeywords.splice(0,attemptedKeywords.length,...new Set([searchQuery(keyword),...alternatives]));
+      try{response=await searchPublicCompetitorLinks(attemptedKeywords,scope,siteData.url);}catch{response=undefined;}
+    }
+    if(!response){
+      lookupUnavailable=true;
+      response={items:[],capturedAt:new Date().toISOString(),start:1,total:null};
+    }
+    const selection=selectSearchCandidates(response.items,ourDomain,keyword,8,commerce,scope,provider==='public_web');
+    const start=response.start;
+    const candidates:Competitor[]=selection.candidates.map(c=>({...c,searchRank:provider==='naver_web'?(c.searchRank||1)+start-1:undefined}));
+    await Promise.all(candidates.map(candidate=>fetchCompetitorMeta(candidate,provider)));
+    const competitors=finalizeSearchCandidates(candidates,keyword,selection.excluded,5,commerce,scope,ourDomain,provider==='public_web');
 
     return {
       searchKeyword: keyword,
       keywordSource,
-      research:{version:2,provider:'naver_web',capturedAt:response.capturedAt,requestedCount:30,returnedCount:response.items.length,apiStart:response.start,totalDocuments:response.total,
+      research:{version:2,provider,capturedAt:response.capturedAt,requestedCount:limit,returnedCount:response.items.length,apiStart:response.start,totalDocuments:response.total,
         ...(!skipProductCollection?{productContext}:{}),searchVolumeStatus:'not_measured',keywordReason:business?'현재 원문에서 확인한 업종·서비스와 고객의 이용 목적에 맞는 검색어를 사용합니다. 검색량이나 주력 매출 순위는 측정하지 않았습니다.':productContext?.sources.length?'자사 상품 원문에서 여러 상품명에 공통으로 확인되는 구체적인 품목을 우선했습니다. 한 상품의 넓은 분류보다 상품명 근거를 우선하며, 전체 쇼핑몰의 매출·주력 순위를 뜻하지 않습니다.':keywordSource==='ai'?'페이지에 실제 있는 상품·서비스 표현으로 AI가 업종 검색어를 제안하고 원문 포함 여부와 회사명 단독 검색 여부를 확인했습니다.':'제목·설명·H1·H2·메타 키워드·수집 본문의 상품·서비스 관련성을 규칙으로 비교하고 회사명 단독 검색어는 제외했습니다.',
         keywordEvidence:keywordEvidence(keyword,querySite).evidence,alternatives:marketKeywordCandidates(querySite).filter(c=>c.keyword!==keyword).slice(0,3).map(c=>({keyword:c.keyword,fields:[...new Set(c.evidence.map(e=>e.field))]})),attemptedKeywords,
         eligibleCount:selection.eligibleCount,budgetDeferredCount:selection.budgetDeferredCount,successfulPages:candidates.filter(c=>!c.fetchError).length,selectedCount:competitors.length,
-        selectionStatus:competitors.length?'matched':'no_relevant_candidates',selectionMessage:competitors.length?'후보 페이지 원문에서 대상 상품·서비스 검색어와 관련 표현을 확인했습니다.':'검색 응답 중 상품·서비스의 관련성을 원문으로 확인한 업체가 없습니다. 관련 없는 업체나 수집 실패 페이지로 비교표를 채우지 않았습니다.'},
+        selectionStatus:lookupUnavailable?'lookup_unavailable':competitors.length?'matched':'no_relevant_candidates',selectionMessage:lookupUnavailable?'경쟁사 URL 검색 응답을 확인하지 못했습니다. 잠시 뒤 다시 조회해 주세요.':competitors.length?'같은 상품·서비스를 제공한다고 원문에서 확인한 URL입니다.':'이번 조회에서 같은 상품·서비스를 확인한 URL이 없습니다.'},
       competitors,
       filtering: {policyVersion: 3, reviewedCount: selection.reviewedCount, metadataCheckedCount: candidates.length, excluded: selection.excluded},
       ourSite: {

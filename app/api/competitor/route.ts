@@ -1,3 +1,4 @@
+import {publicCompetitorSearchAvailable} from '@/lib/publicCompetitorSearch';
 import {naverReportSearchAllowed} from '@/lib/naverReportPolicy';
 import {sameSite} from '@/lib/siteIdentity';
 import {CompetitionScopeSchema} from '@/lib/competitionScope';
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     const scope=hints.scope;
     const wigStores=scope?.profile==='hairpieces_wigs'&&scope.kind==='commerce'&&sameSite(scope.sourceUrl,url);
-    if (!wigStores&&!naverReportSearchAllowed()) {
+    if (!wigStores&&!naverReportSearchAllowed()&&!publicCompetitorSearchAvailable()) {
       return NextResponse.json(
         {
           message: "이 보고서에서는 외부 검색 API를 이용한 자동 경쟁사 조회를 제공하지 않습니다.",
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`[타이밍] 경쟁사 분석 (단독): ${Date.now() - t0}ms`);
 
-    await finish(!result);
+    await finish(!result||result.research.selectionStatus==='lookup_unavailable');
     return NextResponse.json({
       competitorAnalysis: result,
     });

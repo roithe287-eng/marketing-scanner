@@ -61,7 +61,7 @@ export default function HomePage() {
       if(!parsed.success||!parsed.data)throw new Error('경쟁사 비교 결과를 수집하지 못했습니다.');
       const competitorAnalysis=parsed.data;
       if(current())setReport(prev=>prev?{...prev,competitorAnalysis,competitorStatus:{
-        status:competitorAnalysis.competitors.length?'complete':'empty',
+        status:competitorAnalysis.research?.selectionStatus==='lookup_unavailable'?'error':competitorAnalysis.competitors.length?'complete':'empty',
         message:competitorAnalysis.research?.selectionMessage||(competitorAnalysis.competitors.length?'경쟁사 비교를 완료했습니다.':'현재 검색 결과에서 비교할 경쟁사를 찾지 못했습니다.'),
       }}:prev);
     }catch(error){

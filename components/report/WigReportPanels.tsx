@@ -1,8 +1,7 @@
 import React from 'react';
 import type {MarketingReport} from '@/lib/reportSchema';
 import type {WebsitePurpose} from '@/lib/websitePurpose';
-import {safeHttpUrl} from '@/lib/citationMeasurement';
-import {competitorDisplay} from '@/lib/competitorDisplay';
+import CompetitorUrlPanel from './CompetitorUrlPanel';
 import ReportJumpLink from './ReportJumpLink';
 
 const journey=[
@@ -31,22 +30,5 @@ export function WigPurchaseJourney({purpose}:{purpose:WebsitePurpose}){
 }
 
 export function WigStoreComparison({analysis:stored}:{analysis:NonNullable<MarketingReport['competitorAnalysis']>}){
-  const analysis=competitorDisplay(stored);
-  return <section className="report-card wig-report-panel" aria-label="가발·헤어피스 경쟁사">
-    <header><h3>같은 상품군을 판매하는 공식몰</h3>
-      {analysis.competitors.length>0&&<p>비교 상품군 · {analysis.ourSite?.scope?.specialties.join(' / ')}</p>}
-    </header>
-    {analysis.competitors.length>0?<ul className="wig-store-list">
-      {analysis.competitors.map(store=>{const url=safeHttpUrl(store.link);return <li key={store.domain}>
-        <h4>{store.title}</h4>
-        <ul className="wig-store-matches" aria-label="공통 상품군">{store.matchedTerms?.map(facet=><li key={facet}>{facet}</li>)}</ul>
-        {url&&<a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${store.title} 공식몰 열기`}>
-          <span>{new URL(url).host}</span> <span aria-hidden="true">↗</span>
-        </a>}
-      </li>;})}
-    </ul>:<p className="report-note">{analysis.research?.selectionMessage}</p>}
-    {!!analysis.filtering?.excluded.length&&<details className="wig-source-details"><summary>제외한 URL과 확인 결과</summary><ul>
-      {analysis.filtering.excluded.map(store=><li key={store.link}>{store.domain} · {store.reason}</li>)}
-    </ul></details>}
-  </section>;
+  return <CompetitorUrlPanel analysis={stored}/>;
 }

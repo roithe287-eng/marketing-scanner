@@ -11,10 +11,11 @@ export function buildCompetitorDocument(report:MarketingReport):ReportBlock[] {
   const {analysis,rows,own}=model,r=analysis.research;
   if(analysis.ourSite?.scope)add('body',`비교 기준: ${competitionScopeLabel(analysis.ourSite.scope)}`);
   if(r?.selectionMessage)add('body',r.selectionMessage);
-  if(r?.provider==='official_wig_stores'){
-    add('subheading','같은 상품군을 판매하는 공식몰');
+  if(r?.provider==='official_wig_stores'||r?.provider==='public_web'){
+    add('subheading',r.provider==='official_wig_stores'?'같은 상품군을 판매하는 공식몰':'원문으로 확인한 경쟁사');
     for(const store of analysis.competitors){
-      add('body',[store.title,store.selectionEvidence].filter(Boolean).join(' · '));
+      add('body',[store.metaTitle||store.title,store.selectionEvidence].filter(Boolean).join(' · '));
+      if(store.sourceExcerpt)add('body',store.sourceExcerpt);
       add('body',store.link,safeHttpUrl(store.link)||undefined);
     }
     return b;

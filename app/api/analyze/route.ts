@@ -1,3 +1,4 @@
+import {publicCompetitorSearchAvailable} from '@/lib/publicCompetitorSearch';
 import {naverReportSearchAllowed} from '@/lib/naverReportPolicy';
 import {buildCompetitionScope} from '@/lib/competitionScope';
 import {providerBody,isSecondarySection} from '@/lib/websiteIdentity';
@@ -238,7 +239,7 @@ export async function POST(req: NextRequest) {
     return {
       ...reviewedReport,
       _hasCompetitor: !!(
-        competitionScope&&(naverReportSearchAllowed()||competitionScope.profile==='hairpieces_wigs'&&competitionScope.kind==='commerce')
+        competitionScope&&(naverReportSearchAllowed()||publicCompetitorSearchAvailable()||competitionScope.profile==='hairpieces_wigs'&&competitionScope.kind==='commerce')
         && (principal.kind==='internal'||planFeatures(principal.account).competitor)
       ),
       _websiteHints: {

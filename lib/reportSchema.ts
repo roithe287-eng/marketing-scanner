@@ -539,6 +539,8 @@ export const MarketingReportSchema = z.object({
           searchRank: z.number().int().positive().optional(),
           relevance: z.enum(['keyword_match', 'needs_review']).optional(),
           selectionEvidence: z.string().optional(),
+          sourceExcerpt:z.string().max(240).optional(),
+          matchedOffer:z.array(z.string().max(60)).max(8).optional(),
           matchedTerms:z.array(z.string()).optional(),
           relevanceBasis:z.enum(['page_metadata','page_content','search_snippet']).optional(),
           metaTitle: z.string().optional(),
