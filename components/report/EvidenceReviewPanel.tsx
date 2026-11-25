@@ -5,12 +5,19 @@ import {CompactText} from './ReportVisualSummary';
 import type {EvidenceReview} from '@/lib/evidenceReview';
 
 export default function EvidenceReviewPanel({review}:{review:EvidenceReview}) {
+  const criterionId=React.useId();
+  const criterionLabels={pass:'충족',warning:'보완 검토',fail:'미충족',review:'미확인'};
   return <section id="report-html-observations" className="report-card report-evidence-review" aria-label="8개 영역 근거와 측정 범위">
     <div className="report-card-heading">
       <p className="report-eyebrow">EVIDENCE &amp; REVIEW</p>
       <h3>확인한 사실과 더 확인할 부분</h3>
       <p className="report-note">{review.assessed ? `판정한 HTML 기본 항목 ${review.assessed}개 중 ${review.passed}개가 기준을 충족했습니다.` : 'HTML 기본 항목 판정을 보류했습니다.'} 미확인 {review.unknown}개입니다. 실제 화면과 전환은 아래 안내에 따라 직접 확인하세요.</p>
     </div>
+    {review.criteria.length>0&&<nav className="report-criterion-map" style={{'--group-columns':review.criteria.length} as React.CSSProperties} aria-label="HTML 항목별 판정 근거">
+      {review.criteria.map((item,i)=><a key={item.id} href={`#${criterionId}-${i}`} data-status={item.status}>
+        <strong>{item.label}</strong><span>{criterionLabels[item.status]}</span>
+      </a>)}
+    </nav>}
     {review.axes.length > 0 && <div className="report-evidence-overview">
       <div className="report-evidence-columns" aria-hidden="true"><span>진단 영역</span><span>추가로 확인할 것</span></div>
       <ul role="list" aria-label="영역별 다음 확인 항목">
@@ -33,8 +40,8 @@ export default function EvidenceReviewPanel({review}:{review:EvidenceReview}) {
       <p className="report-note">{review.note}</p>
       <p className="report-note">수집 시각: {new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',dateStyle:'medium',timeStyle:'short'}).format(new Date(review.capturedAt))} KST · <ReportJumpLink id="report-site-guide">원문·링크 모음</ReportJumpLink></p>
       <div className="report-evidence-criteria">
-        {review.criteria.map(criterion => <article key={criterion.id}>
-          <h4>{criterion.label} · {criterion.status === 'pass' ? '충족' : criterion.status === 'review' ? '미확인' : '보완 검토'}</h4>
+        {review.criteria.map((criterion,i) => <article key={criterion.id} id={`${criterionId}-${i}`}>
+          <h4>{criterion.label} · {criterionLabels[criterion.status]}</h4>
           <p><strong>기준</strong> {criterion.rule}</p>
           <p><strong>원문 관측</strong> {criterion.evidence}</p>
         </article>)}

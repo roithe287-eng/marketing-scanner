@@ -78,6 +78,9 @@ test('limited UI keeps five chapters and isolates every example from actual obse
   const $=load(output);
   assert.deepEqual($('[data-chapter]').map((_,el)=>$(el).attr('data-chapter')).get(),['overview','geo','search','competition','actions']);
   assert.equal($('.store-unavailable').length,27);
+  assert.equal($('details.store-example-fold:not([open])').length,5);
+  assert.equal($('details.store-example-fold .store-unavailable').length,27);
+  for(const link of $('.store-result-shortcuts a').toArray())assert.equal($($(link).attr('href')!).length,1);
   $('.store-unavailable').each((_,el)=>{const card=$(el);assert.equal(card.find('.store-example-blur[inert][aria-hidden="true"]').length,1);assert.equal(card.find('input,button,a,select,textarea').length,0);assert.match(card.find('.store-unavailable-overlay').text(),/스마트스토어·브랜드스토어는 미적용/);assert.match(card.find('.store-demo-label').text(),/이 스토어의 분석값이 아닙니다/);});
   assert.equal($('[data-store-section="metadata"]').attr('data-applicability'),'unavailable-data');
   assert.equal($('[data-applicability="manual"] input').length,7);

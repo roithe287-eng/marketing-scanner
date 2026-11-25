@@ -15,6 +15,11 @@ test('a report with evidence review still draws the eight saved AI scores and la
  const $=load(renderToStaticMarkup(React.createElement(ScoreRadar,{diagnosis:report.diagnosis,review:report.evidenceReview,featured:true})));
  assert.equal($('.diagnosis-radar-graphic').length,1);
  assert.equal($('.report-axis').length,8);
+ assert.equal($('.diagnosis-radar-graphic').attr('role'),'radiogroup');
+ const selectors=$('[data-radar-select]');
+ assert.equal(selectors.length,8);
+ assert.equal(selectors.filter('[aria-checked="true"][tabindex="0"]').length,1);
+ selectors.each((_,el)=>assert.equal($(`[id="${$(el).attr('aria-controls')}"]`).length,1));
  const description=$('.diagnosis-radar-graphic').attr('aria-label')!;
  for(const a of diagnosisAxes)assert.ok(description.includes(`${a.label} ${report.diagnosis[a.key]}점`));
  assert.match(description,/AI 참고 평가/);assert.match($.text(),/실제 전환율·모바일 동작을 측정한 점수가 아닙니다/);
@@ -52,6 +57,13 @@ test('HTML evidence remains below the radar and never replaces or supplies its A
   assert.equal(next.children('.report-compact-text').text(),review.axes[index].nextStep);
   assert.equal(evidence.attr('open'),undefined);
   assert.equal(evidence.find('.report-compact-text').text(),review.axes[index].evidence);
+ });
+ const criteria=$('.report-criterion-map a');
+ assert.equal(criteria.length,review.criteria.length);
+ criteria.each((i,el)=>{
+   const target=$(`[id="${$(el).attr('href')?.slice(1)}"]`);
+   assert.ok(target.text().includes(review.criteria[i].evidence));
+   assert.equal($(el).attr('data-status'),review.criteria[i].status);
  });
  const method=$('.report-evidence-review>details');
  assert.equal(method.attr('open'),undefined);

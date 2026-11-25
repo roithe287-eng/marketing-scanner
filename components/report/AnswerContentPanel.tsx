@@ -85,7 +85,7 @@ export default function AnswerContentPanel({plan,opportunityFirst=false,placeRev
           <div className="briefing-topics"><strong>질문 주제</strong><span>{keyword.term}</span>{plan.secondaryKeywords.map(k=><span key={k.term}>{k.term}</span>)}</div>
           {plan.topicScope==='mixed'&&<p className="briefing-unavailable">여러 주제가 포함된 페이지입니다. 실제 상품·서비스를 설명하는 대표 주제를 확인하세요.</p>}
           {plan.questions.length?<ReportItemPanels briefing id="answer-questions" label="고객 질문 선택" items={plan.questions.map((q,i)=>({
-            id:q.id,label:q.question,children:<BriefingQuestion key={q.id} q={q} targetUrl={plan.targetUrl}/>,followup:<BriefingFollowup key={q.id} q={q} index={i}/>
+            id:q.id,label:q.question,status:{code:q.status,label:ANSWER_STATUS[q.status]},children:<BriefingQuestion key={q.id} q={q} targetUrl={plan.targetUrl}/>,followup:<BriefingFollowup key={q.id} q={q} index={i}/>
           }))}/>:<p className="briefing-unavailable">이 페이지에는 저장된 고객 질문이 없습니다.</p>}
           <details className="briefing-details briefing-keywords"><summary>질문 주제를 선정한 페이지 근거<ReadingToggle variant="report"/></summary><div>{[keyword,...plan.secondaryKeywords].map(k=>
             <section key={k.term}><h4>{k.term}</h4><p>{k.reason}</p>{k.evidence.map(e=><blockquote key={e.id}><strong>{e.location}</strong>{e.text}</blockquote>)}</section>)}</div></details>

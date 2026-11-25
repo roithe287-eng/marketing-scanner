@@ -8,11 +8,13 @@ type Props = {
   previousScores?:readonly number[];
   reference?:boolean;
   unmeasured?:boolean;
+  onAxisSelect?:(index:number)=>void;
+  controlsId?:string;
 };
 const labels = [[220,18],[350,62],[405,172],[350,282],[220,326],[90,282],[35,172],[90,62]];
 
 /** The same geometry and palette connect the landing preview and actual report. */
-export default function DiagnosisRadarGraphic({scores,selected,example=false,previousScores,reference=false,unmeasured=false}:Props) {
+export default function DiagnosisRadarGraphic({scores,selected,example=false,previousScores,reference=false,unmeasured=false,onAxisSelect,controlsId}:Props) {
   const clipId=useId();
   const values = diagnosisAxes.map((_,i)=>Math.max(0,Math.min(100,scores[i]??0)));
   const average = Math.round(values.reduce((sum,value)=>sum+value,0)/values.length);
@@ -25,7 +27,17 @@ export default function DiagnosisRadarGraphic({scores,selected,example=false,pre
   const tip=point(direction,91),base=point(direction,77),tail=point(direction,32);
   const angle=direction*Math.PI/4-Math.PI/2;
   const wing=(offset:number)=>`${base.x+Math.cos(angle+Math.PI/2)*offset},${base.y+Math.sin(angle+Math.PI/2)*offset}`;
-  return <svg className="diagnosis-radar-graphic" viewBox="0 0 440 344" role="img" aria-label={unmeasured?'8방향 레이더 차트 · 원문 미수집으로 8개 영역 점수 평가 보류':`8방향 레이더 차트 · 8개 영역 진단 ${example?'예시':reference?'AI 참고 평가':'결과'}. 평균 ${average}점. ${diagnosisAxes.map((a,i)=>`${a.label} ${previousScores?`이전 ${previousScores[i]}점, 현재 `:''}${values[i]}점`).join(', ')}. 바깥쪽이 100점입니다.`}>
+  function handleAxisKey(event:React.KeyboardEvent<SVGGElement>,index:number){
+    if(!onAxisSelect)return;
+    const last=diagnosisAxes.length-1;
+    const next:Record<string,number>={ArrowRight:(index+1)%(last+1),ArrowDown:(index+1)%(last+1),ArrowLeft:(index+last)%(last+1),ArrowUp:(index+last)%(last+1),Home:0,End:last,Enter:index,' ':index};
+    const target=next[event.key];
+    if(target===undefined||event.altKey||event.ctrlKey||event.metaKey)return;
+    event.preventDefault();
+    onAxisSelect(target);
+    event.currentTarget.ownerSVGElement?.querySelector<SVGGElement>(`[data-radar-select="${target}"]`)?.focus();
+  }
+  return <svg className="diagnosis-radar-graphic" viewBox="0 0 440 344" role={onAxisSelect?"radiogroup":"img"} aria-label={unmeasured?'8방향 레이더 차트 · 원문 미수집으로 8개 영역 점수 평가 보류':`8방향 레이더 차트 · 8개 영역 진단 ${example?'예시':reference?'AI 참고 평가':'결과'}. 평균 ${average}점. ${diagnosisAxes.map((a,i)=>`${a.label} ${previousScores?`이전 ${previousScores[i]}점, 현재 `:''}${values[i]}점`).join(', ')}. 바깥쪽이 100점입니다.`}>
     <defs><clipPath id={clipId}><polygon points={polygon(100)}/></clipPath></defs>
     <polygon data-radar-boundary points={polygon(100)} fill="#edf3ff"/>
     {[25,50,75,100].map(level=><polygon key={level} points={polygon(level)} fill="none" stroke="#b7c8e5" strokeWidth="1"/>)}
@@ -39,8 +51,14 @@ export default function DiagnosisRadarGraphic({scores,selected,example=false,pre
     </g>}
     {diagnosisAxes.map((a,i)=>{const p=point(i,values[i]),[x,y]=labels[i];return <g key={a.key}>
       {!unmeasured&&<circle cx={p.x} cy={p.y} r={i===selected?7:5} fill={a.color} stroke="white" strokeWidth="2"/>}
+      <g {...(onAxisSelect?{
+        'data-radar-select':i, role:'radio', tabIndex:i===selected?0:-1,
+        'aria-label':a.label+' · '+(unmeasured?'미측정':values[i]+'점')+' 개선 방법', 'aria-checked':i===selected, 'aria-controls':controlsId,
+        onClick:()=>onAxisSelect(i), onKeyDown:(event:React.KeyboardEvent<SVGGElement>)=>handleAxisKey(event,i),
+      }:{})}>
       <rect className="diagnosis-radar-label-box" x={x-32} y={y-12} width="64" height="24" rx="8" fill={a.surface} stroke={i===selected?a.color:'transparent'} strokeWidth="2"/>
       <text className="diagnosis-radar-label" x={x} y={y} dominantBaseline="central" textAnchor="middle" fill={a.color} fontSize="16" fontWeight="750">{a.short}</text>
+      </g>
     </g>;})}
     <circle cx="220" cy="172" r="31" fill="white" stroke="#cedaef"/>
     <text className="diagnosis-radar-average" x="220" y="168" textAnchor="middle" fontSize="25" fontWeight="850" fill="#192a4d">{unmeasured?'—':average}</text>

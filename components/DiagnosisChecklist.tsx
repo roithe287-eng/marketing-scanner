@@ -1,7 +1,9 @@
+'use client';
 import DraftText from './report/DraftText';
 import {Guidebook} from './report/SiteGuidebook';
 import {RoleBox} from './report/ReportRole';
-import React from 'react';
+import React,{useId,useState} from 'react';
+import ReportDistribution,{type DistributionGroup} from './report/ReportDistribution';
 import type {ChecklistItem,MarketingReport} from '@/lib/reportSchema';
 import ReadingDisclosure from './ReadingDisclosure';
 import {reportPhraseKey,reportReadingPoints} from '@/lib/conciseReport';
@@ -10,11 +12,18 @@ import ReportJumpLink from './report/ReportJumpLink';
 const states={pass:{label:'관측 충족',symbol:'✓'},warning:{label:'보완 검토',symbol:'!'},fail:{label:'미충족',symbol:'−'},review:{label:'미확인·검토',symbol:'?'},not_applicable:{label:'해당 없음',symbol:'·'}} as const;
 const categories:Record<string,string>={seo:'SEO',content:'콘텐츠',trust:'신뢰',conversion:'전환'};
 export default function DiagnosisChecklist({checklist,issues=[]}:{checklist:ChecklistItem[];issues?:MarketingReport['criticalIssues']}) {
+  const [filter,setFilter]=useState<string|null>(null);
+  const listId=useId();
   if(!checklist?.length)return null;
-  const counts=Object.fromEntries(Object.keys(states).map(state=>[state,checklist.filter(c=>c.status===state).length]));
-  return <section className="report-checklist" aria-label="기본 진단 체크리스트 상세"><div className="report-card-heading"><p className="report-eyebrow">PAGE CHECKLIST</p><h3>기본 진단 체크리스트</h3><p className="report-note">저장된 기본 점검 {checklist.length}개입니다. 항목별로 수집값과 판단 이유를 읽고, 수정이 필요하면 적용 방법을 확인하세요.</p></div>
-    <div className="report-checklist-stats">{(Object.keys(states) as (keyof typeof states)[]).map(state=><div key={state} data-state={state}><span>{states[state].label}</span><strong>{counts[state]}<small>개</small></strong><div className="report-meter" aria-hidden="true"><i style={{width:`${100*counts[state]/checklist.length}%`}}/></div></div>)}</div>
-    <div className="report-checklist-rows">{checklist.map((item,i)=>{
+  const tones={pass:'good',warning:'attention',fail:'action',review:'review',not_applicable:'neutral'} as const;
+  const groups:DistributionGroup[]=(Object.keys(states) as (keyof typeof states)[]).map(id=>({
+    id,label:states[id].label,tone:tones[id],count:checklist.filter(item=>item.status===id).length,
+  }));
+  const selected=groups.some(group=>group.id===filter&&group.count>0)?filter:null;
+  const visible=selected?checklist.filter(item=>item.status===selected):checklist;
+  return <section className="report-checklist" aria-label="기본 진단 체크리스트 상세"><div className="report-card-heading"><p className="report-eyebrow">PAGE CHECKLIST</p><h3>기본 진단 체크리스트</h3><p className="report-note">상태를 선택하면 해당 항목의 수집값과 수정 방법을 볼 수 있습니다.</p></div>
+    <ReportDistribution title="기본 점검 상태" groups={groups} selection={selected} onSelect={setFilter} controls={listId}/>
+    <div className="report-checklist-rows" id={listId}>{visible.map((item,i)=>{
       const current=reportPhraseKey(item.currentValue),diagnosis=reportPhraseKey(item.diagnosis);
       const explanation=reportReadingPoints(item.diagnosis||'저장된 설명이 없습니다.');
       const instructions=reportReadingPoints(item.guide||'저장된 가이드가 없습니다.');

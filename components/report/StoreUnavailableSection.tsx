@@ -59,12 +59,15 @@ function Example({preview}:{preview:Preview}) {
 }
 
 export default function StoreUnavailableSections({chapter}:{chapter:ReportChapterId}) {
-  return <div className="store-unavailable-grid">{STORE_UNAVAILABLE_SECTIONS[chapter].map(preview=><article key={preview.id} className="report-card store-unavailable" data-store-section={preview.id} data-applicability="unavailable" aria-labelledby={`store-section-${preview.id}`}>
+  const examples=STORE_UNAVAILABLE_SECTIONS[chapter];
+  return <details className="store-example-fold">
+    <summary><span>미적용 진단 예시</span><strong>{examples.length}개</strong></summary>
+    <div className="store-unavailable-grid">{examples.map(preview=><article key={preview.id} className="report-card store-unavailable" data-store-section={preview.id} data-applicability="unavailable" aria-labelledby={`store-section-${preview.id}`}>
     <div className="store-section-heading"><h3 id={`store-section-${preview.id}`}>{preview.title}</h3><span>미적용</span></div>
     <p className="store-demo-label">일반 웹사이트 진단 예시 · 이 스토어의 분석값이 아닙니다</p>
     <div className="store-unavailable-body">
       <div className="store-example-blur" inert aria-hidden="true"><Example preview={preview}/></div>
       <div className="store-unavailable-overlay"><span className="store-lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M7 10V7a5 5 0 0 1 10 0v3"/><rect x="4" y="10" width="16" height="12" rx="3"/><path d="M12 14v4"/></svg></span><strong>스마트스토어·브랜드스토어는 미적용</strong><p>{preview.reason}</p></div>
     </div>
-  </article>)}</div>;
+  </article>)}</div></details>;
 }
