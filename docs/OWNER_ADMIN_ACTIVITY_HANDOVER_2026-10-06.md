@@ -3,7 +3,7 @@
 ## Intended behavior
 
 - `/setup` creates the one owner account only. It requires the pre-existing registered-network check (`ALLOWED_IPS`), a cryptographically random setup code whose SHA-256 is `SAAS_SETUP_TOKEN_HASH`, and an unexpired `SAAS_SETUP_EXPIRES_AT`. The plaintext code must never be committed. The owner chooses their own email and password in the form.
-- `admin-initialized` is the immutable owner ID. Every administrative request checks the active session, admin role, this exact owner ID, and the registered network. A second account with an admin role cannot inherit ownership.
+- `admin-initialized` is the immutable owner ID. Every administrative request checks the active session, admin role, and this exact owner ID. The owner can sign in and manage the service from any network. Initial registration still uses the registered-network check, and password recovery applies its own checks. A second account with an admin role cannot inherit ownership.
 - Registered IPs no longer bypass account login for B2B analysis or reports. Customer account creation and inquiry approval are available only to the owner. No public signup or promotion endpoint exists.
 - `/manage` provides owner-only account creation, inquiry approval, suspension, expiry/feature/quota editing, single-use activation links, pagination, and per-user activity details. Activation links expire in 48 hours; sending them is a separate action.
 - Email is the login account ID; the stable account UUID is the unique user ID. IP and coarse browser/OS labels are observations, not unique person/device identifiers. No hardware fingerprint is collected.

@@ -43,9 +43,11 @@ test('overview counts all account pages, and separates owner, customers and logi
   assert.equal(data.customers.find((c:{id:string})=>c.id===customers[2].id).activated,false);
   assert.ok(!data.customers.some((c:{id:string})=>c.id===owner.id||c.id===NETWORK_ACTIVITY_ID));
 });
-test('all admin read modes deny customers, unlogged networks, outside owner sessions, cross-site and forged forwarding requests',async()=>{
+test('admin read modes allow the owner outside and still deny customers, guests and cross-site requests',async()=>{
   for(const path of ['/api/admin','/api/admin?view=overview','/api/admin?id='+NETWORK_ACTIVITY_ID,'/api/admin?id='+customers[3].id]){
-    for(const [session,ip,headers] of [[customerToken,office,{}],['',office,{}],[ownerToken,outside,{}],[ownerToken,office,{'sec-fetch-site':'cross-site'}],[ownerToken,office,{origin:'https://attacker.example'}],[ownerToken,'',{'x-forwarded-for':office,'x-middleware-subrequest':'middleware:middleware'}]] as const){
+    const allowed=await admin.GET(req(path,undefined,ownerToken,outside));
+    assert.equal(allowed.status,200,path);assert.match(allowed.headers.get('cache-control')!,/no-store/);
+    for(const [session,ip,headers] of [[customerToken,office,{}],['',office,{}],[ownerToken,outside,{'sec-fetch-site':'cross-site'}],[ownerToken,outside,{origin:'https://attacker.example'}],['','',{'x-forwarded-for':office,'x-middleware-subrequest':'middleware:middleware'}]] as const){
       const r=await admin.GET(req(path,undefined,session,ip,headers));assert.equal(r.status,403,path);assert.doesNotMatch(await r.text(),/owner@example|counts|passwordHash/);
     }
   }

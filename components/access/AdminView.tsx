@@ -172,7 +172,7 @@ export default function AdminView() {
   return (
     <div className="access-admin">
       <div className="access-account-head">
-        <div><p><strong>{owner?.name||'소유자'} 관리자</strong> · {owner?.email}</p><p className="access-muted">계정 발급·승인은 이 관리자 한 명만 가능합니다. 등록 네트워크와 관리자 로그인을 함께 확인합니다.</p></div>
+        <div><p><strong>{owner?.name||'소유자'} 관리자</strong> · {owner?.email}</p><p className="access-muted">계정 발급·승인은 로그인한 소유자 관리자만 할 수 있습니다.</p></div>
         <button
           className="access-secondary"
           onClick={() => void load()}

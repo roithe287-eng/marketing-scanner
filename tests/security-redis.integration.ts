@@ -61,7 +61,7 @@ test("inquiry, approval, single-use activation, login, ownership, concurrency an
     { status: 409 },
   );
   const adminToken = await createSession(admin);
-  await assert.rejects(() => requireAdmin(req(adminToken)), { status: 403 });
+  assert.equal((await requireAdmin(req(adminToken))).id, admin.id);
   assert.equal(
     (await requireAdmin(req(adminToken, "203.0.113.10"))).id,
     admin.id,
@@ -232,7 +232,7 @@ test("rate limits are atomic and storage failures do not authorize sessions", as
   );
   process.env.UPSTASH_REDIS_REST_URL = url;
 });
-test("HTTP handlers complete inquiry → approval → activation → login → private report → suspension", async () => {
+test("HTTP handlers support external owner login, inquiry approval, customer activation and private reports", async () => {
   const login = await import("../app/api/login/route");
   const lead = await import("../app/api/lead/route");
   const management = await import("../app/api/admin/route");
@@ -259,9 +259,10 @@ test("HTTP handlers complete inquiry → approval → activation → login → p
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
     });
   const adminLogin = await login.POST(
-    request("/api/login", { email: "admin@example.com", password }, "", true),
+    request("/api/login", { email: "admin@example.com", password }),
   );
   assert.equal(adminLogin.status, 200);
+  assert.deepEqual(await adminLogin.json(), { ok: true, admin: true });
   const adminCookie = adminLogin.headers.get("set-cookie")!.split(";")[0];
   assert.match(adminLogin.headers.get("set-cookie")!, /HttpOnly/i);
   assert.match(adminLogin.headers.get("set-cookie")!, /SameSite=strict/i);
@@ -306,7 +307,7 @@ test("HTTP handlers complete inquiry → approval → activation → login → p
     assert.equal(submitted.status, 200);
   }
   const adminList = await management.GET(
-    request("/api/admin", undefined, adminCookie, true),
+    request("/api/admin", undefined, adminCookie),
   );
   assert.equal(adminList.status, 200);
   const savedInquiries = (await adminList.json()).inquiries;
@@ -337,7 +338,6 @@ test("HTTP handlers complete inquiry → approval → activation → login → p
         ...grant,
       },
       adminCookie,
-      true,
     ),
   );
   assert.equal(approve.status, 200);
