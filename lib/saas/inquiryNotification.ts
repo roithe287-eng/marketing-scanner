@@ -4,12 +4,11 @@ import { db, key, decode, getAccount, INQUIRY_SECONDS } from './store';
 import type { Inquiry, InquiryNotification } from './types';
 import { inquiryServiceLabels } from '../inquiry';
 import { inquiryPlanLabel } from '../pricing';
+import { scannerEmailConfigured, sendScannerEmail } from './scannerEmail';
 
 export function inquiryEmailSettings(ownerEmail: string) {
   const recipient = process.env.INQUIRY_NOTIFY_TO?.trim() || ownerEmail;
-  const from = process.env.INQUIRY_EMAIL_FROM?.trim() || '';
-  const configured = !!process.env.RESEND_API_KEY?.trim()
-    && emailSchema.safeParse(from).success && emailSchema.safeParse(recipient).success;
+  const configured = scannerEmailConfigured() && emailSchema.safeParse(recipient).success;
   return { configured, enabled: configured && process.env.VERCEL_ENV === 'production', recipient };
 }
 
@@ -61,28 +60,8 @@ export async function notifyInquiry(id: string): Promise<InquiryNotification['st
     if (!settings.enabled) return await record('unconfigured');
     attempts += 1;
     await record('pending');
-    try {
-      const response = await fetch('https://api.resend.com/emails', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY!.trim()}`,
-          'Content-Type': 'application/json',
-          'Idempotency-Key': `scanner-inquiry/${id}`,
-        },
-        body: JSON.stringify({
-          from: `마케팅스캐너 <${process.env.INQUIRY_EMAIL_FROM!.trim()}>`,
-          to: [settings.recipient],
-          ...inquiryEmailContent(inquiry),
-        }),
-        signal: AbortSignal.timeout(5000),
-        redirect: 'error',
-      });
-      const body = response.ok ? await response.json() : null;
-      if (response.ok && typeof body?.id === 'string') return await record('sent');
-    } catch {
-      // Provider response bodies and recipient/customer data never enter application logs.
-    }
-    return await record('failed');
+    const sent = await sendScannerEmail(settings.recipient, inquiryEmailContent(inquiry), `scanner-inquiry/${id}`);
+    return await record(sent ? 'sent' : 'failed');
   } catch {
     console.warn('[inquiry-email] Notification could not be completed; inquiry remains saved.');
     return 'failed';
