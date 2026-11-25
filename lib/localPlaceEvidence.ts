@@ -11,7 +11,7 @@ import {placeChannel} from './hospitalPlace';
 import {sameSite,siteIdentity} from './siteIdentity';
 
 const clean=(v:unknown,max=200)=>typeof v==='string'?v.replace(/\s+/gu,' ').trim().slice(0,max):'';
-const provider=/광고\s*대행|마케팅|홈페이지\s*제작|웹\s*제작|솔루션|소프트웨어|뉴스|신문|매거진|블로그|협회|학회|채용|(?:업체|병원|맛집)\s*(?:비교|목록|검색\s*포털)/i;
+const provider=/광고\s*대행|마케팅|(?:병원|의료기관)\s*(?:(?:개원|경영|전문)\s*)?컨설팅|홈페이지\s*제작|웹\s*제작|솔루션|소프트웨어|뉴스|신문|매거진|블로그|협회|학회|채용|(?:업체|병원|맛집)\s*(?:비교|목록|검색\s*포털)/i;
 const sensitive=/\/(?:reviews?|cases?|patients?|records?|consult|counsel|login|admin|예약|상담|환자)(?:[\/._-]|$)/i;
 const localType=/^(?:LocalBusiness|Restaurant|Store|Pharmacy|BankOrCreditUnion|InsuranceAgency|FinancialService|.+Store|.+Salon|.+Restaurant|Hospital|MedicalClinic|Dentist|PhysiciansOffice|LegalService|Attorney|AccountingService|VeterinaryCare|PetSitting|CafeOrCoffeeShop|Bakery|FoodEstablishment|BarOrPub|Hotel|Motel|LodgingBusiness|Campground|BedAndBreakfast|TravelAgency|DaySpa|School|ExerciseGym|SportsActivityLocation|HealthClub|GolfCourse|AutoRepair|AutoDealer|AutoWash|AutomotiveBusiness|HomeAndConstructionBusiness|Plumber|Electrician|Locksmith|MovingCompany|GeneralContractor|RealEstateAgent|Optician|Florist|Museum|ArtGallery|MovieTheater|AmusementPark|TouristAttraction|EventVenue|AutoRental|SelfStorage|ChildCare|NursingHome|DryCleaningOrLaundry|FuneralHome)$/;
 function addressText(value:unknown):string {

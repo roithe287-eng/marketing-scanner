@@ -27,7 +27,7 @@ const placeCases=[
   ['베이커리 카페','cafe','food'],['국밥 식당','restaurant','food'],['호텔','lodging','travel'],['여행사','travel','travel'],
   ['미용실','beauty','beauty'],['영어학원','education','education'],['필라테스','fitness','sports'],
   ['카센터','automotive','automotive'],['인테리어 시공','home_service','interior'],['공인중개사','real_estate','realestate'],
-  ['꽃집','retail','commerce'],['박물관','culture','etc'],['사진관','event','etc'],['렌터카','rental','automotive'],
+  ['꽃집','retail','commerce'],['박물관','culture','etc'],['사진관','event','event'],['렌터카','rental','automotive'],
   ['요양원','welfare','etc'],['세탁소','living','etc'],['장례식장','funeral','etc'],
 ]as const;
 for(const[name,profile,industry]of placeCases)test(`ancillary insurance does not replace the actual local provider: ${name}`,async t=>{

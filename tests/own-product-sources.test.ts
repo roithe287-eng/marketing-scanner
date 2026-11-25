@@ -62,7 +62,8 @@ test('a sparse Onnuri storefront recovers its own products via official URL disc
       if(u.pathname==='/goods/124')return html(product('차일드라이프 어린이 비타민','건강기능식품'));
       throw new Error('Unexpected merchant page');
     }
-    assert.equal(u.hostname,'vitamins.example');return html('<title>비타민 전문몰</title><meta name="description" content="영양제와 비타민 판매">');
+    assert.equal(u.hostname,'vitamins.example');if(u.pathname==='/robots.txt')return new Response('User-agent: *\nAllow: /');
+    return html('<title>비타민 전문몰</title><meta name="description" content="영양제와 비타민 판매"><main><button>구매하기</button></main>');
   });
   try{
     const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'비타민');
@@ -119,7 +120,7 @@ test('unavailable robots or blocked responses produce a collection limitation, n
   t.mock.method(globalThis,'fetch',async()=>new Response('unavailable',{status:503}));
   const context=await collectOwnProductContext(own.url);assert.equal(context.status,'unavailable');assert.deepEqual(context.sources,[]);
   const restore=env();delete process.env.OPENAI_API_KEY;
-  try{const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'');assert.equal(result.research.selectionStatus,'insufficient_source');assert.match(result.research.selectionMessage!,/상품이 없거나 사이트에 정보가 부족하다는 판정은 아닙니다/);}finally{restore();}
+  try{const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'');assert.equal(result.research.selectionStatus,'insufficient_source');assert.match(result.research.selectionMessage!,/공개 원문에서 비교할 상품군을 확인하지 못했습니다/);}finally{restore();}
 });
 
 test('the public main-page catalog retains displayed product fields only, without credentials or private commerce data',async t=>{
@@ -179,7 +180,7 @@ test('repeated concrete product names override one broad category and merchant s
     if(u.hostname==='health-info.example')return html('<title>비타민 안내센터</title><meta name="description" content="비타민 권장량 안내">');
     assert.equal(u.hostname,'vitamin-shop.example');return html('<title>비타민 전문몰</title><meta name="description" content="비타민 상품 쇼핑몰"><button>구매하기</button>');
   });
-  try{const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'비타민');assert.equal(result.keywordSource,'fallback');assert.deepEqual(queries,['비타민 쇼핑몰']);assert.equal(result.research.attemptedKeywords[0],'비타민 쇼핑몰');assert.deepEqual(result.competitors.map(c=>c.domain),['vitamin-shop.example']);assert.ok(result.filtering.excluded.some(c=>c.domain==='health-info.example'&&c.reason.includes('구매')));}finally{restore();}
+  try{const result=await analyzeCompetitors(own);assert.ok(result);assert.equal(result.searchKeyword,'비타민');assert.equal(result.keywordSource,'fallback');assert.deepEqual(queries,['비타민 쇼핑몰']);assert.equal(result.research.attemptedKeywords[0],'비타민 쇼핑몰');assert.deepEqual(result.competitors.map(c=>c.domain),['vitamin-shop.example']);assert.ok(result.filtering.excluded.some(c=>c.domain==='health-info.example'&&c.reason.includes('직접 제공하는 상품')));}finally{restore();}
 });
 
 test('merchant research inspects late shopping candidates before information pages while preserving API rank',()=>{

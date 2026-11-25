@@ -22,6 +22,7 @@ const PLACE_INDUSTRIES:Partial<Record<string,IndustryCategory>>={
   veterinary:'pet',pet_care:'pet',pet_store:'pet',cafe:'food',restaurant:'food',
   lodging:'travel',travel:'travel',beauty:'beauty',education:'education',fitness:'sports',
   automotive:'automotive',home_service:'interior',real_estate:'realestate',retail:'commerce',
+  event:'event',rental:'rental',
 };
 const SEASON_INDUSTRIES:Partial<Record<string,IndustryCategory>>={
   ski:'sports',snow_ice:'sports',water_leisure:'sports',surf_dive:'sports',beach_pool:'sports',
@@ -29,13 +30,13 @@ const SEASON_INDUSTRIES:Partial<Record<string,IndustryCategory>>={
   winter_car:'automotive',season_event:'travel',seasonal_food:'food',cooling:'interior',
 };
 const SERVICE_INDUSTRIES:Partial<Record<string,IndustryCategory>>={
-  software:'it_service',agency:'consulting',accounting:'legal',home:'interior',
+  software:'it_service',agency:'consulting',accounting:'legal',home:'interior',home_service:'interior',
   hospitality:'travel',real_estate:'realestate',fitness:'sports',study_abroad:'education',
-  education:'education',content:'media',community:'media',
+  education:'education',content:'media',community:'media',event:'event',rental:'rental',hiring:'business_services',
 };
 
 const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
-  education: ["학원", "강의", "수업", "교육", "과외", "온라인 클래스", "코딩스쿨", "수강", "튜터", "academy", "school", "course"],
+  education: ["학원", "강의", "수업", "교육", "과외", "온라인 클래스", "코딩스쿨", "수강", "튜터", "유학", "어학연수", "academy", "school", "course"],
   medical: ["병원", "의원", "클리닉", "진료", "치과", "한의원", "의료", "hospital", "clinic", "medical"],
   commerce: ["쇼핑", "매장", "판매", "브랜드", "제품", "shop", "store"],
   realestate: ["부동산", "아파트", "매매", "전세", "월세", "분양", "임대", "estate", "realtor"],
@@ -53,7 +54,10 @@ const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
   pet: ["반려동물", "강아지", "고양이", "펫", "동물병원", "사료", "pet", "dog"],
   automotive: ["자동차", "정비", "튜닝", "중고차", "렌트카", "auto", "car"],
   parenting: ["육아", "유아", "아동", "베이비", "장난감", "kids", "baby"],
-  interior: ["인테리어", "리모델링", "건축", "설계", "가구", "interior", "design"],
+  interior: ["인테리어", "리모델링", "건축", "설계", "가구", "청소", "입주청소", "이사청소", "누수", "해충방제", "해충퇴치", "interior", "design"],
+  event: ["웨딩", "촬영", "예식", "사진관", "행사 대관"],
+  rental: ["렌탈", "렌털", "대여", "공유오피스"],
+  business_services: ["시설 경비", "시설 관리", "사업장 보안", "건물 관리", "인력 파견", "헤드헌팅"],
   ecommerce: ["온라인 쇼핑몰", "이커머스", "장바구니", "결제", "cart", "checkout"],
   fortune: [],
   etc: [],
@@ -92,15 +96,17 @@ export function classifyIndustryFromEvidence(data:IndustryInput,purpose=analyzeW
     const book=nonCommercePlaybook(purpose,providerIdentity(data),place);
     const season=book.id.startsWith('season_')?SEASON_INDUSTRIES[book.id.slice(7)]:undefined;
     if(!season&&place?.sector==='rental'&&/렌터카|렌트카|(?:자동차|차량)\s*대여/.test(providerIdentity(data)))return 'automotive';
-    const local=book.local&&place?PLACE_INDUSTRIES[place.sector]:undefined;
-    const category=season||local||book.industry||SERVICE_INDUSTRIES[book.id];
+    const localSector=book.local&&(place?.sector||book.id.replace(/^place_/,''));
+    const specialty=book.id==='study_abroad'?SERVICE_INDUSTRIES[book.id]:undefined;
+    const local=localSector?PLACE_INDUSTRIES[localSector]:undefined;
+    const category=season||specialty||local||book.industry||SERVICE_INDUSTRIES[book.id];
     if(category)return category;
     // A concrete local business without a benchmark category must not fall
     // through to incidental words such as insurance in its operating terms.
     if(book.local&&place&&place.sector!=='local')return 'etc';
   }
   if(data.productContext?.sources.length&&(data.productContext.commerce===true||data.productContext.discovery==='public_catalog'))return 'ecommerce';
-  if(purpose.kind==='commerce'&&ownBusinessRole(data)==='retail')return 'ecommerce';
+  if(purpose.kind==='commerce'&&(ownBusinessRole(data)==='retail'||data.productDiscovery?.sources.some(product=>sameSite(product.url,data.finalUrl||data.url))))return 'ecommerce';
   const sources=industrySources(data);
   if(purpose.declaredIndustry)return purpose.declaredIndustry.category;
   const scores=Object.keys(CATEGORY_HINTS).map(key=>{
@@ -178,7 +184,7 @@ export function reviewIndustry(input:IndustryInput):IndustryDecision{
     const label=kind==='editorial'?'정보·콘텐츠 페이지':'공공·지원 안내';
     return {status:'page_type',kind,label,sourceUrl,evidence:rows.filter(row=>row.field!=='document'&&row.field!=='product').slice(0,4)};
   }
-  const shop=purpose.kind==='commerce'&&purpose.goal.key==='purchase'&&purpose.goal.observed&&ownBusinessRole(data)==='retail';
+  const shop=purpose.kind==='commerce'&&['purchase','subscribe'].includes(purpose.goal.key)&&purpose.goal.observed&&ownBusinessRole(data)==='retail';
   if(shop)for(const action of purpose.goal.evidence)add('action',action.text);
 
   const claims=(list:IndustryEvidence[])=>new Set(list.flatMap(row=>[...providerClaims(row)].map(comparableCategory)));
@@ -212,11 +218,11 @@ export function reviewIndustry(input:IndustryInput):IndustryDecision{
   const evidence=[...new Set([...specialistEvidence,...direct,...actions,...(verifiedProducts?products:[]),...matched])].slice(0,4);
   const families=purpose.kind==='commerce'?retailFamilies(providerIdentity(data),inventory,sourceUrl):[];
   const local=place&&isNonCommerce(purpose)&&(PLACE_INDUSTRIES[place.sector]===candidate||place.sector==='rental'&&candidate==='automotive')
-    ?place.sector==='rental'&&candidate==='automotive'?'렌터카·차량 대여':placeSector(place.sector).label
+    ?place.sector==='rental'?(candidate==='automotive'?'렌터카·차량 대여':INDUSTRY_LABELS.rental):placeSector(place.sector).label
     :undefined;
   const retail=families.length===1?`${families[0]} 판매`:undefined;
   const label=purpose.business?.label||purpose.sector?.label||(purpose.community?'커뮤니티':retail||local||INDUSTRY_LABELS[candidate]);
-  return {status:'matched',category:candidate,sourceUrl,label,evidence};
+  return {status:'matched',category:candidate,sourceUrl,label,evidence,...(families.length>1?{retailSpecialties:families.slice(0,8)}:{})};
 }
 
 /** A model suggestion must cite literal eligible page text, never invent a basis. */

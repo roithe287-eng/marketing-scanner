@@ -8,7 +8,7 @@ import {fortuneTopic,fortuneRemote,fortuneVisit} from './fortuneService';
 import {SKI_DESTINATIONS,seasonalProfile} from './seasonalPlaceCatalog';
 import {isEditorialPage} from './pageRole';
 import {serviceSpecialties} from './serviceSpecialties';
-import {retailFamilies} from './retailOffer';
+import {retailFamilies,retailFormats,retailSearchTerms} from './retailOffer';
 import {hairGoodsFacets,hairGoodsProducts,hairGoodsTopic} from './hairGoods';
 
 export const CompetitionScopeSchema=z.object({
@@ -17,6 +17,7 @@ export const CompetitionScopeSchema=z.object({
   profile:z.string().max(80),label:z.string().max(120),
   specialties:z.array(z.string().max(60)).max(16),
   serviceSpecialties:z.array(z.string().max(60)).max(8).optional(),
+  retailFormats:z.array(z.string().max(60)).max(4).optional(),
   area:z.string().max(100),destinations:z.array(z.string().max(60)).max(6),
   nationwide:z.boolean(),
 });
@@ -33,8 +34,7 @@ const facetRules:Record<string,[string,RegExp][]>={
   legal:[['변호사',/법무법인|법률사무소|변호사/],['세무',/세무/],['회계',/회계/],['노무',/노무/],['법무사',/법무사/]],
   professional:[['세무',/세무/],['회계',/회계/],['노무',/노무/],['변리',/변리/]],
   education:[['미용',/미용|헤어|네일/],['외국어',/영어|어학|외국어/],['코딩',/코딩|프로그래밍/],['음악',/음악|피아노|보컬/],['마케팅',/마케팅|광고/]],
-  home:[['시공',/인테리어|리모델링|시공/],['청소',/청소|소독|방역/],['이사',/이사/],['수리',/수리|누수/]],
-  home_service:[['시공',/인테리어|리모델링|시공/],['청소',/청소|소독|방역/],['이사',/이사/],['수리',/수리|누수/]],
+  home:[['시공',/인테리어|리모델링|시공/],['청소',/청소/],['방역·해충 방제',/해충\s*(?:방제|퇴치)|방역|소독/],['이사',/이사/],['수리',/수리|누수/]],
   fitness:[['필라테스',/필라테스/],['요가',/요가/],['골프',/골프/],['헬스',/헬스|피트니스|\bPT\b/i],['수영',/수영/],['테니스',/테니스/]],
   automotive:[['정비',/정비|수리|카센터/],['세차',/세차|디테일링/],['판매',/중고차|자동차\s*매장/]],
   pet_care:[['미용',/미용|목욕/],['호텔',/호텔|위탁|돌봄/],['훈련',/훈련|유치원/]],
@@ -44,8 +44,34 @@ const facetRules:Record<string,[string,RegExp][]>={
   cafe:[['커피',/커피|coffee/i],['베이커리',/베이커리|제과|빵집|bakery/i],['케이크',/케이크|케익/]],
   rental:[['차량',/렌터카|렌트카|자동차\s*(?:대여|렌탈)|차량\s*(?:대여|렌탈)/],['촬영장비',/카메라|촬영\s*장비/],['행사장비',/행사\s*장비|음향|조명|천막/],['생활가전',/정수기|공기청정기|비데|생활\s*가전/]],
   event:[['사진촬영',/사진관|스튜디오|사진\s*촬영/],['웨딩',/웨딩|예식|결혼식/],['행사대관',/행사장|공연장|대관/]],
+  business_services:[['시설 경비',/시설\s*경비|사업장\s*보안/],['건물·시설 관리',/건물\s*관리|시설\s*관리/],['인력 파견',/인력\s*파견/],['채용 대행',/채용\s*대행|헤드헌팅/]],
 };
 facetRules.accounting=facetRules.professional;
+facetRules.home_service=facetRules.home;
+const profileTerms:Record<string,RegExp>={
+  medical:/한방병원|한의원|치과\s*의원|치과|피부과|성형외과|정형외과|안과|이비인후과|건강\s*검진/iu,
+  medical_consulting:/(?:병원|의료기관)\s*(?:(?:개원|경영|전문)\s*)?(?:컨설팅|마케팅)|개원\s*컨설팅/iu,
+  property_sales:/(?:아파트|오피스텔|상가|주택)\s*분양/iu,
+  real_estate:/공인중개사|부동산\s*(?:중개|매물)|상가\s*(?:중개|임대)/iu,
+  legal:/법률\s*(?:상담|사무소)|법무법인|형사\s*사건/iu,
+  rehabilitation:/개인\s*(?:회생|파산)|채무\s*조정/iu,
+  accounting:/세무사|세무\s*(?:상담|신고)|기장\s*대행|회계\s*(?:사무소|법인)/iu,
+  franchise:/프랜차이즈|가맹\s*(?:모집|상담|창업|본부)/iu,
+  startup:/창업\s*(?:상담|컨설팅|지원)|사업화\s*멘토링/iu,
+  insurance:/(?:자동차|운전자|기업|여행자|실손|건강|종신|정기|실비|배상책임)\s*보험|보험\s*(?:상담|대리점|중개)/iu,
+  study_abroad:/유학원|유학\s*(?:수속|상담)|어학\s*연수/iu,
+  education:/(?:코딩|외국어|영어|미용|네일|음악|피아노|보컬|직무)\s*(?:학원|수업|교육|강의|과정)|수강\s*과정/iu,
+  home:/(?:입주|이사)\s*청소|인테리어\s*시공|리모델링|누수\s*(?:수리|탐지)|해충\s*(?:방제|퇴치)/iu,
+  home_service:/(?:입주|이사)\s*청소|인테리어\s*시공|리모델링|누수\s*(?:수리|탐지)|해충\s*(?:방제|퇴치)/iu,
+  event:/웨딩\s*(?:촬영|스튜디오)|촬영\s*스튜디오|사진관|행사\s*대관|예식장/iu,
+  rental:/(?:렌터카|렌트카|공유오피스)|(?:정수기|생활\s*가전|카메라|촬영\s*장비|행사\s*장비|차량|자동차|스키\s*장비)\s*(?:렌탈|렌털|대여)/iu,
+  business_services:/시설\s*경비|사업장\s*보안|건물\s*관리|시설\s*관리|인력\s*파견|채용\s*대행|헤드헌팅/iu,
+  lodging:/호텔|펜션|리조트|캠핑장/iu,
+  travel:/패키지\s*여행|가이드\s*투어|여행사|(?:국내|해외)\s*여행/iu,
+  travel_booking:/패키지\s*여행|가이드\s*투어|여행사|(?:국내|해외)\s*여행/iu,
+  fitness:/필라테스|피트니스|요가|헬스장|골프\s*(?:레슨|연습장)/iu,
+  software:/회계\s*(?:ERP|솔루션|소프트웨어)|예약\s*(?:솔루션|시스템)|교육\s*(?:운영\s*)?LMS/iu,
+};
 const areas:[string,RegExp][]=[['서울',/서울/],['부산',/부산/],['대구',/대구/],['인천',/인천/],['광주',/광주(?:광역시|\s|$)/],['대전',/대전/],['울산',/울산/],['세종',/세종/],['경기',/경기도|(?:^|\s)경기(?=\s)/],['강원',/강원/],['충북',/충북|충청북도/],['충남',/충남|충청남도/],['전북',/전북|전라북도/],['전남',/전남|전라남도/],['경북',/경북|경상북도/],['경남',/경남|경상남도/],['제주',/제주/]];
 function areaOf(text:string):string{
   // Province comes first in a street address; city is retained for regional shops.
@@ -56,7 +82,12 @@ function areaOf(text:string):string{
 }
 function providerSpecialties(profile:string,data:Input):string[]{
   const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
-  if(profile==='commerce')return retailFamilies(identity,[...data.productDiscovery?.sources||[],...data.productContext?.sources||[]],data.finalUrl||data.url);
+  if(profile==='commerce'){
+    const products=[...data.productDiscovery?.sources||[],...data.productContext?.sources||[]];
+    const sourceUrl=data.finalUrl||data.url;
+    const primary=retailFamilies(identity,products,sourceUrl);
+    return primary.length?primary:retailFamilies(providerBody(data),[],sourceUrl);
+  }
   const facets=facetRules[profile]||[];
   if(profile==='hairpieces_wigs'){
     const products=hairGoodsProducts([...(data.productDiscovery?.sources||[]),...(data.productContext?.sources||[])],data.finalUrl||data.url);
@@ -88,12 +119,13 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   const role=ownBusinessRole(data),book=nonCommercePlaybook(purpose,identity,place);
   const kind=purpose.kind==='unknown'&&!['agency','software','manufacturing','home','education'].includes(role||'')&&/쇼핑몰|공식몰|전문몰|온라인몰|스토어|\bshop\b|\bstore\b/i.test(identity)?'commerce':purpose.kind;
   const business=purpose.business?.id;
-  let profile=business==='hairpieces_wigs'||business==='custom_apparel'?business:kind==='commerce'?'commerce':role==='manufacturing'?'manufacturing':book.local&&place?place.sector:business||book.industry||book.id;
+  let profile=business==='hairpieces_wigs'||business==='custom_apparel'?business:kind==='commerce'?'commerce':role==='manufacturing'?'manufacturing':book.local&&place&&place.sector!=='local'?place.sector:business||book.industry||book.id;
   if(profile.startsWith('place_'))profile=profile.slice(6);
   if(profile==='organization'&&role==='manufacturing')profile=role;
   const specialties=providerSpecialties(profile,data);
   const declaredFocus=serviceSpecialties(profile,headings,providerBody(data));
   const serviceFocus=declaredFocus.length?declaredFocus:serviceSpecialties(profile,identity);
+  const formats=kind==='commerce'?retailFormats([identity,providerBody(data),...(data.productDiscovery?.sources||[]).map(p=>p.name),...(data.productContext?.sources||[]).map(p=>p.name)].join('\n')):[];
   const season=place?.seasonal?.profiles.map(p=>p.id)||[];
   if(season.length&&purpose.kind!=='commerce'&&!['agency','software','manufacturing'].includes(profile))specialties.push(...season.map(s=>'season:'+s));
   const headingDestinations=SKI_DESTINATIONS.filter(d=>d.aliases.test(headings));
@@ -102,7 +134,7 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   const fortuneText=fortuneConsult?classificationText([identity,providerBody(data)].join('\n')):'';
   const nationwide=profile==='fortune_digital'||(fortuneConsult?fortuneRemote.test(fortuneText):/(?:전국|온라인|비대면)\s*(?:출장|서비스|상담|수업|교육|진료|지원)/.test(identity));
   const area=((localProfiles.has(profile)&&!nationwide)||(fortuneConsult&&fortuneVisit.test(fortuneText)))?areaOf(place?.address||headings)||areaOf(identity):'';
-  return {version:1,sourceUrl:data.finalUrl,kind,profile,label:profiles[profile]||purpose.business?.label||book.label,specialties:[...new Set(specialties)].slice(0,16),...(serviceFocus.length?{serviceSpecialties:serviceFocus}:{}),area,destinations:destinations.slice(0,6),nationwide};
+  return {version:1,sourceUrl:data.finalUrl,kind,profile,label:profiles[profile]||purpose.business?.label||book.label,specialties:[...new Set(specialties)].slice(0,16),...(serviceFocus.length?{serviceSpecialties:serviceFocus}:{}),...(formats.length?{retailFormats:formats}:{}),area,destinations:destinations.slice(0,6),nationwide};
 }
 
 /** Older scopes may omit specialties; retained original metadata can fill them. */
@@ -121,6 +153,7 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
   if(['commerce','mixed'].includes(own.kind)&&['content','education','public_service'].includes(candidate.kind))return '상품 판매 업체와 정보·교육 페이지의 사업 유형이 다름';
   if(own.kind==='commerce'&&candidate.kind!=='commerce'&&candidate.kind!=='mixed'&&candidate.kind!=='unknown')return '자사는 상품 판매형이며 후보는 다른 제공 방식의 업체';
   if(!['commerce','mixed','unknown'].includes(own.kind)&&candidate.kind==='commerce')return '자사는 서비스·기관형이며 후보는 상품 판매형';
+  if(own.retailFormats?.length&&!own.retailFormats.some(format=>candidate.retailFormats?.includes(format))&&(strict||candidate.retailFormats?.length))return '해외직구·정기구독 등 같은 판매 방식이 확인되지 않음';
   const editorialComparison=own.kind==='content'&&candidate.kind==='content'&&(own.profile==='editorial'||candidate.profile==='editorial');
   if(known(own)&&!editorialComparison){
     if(known(candidate)&&own.profile!==candidate.profile&&!equivalent.some(g=>g.includes(own.profile)&&g.includes(candidate.profile)))return `실제 제공 업무 불일치: 자사 ${own.label} · 후보 ${candidate.label}`;
@@ -150,6 +183,7 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
 /** A client noun cannot be the whole query for a provider with a clear role. */
 export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean{
   if(!scope)return true;
+  if(profileTerms[scope.profile]&&['property_sales','franchise','startup','medical_consulting','study_abroad','business_services','event'].includes(scope.profile)&&!profileTerms[scope.profile].test(query))return false;
   const subjects=serviceSpecialties(scope.profile,query),knownSubjects=scope.serviceSpecialties||[];
   if(knownSubjects.length&&subjects.length&&!subjects.some(service=>knownSubjects.includes(service)))return false;
   if(scope.profile==='commerce'&&scope.specialties.length){
@@ -164,7 +198,7 @@ export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean
   if(scope.profile==='rental'&&!/렌탈|렌털|렌터카|렌트|대여|강습|rental/i.test(query))return false;
   const localRoleTerms:Record<string,RegExp>={event:/촬영|사진관|웨딩|예식|행사|스튜디오|대관|파티룸/,funeral:/장례|추모|봉안|상조/,living:/세탁|수선|수리|인쇄|도장|택배|보관|수거/,accounting:/세무|회계|기장|신고|노무|특허|변리/};
   if(localRoleTerms[scope.profile]&&!localRoleTerms[scope.profile].test(query))return false;
-  const roleTerms:Record<string,RegExp>={international_logistics:/이사|물류|운송|포워딩|통관|freight|relocation|logistics/i,agency:/광고|마케팅|브랜딩|제작|대행/,medical_consulting:/컨설팅|마케팅|광고|개원/,software:/소프트웨어|솔루션|시스템|SaaS|프로그램/i,manufacturing:/제조|생산|공장|가공/,home:/시공|인테리어|리모델링|청소|소독|방역|수리|누수|이사/,education:/교육|학원|수업|강의|과정|수강|학교|클래스/};
+  const roleTerms:Record<string,RegExp>={international_logistics:/이사|물류|운송|포워딩|통관|freight|relocation|logistics/i,agency:/광고|마케팅|브랜딩|제작|대행/,medical_consulting:/컨설팅|마케팅|광고|개원/,software:/소프트웨어|솔루션|시스템|SaaS|프로그램/i,manufacturing:/제조|생산|공장|가공/,home:/시공|인테리어|리모델링|청소|소독|방역|수리|누수|이사|해충\s*(?:방제|퇴치)/,education:/교육|학원|수업|강의|과정|수강|학교|클래스/};
   return !roleTerms[scope.profile]||roleTerms[scope.profile].test(query);
 }
 
@@ -172,9 +206,17 @@ export function eligibleMetadata(text:string|undefined):string{
   return text&&!isContextOnlyEvidence('',text)?classificationText(text):'';
 }
 
+/** Search seeds come from the page's verified offering vocabulary. */
+export function scopedSearchTerms(text:string,scope:CompetitionScope|undefined):string[]{
+  if(!scope)return [];
+  if(scope.profile==='commerce')return retailSearchTerms(text,[...scope.specialties,...scope.retailFormats||[]]);
+  const rule=profileTerms[scope.profile];
+  return rule?[...text.matchAll(new RegExp(rule.source,rule.flags+'g'))].map(match=>match[0]):[];
+}
+
 export function competitionScopeLabel(scope:CompetitionScope):string{
   const season=scope.specialties.find(s=>s.startsWith('season:'))?.slice(7);
   const label=season&&seasonalProfile(season)?.label||scope.label;
   const destinations=scope.destinations.map(id=>SKI_DESTINATIONS.find(d=>d.id===id)?.label||id).filter(label=>!scope.area.split(' ').includes(label));
-  return [...new Set([label,...scope.specialties.filter(s=>!s.startsWith('season:')),...scope.serviceSpecialties||[],scope.area,...destinations])].filter(Boolean).join(' · ');
+  return [...new Set([label,...scope.specialties.filter(s=>!s.startsWith('season:')),...scope.serviceSpecialties||[],...scope.retailFormats||[],scope.area,...destinations])].filter(Boolean).join(' · ');
 }

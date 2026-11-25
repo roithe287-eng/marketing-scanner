@@ -27,7 +27,7 @@ async function extract(t:TestContext,title:string,description:string,body=''){
   return extractWebsite(url);
 }
 const roleCases=[
-  ['부산 반려동물 사진관','강아지 고양이 프로필 촬영 예약','event','etc','촬영'],
+  ['부산 반려동물 사진관','강아지 고양이 프로필 촬영 예약','event','event','촬영'],
   ['부산 반려동물 법률사무소','반려동물 관련 소송과 법률 상담','legal','legal','법률'],
   ['부산 반려동물 장례식장','강아지 고양이 장례와 추모 상담','funeral','etc','장례'],
   ['부산 병원 전문 세무사','병의원 기장과 세무신고 대행','accounting','legal','기장'],

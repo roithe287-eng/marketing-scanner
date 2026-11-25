@@ -91,7 +91,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
   const wigPurpose=report.sitePurpose?.business?.id==='hairpieces_wigs'?report.sitePurpose:undefined;
   const competition=report.competitorAnalysis;
   const detailedMap=competition?.research?.provider==='naver_web'&&data.competitorCount>0;
-  const verifiedUrlView=competition?.research?.provider==='public_web'||competition?.research?.provider==='official_wig_stores'||!!competition?.competitors.some(candidate=>candidate.sourceExcerpt);
+  const verifiedUrlView=!!report.industryDecision||competition?.research?.provider==='public_web'||competition?.research?.provider==='official_wig_stores'||!!competition?.competitors.some(candidate=>candidate.sourceExcerpt);
   const productContextInScope=showProductCollection(report.sitePurpose)?report.productContext||undefined:undefined;
   const scope=<>
     <ReportCoverageWarnings warnings={report.analysisWarnings}/>

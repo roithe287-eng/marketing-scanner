@@ -23,6 +23,7 @@ const offerings={
   finance:'보험 상품을 중개합니다.',consulting:'온라인 광고를 대행합니다.',media:'뉴스레터를 발행합니다.',
   sports:'필라테스 레슨을 진행합니다.',pet:'반려견 미용을 제공합니다.',automotive:'차량을 정비합니다.',
   parenting:'아이 돌봄을 제공합니다.',interior:'맞춤 가구를 제작합니다.',ecommerce:'온라인 쇼핑몰을 운영합니다.',
+  event:'웨딩 촬영을 진행합니다.',rental:'정수기 대여를 제공합니다.',business_services:'시설 경비를 대행합니다.',
 };
 function capture(description:string,title='온결',body='이용 안내를 확인하세요.'){
   const html=`<html><head><title>${title}</title><meta name="description" content="${description}"></head><body><main><h1>${title}</h1><p>${body}</p></main></body></html>`;

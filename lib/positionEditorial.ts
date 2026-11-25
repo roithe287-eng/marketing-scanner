@@ -1,6 +1,6 @@
 import {isPlacePosition,placeChecks,type PlacePosition} from './placePositioning';
 import type {IndustryCategory} from './reportSchema';
-export type PositionCategory=IndustryCategory|'rental'|'ski'|'hairpieces_wigs'|PlacePosition;
+export type PositionCategory=IndustryCategory|'ski'|'hairpieces_wigs'|PlacePosition;
 
 // Editorial options, never claims about the scanned business. Brackets require verified values.
 type Lens = [question:string, titleSubject:string, description:string, verify:string];
@@ -12,6 +12,12 @@ const SHOP:Lenses=[
  ['주문 후 언제 받고 어디에 문의하나요?','주문·출고 안내','[재고·주문 제작 여부]에 따른 [출고 기준]과 [주문 후 문의 경로]를 안내합니다.','결제부터 출고까지의 기준을 정하고, 제작 상품과 재고 상품의 일정이 다르면 구분하세요.'],
 ];
 const LENSES:Record<Exclude<PositionCategory,PlacePosition>,Lenses>={
+ business_services:[
+  ['견적과 계약 조건은 어디에서 확인하나요?','계약·견적 기준','[시설·인원·업무 시간]에 따른 [견적 기준]을 안내합니다.','정기 업무와 별도 요청 비용, 계약 기간을 실제 적용 조건과 맞추세요.'],
+  ['어떤 시설과 업무를 맡길 수 있나요?','지원 범위와 담당 업무','[지원 시설]에서 [직접 수행하는 업무]를 안내합니다.','출입 관리·시설 관리·인력 배치 중 직접 제공하는 항목을 구분하세요.'],
+  ['누가 업무를 맡고 운영 상황을 어떻게 확인하나요?','수행 근거와 담당 조직','[담당 조직·교육 또는 보고 자료]를 확인하세요.','실제 담당 조직과 품질 확인 방식, 자료의 적용 범위를 대조하세요.'],
+  ['계약 후 운영을 시작하기까지 어떻게 진행되나요?','도입과 운영 절차','[현장 확인·배치·운영 인수] 일정을 안내합니다.','현장 확인부터 인수 및 변경 요청까지 실제 담당자와 처리 절차를 연결하세요.'],
+ ],
  hairpieces_wigs:[
   ['결제 비용과 교환·반품 조건을 확인할 수 있나요?','가격·배송·교환 조건','[상품별 판매가·옵션 추가금·배송비]와 [개봉·착용 시 교환 조건]을 확인하세요.','상품 상세와 결제 화면의 배송비·옵션 추가금을 대조하고, 개봉 또는 착용한 상품의 교환 조건은 실제 정책과 맞추세요.'],
   ['숱·길이·볼륨에 맞는 제품을 어떻게 고르나요?','종류·소재·실측','[가발·헤어피스 유형]의 [소재·길이·폭·피스 수]를 비교하세요.','인모와 고열사를 구분하고, 길이·폭·피스 수의 표기 기준을 통일해 같은 기준으로 여러 상품을 비교할 수 있게 하세요.'],
