@@ -30,13 +30,17 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     requireSameOrigin(req);
-    await limitRequest(req.headers, "login", 12, 900);
+    await limitRequest(req.headers, "login-request", 24, 60);
     const body = z
       .object({ email: emailSchema, password: z.string().min(1).max(128) })
       .parse(await readJson(req));
-    await rateLimit("login-email:" + digest(body.email), 8, 900);
     const id = await db().get<string>(emailKey(body.email));
     const account = id ? await getAccount(id) : null;
+    // A verified administrator password reset increments the account version.
+    // Attempts made with the old password stay in the old limit windows.
+    const loginBucket = account?.role === "admin" ? "login-owner:v" + account.version : "login";
+    await limitRequest(req.headers, loginBucket, 12, 900);
+    await rateLimit(loginBucket + "-email:" + digest(body.email), 8, 900);
     const valid = await verifyPassword(
       body.password,
       account?.passwordHash || null,
@@ -60,6 +64,11 @@ export async function POST(req: NextRequest) {
       await createSession(account),
     );
   } catch (error) {
+    if (error instanceof AccessError && error.status === 429 && error.retryAfterSeconds !== undefined) {
+      const seconds = error.retryAfterSeconds;
+      const wait = seconds < 60 ? `${seconds}초` : `${Math.ceil(seconds / 60)}분`;
+      return failure(new AccessError(429, `로그인 시도 횟수가 초과됐습니다. 약 ${wait} 후 다시 시도해 주세요.`, seconds));
+    }
     return failure(error);
   }
 }

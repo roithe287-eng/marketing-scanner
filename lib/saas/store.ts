@@ -94,13 +94,18 @@ export async function rateLimit(
   limit: number,
   seconds: number,
 ) {
-  const count = await db().eval<unknown[], number>(
-    `local n=redis.call('INCR',KEYS[1]);if n==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]) end;return n`,
+  const retryAfterSeconds = await db().eval<unknown[], number>(
+    `
+      local n = redis.call('INCR', KEYS[1])
+      if n == 1 then redis.call('EXPIRE', KEYS[1], ARGV[1]) end
+      if n <= tonumber(ARGV[2]) then return 0 end
+      return math.max(1, math.ceil(redis.call('PTTL', KEYS[1]) / 1000))
+    `,
     [key("rate:" + bucket)],
-    [seconds],
+    [seconds, limit],
   );
-  if (count > limit)
-    throw new AccessError(429, "요청이 많습니다. 잠시 후 다시 시도해 주세요.");
+  if (retryAfterSeconds > 0)
+    throw new AccessError(429, "요청이 많습니다. 잠시 후 다시 시도해 주세요.", retryAfterSeconds);
 }
 export async function limitRequest(
   headers: Headers,

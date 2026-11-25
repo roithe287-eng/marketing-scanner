@@ -335,8 +335,9 @@ test('legacy administrator audit records migrate to absolute expiry and do not r
   assert.equal(await migrateLegacyAudit(),0);
 });
 
-test('owner recovery uses the registered network and owner mailbox, and atomically revokes prior sessions', async t => {
+test('owner recovery revokes old sessions and allows immediate external login after a prior lockout', async t => {
   const internal = '203.0.113.10';
+  const outside = '203.0.113.20';
   const path = '/api/recover';
   const start = { action: 'request' };
   assert.equal((await recovery.POST(request(path, start, '', internal))).status, 403);
@@ -354,6 +355,21 @@ test('owner recovery uses the registered network and owner mailbox, and atomical
     process.env.INQUIRY_NOTIFY_TO = 'alerts-only@example.com';
     const account = await createAdmin({ email: 'recovery-owner@example.com', name: 'Recovery owner', password });
     const priorSession = await createSession(account);
+    const emailHash = digest(account.email);
+    const ipHash = digest(outside);
+    const attemptLogin = (value: string, ip = outside) => login.POST(request('/api/login', {
+      email: account.email, password: value,
+    }, '', ip));
+    const oldLoginBucket = 'login-owner:v' + account.version;
+    const oldIpLimit = key('rate:' + oldLoginBucket + ':' + ipHash);
+    const oldEmailLimit = key('rate:' + oldLoginBucket + '-email:' + emailHash);
+    await db().set(oldIpLimit, 12, { ex: 900 });
+    await db().set(oldEmailLimit, 8, { ex: 900 });
+    const blocked = await attemptLogin(password);
+    assert.equal(blocked.status, 429);
+    assert.ok(Number(blocked.headers.get('Retry-After')) > 0);
+    assert.match((await blocked.json()).message, /로그인 시도 횟수가 초과됐습니다.*분 후/);
+    assert.equal((await attemptLogin(password, '203.0.113.21')).status, 429, 'owner email throttling applies across networks');
     const customer = await createCustomer({ ...grant, email: 'unrelated@example.com', name: 'Customer', company: '' }, account.id);
     const customerAccount = await activate(customer.invite, password);
     const customerSession = await createSession(customerAccount);
@@ -401,11 +417,17 @@ test('owner recovery uses the registered network and owner mailbox, and atomical
     assert.deepEqual(await getAccount(customerAccount.id), customerAccount);
     assert.ok(await getPrincipal(request('/api/access', undefined, customerSession)));
     assert.equal(await db().exists(key('inquiry:' + inquiryId)), 1);
-    assert.equal((await login.POST(request('/api/login', { email: account.email, password }, '', internal))).status, 401);
-    const signedIn = await login.POST(request('/api/login', { email: account.email, password: nextPassword }, '', internal));
+    assert.equal((await attemptLogin(password)).status, 401);
+    const signedIn = await attemptLogin(nextPassword);
     assert.equal(signedIn.status, 200);
-    const restored = await requireAdmin(request('/api/admin', undefined, signedIn.cookies.get(SESSION_COOKIE)?.value, internal));
+    const restored = await requireAdmin(request('/api/admin', undefined, signedIn.cookies.get(SESSION_COOKIE)?.value, outside));
     assert.equal(restored.id, account.id);
+    assert.equal(await db().exists(oldIpLimit, oldEmailLimit), 2);
+    const newEmailLimit = key('rate:login-owner:v' + restored.version + '-email:' + emailHash);
+    await db().set(newEmailLimit, 8, { ex: 30 });
+    const limitedAgain = await attemptLogin(nextPassword, '203.0.113.21');
+    assert.equal(limitedAgain.status, 429);
+    assert.ok(Number(limitedAgain.headers.get('Retry-After')) <= 30);
     assert.equal(links.length, 2);
   } finally {
     for (const [name, value] of Object.entries(env)) {

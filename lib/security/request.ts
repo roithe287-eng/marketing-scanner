@@ -8,6 +8,7 @@ export class AccessError extends Error {
   constructor(
     public status: number,
     message: string,
+    public retryAfterSeconds?: number,
   ) {
     super(message);
   }
@@ -99,8 +100,13 @@ export function privateJson(body: unknown, status = 200) {
   });
 }
 export function failure(error: unknown) {
-  if (error instanceof AccessError)
-    return privateJson({ message: error.message }, error.status);
+  if (error instanceof AccessError) {
+    const response = privateJson({ message: error.message }, error.status);
+    if (error.retryAfterSeconds !== undefined) {
+      response.headers.set("Retry-After", String(error.retryAfterSeconds));
+    }
+    return response;
+  }
   if (error instanceof ZodError)
     return privateJson(
       { message: "입력한 항목의 형식과 길이를 확인해 주세요." },
