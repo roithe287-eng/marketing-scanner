@@ -1,5 +1,6 @@
 import {keywordList} from './industryLanguage';
 import {apparelProfile,customApparelIdentity} from './customApparel';
+import {hairGoodsIdentity,hairGoodsProducts,hairGoodsProfile,hairGoodsTopic} from './hairGoods';
 import {sameSite} from './siteIdentity';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
 import {PLACE_DETECTION_ORDER,placeSector} from './localPlaceCatalog';
@@ -17,7 +18,7 @@ export const BusinessDocumentSchema=z.object({
 });
 export type BusinessDocument=z.infer<typeof BusinessDocumentSchema>;
 export const BusinessContextSchema=z.object({
-  version:z.literal(1),id:z.enum(['custom_apparel','duty_free','cross_border','supplements','travel_booking','international_logistics','fortune_digital','fortune_consultation']),label:z.string().max(100),
+  version:z.literal(1),id:z.enum(['custom_apparel','hairpieces_wigs','duty_free','cross_border','supplements','travel_booking','international_logistics','fortune_digital','fortune_consultation']),label:z.string().max(100),
   industry:z.enum(['manufacturing','commerce','ecommerce','travel','logistics','fortune']),kind:z.enum(['commerce','mixed','service']),
   goalKey:z.enum(['purchase','contact','booking','start']),goalLabel:z.string().max(100),
   evidence:z.array(unit).max(8),documents:z.array(BusinessDocumentSchema).max(9),
@@ -31,6 +32,7 @@ export type BusinessQuestion={intent:'location'|'eligibility'|'process'|'deliver
 export type BusinessProfile={label:string;industry:BusinessContext['industry'];kind:BusinessContext['kind'];goalKey:BusinessContext['goalKey'];goalLabel:string;checks:CheckSpec[];questions:BusinessQuestion[];keywords:string[];caution:string};
 const profiles:Record<BusinessContext['id'],BusinessProfile>={
   custom_apparel:apparelProfile,
+  hairpieces_wigs:hairGoodsProfile,
   fortune_digital:fortuneDigitalProfile,
   fortune_consultation:fortuneConsultationProfile,
   international_logistics:{label:'해외이사·국제운송 견적 상담형',industry:'logistics',kind:'service',goalKey:'contact',goalLabel:'운송 조건 확인·견적 상담',
@@ -97,7 +99,7 @@ const profiles:Record<BusinessContext['id'],BusinessProfile>={
     ]},
 };
 export const businessProfile=(id:BusinessContext['id'])=>profiles[id];
-type Input=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'schemaTypes'|'jsonLdSchemas'|'productContext'|'businessDocuments'|'diagnosticSeed'>> & {localPlaceEvidence?:LocalPlaceEvidence};
+type Input=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'schemaTypes'|'jsonLdSchemas'|'productContext'|'productDiscovery'|'businessDocuments'|'diagnosticSeed'>> & {localPlaceEvidence?:LocalPlaceEvidence};
 
 /** Infer from current merchant text. A known domain alone never produces a diagnosis. */
 export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
@@ -110,7 +112,7 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
   const headingIdentity=classificationText(headings).replace(/(?:반려동물|반려견|애견|강아지|고양이)\s*동반/gu,'');
   const placeIdentity=place?.sector||(role!=='retail'?PLACE_DETECTION_ORDER.find(id=>placeSector(id).identity.test(headingIdentity)):undefined);
-  const placeProfiles:Record<BusinessContext['id'],string[]>={custom_apparel:['custom_apparel','retail'],international_logistics:[],duty_free:['retail'],cross_border:['retail','pet_store','pharmacy'],supplements:['retail','pharmacy'],travel_booking:['travel'],fortune_digital:[],fortune_consultation:[]};
+  const placeProfiles:Record<BusinessContext['id'],string[]>={custom_apparel:['custom_apparel','retail'],hairpieces_wigs:['retail'],international_logistics:[],duty_free:['retail'],cross_border:['retail','pet_store','pharmacy'],supplements:['retail','pharmacy'],travel_booking:['travel'],fortune_digital:[],fortune_consultation:[]};
   const compatible=(id:BusinessContext['id'])=>(!placeIdentity||placeIdentity==='local'||placeProfiles[id].includes(placeIdentity))&&!(role==='retail'&&['international_logistics','travel_booking','fortune_digital','fortune_consultation'].includes(id));
   const documents=(data.businessDocuments||[]).filter(d=>sameSite(d.url,data.finalUrl||data.url)).map(d=>({...d,sections:d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url))})).filter(d=>!isSecondarySection(d.title,'',d.url));
   const identity=[data.title,...[data.description,data.ogDescription].filter(v=>v&&!keywordList(v)),...(data.h1||[])].filter(v=>v&&!isContextOnlyEvidence('',v)).join('\n');
@@ -121,6 +123,8 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const all=[primary,...units.map(u=>classificationText(u.text)),...documents.filter(d=>!identity&&d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
   const merchantDocs=documents.filter(d=>d.source!=='search_excerpt');
   const serviceActions=data.siteEditing?data.siteEditing.elements.filter(e=>e.kind==='cta'&&!['header','nav','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)).map(e=>e.text):[...data.ctaButtons||[],...data.buttons||[]];
+  const hairProducts=hairGoodsProducts([...(data.productDiscovery?.sources||[]),...(data.productContext?.sources||[])],data.finalUrl||data.url);
+  const hairStore=compatible('hairpieces_wigs')&&hairGoodsIdentity(data.finalUrl||data.url,headings,classificationText(identity),hairProducts,serviceActions);
   const tools=fortuneTopic.test(primary)?firstPartyFortuneTools(data.finalUrl||data.url,data.siteEditing?.elements):[];
   const fortune=detectFortuneService({
     url:data.finalUrl||data.url,headings,description:data.description||data.ogDescription||'',
@@ -131,6 +135,7 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const logistics=/해외\s*이사|귀국\s*이사|국제\s*운송|국제\s*물류|포워딩|freight\s*(?:forward|service)|international\s*(?:moving|relocation)/i;
   const logisticsUnits=new Set(units.map(u=>classificationText(u.text)).filter(t=>logistics.test(t)));
   if(apparel&&(compatible('custom_apparel')||(!place&&customApparelIdentity(headings,''))))id='custom_apparel';
+  else if(hairStore)id='hairpieces_wigs';
   else if(fortune&&compatible(fortune))id=fortune;
   else if(compatible('international_logistics')&&(logistics.test(primary)||logisticsUnits.size>=2)&&/운송|포장|화물|견적|통관|freight|moving/i.test(all))id='international_logistics';
   else if(compatible('duty_free')&&/면세점|duty\s*free/i.test(primary)&&/시드니|sydney|매장|store/i.test(all))id='duty_free';
@@ -139,14 +144,15 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   else if(compatible('supplements')&&/health foods|supplements|nutritional|건강식품|영양제/i.test(all)&&/TGA|AUST\s*L|Australian.made|호주산/i.test(all)&&/제품|products?|브랜드|brand/i.test(all))id='supplements';
   if(!id)return;
   const p=profiles[id],isFortune=p.industry==='fortune';
-  const keywordSource=isFortune?classificationText([primary,providerBody(data),...serviceActions,...units.map(u=>u.text)].join('\n')):all;
+  const hairUnits=id==='hairpieces_wigs'?hairProducts.flatMap(p=>[p.name,p.description].filter(Boolean).map(text=>({text:text.slice(0,600),locator:p.url.slice(0,1000)}))).filter(u=>!isSecondarySection('',u.text,u.locator)):[];
+  const keywordSource=isFortune?classificationText([primary,providerBody(data),...serviceActions,...units.map(u=>u.text)].join('\n')):id==='hairpieces_wigs'?classificationText([identity,...units.map(u=>u.text),...hairUnits.map(u=>u.text)].join('\n')):all;
   const normalizeKeyword=(keyword:string)=>keyword.toLowerCase().replace(/\s/g,'');
   const keywordText=normalizeKeyword(keywordSource);
   const keywords=p.keywords.filter(k=>keywordText.includes(normalizeKeyword(k))).filter((k,i,list)=>!isFortune||!list.slice(0,i).some(prior=>normalizeKeyword(prior).includes(normalizeKeyword(k)))).slice(0,5);
   // The supplemental collector strips testimonials. Do not let a customer's
   // one-off quote or transit time become a provider's shipping/insurance terms.
-  const sourceUnits=id==='international_logistics'&&merchantDocs.length?units.filter(u=>merchantDocs.some(d=>d.url===u.locator)||['head > title','meta[name="description"]','h1'].includes(u.locator)):units;
-  const evidence=sourceUnits.filter(u=>id==='custom_apparel'?apparelProfile.keywords.some(term=>u.text.includes(term)):isFortune?fortuneTopic.test(classificationText(u.text)):id==='international_logistics'?/이사|운송|화물|견적|통관|freight|moving/i.test(u.text):/면세|duty.free|직구|구매대행|health foods|supplement|TGA|공항|투어|예약|ingredients/i.test(u.text)).slice(0,8);
+  const sourceUnits=id==='international_logistics'&&merchantDocs.length?units.filter(u=>merchantDocs.some(d=>d.url===u.locator)||['head > title','meta[name="description"]','h1'].includes(u.locator)):[...units,...hairUnits];
+  const evidence=sourceUnits.filter(u=>id==='custom_apparel'?apparelProfile.keywords.some(term=>u.text.includes(term)):id==='hairpieces_wigs'?hairGoodsTopic.test(classificationText(u.text)):isFortune?fortuneTopic.test(classificationText(u.text)):id==='international_logistics'?/이사|운송|화물|견적|통관|freight|moving/i.test(u.text):/면세|duty.free|직구|구매대행|health foods|supplement|TGA|공항|투어|예약|ingredients/i.test(u.text)).slice(0,8);
   const checks=p.checks.map(c=>{
     const matching=sourceUnits.filter(u=>c.match.test(isFortune?classificationText(u.text):u.text));
     const supplemental=(locator:string)=>/^https?:/.test(locator)&&!documents.some(d=>d.url===locator&&d.url===data.finalUrl);

@@ -1,6 +1,6 @@
 import {isPlacePosition,placeChecks,type PlacePosition} from './placePositioning';
 import type {IndustryCategory} from './reportSchema';
-export type PositionCategory=IndustryCategory|'rental'|'ski'|PlacePosition;
+export type PositionCategory=IndustryCategory|'rental'|'ski'|'hairpieces_wigs'|PlacePosition;
 
 // Editorial options, never claims about the scanned business. Brackets require verified values.
 type Lens = [question:string, titleSubject:string, description:string, verify:string];
@@ -12,6 +12,12 @@ const SHOP:Lenses=[
  ['주문 후 언제 받고 어디에 문의하나요?','주문·출고 안내','[재고·주문 제작 여부]에 따른 [출고 기준]과 [주문 후 문의 경로]를 안내합니다.','결제부터 출고까지의 기준을 정하고, 제작 상품과 재고 상품의 일정이 다르면 구분하세요.'],
 ];
 const LENSES:Record<Exclude<PositionCategory,PlacePosition>,Lenses>={
+ hairpieces_wigs:[
+  ['결제 비용과 교환·반품 조건을 확인할 수 있나요?','가격·배송·교환 조건','[상품별 판매가·옵션 추가금·배송비]와 [개봉·착용 시 교환 조건]을 확인하세요.','상품 상세와 결제 화면의 배송비·옵션 추가금을 대조하고, 개봉 또는 착용한 상품의 교환 조건은 실제 정책과 맞추세요.'],
+  ['숱·길이·볼륨에 맞는 제품을 어떻게 고르나요?','종류·소재·실측','[가발·헤어피스 유형]의 [소재·길이·폭·피스 수]를 비교하세요.','인모와 고열사를 구분하고, 길이·폭·피스 수의 표기 기준을 통일해 같은 기준으로 여러 상품을 비교할 수 있게 하세요.'],
+  ['내 머리색과 착용 모습을 어떻게 비교하나요?','컬러차트·착용 확인','[실제 판매 색상], [컬러차트와 해당 상품의 착용 이미지]를 확인하세요.','표시 색상과 실제 판매 옵션명을 맞추고, 착용 사진과 영상은 판매 중인 동일 상품으로 촬영한 자료인지 확인하세요.'],
+  ['착용과 관리, 구매 후 도움은 어디에서 확인하나요?','착용·관리·A/S','[부착·분리·세척 방법]과 [열기구 사용 기준·A/S 문의]를 안내합니다.','열기구 사용과 세척 기준은 해당 상품의 소재와 공식 안내에 맞추고, A/S 문의 방법과 적용 범위를 상세에서 확인할 수 있게 하세요.'],
+ ],
  ski:[
   ['시간권과 장비·리프트권 비용을 구분할 수 있나요?','렌탈 요금·포함 항목','[시간권·주중/주말 요금]과 [장비·의류·리프트권 포함 여부]를 안내합니다.','시간권별 요금표에 장비·의류·헬멧·리프트권의 포함 여부와 추가금을 각각 써야 합니다. 강습료는 렌탈료와 구분해야 합니다.'],
   ['어떤 장비를 빌리고 어떤 강습을 받을 수 있나요?','스키·보드 장비와 강습','[대여 가능한 장비·사이즈]와 [실제 운영하는 강습 대상·구성]을 확인하세요.','스키·보드·부츠·의류의 대여 품목과 사이즈를 표시해야 합니다. 강습을 제공할 때만 대상·시간·인원을 별도로 써야 합니다.'],

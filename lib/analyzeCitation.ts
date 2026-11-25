@@ -40,6 +40,10 @@ export function citationFallbackQuestions(data:ExtractedWebsiteData,brand:string
   }
   if(purpose.business){
     const p=businessProfile(purpose.business.id),topic=purpose.business.keywords[0]||p.label;
+    if(purpose.business.id==='hairpieces_wigs')return [
+      {question:`${brand}(${host})의 가발·헤어피스 제품 유형과 구매 경로는 어디에서 확인하나요?`,type:'brand',journey:'브랜드 확인'},
+      ...p.questions.map((q,i)=>({question:q.question,type:i===0?'industry' as const:'service' as const,journey:['상품·소재 선택','색상·착용 비교','착용·관리','교환·반품'][i]})),
+    ];
     return [
       {question:`${brand}(${host})는 어떤 상품·서비스와 이용 경로를 안내하나요?`,type:'brand',journey:'브랜드 확인'},
       ...p.questions.map((q,i)=>({question:q.question,type:i===0?'industry' as const:'service' as const,journey:['제공 범위·위치','조건·절차','이용 전 확인'][i]})),

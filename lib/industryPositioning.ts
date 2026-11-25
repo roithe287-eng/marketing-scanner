@@ -9,9 +9,10 @@ export type {PositionCategory} from './positionEditorial';
 
 export type PositionCriterion={id:string;label:string;pattern:RegExp;description:string;examples:string[];action:string;template:string;weight:number};
 type Spec=[string,string,string,string];
-export const POSITION_INDUSTRIES:Record<PositionCategory,string>={...placeLabels,ski:'스키·보드 렌탈·강습',rental:'대여·렌탈',education:'교육',medical:'의료·병원',commerce:'커머스·쇼핑',realestate:'부동산',legal:'법률·세무',beauty:'뷰티·미용',food:'식음료·외식',travel:'여행·숙박',logistics:'해외이사·국제물류',fortune:'사주·운세',it_service:'IT·서비스',manufacturing:'제조·산업',finance:'금융',consulting:'컨설팅·마케팅',media:'미디어·콘텐츠',sports:'스포츠·피트니스',pet:'반려동물',automotive:'자동차',parenting:'육아·아동',interior:'인테리어·건축',ecommerce:'이커머스',etc:'공통 기준'};
+export const POSITION_INDUSTRIES:Record<PositionCategory,string>={...placeLabels,ski:'스키·보드 렌탈·강습',rental:'대여·렌탈',education:'교육',medical:'의료·병원',commerce:'커머스·쇼핑',realestate:'부동산',legal:'법률·세무',beauty:'뷰티·미용',food:'식음료·외식',travel:'여행·숙박',logistics:'해외이사·국제물류',fortune:'사주·운세',it_service:'IT·서비스',manufacturing:'제조·산업',finance:'금융',consulting:'컨설팅·마케팅',media:'미디어·콘텐츠',sports:'스포츠·피트니스',pet:'반려동물',automotive:'자동차',parenting:'육아·아동',interior:'인테리어·건축',ecommerce:'이커머스',hairpieces_wigs:'가발·헤어피스 전문 쇼핑몰',etc:'공통 기준'};
 // Editorial comparison lenses, not empirical industry averages or performance scores.
 const SPECS:Record<Exclude<PositionCategory,PlacePosition>,[Spec,Spec,Spec,Spec]>={
+ hairpieces_wigs:[['cost','가격·배송·교환 조건','판매가|추가금|배송비|교환|반품|\\d[\\d,]*원','가격, 배송비와 개봉·착용 상태에 따른 조건'],['scope','상품 유형·소재·실측','헤어피스|가발|인모|고열사|길이|사이즈|피스 수','상품 유형, 소재, 길이와 피스 수'],['proof','색상·착용 근거','컬러차트|칼라차트|색상표|착용 사진|착용 영상|내츄럴블랙|내츄럴브라운','판매 색상을 확인할 수 있는 표본과 착용 자료'],['process','착용·관리·A/S','착용법|착용 가이드|열기구|고데기|세척|보관|A/S','상품별 착용·관리 기준과 구매 후 지원']],
  ski:[['cost','렌탈 요금·포함 항목','요금|가격|리프트권|시간권|추가금|보증금|환불','시간별 렌탈 요금과 장비·리프트권 포함 여부'],['scope','장비·강습 범위','스키|보드|부츠|의류|헬멧|강습|사이즈','대여 품목·사이즈와 실제 강습 범위'],['proof','장비 상태·담당자','정비|세척|장비 사진|점검|강사|자격|경력','실제 장비 상태·관리와 강습 담당자'],['process','수령·반납·이동','수령|반납|픽업|셔틀|예약|위치|주차|취소','매장 위치와 장비 수령·반납·스키장 이동']],
  rental:[['cost','대여 비용·보증금','요금|가격|보증금|연장|추가금|환불','기간별 대여료·보증금·별도 비용'],['scope','대여 품목·구성','대여|렌탈|렌털|규격|구성|수량|사이즈','대여 품목과 포함 구성'],['proof','물품 상태·관리','점검|정비|세척|사진|교체|관리','실제 물품 상태와 관리 기준'],['process','수령·반납','수령|반납|배송|설치|예약|취소|위치','수령·설치와 반납·변경 조건']],
  fortune:[['cost','무료 범위·비용과 변경','무료|유료|복채|상담료|가격|환불|취소','무료 범위와 유료 조건·환불·취소 기준'],['scope','풀이·상담 유형','사주|궁합|만세력|운세|타로|신점','서비스별 주제와 실제 제공 방식'],['proof','이용 근거·정보 안내','샘플|예시|상담사|역술인|생년월일|개인정보','공개 예시 또는 상담 담당자와 개인정보 안내'],['process','시작·예약·결과 확인','입력|열람|결제|예약|접수|오시는 길','풀이 시작부터 결과 열람 또는 상담 예약까지']],
@@ -42,10 +43,11 @@ export function positionProfile(category:PositionCategory){const specs:Spec[]=is
 const scopeCategories:Record<string,PositionCategory>={retail:'commerce',finance:'finance',pharmacy:'pharmacy',insurance:'finance',rehabilitation:'legal',property_sales:'realestate',startup:'consulting',franchise:'consulting',custom_apparel:'manufacturing',medical:'medical',veterinary:'pet',pet_care:'pet',pet_store:'pet',agency:'consulting',medical_consulting:'consulting',software:'it_service',manufacturing:'manufacturing',education:'education',international_logistics:'logistics',fortune_digital:'fortune',fortune_consultation:'fortune',legal:'legal',accounting:'legal',professional:'legal',home:'interior',home_service:'interior',restaurant:'food',cafe:'food',beauty:'beauty',rental:'rental',lodging:'travel',hospitality:'travel',travel:'travel',travel_booking:'travel',fitness:'sports',automotive:'automotive',real_estate:'realestate',community:'media',content:'media'};
 export function defaultPositionIndustry(report:MarketingReport):{category:PositionCategory;basis:string} {
  if(report.sitePurpose?.business?.id==='custom_apparel')return {category:'manufacturing',basis:'홈페이지 원문에서 확인한 단체복 주문제작'};
+ if(report.sitePurpose?.business?.id==='hairpieces_wigs')return {category:'hairpieces_wigs',basis:'홈페이지 원문에서 확인한 가발·헤어피스 상품군'};
  const scope=report.competitorAnalysis?.ourSite?.scope;
  if(scope&&sameSite(scope.sourceUrl,report.url)){
 
-  const category=scope.kind==='commerce'?'ecommerce':scope.profile==='rental'&&scope.specialties.includes('season:ski')?'ski':isPlacePosition(scope.profile)?scope.profile:scopeCategories[scope.profile];
+  const category=scope.profile==='hairpieces_wigs'?'hairpieces_wigs':scope.kind==='commerce'?'ecommerce':scope.profile==='rental'&&scope.specialties.includes('season:ski')?'ski':isPlacePosition(scope.profile)?scope.profile:scopeCategories[scope.profile];
   if(category)return {category,basis:'홈페이지 원문에서 확인한 제공 업무·세부 업종 기준'};
  }
 

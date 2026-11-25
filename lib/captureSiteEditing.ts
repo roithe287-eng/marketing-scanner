@@ -40,26 +40,39 @@ export function captureSiteEditing($:CheerioAPI,finalUrl:string,headers:Headers)
   const elements:PageElement[]=[];let order=0,lastHeading='',total=0;
   const counts:Record<PageElement['kind'],number>={title:0,description:0,heading:0,text:0,cta:0,image:0,form:0};
   const limits:Record<PageElement['kind'],number>={title:2,description:2,heading:20,text:36,cta:24,image:12,form:4};
-  const controlSelector='body a,body button,body [role="button"],body input[type="submit"]';
+  const purchaseLabel=/장바구니\s*(?:담기|추가)|바로\s*구매|구매하기|add to cart|buy now/i;
+  const iconControl=(el:Element)=>el.tagName==='img'&&!!$(el).attr('onclick')&&purchaseLabel.test($(el).attr('alt')||'');
+  const controlText=(el:Element)=>{
+    const item=$(el),icon=el.tagName==='img'?item:item.find('img[alt]').first();
+    const alt=icon.attr('alt')||'';
+    return clean(item.text()||item.attr('value')||item.attr('aria-label')||(purchaseLabel.test(alt)?alt:''));
+  };
+  const controlSelector='body a,body button,body [role="button"],body input[type="submit"],body img[onclick][alt]';
   // Navigation and CMS account controls often precede the real content. Reserve the
   // bounded sample for useful main-page actions before restoring document order.
   const controlPriority=(el:Element)=>{
-    const item=$(el),text=clean(item.text()||item.attr('value')||item.attr('aria-label')||'');
+    const text=controlText(el);
     const actionable=fortuneStart.test(text)||/문의|상담|견적|예약|신청|수강|접수|다운로드|구독|구매|결제|장바구니|contact|consult|book|apply|enroll|download|subscribe|buy|checkout|add to cart/i.test(text);
     const region=pageRegion($,el),main=region==='main',chrome=['header','nav','footer'].includes(region);
     return main&&actionable?0:main?1:!chrome&&actionable?2:chrome&&actionable?3:chrome?5:4;
   };
+  const sampledIcons=new Map<string,number>();
   const sampledControls=new Set($(controlSelector).toArray().filter(el=>{
-    const item=$(el);return !item.closest(CONSENT_WIDGET_SELECTOR).length&&!item.parents('script,style,noscript,template,[hidden],[aria-hidden="true"]').length&&!item.is('[hidden],[aria-hidden="true"]')&&!!clean(item.text()||item.attr('value')||item.attr('aria-label')||'');
-  }).sort((a,b)=>controlPriority(a as Element)-controlPriority(b as Element)).slice(0,limits.cta));
+    const item=$(el);return (el.tagName!=='img'||iconControl(el as Element))&&!item.closest(CONSENT_WIDGET_SELECTOR).length&&!item.parents('script,style,noscript,template,[hidden],[aria-hidden="true"]').length&&!item.is('[hidden],[aria-hidden="true"]')&&!!controlText(el as Element);
+  }).sort((a,b)=>controlPriority(a as Element)-controlPriority(b as Element)).filter(el=>{
+    if(el.tagName!=='img')return true;
+    const label=controlText(el as Element),count=(sampledIcons.get(label)||0)+1;
+    sampledIcons.set(label,count);
+    return count<=3;
+  }).slice(0,limits.cta));
   $(`head title,head meta[name="description" i],body h1,body h2,body h3,body p,body li,${controlSelector},body img,body form`).each((_,node)=>{
     const el=node as Element,item=$(node),tag=el.tagName;
     if(item.parents('script,style,noscript,template,[hidden],[aria-hidden="true"]').length||item.is('[hidden],[aria-hidden="true"]'))return;
     if(item.closest(CONSENT_WIDGET_SELECTOR).length)return;
-    const control=tag==='a'||tag==='button'||item.attr('role')==='button'||(tag==='input'&&item.attr('type')?.toLowerCase()==='submit');
+    const control=tag==='a'||tag==='button'||item.attr('role')==='button'||(tag==='input'&&item.attr('type')?.toLowerCase()==='submit')||iconControl(el);
     const copy=item.clone();copy.find('script,style,noscript,template').remove();copy.find('br').replaceWith(' ');
     const visibleText=copy.text();
-    const text=clean(tag==='meta'?item.attr('content')||'':tag==='img'?item.attr('alt')||'':tag==='form'?'문의·입력 폼':control?item.text()||item.attr('value')||item.attr('aria-label')||'':visibleText);
+    const text=clean(tag==='meta'?item.attr('content')||'':control?controlText(el):tag==='img'?item.attr('alt')||'':tag==='form'?'문의·입력 폼':visibleText);
     if(!text&&tag!=='img')return;if(tag==='li'&&!control&&item.children('p,ul,ol,a').length)return;
     if(/^h[1-3]$/.test(tag))lastHeading=text.slice(0,300);
     const kind:PageElement['kind']=tag==='title'?'title':tag==='meta'?'description':/^h[1-3]$/.test(tag)?'heading':control?'cta':tag==='img'?'image':tag==='form'?'form':'text';
