@@ -64,6 +64,7 @@ export const buildPrompt = (
   const elements=(data.siteEditing?.elements||[]).filter(e=>!['header','nav','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)&&['heading','text','cta'].includes(e.kind)).slice(0,mode==='lean'?20:10).map(e=>({tag:e.tag,section:e.section?.label||'',text:e.text.slice(0,400),truncated:e.truncated||e.text.length>400}));
   return `[페이지 목적과 적용 기준 · 원문 기반 후보]
 ${purposePrompt(data)}
+${data.industryDecision?.status==='review'?'업종을 보류한 페이지다. 제목·설명·대표 제목·모바일 기본 설정처럼 수집 HTML에서 확인할 수 있는 공통 항목만 점검한다. 특정 업종, 상품, 시술, 구매, 예약, 대상 고객을 추정하거나 그 전제의 제안·예시를 작성하지 않는다.':''}
 페이지 목적에 맞는 제공 가치·설명·실제 다음 행동을 검토하라. 고객사 사례·포트폴리오·관련 글·다른 지점의 설명을 자사의 제공 서비스·의료진·가격으로 옮기지 마라. 제공하지 않는다는 문구는 제외 조건 그대로 보존하라. 정보형은 작성자·출처·최신성·본문 답변, 교육형은 대상·커리큘럼·일정·신청, 기업형은 사업 분야·담당 주체·사례, 서비스형은 제공 범위·절차·상담/예약을 우선한다. 구매 전환을 모든 사이트의 목표로 가정하지 마라. 관련 없는 가격·배송·재고·상품 후기 개선은 생성하지 마라.
 
 ${detailed&&analyzeBusinessContext(data)?.id==='international_logistics'?'국제물류 상세 진단: 개인 해외이사·귀국이사와 기업 해상·항공 운송의 고객과 견적 조건을 구분합니다.':''}

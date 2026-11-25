@@ -74,6 +74,7 @@ function providerSpecialties(profile:string,data:Input):string[]{
 /** Uses the same page-purpose and playbook decisions as the report, never search snippets. */
 export function buildCompetitionScope(input:Input):CompetitionScope{
   const data={...input,finalUrl:input.finalUrl||input.url,title:input.title||'',description:input.description||'',h1:input.h1||[],h2:input.h2||[],bodyText:input.bodyText||''};
+  if(data.industryDecision?.status==='review')return {version:1,sourceUrl:data.finalUrl,kind:'unknown',profile:'unknown',label:'업종 확인 필요',specialties:[],area:'',destinations:[],nationwide:false};
   const purpose=analyzeWebsitePurpose(data),place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
   const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
   const role=ownBusinessRole(data),book=nonCommercePlaybook(purpose,identity,place);

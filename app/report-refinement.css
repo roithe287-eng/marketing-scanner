@@ -420,3 +420,11 @@
  .report-v2 .report-evidence-topic h4 {margin:0}
  .report-evidence-next-label {position:static;display:block;width:auto;height:auto;clip-path:none;margin-bottom:2px;color:#365273;font-size:.875rem}
 }
+
+.report-hero .industry-original .industry-decision{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 10px;text-align:center}
+.industry-decision>div{display:grid;align-content:center;min-width:0;padding:12px;border:1px solid #d5e4eb;border-radius:12px;background:#f2f7fa}
+.report-hero .industry-original .industry-decision dd{font-size:clamp(14px,1.8vw,19px);font-weight:800;line-height:1.35;word-break:keep-all}
+.industry-decision[data-industry-status="review"]>div:first-child{background:#fbf4e8;border-color:#ecdbbf;color:#6d481c}
+.industry-review-note{text-align:center;color:#415972;font-size:13px;margin:0 0 9px;overflow-wrap:anywhere}
+.industry-review-note a,.industry-evidence-link{text-decoration:underline;text-underline-offset:3px}
+.industry-evidence-link{margin-inline-start:8px;display:inline-block}

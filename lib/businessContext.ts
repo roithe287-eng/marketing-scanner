@@ -123,8 +123,10 @@ export function analyzeBusinessContext(data:Input):BusinessContext|undefined{
   const all=[primary,...units.map(u=>classificationText(u.text)),...documents.filter(d=>!identity&&d.source==='search_excerpt').flatMap(d=>d.sections.map(s=>s.text)),...data.productContext?.sources.map(p=>p.name+' '+p.description)||[]].join(' ');
   const merchantDocs=documents.filter(d=>d.source!=='search_excerpt');
   const serviceActions=data.siteEditing?data.siteEditing.elements.filter(e=>e.kind==='cta'&&!['header','nav','footer'].includes(e.region||'')&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)).map(e=>e.text):[...data.ctaButtons||[],...data.buttons||[]];
-  const hairProducts=hairGoodsProducts([...(data.productDiscovery?.sources||[]),...(data.productContext?.sources||[])],data.finalUrl||data.url);
-  const hairStore=compatible('hairpieces_wigs')&&hairGoodsIdentity(data.finalUrl||data.url,headings,classificationText(identity),hairProducts,serviceActions);
+  const ownProducts=[...(data.productDiscovery?.sources||[]),...(data.productContext?.sources||[])].filter(product=>sameSite(product.url,data.finalUrl||data.url));
+  const hairProducts=hairGoodsProducts(ownProducts,data.finalUrl||data.url);
+  const hairOnlyCatalog=ownProducts.every(product=>hairGoodsTopic.test(product.name));
+  const hairStore=compatible('hairpieces_wigs')&&hairGoodsIdentity(data.finalUrl||data.url,headings,classificationText(identity),hairOnlyCatalog||hairGoodsTopic.test(classificationText(identity))?hairProducts:[],serviceActions);
   const tools=fortuneTopic.test(primary)?firstPartyFortuneTools(data.finalUrl||data.url,data.siteEditing?.elements):[];
   const fortune=detectFortuneService({
     url:data.finalUrl||data.url,headings,description:data.description||data.ogDescription||'',

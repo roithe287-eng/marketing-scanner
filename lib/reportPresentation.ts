@@ -25,7 +25,7 @@ export function reportForPresentation(report:MarketingReport):MarketingReport {
     report={...report,keywordFrequency:reconcileKeywordMetadata(report.keywordFrequency,titleClipped?undefined:page.title,descriptionClipped?undefined:page.description)};
   }
   // Reuse retained public source bodies when opening a saved report. No new request or invented fact.
-  if(page&&report.serviceStrategy?.industry==='noncommerce'&&report.sitePurpose&&report.sitePurpose.business?.id!=='custom_apparel'){
+  if(!report.industryDecision&&page&&report.serviceStrategy?.industry==='noncommerce'&&report.sitePurpose&&report.sitePurpose.business?.id!=='custom_apparel'){
     const plan=report.serviceStrategy;
     const documents=(report.siteDiagnostics?.pages||[]).filter(p=>!p.noindex).flatMap(p=>p.businessDocument?[p.businessDocument]:[]);
     for(const s of plan.sources){

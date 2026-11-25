@@ -21,7 +21,8 @@ import { extractWebsite } from "@/lib/extractWebsite";
 import { analyzeMarketing } from "@/lib/analyzeMarketing";
 import { analyzeDiscoverability } from "@/lib/analyzeDiscoverability";
 import { analyzeCitation } from "@/lib/analyzeCitation";
-import {classifyIndustry} from "@/lib/industryClassifier";
+import {reviewIndustry} from '@/lib/industryClassifier';
+import {industryReviewMessage} from '@/lib/industryDecisionSchema';
 import { analyzeKeywordRank } from "@/lib/analyzeKeywordRank";
 import { analyzeBenchmark } from "@/lib/analyzeBenchmark";
 import { analyzeKeywordFrequency } from "@/lib/analyzeKeywordFreq";
@@ -153,6 +154,10 @@ export async function POST(req: NextRequest) {
     const sourceDocuments=[...businessDocuments,...siteDiagnostics.pages.filter(p=>!p.noindex).flatMap(p=>p.businessDocument?[p.businessDocument]:[])];
     websiteData.businessDocuments=sourceDocuments.filter((d,i,a)=>a.findIndex(v=>v.url===d.url)===i).slice(0,9);
     if(siteDiagnostics.medicalAudit)websiteData.medicalAudit=siteDiagnostics.medicalAudit;
+    const industryDecision=reviewIndustry(websiteData);
+    websiteData.industryDecision=industryDecision;
+    const industryMatched=industryDecision.status==='matched';
+    const deferred={value:null};
     const pageEvidence=capturePageEvidence(websiteData);
     console.log(`[타이밍] 사이트 추출: ${Date.now() - t0}ms`);
 
@@ -163,19 +168,23 @@ export async function POST(req: NextRequest) {
     //    - Keyword Rank (v45-W2)
     const t1 = Date.now();
     const optionalBudget=Math.max(1,remainingBudget()-2500);
-    const [report, discoverability, llmCitation, keywordRank, category, answerContent] = await Promise.all([
+    const [report, discoverability, llmCitation, keywordRank, answerContent] = await Promise.all([
       analyzeMarketing(websiteData),
-      optionalStage('discoverability','AI 검색 준비도',Math.min(34_000,optionalBudget),()=>analyzeDiscoverability(websiteData)),
-      optionalStage('citation','GEO 답변·출처 관측',Math.min(34_000,optionalBudget),()=>analyzeCitation(websiteData,geoQuestions?.map((q:string)=>q.trim()),{fixedQuestions,fresh:!!geoBaseline})),
-      optionalStage('keywords','네이버 키워드 관측',Math.min(30_000,optionalBudget),()=>analyzeKeywordRank(websiteData)),
-      optionalStage('category','업종 분류',Math.min(5000,optionalBudget),()=>classifyIndustry(websiteData)),
-      optionalStage('answerContent','네이버 대응 콘텐츠 개선안',Math.min(26_000,optionalBudget),()=>analyzeAnswerContent(websiteData)),
+      industryMatched?optionalStage('discoverability','AI 검색 준비도',Math.min(34_000,optionalBudget),()=>analyzeDiscoverability(websiteData)):deferred,
+      industryMatched?optionalStage('citation','GEO 답변·출처 관측',Math.min(34_000,optionalBudget),()=>analyzeCitation(websiteData,geoQuestions?.map((q:string)=>q.trim()),{fixedQuestions,fresh:!!geoBaseline})):deferred,
+      industryMatched?optionalStage('keywords','네이버 키워드 관측',Math.min(30_000,optionalBudget),()=>analyzeKeywordRank(websiteData)):deferred,
+      industryMatched?optionalStage('answerContent','네이버 대응 콘텐츠 개선안',Math.min(26_000,optionalBudget),()=>analyzeAnswerContent(websiteData)):deferred,
     ]);
     console.log(`[타이밍] AI 병렬 분석: ${Date.now() - t1}ms`);
 
     report.url = url;
     report.pageEvidence=pageEvidence;
-    report.siteDiagnostics=siteDiagnostics;
+    report.siteDiagnostics=industryMatched?siteDiagnostics:{...siteDiagnostics,medicalAudit:undefined,localPlaceLookup:undefined,
+      pages:siteDiagnostics.pages.map(page=>({...page,localPlaceEvidence:undefined,medicalRelevant:false,medicalEvidence:undefined})),
+      findings:siteDiagnostics.findings.filter(finding=>!finding.id.startsWith('medical-')),
+    };
+    report.industryDecision=industryDecision;
+    if(!industryMatched)report.competitorStatus={status:'unavailable',message:'업종 확인 후 같은 상품이나 서비스를 제공하는 경쟁사를 비교할 수 있습니다.'};
     if(websiteData.productContext)report.productContext=websiteData.productContext;
     report.diagnosisMethod=`${DIAGNOSIS_METHOD}:${process.env.OPENAI_MODEL||'gpt-4.1-mini'}`;
     if(diagnosisBaseline)report.diagnosisBaseline=diagnosisBaseline;
@@ -185,8 +194,8 @@ export async function POST(req: NextRequest) {
     if(siteDiagnostics.medicalAudit)siteDiagnostics.medicalAudit=withMedicalCitation(siteDiagnostics.medicalAudit,llmCitation.value,websiteData.finalUrl);
     if (geoBaseline) report.geoBaseline = geoBaseline;
     report.keywordRankTracking = keywordRank.value;
-    report.answerContentPlan = answerContent.value||buildAnswerContentPlan(websiteData);
-    report.serviceStrategy = buildServiceStrategy(websiteData);
+    report.answerContentPlan = industryMatched?(answerContent.value||buildAnswerContentPlan(websiteData)):null;
+    report.serviceStrategy = industryMatched?buildServiceStrategy(websiteData):undefined;
 
     report.adWasteSimulation=null; // Page scores cannot establish ad waste or savings.
 
@@ -198,9 +207,10 @@ export async function POST(req: NextRequest) {
     report.naverEcosystemReadiness = null;
     report.technicalSeo = null; // Replaced by scoped observations in naverOptimization.
     report.keywordFrequency = websiteData.collectionNotice?null:analyzeKeywordFrequency(websiteData);
-    const benchmark=await optionalStage('benchmark','업종 비교 데이터',Math.max(1,Math.min(2500,remainingBudget()-500)),()=>category.value?analyzeBenchmark(websiteData,report.diagnosis,category.value,report.diagnosisMethod!):Promise.resolve(null));
+    const benchmark=await optionalStage('benchmark','업종 비교 데이터',Math.max(1,Math.min(2500,remainingBudget()-500)),()=>industryMatched?analyzeBenchmark(websiteData,report.diagnosis,industryDecision.category,report.diagnosisMethod!):Promise.resolve(null));
     report.industryBenchmark=benchmark.value;
-    report.analysisWarnings=[discoverability,llmCitation,keywordRank,category,benchmark,answerContent].flatMap(stage=>stage.warning?[stage.warning]:[]);
+    report.analysisWarnings=[discoverability,llmCitation,keywordRank,benchmark,answerContent].flatMap(stage=>'warning' in stage&&stage.warning?[stage.warning]:[]);
+    if(industryDecision.status==='review')report.analysisWarnings.push({key:'industry',label:`업종별 분석 보류 · ${industryReviewMessage[industryDecision.reason].split('.')[0]}`.slice(0,80),status:'unavailable'});
     if(websiteData.collectionNotice)report.analysisWarnings.push({key:'source',label:websiteData.collectionNotice,status:'unavailable'});
     const reviewed=MarketingReportSchema.safeParse(finalizeReportEvidence(report,websiteData));
     if(!reviewed.success)throw new AccessError(502,'진단 결과의 필수 항목을 확인하지 못했습니다. 잠시 후 다시 시도해 주세요.');
@@ -208,11 +218,11 @@ export async function POST(req: NextRequest) {
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
-    const competitionScope=buildCompetitionScope(websiteData);
+    const competitionScope=industryMatched?buildCompetitionScope(websiteData):undefined;
     return {
       ...reviewedReport,
       _hasCompetitor: !!(
-        (naverReportSearchAllowed()||competitionScope.profile==='hairpieces_wigs'&&competitionScope.kind==='commerce')
+        competitionScope&&(naverReportSearchAllowed()||competitionScope.profile==='hairpieces_wigs'&&competitionScope.kind==='commerce')
         && (principal.kind==='internal'||planFeatures(principal.account).competitor)
       ),
       _websiteHints: {

@@ -113,7 +113,7 @@ export default function HomePage() {
       setStoreReport(null);
       setRestrictedReport(null);
       const canAnalyzeCompetitors=Boolean(data._hasCompetitor&&data._websiteHints);
-      setReport({...parsed.data,competitorStatus:{status:canAnalyzeCompetitors?'pending':'unavailable',message:canAnalyzeCompetitors?'경쟁사 비교를 분석하고 있습니다.':'현재 경쟁사 비교 결과를 제공할 수 없습니다.'}});
+      setReport({...parsed.data,competitorStatus:canAnalyzeCompetitors?{status:'pending',message:'경쟁사 비교를 분석하고 있습니다.'}:parsed.data.competitorStatus||{status:'unavailable',message:'현재 경쟁사 비교 결과를 제공할 수 없습니다.'}});
       scrollTimer.current=setTimeout(()=>{
         if(current())document.getElementById('report-area')?.scrollIntoView({behavior:'smooth',block:'start'});
       },150);

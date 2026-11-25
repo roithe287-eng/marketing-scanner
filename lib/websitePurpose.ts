@@ -11,6 +11,7 @@ import {NonCommerceSectorSchema,analyzeNonCommerceSector,sectorActionPattern} fr
 import {BusinessContextSchema,analyzeBusinessContext,businessPrompt} from './businessContext';
 import {firstPartyFortuneTools,fortuneStart,fortunePricing,hasFortuneOverview} from './fortuneService';
 import {medicalPrompt} from './medicalAudit';
+import {industryReviewMessage} from './industryDecisionSchema';
 import {CommunityContextSchema,communityChecks} from './communityContext';
 
 export const PurposeKindSchema=z.enum(['commerce','service','organization','education','content','public_service','mixed','unknown']);
@@ -28,7 +29,7 @@ export const WebsitePurposeSchema=z.object({
 });
 export type WebsitePurpose=z.infer<typeof WebsitePurposeSchema>;
 export type PurposeKind=WebsitePurpose['kind'];
-type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'communityContext'|'medicalAudit'|'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'productContext'|'productDiscovery'|'seoEvidence'|'schemaTypes'|'jsonLdSchemas'|'businessDocuments'|'diagnosticSeed'>> & {localPlaceEvidence?:LocalPlaceEvidence};
+type PurposeInput=Pick<ExtractedWebsiteData,'url'|'finalUrl'|'title'|'description'|'h1'|'h2'|'bodyText'> & Partial<Pick<ExtractedWebsiteData,'industryDecision'|'communityContext'|'medicalAudit'|'ogDescription'|'siteEditing'|'buttons'|'ctaButtons'|'productContext'|'productDiscovery'|'seoEvidence'|'schemaTypes'|'jsonLdSchemas'|'businessDocuments'|'diagnosticSeed'>> & {localPlaceEvidence?:LocalPlaceEvidence};
 const labels:Record<PurposeKind,string>={commerce:'상품 판매형',service:'서비스·상담형',organization:'기업·기관 소개형',education:'교육·프로그램형',content:'정보·콘텐츠형',public_service:'공공·지원 안내형',mixed:'판매·비커머스 혼합형',unknown:'목적 확인 필요'};
 const patterns={
   public_service:/지원사업|공공\s*서비스|행정\s*민원|복지\s*(?:서비스|사업|지원|급여|시설)|보조금|(?:정부|지자체|공공).{0,12}지원|public service/i,
@@ -46,6 +47,16 @@ export const showProductCollection=(p:WebsitePurpose|undefined)=>!p||!isNonComme
 
 /** Submitted-page purpose candidates, not a verified business model or a performance score. */
 export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
+  const industry=data.industryDecision;
+  if(industry?.status==='review'){
+    const note=industryReviewMessage[industry.reason];
+    const guide='대표 상품·서비스 상세에서 제공 범위와 실제 다음 행동을 확인하세요.';
+    return {version:1,kind:'unknown',label:'공통 페이지 점검',sourceUrl:industry.sourceUrl,capturedAt:data.seoEvidence?.capturedAt,
+      evidence:industry.evidence.map(item=>({text:item.text,locator:item.url})),
+      goal:{key:'unknown',label:'다음 행동 확인',observed:false,evidence:[]},pricingObserved:false,note,
+      checks:[{id:'scope',label:'자사 제공 범위',status:'review',evidence:[],guide:note},{id:'goal',label:'고객의 다음 행동',status:'review',evidence:[],guide}],
+    };
+  }
   if(data.communityContext){
     const c=data.communityContext,checks=communityChecks(c),goal=checks.find(check=>check.id==='goal')!;
     return WebsitePurposeSchema.parse({version:1,kind:'content',label:c.pageType==='discussion'?'커뮤니티·게시글형':'커뮤니티·정보 포털형',sourceUrl:data.finalUrl||data.url,capturedAt:data.seoEvidence?.capturedAt,evidence:c.evidence,community:c,goal:{key:'read',label:'게시글 탐색·회원 참여',observed:goal.status==='observed',evidence:goal.evidence},pricingObserved:false,checks,note:c.note});
@@ -120,13 +131,14 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const purchase=actions.filter(a=>actionPatterns.purchase.test(a.text));
   const localPayment=!!place&&['restaurant','cafe','lodging','fitness','education','culture','rental','medical','veterinary','pet_care'].includes(place.sector)&&purchase.length>0&&purchase.every(a=>/결제하기|checkout/i.test(a.text))&&!data.productDiscovery?.sources.length&&!data.productDiscovery?.productLinks.length&&!data.productContext?.sources.length&&role!=='retail';
   // Select one provider claim from the submitted page. Conflicting categories need more evidence.
-  const claimUnits=identityUnits.filter(u=>['head > title','h1','meta[name="description"]'].includes(u.locator))
+  const claimUnits=identityUnits.filter(u=>!u.locator.endsWith(' · 입력 항목 라벨'))
     .flatMap(unit=>directIndustries(unit.text).map(category=>({category,evidence:original(unit)})));
   const providerClaim=claimUnits.length&&claimUnits.every(c=>c.category===claimUnits[0].category)?claimUnits[0]:undefined;
   const declaredKind=providerClaim&&({manufacturing:'organization',education:'education',media:'content',ecommerce:'commerce'} as Partial<Record<string,PurposeKind>>)[providerClaim.category];
   const candidate=sector?(genericCandidate==='public_service'?'public_service':'service'):genericCandidate||(place&&(!purchase.length||localPayment)&&!data.productContext?.commerce&&!data.productDiscovery?.commerce?'service':undefined);
   const explicitStore=role==='retail'&&/쇼핑몰|공식몰|전문몰|온라인\s*(?:몰|스토어|판매)/.test(providerIdentity(data));
-  const commerce=explicitStore||purchase.length>0&&!localPayment||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true));
+  const commerce=explicitStore||purchase.length>0&&!localPayment||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true||
+    data.productContext?.discovery==='public_catalog'&&data.productContext.sources.some(product=>sameSite(product.url,data.finalUrl||data.url))));
   const fortuneDescription=data.description||data.ogDescription||'';
   const serviceAction=actions.some(a=>actionPatterns.booking.test(a.text)||actionPatterns.contact.test(a.text)||actionPatterns.application.test(a.text));
   const topicOnly=!candidate||candidate==='service'&&!sector&&!serviceAction;

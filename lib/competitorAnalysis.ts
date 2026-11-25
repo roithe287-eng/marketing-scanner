@@ -2,6 +2,7 @@ import {restoreStreamedHtml} from './streamedHtml';
 import {captureCommunityContext} from './communityContext';
 import {SKI_DESTINATIONS} from './seasonalPlaceCatalog';
 import {buildCompetitionScope,competitionMismatch,eligibleMetadata,type CompetitionScope} from './competitionScope';
+import {reviewIndustry} from './industryClassifier';
 import {captureSiteEditing} from './captureSiteEditing';
 import {captureLocalPlaceEvidence} from './localPlaceEvidence';
 import {captureProductSeed} from './productDiscovery';
@@ -143,7 +144,7 @@ async function fetchCompetitorMeta(competitor: Competitor, officialStore=false):
 }
 
 /** Candidate facts are parsed from its own fetched page, never from the search snippet. */
-export function captureCompetitorPage(html:string,url:string,headers=new Headers()){
+export function captureCompetitorPage(html:string,url:string,headers=new Headers()):Pick<Competitor,'finalUrl'|'metaTitle'|'metaDescription'|'h1'|'ctaTexts'|'bodySnippet'|'scope'|'fetchError'>{
   const $=cheerio.load(html);
   restoreStreamedHtml($);
   if($('meta[name="robots" i],meta[name="JinjjaScanner" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')))return {finalUrl:url,fetchError:'페이지 검색 수집 제한'};
@@ -154,8 +155,12 @@ export function captureCompetitorPage(html:string,url:string,headers=new Headers
   const ctaTexts=[...new Set(siteEditing.elements.filter(e=>e.kind==='cta'&&!isSecondarySection(e.section?.label||e.heading,e.text,e.href)).map(e=>e.text))].slice(0,12);
   const bodySnippet=providerBody({siteEditing}).slice(0,4000);
   const data={communityContext:captureCommunityContext($,url),url,finalUrl:url,title:metaTitle,description:metaDescription,h1:h1?[h1]:[],h2:[],bodyText:bodySnippet,siteEditing,ctaButtons:ctaTexts,productDiscovery:captureProductSeed(html,url)};
-  const scope=buildCompetitionScope({...data,localPlaceEvidence:place});
-  return {finalUrl:url,metaTitle,metaDescription,h1,ctaTexts,bodySnippet,scope};
+  const input={...data,localPlaceEvidence:place};
+  const scope=buildCompetitionScope(input);
+  const industry=reviewIndustry(input);
+  return {finalUrl:url,metaTitle,metaDescription,h1,ctaTexts,bodySnippet,scope,
+    ...(industry.status==='review'&&industry.reason==='conflicting'?{fetchError:'후보 원문의 제공 업종 단서가 서로 다름'}:{}),
+  };
 }
 
 /**

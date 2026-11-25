@@ -3,10 +3,12 @@ export {INDUSTRY_LABELS} from './industryCategory';
 import {directIndustries} from './providerClaims';
 import {keywordList} from './industryLanguage';
 import {providerIdentity,ownBusinessRole,providerBody,classificationText,isExcludedOffering,isContextOnlyEvidence} from './websiteIdentity';
-import { getOpenAI } from "./openaiClient";
 import { ExtractedWebsiteData } from "./extractWebsite";
 import { IndustryCategory } from "./reportSchema";
 import {analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
+import {sameSite} from './siteIdentity';
+import type {IndustryDecision,IndustryEvidence} from './industryDecisionSchema';
+import {isSecondarySection,isOtherBranch} from './websiteIdentity';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
 
 // Use the same identity chosen for the report. Client examples and seasonal
@@ -27,16 +29,6 @@ const SERVICE_INDUSTRIES:Partial<Record<string,IndustryCategory>>={
   hospitality:'travel',real_estate:'realestate',fitness:'sports',study_abroad:'education',
   education:'education',content:'media',community:'media',
 };
-
-/**
- * v45-W3: AI 업종 자동 분류기
- * - 사이트 URL·본문·타이틀 분석 후 20개 카테고리 중 하나로 태깅
- * - 개인정보 저장 X · 오직 카테고리만 반환
- * - 실패 시 "etc" 반환
- */
-
-const OPENAI_MODEL = "gpt-4o-mini";
-const AI_TIMEOUT_MS = 15000;
 
 const CATEGORY_HINTS: Record<IndustryCategory, string[]> = {
   education: ["학원", "강의", "수업", "교육", "과외", "온라인 클래스", "코딩스쿨", "수강", "튜터", "academy", "school", "course"],
@@ -69,7 +61,8 @@ const concreteHints=(category:IndustryCategory)=>CATEGORY_HINTS[category].filter
 function matchingHints(text:string,hints:string[]){
   return hints.filter(h=>/^[a-z ]+$/i.test(h)?new RegExp('\\b'+h.replace(/ /g,'\\s+')+'\\b','i').test(text):text.toLowerCase().includes(h.toLowerCase()));
 }
-function industrySources(data:Parameters<typeof analyzeWebsitePurpose>[0]&{ogTitle?:string}){
+type IndustryInput=Parameters<typeof analyzeWebsitePurpose>[0]&Partial<Pick<ExtractedWebsiteData,'ogTitle'|'collectionNotice'>>;
+function industrySources(data:IndustryInput){
   const eligible=(s:string|undefined)=>s&&!isContextOnlyEvidence('',s)&&!keywordList(s)?classificationText(s):'';
   const names=[data.title,...data.h1||[],data.ogTitle].map(eligible).filter(Boolean);
   const meta=[...new Set([data.description,data.ogDescription].map(eligible).filter(Boolean))];
@@ -82,8 +75,7 @@ function industrySources(data:Parameters<typeof analyzeWebsitePurpose>[0]&{ogTit
 /**
  * 키워드 기반 빠른 예비 분류 (AI 호출 전 힌트)
  */
-export function classifyIndustryFromEvidence(data: Parameters<typeof analyzeWebsitePurpose>[0] & Partial<Pick<ExtractedWebsiteData,'ogTitle'>>): IndustryCategory | null {
-  const purpose=analyzeWebsitePurpose(data);
+export function classifyIndustryFromEvidence(data:IndustryInput,purpose=analyzeWebsitePurpose(data)): IndustryCategory | null {
   if(purpose.community)return 'media';
   if(purpose.business)return purpose.business.industry;
   if(isNonCommerce(purpose)&&ownBusinessRole(data)==='manufacturing')return 'manufacturing';
@@ -92,7 +84,7 @@ export function classifyIndustryFromEvidence(data: Parameters<typeof analyzeWebs
     return categories[purpose.sector.id];
   }
   if(isNonCommerce(purpose)){
-    const place=data.diagnosticSeed?.page.localPlaceEvidence;
+    const place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
     const book=nonCommercePlaybook(purpose,providerIdentity(data),place);
     const season=book.id.startsWith('season_')?SEASON_INDUSTRIES[book.id.slice(7)]:undefined;
     if(!season&&place?.sector==='rental'&&/렌터카|렌트카|(?:자동차|차량)\s*대여/.test(providerIdentity(data)))return 'automotive';
@@ -119,6 +111,80 @@ export function classifyIndustryFromEvidence(data: Parameters<typeof analyzeWebs
   return null;
 }
 
+const roleCategories={agency:'consulting',software:'it_service',manufacturing:'manufacturing',home:'interior',education:'education',retail:'ecommerce'} as const;
+const comparableCategory=(category:IndustryCategory)=>category==='commerce'?'ecommerce':category;
+
+function providerClaims(row:IndustryEvidence){
+  const text=classificationText(row.text);
+  const explicit=directIndustries(text);
+  if(explicit.length||!['title','heading'].includes(row.field))return explicit;
+  const role=ownBusinessRole({title:text});
+  if(role)return [roleCategories[role]];
+  if(/(?:동물병원|동물의료센터)(?:\s|$)/.test(text))return ['pet'] as const;
+  if(/(?:법무법인|법률사무소|법무사)(?:\s|$)/.test(text))return ['legal'] as const;
+  if(/(?:병원|의원|치과|한의원|클리닉)(?:\s*[|·-]|$)/.test(text))return ['medical'] as const;
+  return [];
+}
+
+/** Authorize industry-specific output from first-party statements and products only. */
+export function reviewIndustry(data:IndustryInput):IndustryDecision{
+  const sourceUrl=data.finalUrl||data.url;
+  if(!sameSite(sourceUrl,data.url)&&!sameSite(data.url,sourceUrl))return {status:'review',reason:'redirected',sourceUrl,evidence:[]};
+  if(data.collectionNotice)return {status:'review',reason:'restricted',sourceUrl,evidence:[]};
+  const purpose=analyzeWebsitePurpose(data);
+  const place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
+  const rows:IndustryEvidence[]=[];
+  const add=(field:IndustryEvidence['field'],value:string|undefined,url=sourceUrl)=>{
+    const text=value?.replace(/\s+/g,' ').trim();
+    if(!text||text.length<2||keywordList(text)||isSecondarySection('',text,url)||!classificationText(text)||!sameSite(url,sourceUrl))return;
+    if(!rows.some(row=>row.text===text.slice(0,240)))rows.push({field,text:text.slice(0,240),url});
+  };
+  add('title',data.title);
+  data.h1.slice(0,4).forEach(text=>add('heading',text));
+  add('description',data.description||data.ogDescription);
+  const headings=rows.filter(row=>row.field==='title'||row.field==='heading');
+  for(const line of providerBody(data).slice(0,7000).split(/\n+/u).slice(0,24)){
+    for(const text of line.split(/(?<=[.!?。])\s+/u).slice(0,5)){
+      if(!headings.some(row=>row.text.includes(text.trim())||text.trim()===row.text))add('body',text);
+    }
+  }
+  for(const doc of data.businessDocuments||[]){
+    if(doc.source==='search_excerpt'||doc.url===sourceUrl||isOtherBranch(doc.title,place?.branch)||isSecondarySection(doc.title,'',doc.url))continue;
+    for(const section of doc.sections.filter(s=>!isSecondarySection(s.heading,s.text,doc.url)).slice(0,4))add('document',section.text,doc.url);
+  }
+  for(const product of [...data.productDiscovery?.sources||[],...data.productContext?.sources||[]])add('product',product.name,product.url);
+  const primary=rows.filter(row=>['title','heading','description'].includes(row.field));
+  const claims=(list:IndustryEvidence[])=>new Set(list.flatMap(row=>[...providerClaims(row)].map(comparableCategory)));
+  const lead=claims(headings),confirmed=claims(rows.filter(row=>row.field==='body'||row.field==='document'));
+  const allClaims=claims(rows);
+  const candidate=classifyIndustryFromEvidence(data,purpose);
+  const selected=candidate&&comparableCategory(candidate);
+  // If headline and substantive copy agree, a stale description may be ignored.
+  // A competing service declared in the headline or substantive copy still requires review.
+  const corroborated=lead.size===1&&confirmed.size===1&&[...lead][0]===[...confirmed][0];
+  const conflict=lead.size>1||confirmed.size>1||allClaims.size>1&&!corroborated;
+  if(conflict&&!purpose.community){
+    const evidence=rows.filter(row=>providerClaims(row).length).slice(0,4);
+    return {status:'review',reason:'conflicting',sourceUrl,evidence};
+  }
+  const specialists=[...purpose.business?.evidence||[],...purpose.sector?.evidence||[],...purpose.community?.evidence||[]];
+  const direct=selected?rows.filter(row=>providerClaims(row).some(category=>comparableCategory(category)===selected)):[];
+  const specialistEvidence=rows.filter(row=>specialists.some(s=>s.text.replace(/\s+/g,' ').includes(row.text)));
+  const matched=selected?rows.filter(row=>matchingHints(classificationText(row.text),concreteHints(selected)).length):[];
+  const products=rows.filter(row=>row.field==='product');
+  const verifiedProducts=products.length>0&&(purpose.kind==='commerce'||purpose.kind==='mixed'||data.productContext?.discovery==='public_catalog');
+  const corroboratingFields=new Set(matched.map(row=>row.field==='heading'?'title':row.field));
+  const specialistSupported=specialistEvidence.some(row=>row.field!=='description')||
+    specialistEvidence.length>0&&corroboratingFields.size>=2;
+  const explicitProvider=direct.some(row=>row.field!=='description'&&directIndustries(row.text).length>0);
+  const placeSupported=!!(place?.sector&&place.sector!=='local'&&place.address&&matched.length);
+  const supported=specialistSupported||verifiedProducts||explicitProvider||corroboratingFields.size>=2||placeSupported;
+  if(!candidate||candidate==='etc'||!supported)return {status:'review',reason:'insufficient',sourceUrl,evidence:primary.slice(0,2)};
+  const evidence=[...new Set([...specialistEvidence,...direct,...(verifiedProducts?products:[]),...matched])].slice(0,4);
+  const label=purpose.business?.label||purpose.sector?.label||(purpose.community?'커뮤니티':INDUSTRY_LABELS[candidate]);
+  return {status:'matched',category:candidate,sourceUrl,label,evidence};
+}
+
 /** A model suggestion must cite literal eligible page text, never invent a basis. */
 export function groundedIndustrySuggestion(value:unknown,data:Parameters<typeof industrySources>[0]):IndustryCategory{
   if(!value||typeof value!=='object')return 'etc';
@@ -138,72 +204,9 @@ export function groundedIndustrySuggestion(value:unknown,data:Parameters<typeof 
   return supported||matchesClaim?category as IndustryCategory:'etc';
 }
 
-/**
- * AI 업종 분류
- */
-export async function classifyIndustry(
-  data: ExtractedWebsiteData
-): Promise<IndustryCategory> {
-  // 1. 키워드 기반 강한 매칭이면 AI 호출 없이 즉시 반환
-  const quick = classifyIndustryFromEvidence(data);
-  if (quick) {
-    return quick;
-  }
-
-  // 2. AI 분류
-  if (!process.env.OPENAI_API_KEY) {
-    return "etc";
-  }
-
-  const bodyPreview = providerBody(data).slice(0, 1500);
-  if(![data.title,data.description,...data.h1||[],bodyPreview].some(v=>v?.trim()))return 'etc';
-  const prompt = `다음 사이트의 업종을 20개 카테고리 중 하나로 정확히 분류하라.
-
-[사이트]
-페이지 목적: ${analyzeWebsitePurpose(data).label}
-타이틀: ${data.title}
-설명: ${data.description || data.ogDescription || ""}
-H1: ${(data.h1 || []).slice(0, 3).join(" | ")}
-본문 발췌: ${bodyPreview}
-
-[20개 카테고리]
-education / medical / commerce / realestate / legal / beauty / food /
-travel / logistics / it_service / manufacturing / finance / consulting / media /
-sports / pet / automotive / parenting / interior / ecommerce / etc
-
-JSON만 응답:
-{"category":"education","evidence":"업종 판단에 사용한 원문의 짧은 문구"}
-evidence는 위 제목·설명·H1·본문에서 그대로 인용한다. 자사 제공 업무를 확인할 근거가 부족하면 category를 etc로 반환한다.`;
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS);
-
-  try {
-    const resp = await getOpenAI().chat.completions.create(
-      {
-        model: OPENAI_MODEL,
-        messages: [
-          {
-            role: "system",
-            content: "업종 분류 도우미. 자사가 제공하는 업무로 분류한다. 고객사 업종·관련 글·제공하지 않는 업무는 제외한다. 제목·대표 제목·소개와 본문이 충돌하거나 근거가 부족하면 etc를 반환한다. JSON만 응답.",
-          },
-          { role: "user", content: prompt },
-        ],
-        temperature: 0.1,
-        response_format: { type: "json_object" },
-      },
-      { signal: controller.signal }
-    );
-    clearTimeout(timer);
-
-    const content = resp.choices[0]?.message?.content?.trim() || "";
-    const parsed = JSON.parse(content);
-    return groundedIndustrySuggestion(parsed,data);
-  } catch (e: any) {
-    clearTimeout(timer);
-    console.warn("[industry] AI 분류 실패:", e?.message || e);
-    return "etc";
-  }
+export async function classifyIndustry(data:ExtractedWebsiteData):Promise<IndustryCategory>{
+  const decision=data.industryDecision||reviewIndustry(data);
+  return decision.status==='matched'?decision.category:'etc';
 }
 
 export function industryLabel(cat: IndustryCategory): string {
