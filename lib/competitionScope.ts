@@ -6,6 +6,8 @@ import {nonCommercePlaybook} from './nonCommercePlaybook';
 import {classificationText,offeringClauses,ownBusinessRole,providerIdentity,providerBody,isContextOnlyEvidence} from './websiteIdentity';
 import {fortuneTopic,fortuneRemote,fortuneVisit} from './fortuneService';
 import {SKI_DESTINATIONS,seasonalProfile} from './seasonalPlaceCatalog';
+import {isEditorialPage} from './pageRole';
+import {retailFamilies} from './retailOffer';
 import {hairGoodsFacets,hairGoodsProducts,hairGoodsTopic} from './hairGoods';
 
 export const CompetitionScopeSchema=z.object({
@@ -52,6 +54,7 @@ function areaOf(text:string):string{
 }
 function providerSpecialties(profile:string,data:Input):string[]{
   const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
+  if(profile==='commerce')return retailFamilies(identity,[...data.productDiscovery?.sources||[],...data.productContext?.sources||[]],data.finalUrl||data.url);
   const facets=facetRules[profile]||[];
   if(profile==='hairpieces_wigs'){
     const products=hairGoodsProducts([...(data.productDiscovery?.sources||[]),...(data.productContext?.sources||[])],data.finalUrl||data.url);
@@ -75,6 +78,9 @@ function providerSpecialties(profile:string,data:Input):string[]{
 export function buildCompetitionScope(input:Input):CompetitionScope{
   const data={...input,finalUrl:input.finalUrl||input.url,title:input.title||'',description:input.description||'',h1:input.h1||[],h2:input.h2||[],bodyText:input.bodyText||''};
   if(data.industryDecision?.status==='review')return {version:1,sourceUrl:data.finalUrl,kind:'unknown',profile:'unknown',label:'업종 확인 필요',specialties:[],area:'',destinations:[],nationwide:false};
+  const pageType=data.industryDecision?.status==='page_type'?data.industryDecision.kind:!data.communityContext&&isEditorialPage(data)?'editorial':undefined;
+  if(pageType)return {version:1,sourceUrl:data.finalUrl,kind:pageType==='editorial'?'content':'public_service',profile:pageType,
+    label:pageType==='editorial'?'정보·콘텐츠 페이지':'공공·지원 안내',specialties:[],area:'',destinations:[],nationwide:false};
   const purpose=analyzeWebsitePurpose(data),place=data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence;
   const identity=providerIdentity(data),headings=providerIdentity({...data,description:''});
   const role=ownBusinessRole(data),book=nonCommercePlaybook(purpose,identity,place);
@@ -104,10 +110,13 @@ export function refineStoredCompetitionScope(saved:CompetitionScope|undefined,in
 const equivalent=[['home','home_service'],['legal','accounting','professional'],['hospitality','lodging'],['travel','travel_booking'],['medical_consulting','agency']];
 const known=(scope:CompetitionScope)=>!['service','unknown','mixed','organization'].includes(scope.profile)&&scope.kind!=='unknown';
 export function competitionMismatch(own:CompetitionScope,candidate:CompetitionScope,strict=true):string|undefined{
+  if(candidate.profile==='public_service'&&own.kind!=='public_service')return '후보 URL에 자사의 제공 방식과 다른 공공·지원 안내가 확인됨';
+  if(!['content','public_service','unknown'].includes(own.kind)&&candidate.kind==='content')return '콘텐츠 페이지에서 자사와 같은 제공 업무를 확인하지 못함';
   if(['commerce','mixed'].includes(own.kind)&&['content','education','public_service'].includes(candidate.kind))return '상품 판매 업체와 정보·교육 페이지의 사업 유형이 다름';
   if(own.kind==='commerce'&&candidate.kind!=='commerce'&&candidate.kind!=='mixed'&&candidate.kind!=='unknown')return '자사는 상품 판매형이며 후보는 다른 제공 방식의 업체';
   if(!['commerce','mixed','unknown'].includes(own.kind)&&candidate.kind==='commerce')return '자사는 서비스·기관형이며 후보는 상품 판매형';
-  if(known(own)){
+  const editorialComparison=own.kind==='content'&&candidate.kind==='content'&&(own.profile==='editorial'||candidate.profile==='editorial');
+  if(known(own)&&!editorialComparison){
     if(known(candidate)&&own.profile!==candidate.profile&&!equivalent.some(g=>g.includes(own.profile)&&g.includes(candidate.profile)))return `실제 제공 업무 불일치: 자사 ${own.label} · 후보 ${candidate.label}`;
     if(strict&&!known(candidate))return '후보 원문에서 자사와 같은 제공 업무를 확인하지 못함';
   }
@@ -131,6 +140,11 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
 /** A client noun cannot be the whole query for a provider with a clear role. */
 export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean{
   if(!scope)return true;
+  if(scope.profile==='commerce'&&scope.specialties.length){
+    const families=retailFamilies(query,[],scope.sourceUrl);
+    if(families.length&&!families.some(family=>scope.specialties.includes(family)))return false;
+    if(!families.length&&/^(?:(?:[가-힣]{2,10})\s+)?(?:치과|병원|의원|미용실|학원|식당|숙박|호텔|법률사무소)(?:\s*(?:예약|상담|추천))?$/u.test(query.trim()))return false;
+  }
   if(scope.profile==='hairpieces_wigs')return hairGoodsTopic.test(query)&&!/모발\s*이식|탈모\s*(?:약|치료|클리닉)|두피\s*시술/.test(query);
   if(scope.profile.startsWith('fortune_'))return (fortuneTopic.test(query)||/^궁합$/.test(query.trim()))&&!(scope.profile==='fortune_digital'&&/상담|점집|철학관/.test(query));
   if(!['insurance','finance','unknown','service','mixed'].includes(scope.profile)&&/^(?:(?:자동차|차량|여행|배상책임)\s*)?보험(?:\s*(?:가입|상담|보장|보장\s*분석))?$/.test(query.trim()))return false;

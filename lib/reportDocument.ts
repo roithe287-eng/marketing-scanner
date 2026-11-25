@@ -65,7 +65,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   }
   if(report.industryDecision){
     const industry=report.industryDecision;
-    blocks.push({kind:'heading',text:'업종과 분석 범위'},{kind:'body',text:industry.status==='matched'?industry.label:industryReviewMessage[industry.reason]});
+    blocks.push({kind:'heading',text:'업종과 분석 범위'},{kind:'body',text:industry.status==='review'?industryReviewMessage[industry.reason]:industry.label});
     for(const item of industry.evidence)blocks.push({kind:'body',text:item.text,href:safeHttpUrl(item.url)||undefined});
   }
   if(report.sitePurpose){const p=report.sitePurpose;blocks.push({kind:'heading',text:'페이지 목적별 분석'},{kind:'body',text:`분류 후보: ${p.label} · 다음 행동 후보: ${p.goal.label}`},{kind:'body',text:`원문 ${p.sourceUrl} · 수집 ${p.capturedAt||'미기록'}`});for(const c of p.checks){blocks.push({kind:'subheading',text:c.label+' · '+({observed:'원문 신호 확인',review:'추가 확인',not_applicable:'해당 없음'}[c.status])});for(const e of c.evidence)blocks.push({kind:'body',text:`원문: ${e.text} · 위치: ${e.locator}`});}}
