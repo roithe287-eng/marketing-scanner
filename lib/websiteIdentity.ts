@@ -3,6 +3,8 @@ import {industryLanguage,keywordList,bareIndustryTag} from './industryLanguage';
 /** Identity and evidence boundaries shared by the deterministic analysis paths. */
 export type OwnBusinessRole='agency'|'software'|'manufacturing'|'home'|'education'|'retail';
 type IdentityInput={title?:string;description?:string;h1?:string[]};
+const productSoftware=/(?:학습|교육|학원|회계|주문|재고|예약|접수)\s*(?:관리|운영|통합)?\s*(?:솔루션|시스템|프로그램)\s*(?:개발|제공|공급|구축)|(?:ERP|LMS)\s*(?:솔루션|소프트웨어|시스템)\s*(?:개발|제공|공급|구축)/iu;
+const trainingLabel=/개발\s*(?:교육|과정|강의|수업|학원)|수강\s*(?:신청|안내)|커리큘럼/u;
 const ownLegal=/법무법인|법률사무소|법무사|변호사|세무사|회계사/;
 export function ownBusinessRole(data:IdentityInput):OwnBusinessRole|undefined{
   const headings=classificationText([data.title,...data.h1||[]].filter(v=>v&&!isContextOnlyEvidence('',v)).join('\n'));
@@ -17,6 +19,7 @@ export function ownBusinessRole(data:IdentityInput):OwnBusinessRole|undefined{
     if(isContextOnlyEvidence('',text)||(i===1&&(keywordList(text)||bareIndustryTag(text))))continue;
     if(i===1&&/법무법인|법률사무소|병원|의원|클리닉|식당|카페|호텔|펜션|약국/.test(headings))return;
     if(/(?:인테리어|리모델링).{0,8}상품/.test(text)&&!/시공|설계/.test(text))return 'retail';
+    if(productSoftware.test(text)&&!trainingLabel.test(text))return 'software';
     if(i===0&&/교육(?!용)|강의|수업|학습|커리큘럼/.test(text)&&!/교재|도서|판매|교육청|교육원\s*소개/.test(text))return 'education';
     if(/쇼핑몰\s*(?:구축|제작)|광고\s*대행|마케팅\s*(?:대행|에이전시)|홈페이지\s*제작|웹\s*제작|브랜딩\s*(?:대행|스튜디오)/i.test(text))return 'agency';
     if(/소프트웨어|\bSaaS\b|업무\s*솔루션|(?:예약|보험|물류|병원|쇼핑몰)\s*(?:관리\s*)?(?:솔루션|시스템)\s*(?:개발|제공)/i.test(text))return 'software';

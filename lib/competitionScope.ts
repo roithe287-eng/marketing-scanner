@@ -7,6 +7,7 @@ import {classificationText,offeringClauses,ownBusinessRole,providerIdentity,prov
 import {fortuneTopic,fortuneRemote,fortuneVisit} from './fortuneService';
 import {SKI_DESTINATIONS,seasonalProfile} from './seasonalPlaceCatalog';
 import {isEditorialPage} from './pageRole';
+import {serviceSpecialties} from './serviceSpecialties';
 import {retailFamilies} from './retailOffer';
 import {hairGoodsFacets,hairGoodsProducts,hairGoodsTopic} from './hairGoods';
 
@@ -15,6 +16,7 @@ export const CompetitionScopeSchema=z.object({
   kind:z.enum(['commerce','service','organization','education','content','public_service','mixed','unknown']),
   profile:z.string().max(80),label:z.string().max(120),
   specialties:z.array(z.string().max(60)).max(16),
+  serviceSpecialties:z.array(z.string().max(60)).max(8).optional(),
   area:z.string().max(100),destinations:z.array(z.string().max(60)).max(6),
   nationwide:z.boolean(),
 });
@@ -90,6 +92,8 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   if(profile.startsWith('place_'))profile=profile.slice(6);
   if(profile==='organization'&&role==='manufacturing')profile=role;
   const specialties=providerSpecialties(profile,data);
+  const declaredFocus=serviceSpecialties(profile,headings,providerBody(data));
+  const serviceFocus=declaredFocus.length?declaredFocus:serviceSpecialties(profile,identity);
   const season=place?.seasonal?.profiles.map(p=>p.id)||[];
   if(season.length&&purpose.kind!=='commerce'&&!['agency','software','manufacturing'].includes(profile))specialties.push(...season.map(s=>'season:'+s));
   const headingDestinations=SKI_DESTINATIONS.filter(d=>d.aliases.test(headings));
@@ -98,13 +102,15 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   const fortuneText=fortuneConsult?classificationText([identity,providerBody(data)].join('\n')):'';
   const nationwide=profile==='fortune_digital'||(fortuneConsult?fortuneRemote.test(fortuneText):/(?:전국|온라인|비대면)\s*(?:출장|서비스|상담|수업|교육|진료|지원)/.test(identity));
   const area=((localProfiles.has(profile)&&!nationwide)||(fortuneConsult&&fortuneVisit.test(fortuneText)))?areaOf(place?.address||headings)||areaOf(identity):'';
-  return {version:1,sourceUrl:data.finalUrl,kind,profile,label:profiles[profile]||purpose.business?.label||book.label,specialties:[...new Set(specialties)].slice(0,16),area,destinations:destinations.slice(0,6),nationwide};
+  return {version:1,sourceUrl:data.finalUrl,kind,profile,label:profiles[profile]||purpose.business?.label||book.label,specialties:[...new Set(specialties)].slice(0,16),...(serviceFocus.length?{serviceSpecialties:serviceFocus}:{}),area,destinations:destinations.slice(0,6),nationwide};
 }
 
 /** Older scopes may omit specialties; retained original metadata can fill them. */
 export function refineStoredCompetitionScope(saved:CompetitionScope|undefined,input:Input):CompetitionScope{
   if(!saved)return buildCompetitionScope(input);
-  return saved.specialties.length?saved:{...saved,specialties:providerSpecialties(saved.profile,input).slice(0,16)};
+  const focus=saved.serviceSpecialties||serviceSpecialties(saved.profile,providerIdentity(input),providerBody(input));
+  return {...saved,specialties:saved.specialties.length?saved.specialties:providerSpecialties(saved.profile,input).slice(0,16),
+    ...(focus.length?{serviceSpecialties:focus}:{})};
 }
 
 const equivalent=[['home','home_service'],['legal','accounting','professional'],['hospitality','lodging'],['travel','travel_booking'],['medical_consulting','agency']];
@@ -119,6 +125,10 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
   if(known(own)&&!editorialComparison){
     if(known(candidate)&&own.profile!==candidate.profile&&!equivalent.some(g=>g.includes(own.profile)&&g.includes(candidate.profile)))return `실제 제공 업무 불일치: 자사 ${own.label} · 후보 ${candidate.label}`;
     if(strict&&!known(candidate))return '후보 원문에서 자사와 같은 제공 업무를 확인하지 못함';
+  }
+  if(own.serviceSpecialties?.length){
+    const offered=candidate.serviceSpecialties||[];
+    if(!own.serviceSpecialties.some(service=>offered.includes(service))&&(strict||offered.length>0))return '같은 세부 서비스를 후보 원문에서 확인하지 못함';
   }
   // A shared seasonal label cannot hide a conflicting service (and vice versa).
   for(const seasonal of [false,true]){
@@ -140,6 +150,8 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
 /** A client noun cannot be the whole query for a provider with a clear role. */
 export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean{
   if(!scope)return true;
+  const subjects=serviceSpecialties(scope.profile,query),knownSubjects=scope.serviceSpecialties||[];
+  if(knownSubjects.length&&subjects.length&&!subjects.some(service=>knownSubjects.includes(service)))return false;
   if(scope.profile==='commerce'&&scope.specialties.length){
     const families=retailFamilies(query,[],scope.sourceUrl);
     if(families.length&&!families.some(family=>scope.specialties.includes(family)))return false;
@@ -164,5 +176,5 @@ export function competitionScopeLabel(scope:CompetitionScope):string{
   const season=scope.specialties.find(s=>s.startsWith('season:'))?.slice(7);
   const label=season&&seasonalProfile(season)?.label||scope.label;
   const destinations=scope.destinations.map(id=>SKI_DESTINATIONS.find(d=>d.id===id)?.label||id).filter(label=>!scope.area.split(' ').includes(label));
-  return [label,...scope.specialties.filter(s=>!s.startsWith('season:')),scope.area,...destinations].filter(Boolean).join(' · ');
+  return [...new Set([label,...scope.specialties.filter(s=>!s.startsWith('season:')),...scope.serviceSpecialties||[],scope.area,...destinations])].filter(Boolean).join(' · ');
 }

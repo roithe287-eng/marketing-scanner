@@ -21,6 +21,7 @@ import { extractWebsite } from "@/lib/extractWebsite";
 import { analyzeMarketing } from "@/lib/analyzeMarketing";
 import { analyzeDiscoverability } from "@/lib/analyzeDiscoverability";
 import { analyzeCitation } from "@/lib/analyzeCitation";
+import {industryDocuments} from '@/lib/industrySourceScope';
 import {reviewIndustry} from '@/lib/industryClassifier';
 import {industryReviewMessage} from '@/lib/industryDecisionSchema';
 import { analyzeKeywordRank } from "@/lib/analyzeKeywordRank";
@@ -152,7 +153,8 @@ export async function POST(req: NextRequest) {
     if(products)websiteData.productContext=products;
     if(communityContext)websiteData.communityContext=communityContext;
     const sourceDocuments=[...businessDocuments,...siteDiagnostics.pages.filter(p=>!p.noindex).flatMap(p=>p.businessDocument?[p.businessDocument]:[])];
-    websiteData.businessDocuments=sourceDocuments.filter((d,i,a)=>a.findIndex(v=>v.url===d.url)===i).slice(0,9);
+    websiteData.businessDocuments=industryDocuments(websiteData.finalUrl,sourceDocuments)
+      .filter((doc,index,list)=>list.findIndex(item=>item.url===doc.url)===index).slice(0,9);
     const industryDecision=reviewIndustry(websiteData);
     websiteData.industryDecision=industryDecision;
     const industryMatched=industryDecision.status==='matched';
@@ -193,9 +195,12 @@ export async function POST(req: NextRequest) {
       })),
       findings:siteDiagnostics.findings.filter(finding=>hasMedicalService||!finding.id.startsWith('medical-')),
     };
-    report.industryDecision=industryDecision;
+    report.industryDecision=industryMatched&&competitionScope?.serviceSpecialties?.length
+      ?{...industryDecision,serviceSpecialties:competitionScope.serviceSpecialties}
+      :industryDecision;
     if(!industryMatched)report.competitorStatus={status:'unavailable',message:industryDecision.status==='page_type'
       ?'이 URL은 안내·콘텐츠 페이지로 진단했습니다. 대표 상품·서비스 URL에서 업체를 비교할 수 있습니다.'
+      :industryDecision.reason==='multiple_offers'?'상세 상품·서비스 주소를 진단하면 해당 사업 영역의 경쟁사를 비교할 수 있습니다.'
       :'업종 확인 후 같은 상품이나 서비스를 제공하는 경쟁사를 비교할 수 있습니다.'};
     if(websiteData.productContext)report.productContext=websiteData.productContext;
     report.diagnosisMethod=`${DIAGNOSIS_METHOD}:${process.env.OPENAI_MODEL||'gpt-4.1-mini'}`;

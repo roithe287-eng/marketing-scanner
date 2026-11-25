@@ -113,7 +113,7 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const scoredCandidate=(['public_service','content','education','organization','service'] as const)
     .filter(k=>matched[k].length>=2||(matched[k].some(u=>primaryWeight(u)>0)&&(k!=='service'||actions.some(a=>Object.entries(actionPatterns).some(([key,re])=>key!=='start'&&re.test(a.text))))))
     .sort((a,b)=>purposeScore(b)-purposeScore(a))[0];
-  const editorialPrimary=scoredCandidate&&['content','education','public_service'].includes(scoredCandidate)&&matched[scoredCandidate].some(u=>u.locator==='head > title'||u.locator==='h1');
+  const editorialPrimary=scoredCandidate&&(scoredCandidate!=='education'||role!=='software')&&['content','education','public_service'].includes(scoredCandidate)&&matched[scoredCandidate].some(u=>u.locator==='head > title'||u.locator==='h1');
   const petTraining=(data.localPlaceEvidence||data.diagnosticSeed?.page.localPlaceEvidence)?.sector==='pet_care'&&role!=='education';
   const genericCandidate=structuredKind||(petTraining&&scoredCandidate==='education'?'service':editorialPrimary?scoredCandidate:roleKind||scoredCandidate);
   const supplemental=(data.businessDocuments||[]).filter(d=>d.source!=='search_excerpt'&&sameSite(d.url,data.finalUrl||data.url)&&!isOtherBranch(d.title,data.localPlaceEvidence?.branch||data.diagnosticSeed?.page.localPlaceEvidence?.branch)).flatMap(d=>d.sections.filter(s=>!isSecondarySection(s.heading,s.text,d.url)).map(s=>({text:short(s.text),locator:d.url}))).filter(u=>u.text.length>=4);
