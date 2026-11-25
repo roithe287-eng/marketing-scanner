@@ -3,6 +3,7 @@ import {buildCompetitorPositioning,positionGroups,positionCoordinates,positionDi
 import {wrapPdfText,type TextMeasurer,type PdfTextStyle} from './pdfLayout';
 import type {VisualPdfPage} from './reportVisualPdf';
 export function buildCompetitorVisualPage(report:MarketingReport,measure:TextMeasurer):VisualPdfPage|null {
+  if(report.competitorAnalysis?.research?.provider==='official_wig_stores')return null;
   const model=buildCompetitorPositioning(report);if(!model||!model.analysis.competitors.length)return null;
   const page:VisualPdfPage={lines:[],shapes:[]};
   const rect=(x:number,y:number,width:number,height:number,color:string,radius=8)=>page.shapes.push({kind:'rect',x,y,width,height,color,radius});

@@ -28,7 +28,7 @@ export function hairGoodsIdentity(url: string, headings: string, primary: string
 
 export const hairGoodsFacets: [string, RegExp][] = [
   ['헤어피스', /헤어\s*피스|붙임머리|똑딱이\s*피스|\bhair\s*pieces?\b/i],
-  ['부분가발', /부분\s*가발|앞머리\s*가발|포니테일\s*가발|정수리\s*가발|\bhair\s*topper\b/i],
+  ['부분가발', /부분\s*가발|앞머리\s*가발|포니테일\s*가발|정수리\s*가발|탑\s*커버|\b(?:hair\s*topper|top\s*cover)\b/i],
   ['통가발·반가발', /통\s*가발|반\s*가발|패션\s*가발|\b(?:full|half)\s*wigs?\b/i],
 ];
 

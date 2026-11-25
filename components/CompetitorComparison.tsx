@@ -43,14 +43,14 @@ export default function CompetitorComparison({competitorAnalysis:storedAnalysis,
                     {comp.domain} ↗
                   </a>
                 </div>
-                <p className="mt-3 text-sm font-semibold">{comp.metaTitle?'수집한 페이지 제목':'검색에서 표시된 제목'}</p>
+                <p className="mt-3 text-sm font-semibold">{comp.metaTitle?'수집한 페이지 제목':'후보 페이지 제목'}</p>
                 <h4 className="font-black text-base leading-snug">
                   {comp.metaTitle || comp.title}
                 </h4>
                 {comp.relevance && <p className="report-competitor-relevance">{comp.relevance === 'keyword_match' ? '검색어 관련 신호 확인' : '서비스 일치 검토 필요'}</p>}
                 {comp.fetchError && <p className="mt-2 report-note">페이지 수집 미완료. 저장된 자료는 원문과 대조해 확인하세요.</p>}
-                {(comp.metaDescription||comp.description||comp.h1||comp.keyMessage||comp.differentiation||comp.ctaTexts?.length||(comp.relevance&&(comp.selectionEvidence||comp.searchRank))) ? <ReadingDisclosure title="수집 문구와 비교 근거" className="report-supporting-detail">
-                  {comp.relevance && (comp.selectionEvidence||comp.searchRank) ? <div className="report-competitor-selection">
+                {(comp.metaDescription||comp.description||comp.h1||comp.keyMessage||comp.differentiation||comp.ctaTexts?.length||comp.selectionEvidence||comp.searchRank) ? <ReadingDisclosure title="수집 문구와 비교 근거" className="report-supporting-detail">
+                  {(comp.selectionEvidence||comp.searchRank) ? <div className="report-competitor-selection">
                     {comp.selectionEvidence && <p className="text-sm text-jm-gray leading-6">{comp.selectionEvidence}</p>}
                     {comp.searchRank && <p className="mt-2 text-sm text-jm-gray">네이버 웹문서 검색 응답에서 {comp.searchRank}번째 항목</p>}
                   </div> : null}

@@ -6,7 +6,7 @@ export type SearchItem = { title: string; link: string; description: string };
 export type SearchCandidate = SearchItem & {
   domain: string;
   rank: number;
-  searchRank: number;
+  searchRank?: number;
   relevance?: 'keyword_match' | 'needs_review';
   selectionEvidence?: string;
   matchedTerms?: string[];
@@ -71,7 +71,7 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
   const coverage=(c:SearchCandidate)=>queryMatches(query,`${c.title} ${c.description}`).matched.length;
   const seller=(c:SearchCandidate)=>Number(commerceText.test(`${c.title} ${c.description}`)||/\/(?:goods|products?)\//i.test(c.link));
   const fit=(c:SearchCandidate)=>ownScope?Number(!competitionMismatch(ownScope,buildCompetitionScope({url:c.link,title:c.title,description:c.description}),false)):0;
-  const unique=candidates.sort((a,b)=>fit(b)-fit(a)||(preferCommerce?seller(b)-seller(a):0)||coverage(b)-coverage(a)||a.searchRank-b.searchRank).filter(c=>{if(seen.has(c.domain)){excluded.push({...c,reason:'이미 수집한 도메인의 중복 페이지'});return false;}seen.add(c.domain);return true;});
+  const unique=candidates.sort((a,b)=>fit(b)-fit(a)||(preferCommerce?seller(b)-seller(a):0)||coverage(b)-coverage(a)||(a.searchRank??0)-(b.searchRank??0)).filter(c=>{if(seen.has(c.domain)){excluded.push({...c,reason:'이미 수집한 도메인의 중복 페이지'});return false;}seen.add(c.domain);return true;});
   eligibleCount=unique.length;
   const selected=unique.slice(0,limit).map((c,i)=>({...c,rank:i+1}));
   return {candidates:selected, excluded, reviewedCount: items.length,eligibleCount,budgetDeferredCount:Math.max(0,eligibleCount-selected.length)};
@@ -105,5 +105,5 @@ export function finalizeSearchCandidates<T extends SearchCandidate & {metaTitle?
     kept.push({...candidate,domain,link,scope,relevance:'keyword_match',matchedTerms:match.matched,relevanceBasis,
       selectionEvidence:`자사 제공 업무 원문에서 “${query}” 확인${ownScope?` · ${scope.label}${ownScope.area?' · 지역 '+scope.area:''}${ownScope.destinations.length?' · 이용 목적지 일치':''}`:''}`});
   }
-  return kept.sort((a,b)=>a.searchRank-b.searchRank).slice(0,limit).map((c,i)=>({...c,rank:i+1}));
+  return kept.sort((a,b)=>(a.searchRank??0)-(b.searchRank??0)).slice(0,limit).map((c,i)=>({...c,rank:i+1}));
 }

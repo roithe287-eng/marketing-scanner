@@ -208,13 +208,15 @@ export async function POST(req: NextRequest) {
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
+    const competitionScope=buildCompetitionScope(websiteData);
     return {
       ...reviewedReport,
       _hasCompetitor: !!(
-        naverReportSearchAllowed() && (principal.kind==='internal'||planFeatures(principal.account).competitor)
+        (naverReportSearchAllowed()||competitionScope.profile==='hairpieces_wigs'&&competitionScope.kind==='commerce')
+        && (principal.kind==='internal'||planFeatures(principal.account).competitor)
       ),
       _websiteHints: {
-        scope:buildCompetitionScope(websiteData),
+        scope:competitionScope,
         communityContext: websiteData.communityContext,
         title: websiteData.title,
         ogTitle: websiteData.ogTitle,
