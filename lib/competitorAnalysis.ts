@@ -26,7 +26,7 @@ import {withBudget} from './runtime/budget';
 import {publicUrl,websiteHttp} from './security/safeFetch';
 import {marketKeywordCandidates,usableMarketKeyword,keywordEvidence,queryMatches,type QuerySite} from "./competitorResearch";
 import type {z} from "zod";
-import type {CompetitorResearchSchema} from "./competitorSchema";
+import {reviewCandidateCoverage,type CompetitorResearchSchema} from "./competitorSchema";
 import * as cheerio from "cheerio";
 import iconv from "iconv-lite";
 import { getOpenAI } from "./openaiClient";
@@ -278,7 +278,7 @@ async function compareWigStores(site:QuerySite&{url:string;title:string;descript
     return [{...candidate,matchedOffer:overlap,matchedTerms:overlap,relevanceBasis:'page_content' as const,selectionEvidence:`공통 상품군 · ${overlap.join(' / ')}`}];
   }).sort((a,b)=>b.matchedTerms.length-a.matchedTerms.length).map((candidate,index)=>({...candidate,rank:index+1}));
   const searchKeyword=ownFacets[0]||'';
-  return {
+  return reviewCandidateCoverage<CompetitorAnalysisResult>({
     searchKeyword,keywordSource:'fallback',competitors,
     ourSite:{scope,url:site.url,domain,title:site.title,metaDescription:site.description,h1:site.h1[0]||''},
     filtering:{policyVersion:3,reviewedCount:candidates.length,metadataCheckedCount:targets.length,excluded},
@@ -287,7 +287,7 @@ async function compareWigStores(site:QuerySite&{url:string;title:string;descript
       eligibleCount:targets.length,budgetDeferredCount:0,successfulPages:targets.filter(c=>!c.fetchError).length,selectedCount:competitors.length,
       selectionStatus:competitors.length?'matched':ownFacets.length?'no_relevant_candidates':'insufficient_source',
       selectionMessage:competitors.length?'양쪽 원문에서 같은 상품군이 확인된 공식몰입니다.':ownFacets.length?'공개 원문에서 상품군이 겹치는 공식몰을 확인하지 못했습니다.':'자사에서 확인한 상품군이 부족합니다. 헤어피스나 가발의 상품 상세 URL로 진단해 보세요.'},
-  };
+  });
 }
 
 export async function analyzeCompetitors(siteData: {
@@ -405,7 +405,7 @@ export async function analyzeCompetitors(siteData: {
     await Promise.all(candidates.map(candidate=>fetchCompetitorMeta(candidate,provider)));
     const competitors=finalizeSearchCandidates(candidates,keyword,selection.excluded,5,commerce,scope,ourDomain,true);
 
-    return {
+    return reviewCandidateCoverage<CompetitorAnalysisResult>({
       searchKeyword: keyword,
       keywordSource,
       research:{version:2,provider,capturedAt:response.capturedAt,requestedCount:limit,returnedCount:response.items.length,apiStart:response.start,totalDocuments:response.total,
@@ -423,7 +423,7 @@ export async function analyzeCompetitors(siteData: {
         metaDescription: rawSite.description,
         h1: rawSite.h1[0] || "",
       },
-    };
+    });
   } catch (err: any) {
     console.error("[경쟁사] 실패:", err?.message);
     return null;

@@ -62,7 +62,7 @@ export function reportForPresentation(report:MarketingReport):MarketingReport {
   const previous=report.competitorStatus;
   const status=visible.research?.selectionStatus==='lookup_unavailable'?'error':visible.competitors.length?'complete':'empty';
   return {...report,competitorAnalysis:visible,
-    ...((previous?.status==='complete'||previous?.status==='empty')&&{competitorStatus:{
+    ...((!previous||previous.status==='complete'||previous.status==='empty')&&{competitorStatus:{
       status,message:visible.research?.selectionMessage||(status==='error'?'공식 URL 조회를 완료하지 못했습니다.':status==='complete'?'비교 기준에 맞는 후보를 표시합니다.':'저장된 후보 중 현재 비교 기준에 맞는 URL이 없습니다.'),
     }}),
   };
