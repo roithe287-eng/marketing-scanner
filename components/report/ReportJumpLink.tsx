@@ -1,24 +1,49 @@
 'use client';
-import React from 'react';
+import React,{useEffect} from 'react';
 
-/** Reveal the destination before scrolling so links into closed task groups work. */
+type ReportLocation={id:string;container?:HTMLElement};
+/** Let a filtered or paginated panel materialize the exact requested item. */
+export function useReportLocator(containerId:string,locate:(id:string)=>boolean){
+ useEffect(()=>{
+  const handle=(event:Event)=>{
+   const detail=(event as CustomEvent<ReportLocation>).detail;
+   const host=document.getElementById(containerId);
+   if(host&&!detail.container&&locate(detail.id))detail.container=host;
+  };
+  document.addEventListener('report:locate',handle);
+  return ()=>document.removeEventListener('report:locate',handle);
+ },[containerId,locate]);
+}
+function openAncestors(element:HTMLElement){
+ for(let node:HTMLElement|null=element;node;node=node.parentElement)if(node instanceof HTMLDetailsElement)node.open=true;
+}
+let navigation=0;
 export function revealReportTarget(id:string,updateHistory=true) {
-  const target=document.getElementById(id);
-  if(!target)return false;
-  document.dispatchEvent(new CustomEvent('report:reveal',{detail:{id}}));
-  if(updateHistory&&window.location.hash!==`#${id}`)window.history.pushState(null,'',`#${id}`);
-  let parent:HTMLElement|null=target;
-  while(parent){if(parent instanceof HTMLDetailsElement)parent.open=true;parent=parent.parentElement;}
-  // Section links open that section; links to the topic list keep its individual rows closed.
-  const section=target.matches('[data-report-panel]')?target.querySelector(':scope > .section-reading'):null;
-  if(section instanceof HTMLDetailsElement)section.open=true;
-  if(target instanceof HTMLButtonElement&&target.dataset.reportTab==='true')target.click();
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    target.scrollIntoView({behavior:'instant',block:'start'});
-    if(!target.matches('button,input,select,textarea,a[href]'))target.tabIndex=-1;target.focus({preventScroll:true});
-  }));
-  return true;
+ const location:ReportLocation={id};
+ let target=document.getElementById(id);
+ if(!target){
+  document.dispatchEvent(new CustomEvent('report:locate',{detail:location}));
+  target=location.container||null;
+ }
+ if(!target)return false;
+ const visit=++navigation;
+ document.dispatchEvent(new CustomEvent('report:reveal',{detail:{id,target}}));
+ const hash='#'+encodeURIComponent(id);
+ if(updateHistory&&window.location.hash!==hash)window.history.pushState(window.history.state,'',hash);
+ openAncestors(target);
+ const section=target.matches('[data-report-panel]')?target.querySelector(':scope > .section-reading'):null;
+ if(section instanceof HTMLDetailsElement)section.open=true;
+ if(target instanceof HTMLButtonElement&&target.dataset.reportTab==='true')target.click();
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  const destination=document.getElementById(id);
+  if(visit!==navigation||!destination)return;
+  openAncestors(destination);
+  destination.scrollIntoView({behavior:'instant',block:'start'});
+  if(!destination.matches('button,input,select,textarea,a[href]'))destination.tabIndex=-1;
+  destination.focus({preventScroll:true});
+ }));
+ return true;
 }
 export default function ReportJumpLink({id,children,className='work-link'}:{id:string;children:React.ReactNode;className?:string}) {
-  return <a className={className} href={`#${id}`} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(id))event.preventDefault();}}>{children}<span aria-hidden="true">→</span></a>;
+ return <a className={className} href={'#'+encodeURIComponent(id)} onClick={event=>{if(event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;if(revealReportTarget(id))event.preventDefault();}}>{children}<span aria-hidden="true">→</span></a>;
 }

@@ -9,12 +9,17 @@ import {excludedPlatformReason} from './competitorSelection';
 import {ownHost,safeHttpUrl} from './citationMeasurement';
 import {competitorDisplay,applyCompetitorExclusions} from './competitorDisplay';
 import {reconcileKeywordMetadata} from './analyzeKeywordFreq';
-import {canonicalPage} from './geoComparison';
+import {canonicalPage,matchesReportPage} from './geoComparison';
 import {currentPlacePolicy,buildHospitalPlaceReview} from './hospitalPlace';
 import {PAGE_EVIDENCE_METADATA_LIMITS} from './pageEvidence';
 
 /** Reapply candidate policy to saved reports without mutating their observations. */
 export function reportForPresentation(report:MarketingReport):MarketingReport {
+  // Older snapshots may include observations from a different scan.
+  const {naverOptimization,officialSeoAudit,siteDiagnostics}=report;
+  if(naverOptimization&&!matchesReportPage(report,naverOptimization.targetUrl))report={...report,naverOptimization:undefined};
+  if(officialSeoAudit&&!matchesReportPage(report,officialSeoAudit.targetUrl))report={...report,officialSeoAudit:undefined};
+  if(siteDiagnostics&&!matchesReportPage(report,siteDiagnostics.targetUrl))report={...report,siteDiagnostics:undefined};
   report=applyActionableGuides(reconcileStoredIndustry(report));
   if(report.evidenceReview?.assessed===0){
     const summary=report.oneLineSummary.replace(/^HTML 기본 항목 0개 중 0개 충족/,'HTML 기본 항목 판정 보류');

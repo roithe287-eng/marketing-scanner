@@ -1,12 +1,14 @@
 import type {MarketingReport} from './reportSchema';
+import type {BusinessDocument} from './businessContext';
 import type {PageElement} from './siteEditingSchema';
 import {editingEvidence} from './siteGuidebook';
 import {safeHttpUrl} from './citationMeasurement';
+import {industryDocuments} from './industrySourceScope';
 import {isConsentBoilerplate} from './contentBoilerplate';
 
 const clean=(text:string)=>text.replace(/\s+/g,' ').trim();
-export type SourceGroup={id:string;text:string;kinds:PageElement['kind'][];occurrences:number;heading:string;chrome:boolean;truncated:boolean;linkIds:string[]};
-export type SourceLink={id:string;url:string;labels:string[];category:'page'|'action'|'internal'|'external';occurrences:number};
+export type SourceGroup={id:string;text:string;kinds:PageElement['kind'][];occurrences:number;sourceUrl:string;heading:string;chrome:boolean;truncated:boolean;linkIds:string[]};
+export type SourceLink={id:string;url:string;labels:string[];category:'page'|'action'|'internal'|'external';occurrences:number;references?:{heading:string;text:string}[]};
 export type SourceLibrary={groups:SourceGroup[];links:SourceLink[];rawCount:number;pageUrl:string;capturedAt?:string;newCapture:boolean};
 /** Preserve functional queries and anchors; remove tracking and synthetic text fragments only. */
 export function sourcePageUrl(value:string):string|null{
@@ -17,19 +19,28 @@ export function sourcePageUrl(value:string):string|null{
  for(const key of [...url.searchParams.keys()])if(/^utm_|^(?:fbclid|gclid|msclkid)$/i.test(key))url.searchParams.delete(key);
  return url.href;
 }
-export function buildSourceLibrary(report:MarketingReport):SourceLibrary{
+export function buildSourceLibrary(report:MarketingReport,retainedDocuments?:BusinessDocument[]):SourceLibrary{
  const page=editingEvidence(report),pageUrl=sourcePageUrl(page?.finalUrl||report.url)||'',groups:SourceGroup[]=[],links:SourceLink[]=[];
  const byText=new Map<string,SourceGroup>(),byUrl=new Map<string,SourceLink>();let rawCount=0;
- function link(value:string,label:string){const url=sourcePageUrl(value);if(!url)return undefined;const prior=byUrl.get(url);if(prior){prior.occurrences++;if(label&&!prior.labels.includes(label))prior.labels.push(label);return prior.id;}
-  const category:SourceLink['category']=url===pageUrl?'page':pageUrl&&new URL(url).origin===new URL(pageUrl).origin?(/문의|상담|신청|예약|견적|접수|등록|contact|apply|book/i.test(label)?'action':'internal'):'external';
-  const entry={id:`L${String(links.length+1).padStart(2,'0')}`,url,labels:label?[label]:[],category,occurrences:1};links.push(entry);byUrl.set(url,entry);return entry.id;
+ function link(value:string,label:string,action=false):SourceLink|undefined {
+  const url=sourcePageUrl(value);if(!url)return;
+  const prior=byUrl.get(url);
+  if(prior){
+   prior.occurrences++;
+   if(label&&!prior.labels.includes(label))prior.labels.push(label);
+   if(action&&prior.category==='internal')prior.category='action';
+   return prior;
+  }
+  const category:SourceLink['category']=url===pageUrl?'page':pageUrl&&new URL(url).origin===new URL(pageUrl).origin?(action?'action':'internal'):'external';
+  const entry:SourceLink={id:`L${String(links.length+1).padStart(2,'0')}`,url,labels:label?[label]:[],category,occurrences:1};
+  links.push(entry);byUrl.set(url,entry);return entry;
  }
  if(pageUrl)link(pageUrl,'분석한 페이지');
- function add(text:string,kind:PageElement['kind'],heading='',chrome=false,truncated=false,href?:string){
+ function add(text:string,kind:PageElement['kind'],heading='',chrome=false,truncated=false,href?:string,sourceUrl=pageUrl){
   const value=clean(text);if(!value)return;rawCount++;
-  const id=href&&sourcePageUrl(href)!==pageUrl?link(href,value):undefined,key=value.normalize('NFKC').toLowerCase(),prior=byText.get(key);
+  const id=href&&sourcePageUrl(href)!==pageUrl?link(href,value,kind==='cta'&&/문의|상담|신청|예약|견적|접수|등록|contact|apply|book/i.test(value))?.id:undefined,key=value.normalize('NFKC').toLowerCase(),prior=byText.get(key);
   if(prior){prior.occurrences++;if(!prior.kinds.includes(kind))prior.kinds.push(kind);if(id&&!prior.linkIds.includes(id))prior.linkIds.push(id);prior.chrome=prior.chrome&&chrome;prior.truncated=prior.truncated&&truncated;return;}
-  const group={id:`S${String(groups.length+1).padStart(2,'0')}`,text:value,kinds:[kind],occurrences:1,heading,chrome,truncated,linkIds:id?[id]:[]};groups.push(group);byText.set(key,group);
+  const group={id:`S${String(groups.length+1).padStart(2,'0')}`,text:value,kinds:[kind],occurrences:1,sourceUrl,heading,chrome,truncated,linkIds:id?[id]:[]};groups.push(group);byText.set(key,group);
  }
  const elements=page?.siteEditing?.elements||[];
  for(const e of elements)add(e.text,e.kind,e.section?.label||e.heading||'',!!e.region&&['nav','header','footer'].includes(e.region),e.truncated,e.kind==='cta'?e.href:undefined);
@@ -44,7 +55,7 @@ export function buildSourceLibrary(report:MarketingReport):SourceLibrary{
    prior.chrome=false;prior.truncated=prior.truncated&&section.truncated;
    if(!prior.kinds.includes('text'))prior.kinds.push('text');
    if(!prior.heading)prior.heading=section.heading;
-   const id=section.url&&sourcePageUrl(section.url)!==pageUrl?link(section.url,section.text):undefined;
+   const id=section.url&&sourcePageUrl(section.url)!==pageUrl?link(section.url,section.text)?.id:undefined;
    if(id&&!prior.linkIds.includes(id))prior.linkIds.push(id);
   }
   const chrome=elements.filter(e=>['nav','header','footer'].includes(e.region||'')).map(e=>clean(e.text));
@@ -54,7 +65,26 @@ export function buildSourceLibrary(report:MarketingReport):SourceLibrary{
   }
  }
  for(const page of report.sitePurpose?.community?.pages||[])link(page.url,'커뮤니티 공개 표본 · '+page.title);
- for(const doc of report.sitePurpose?.business?.documents||[]){const prefix=doc.source==='search_excerpt'?'검색 요약 · 원문 미검증':'보완 원문';link(doc.url,prefix+' · '+doc.title);for(const section of doc.sections)add(section.text,'text',prefix+' · '+section.heading,false,false,doc.url);}
+ const currentDocuments=report.sitePurpose?.business?.documents||[];
+ // Industry reconciliation can update the label and replace its selected documents.
+ // Preserve distinct captured references, including two captures of the same URL.
+ const documents=!retainedDocuments||retainedDocuments===currentDocuments?currentDocuments:
+  [...new Map([...currentDocuments,...retainedDocuments].map(d=>[JSON.stringify([d.url,d.source,d.sections]),d])).values()];
+ const scopedDocuments=new Set(industryDocuments(pageUrl,documents));
+ for(const doc of documents){
+  const primary=doc.source==='merchant_html'&&scopedDocuments.has(doc);
+  const basis=doc.source==='search_excerpt'?'검색 요약 · 원문 미검증':!doc.source?'수집 방식 미기록':primary?'같은 사이트 보완 원문':'다른 페이지 참고';
+  const entry=link(doc.url,`${basis} · ${doc.title}`);
+  if(!entry)continue;
+  for(const section of doc.sections){
+   const heading=[basis,section.heading].filter(Boolean).join(' · ');
+   if(primary){add(section.text,'text',heading,false,false,doc.url,entry.url);continue;}
+   const text=clean(section.text);
+   if(!text)continue;
+   const references=entry.references??=[];
+   if(!references.some(r=>r.text===text&&r.heading===heading))references.push({heading,text});
+  }
+ }
  if(report.productContext?.status==='observed')for(const product of report.productContext.sources)link(product.url,product.name);
  for(const observed of report.siteDiagnostics?.pages||[])link(observed.url,'기술 점검 원문 · '+(observed.title||'제목 미감지'));
  for(const evidence of [...(report.answerContentPlan?.primaryKeyword?.evidence||[]),...(report.answerContentPlan?.secondaryKeywords.flatMap(k=>k.evidence)||[]),...(report.answerContentPlan?.questions.flatMap(q=>q.evidence)||[])])if(evidence.url)link(evidence.url,evidence.text.slice(0,70));

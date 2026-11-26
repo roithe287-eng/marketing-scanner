@@ -1,5 +1,6 @@
 'use client';
 import ReadingDisclosure from '../ReadingDisclosure';
+import {useReportLocator} from './ReportJumpLink';
 import ReportItemPanels from './ReportItemPanels';
 import {revealReportTarget} from './ReportJumpLink';
 import {CompactText} from './ReportVisualSummary';
@@ -16,6 +17,14 @@ export default function OfficialSeoPanel({audit,targetUrl}:{audit?:OfficialSeoAu
  const report=useMemo(()=>audit||analyzeOfficialSeo(null,targetUrl),[audit,targetUrl]);
  const [engine,setEngine]=useState<'all'|OfficialSeoEngine>('all'),[status,setStatus]=useState('action');
  const [catalogOpen,setCatalogOpen]=useState(false),[topic,setTopic]=useState('all'),[query,setQuery]=useState(''),[page,setPage]=useState(0);
+ const [selectedCheck,setSelectedCheck]=useState('');
+ useReportLocator('official-seo',id=>{
+  const check=report.checks.find(c=>`report-official-check-${c.id}`===id);
+  if(!check)return false;
+  if(engine!=='all'&&!check.engines.includes(engine)){setEngine('all');setPage(0);}
+  setStatus(check.status);setSelectedCheck(check.id);
+  return true;
+ });
  const counts=report.checks.reduce((s,c)=>({...s,[c.status]:s[c.status]+1}),{observed:0,action:0,manual:0,not_applicable:0});
  const rows=report.checks.filter(c=>(engine==='all'||c.engines.includes(engine))&&(status==='all'||c.status===status));
  const filtered=useMemo(()=>{
@@ -34,13 +43,13 @@ export default function OfficialSeoPanel({audit,targetUrl}:{audit?:OfficialSeoAu
   <div className="report-card-heading"><div><p className="report-eyebrow">NAVER · GOOGLE · OFFICIAL SEO</p><h3 id="official-seo-title">공식 검색 기준 재검증</h3><p className="report-note">네이버와 Google의 기준을 비교합니다. 검색 로봇 접근이나 페이지 정보 표시처럼 항목별 적용 조건을 확인하세요.</p></div><div className="naver-reviewed"><span>기준 확인일</span><time dateTime={report.catalogVersion}>{report.catalogVersion}</time></div></div>
   <div className="official-seo-coverage"><strong>네이버 {OFFICIAL_SEO_COVERAGE.naver} · Google {OFFICIAL_SEO_COVERAGE.google} 문서</strong><span>반영 {OFFICIAL_SEO_COVERAGE.reviewed}개 · 교육 PDF 2종{OFFICIAL_SEO_COVERAGE.unavailable>0?` · 원문 재확인 필요 ${OFFICIAL_SEO_COVERAGE.unavailable}개`:null}</span></div>
   <CompactText className="report-note" text={OFFICIAL_SEO_SCOPE} summary="관측된 항목과 직접 확인할 항목을 구분합니다. 검색 노출·순위는 보장하지 않습니다."/>
-  {report.mode==='guide'?<p className="naver-legacy">이전 보고서입니다. 현재 URL의 추가 검사는 재진단 후 표시됩니다.</p>:<div className="naver-counts">{(['action','observed','manual','not_applicable'] as const).map(key=><div key={key} data-state={key}><span>{OFFICIAL_SEO_STATUS[key]}</span><strong>{counts[key]}<small>개</small></strong></div>)}</div>}
+  {report.mode==='guide'?<p className="naver-legacy">이 URL의 공식 검색 기준 관측 기록이 없습니다. 재진단하면 현재 페이지의 점검 결과를 확인할 수 있습니다.</p>:<div className="naver-counts">{(['action','observed','manual','not_applicable'] as const).map(key=><div key={key} data-state={key}><span>{OFFICIAL_SEO_STATUS[key]}</span><strong>{counts[key]}<small>개</small></strong></div>)}</div>}
   <div className="official-seo-controls">
    <label>검색엔진<select value={engine} onChange={e=>{setEngine(e.target.value as typeof engine);setPage(0);}}><option value="all">전체</option><option value="naver">네이버</option><option value="google">Google</option></select></label>
    <label>검사 결과<select value={status} onChange={e=>setStatus(e.target.value)}><option value="action">보완 필요</option><option value="observed">관측 확인</option><option value="manual">직접 확인</option><option value="not_applicable">해당 없음</option><option value="all">전체</option></select></label>
    <span role="status">{engine==='all'?'전체 검색엔진':names[engine]}에서 {rows.length}개 항목 표시</span>
   </div>
-  <div className="naver-checks">{rows.length?<ReportItemPanels id="official-checks" label="공통 검색 점검 항목" items={rows.map(check=>({id:check.id,label:check.title,children:<details open key={check.id} className="naver-check" data-state={check.status}>
+  <div className="naver-checks">{rows.length?<ReportItemPanels selection={{id:selectedCheck,onSelect:setSelectedCheck}} id="official-checks" label="공통 검색 점검 항목" items={rows.map(check=>({id:check.id,label:check.title,children:<details open key={check.id} id={`report-official-check-${check.id}`} className="naver-check" data-state={check.status}>
    <summary><span className="naver-check-main"><strong>{check.title}</strong><small>{check.engines.map(e=>names[e]).join(' · ')} · {OFFICIAL_SEO_TOPICS[check.topic as OfficialSeoTopic]}</small></span><span className="naver-badge">{OFFICIAL_SEO_STATUS[check.status]}</span><span aria-hidden="true">+</span></summary>
    <div className="naver-check-body"><EvidenceFlow items={[{label:"확인 근거",role:"current",kicker:report.mode==="guide"?undefined:"AS-IS",content:check.evidence},{label:"진단 해석",role:"review",content:check.interpretation}]}/><RoleBox className="naver-execution" role="proposal" label="실행·확인 순서" kicker={check.status==="action"?"TO-BE · 제안":undefined}><ol className="official-seo-steps">{check.steps.map((step,i)=><li key={i}>{step}</li>)}</ol><div className="naver-completion"><RoleLabel role="verify" label="완료 확인"/><p>{check.completion}</p></div></RoleBox><ReadingDisclosure title="홈페이지 적용 예시" className="report-supporting-detail"><PagePatternGuide title={check.title}/></ReadingDisclosure><div className="naver-check-footer"><div className="naver-sources">{officialSeoCheckSources(check).slice(0,3).map(source=><a key={source.id} href={source.url} target="_blank" rel="noopener noreferrer">{names[source.engine]} · {source.title} ↗</a>)}</div><button type="button" className="naver-copy" aria-controls="report-search-document-library" onClick={()=>showTopic(check.topic)}>이 항목의 공식 문서 열기</button></div></div>
   </details>}))}/>:<p className="report-empty">이 조건의 항목이 없습니다. 직접 확인 항목과 문서 기준은 아래에서 확인하세요.</p>}</div>

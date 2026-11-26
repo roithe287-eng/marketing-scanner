@@ -2,14 +2,14 @@ import {competitorCollectionState} from './competitorDisplay';
 import {reportForPresentation} from './reportPresentation';
 import {OFFICIAL_SEO_COVERAGE} from './officialSeoCatalog';
 import {buildCompetitorPositioning} from './competitorPositioning';
-import {NAVER_CATEGORIES,naverCounts} from './naverKnowledge';
+import {NAVER_CATEGORIES,naverCounts,naverWorkScope} from './naverKnowledge';
 import {isKeywordPlacementCandidate,keywordReviewReason} from './keywordRewrite';
 import {excludedPlatformReason} from './competitorSelection';
 import type {MarketingReport} from './reportSchema';
 import {safeHttpUrl,ownHost} from './citationMeasurement';
 import {buildObservationVisual,engineNames,engines,observationState,readinessItems} from './reportVisuals';
 
-export type FollowupTask={id:string;group:string;title:string;status:'fail'|'warning'|'review';evidence:string;action:string;source:string;current?:string;location?:string;guideScope?:'page'|'account';instructions?:string[];completion?:string};
+export type FollowupTask={id:string;group:string;title:string;status:'fail'|'warning'|'review';evidence:string;action:string;source:string;current?:string;location?:string;guideScope?:'page'|'account';ownerHint?:'content'|'developer'|'marketer';evidenceAnchor?:string;instructions?:string[];completion?:string};
 export type SourceEntry={url:string;title:string;domain:string;ownership:'own'|'external'|'unresolved';questions:string[];observations:string[]};
 export const messageThemes=[
   {label:'가격·혜택',pattern:/가격|비용|할인|무료|견적|수수료/},
@@ -78,8 +78,8 @@ export function buildReportInsights(report:MarketingReport) {
   const heldKeywords=(report.keywordFrequency?.singles||[]).flatMap(k=>{const reason=keywordReviewReason(k.keyword,report.meta);return reason?[{...k,reason}]:[];});
   const tasks:FollowupTask[]=[];
   for(const finding of report.siteDiagnostics?.findings||[]){
-    if(finding.id!=='broken-internal-link'&&finding.id!=='product-offer-mismatch')continue;
-    tasks.push({id:finding.id,group:'페이지·기술',title:finding.title,status:finding.id==='broken-internal-link'?'fail':'warning',evidence:finding.evidence,action:finding.action,source:'공개 페이지 직접 관측',guideScope:'page',location:finding.urls[0],
+    if(finding.status==='observed'||(finding.id!=='broken-internal-link'&&finding.id!=='product-offer-mismatch'))continue;
+    tasks.push({id:finding.id,evidenceAnchor:`report-finding-${finding.id}`,group:'페이지·기술',title:finding.title,status:finding.status==='review'?'review':finding.id==='broken-internal-link'?'fail':'warning',evidence:finding.evidence,action:finding.action,source:'공개 페이지 직접 관측',guideScope:'page',location:finding.urls[0],
       completion:finding.id==='broken-internal-link'?'원문 링크 클릭 시 의도한 주소가 열리는지 확인':'상품 페이지와 구조화 데이터 값의 일치 여부를 재확인'});
   }
   const push=(group:string,source:string,rows:{label:string;status:'pass'|'warning'|'fail'|'review'|'not_applicable';currentValue:string;guide:string}[])=>rows.filter(r=>!['pass','not_applicable'].includes(r.status)).forEach((r,i)=>tasks.push({id:`${source}-${i}`,group,title:r.label,status:r.status as 'warning'|'fail'|'review',evidence:r.currentValue,current:r.currentValue,action:r.guide,source}));
@@ -88,9 +88,9 @@ export function buildReportInsights(report:MarketingReport) {
   push('기본 진단','기본 체크리스트',report.checklist||[]);
   push('GEO 준비도','GEO 준비도',readinessItems(report.discoverability).map(c=>report.evidenceReview?{...c,status:'review' as const}:c));
   for(const check of report.naverOptimization?.mode==='diagnosis'?report.naverOptimization.checks:[]) {
-    if(check.status==='action'||(check.status==='manual'&&check.priority==='high'))tasks.push({id:`naver-${check.id}`,group:'네이버',title:check.title,status:check.status==='manual'?'review':check.priority==='high'?'fail':'warning',evidence:check.evidence,guideScope:check.category!=='search'||check.owner==='marketer'?'account':'page',instructions:check.steps,completion:check.completion,action:`${check.steps.join(' → ')} / 완료 확인: ${check.completion}`,source:NAVER_CATEGORIES[check.category]});
+    if(check.status==='action'||(check.status==='manual'&&check.priority==='high'))tasks.push({id:`naver-${check.id}`,evidenceAnchor:`report-naver-check-${check.id}`,ownerHint:check.owner,group:'네이버',title:check.title,status:check.status==='manual'?'review':check.priority==='high'?'fail':'warning',evidence:check.evidence,guideScope:naverWorkScope(check),instructions:check.steps,completion:check.completion,action:`${check.steps.join(' → ')} / 완료 확인: ${check.completion}`,source:NAVER_CATEGORIES[check.category]});
   }
-  for(const check of report.officialSeoAudit?.mode==='diagnosis'?report.officialSeoAudit.checks:[])if(check.status==='action')tasks.push({id:`official-${check.id}`,group:'공식 SEO',title:check.title,status:'warning',evidence:check.evidence,guideScope:'page',instructions:check.steps,completion:check.completion,action:`${check.steps.join(' → ')} / 완료 확인: ${check.completion}`,source:check.engines.map(e=>e==='naver'?'네이버':'Google').join(' · ')});
+  for(const check of report.officialSeoAudit?.mode==='diagnosis'?report.officialSeoAudit.checks:[])if(check.status==='action')tasks.push({id:`official-${check.id}`,evidenceAnchor:`report-official-check-${check.id}`,group:'공식 SEO',title:check.title,status:'warning',evidence:check.evidence,guideScope:'page',instructions:check.steps,completion:check.completion,action:`${check.steps.join(' → ')} / 완료 확인: ${check.completion}`,source:check.engines.map(e=>e==='naver'?'네이버':'Google').join(' · ')});
   reviews.forEach((r,i)=>tasks.push({id:`brand-review-${i}`,group:'AI 답변',title:`${r.engine} 브랜드 답변 대조`,status:'review',evidence:r.question,action:'답변의 서비스 설명·업체명과 연결된 출처를 대조하세요. 오인식 여부는 확인 후 판단하세요.',source:'AI 답변 관측'}));
   const rank={fail:0,warning:1,review:2};tasks.sort((a,b)=>rank[a.status]-rank[b.status]);
   const collection=competitorCollectionState(report);

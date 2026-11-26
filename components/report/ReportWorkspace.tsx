@@ -32,7 +32,8 @@ export function ReportWorkspace({children}:{children:React.ReactNode}){
  },[]);
  useEffect(()=>{
   const activate=(event:Event)=>{
-   const id=(event as CustomEvent<{id:string}>).detail?.id,target=id?document.getElementById(id):null;
+   const {id,target:host}=(event as CustomEvent<{id:string;target?:HTMLElement}>).detail;
+   const target=document.getElementById(id)||host;
    const chapter=target?.closest<HTMLElement>('[data-chapter]')?.dataset.chapter;
    const panel=target?.closest<HTMLElement>('[data-report-panel]')?.dataset.reportPanel;
    if(chapter)setSelection(previous=>({chapter,panels:panel?{...previous.panels,[chapter]:panel}:previous.panels}));
@@ -42,7 +43,7 @@ export function ReportWorkspace({children}:{children:React.ReactNode}){
    if(event.defaultPrevented||event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;
    const link=(event.target as Element)?.closest<HTMLAnchorElement>('a[href^="#"]');
    if(!link?.closest('#report-area'))return;
-   const id=link.getAttribute('href')!.slice(1);
+   let id:string;try{id=decodeURIComponent(link.hash.slice(1));}catch{return;}
    if(revealReportTarget(id))event.preventDefault();
   };
   document.addEventListener('report:reveal',activate);document.addEventListener('click',fromLink);

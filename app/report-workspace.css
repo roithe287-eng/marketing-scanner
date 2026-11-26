@@ -111,3 +111,12 @@
  .report-section-nav,#report-site-guide,#report-content-evidence { scroll-margin-top:145px; }
 }
 @media print { .report-v2.report-focused [hidden],.report-item-panel[hidden] { display:block!important; }.report-section-nav,.report-item-navigation { display:none; } }
+
+.source-extra-quotes, .source-references { min-width:0; margin-top:10px; }
+.source-extra-quotes summary, .source-references summary { cursor:pointer; padding:10px 4px; color:#31567e; font-weight:700; }
+.source-links-directory .source-references { grid-column:1 / -1; padding:0 12px; background:#f3f6fb; border-radius:8px; }
+.source-references > div { padding:8px 0 12px; overflow-wrap:anywhere; }
+.content-evidence-quotes blockquote .work-link { display:inline-flex; margin-top:8px; font-size:14px; }
+.content-evidence-footer .work-copy { min-width:0; max-width:100%; }
+.source-browser-detail:focus-visible { outline:2px solid #42669e; outline-offset:2px; }
+.source-capture-url { display:block; overflow-wrap:anywhere; margin:8px 0; color:#526c87; font-size:13px; }

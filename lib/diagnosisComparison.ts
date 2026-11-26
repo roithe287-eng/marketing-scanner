@@ -1,5 +1,5 @@
 import {DiagnosisBaselineSchema,type DiagnosisBaseline,type DiagnosisCheck,type MarketingReport} from './reportSchema';
-import {canonicalPage} from './geoComparison';
+import {canonicalPage,matchesReportPage} from './geoComparison';
 import {growthPageEvidence} from './growthPlan';
 import {diagnosisAxes} from './diagnosisVisuals';
 
@@ -10,16 +10,16 @@ export function diagnosisChecks(report:MarketingReport):DiagnosisCheck[] {
  const rows:DiagnosisCheck[]=(report.checklist||[]).map(c=>({key:`check:${c.category}:${normal(c.label)}`,label:c.label,status:c.status,evidence:c.currentValue,source:'기본 체크리스트'}));
  const p=growthPageEvidence(report);
  if(p)for(const [key,label,value] of [['title','검색 제목 존재',p.title],['description','메타 설명 존재',p.description],['h1','H1 존재',p.h1.join('\n')]] as const)rows.push({key:`html:${key}`,label,status:value?'pass':'warning',evidence:value||'수집한 정적 HTML에서 미감지 · 렌더링 결과 확인 필요',source:'정적 HTML 수집'});
- if(report.naverOptimization?.mode==='diagnosis'&&canonicalPage(report.naverOptimization.targetUrl)===canonicalPage(report.url))for(const c of report.naverOptimization.checks)rows.push({key:`naver:${c.id}`,label:c.title,status:c.status==='observed'?'pass':c.status==='action'?'warning':'review',evidence:c.evidence,source:'네이버 관측'});
- if(report.officialSeoAudit?.mode==='diagnosis'&&canonicalPage(report.officialSeoAudit.targetUrl)===canonicalPage(report.url))for(const c of report.officialSeoAudit.checks)rows.push({key:`official:${report.officialSeoAudit.catalogVersion}:${c.id}`,label:c.title,status:c.status==='observed'?'pass':c.status==='action'?'warning':'review',evidence:c.evidence,source:'공식 검색 기준 관측'});
- for(const c of report.criticalIssues)rows.push({key:`issue:${normal(c.title)}`,label:c.title,status:c.priority==='high'?'fail':c.priority==='medium'?'warning':'review',evidence:c.problem,source:'핵심 이슈'});
+ if(report.naverOptimization?.mode==='diagnosis'&&matchesReportPage(report,report.naverOptimization.targetUrl))for(const c of report.naverOptimization.checks)rows.push({key:`naver:${c.id}`,label:c.title,status:c.status==='observed'?'pass':c.status==='action'?'warning':c.status==='not_applicable'?'not_applicable':'review',evidence:c.evidence,source:'네이버 관측'});
+ if(report.officialSeoAudit?.mode==='diagnosis'&&matchesReportPage(report,report.officialSeoAudit.targetUrl))for(const c of report.officialSeoAudit.checks)rows.push({key:`official:${report.officialSeoAudit.catalogVersion}:${c.id}`,label:c.title,status:c.status==='observed'?'pass':c.status==='action'?'warning':c.status==='not_applicable'?'not_applicable':'review',evidence:c.evidence,source:'공식 검색 기준 관측'});
+ for(const c of report.criticalIssues)rows.push({key:`issue:${normal(c.title)}`,label:c.title,status:c.evidenceStatus==='review'?'review':c.priority==='high'?'fail':c.priority==='medium'?'warning':'review',evidence:c.problem,source:'핵심 이슈'});
  return rows;
 }
 export function createDiagnosisBaseline(report:MarketingReport,reportId:string):DiagnosisBaseline {
  const p=growthPageEvidence(report);
  return DiagnosisBaselineSchema.parse({version:1,reportId,expiresAt:report.sharedRetention?.expiresAt,url:report.url,finalUrl:p?.finalUrl,capturedAt:p?.capturedAt,method:report.diagnosisMethod,overallScore:report.overallScore,diagnosis:report.diagnosis,checks:diagnosisChecks(report)});
 }
-export const comparisonGroups=[{id:'resolved',label:'통과 전환',note:'동일 항목이 보완에서 통과로 변경'},{id:'kept',label:'보완 유지',note:'양쪽 결과에서 보완 필요'},{id:'new',label:'새로 보완',note:'현재 결과에서 새로 확인한 보완 항목'},{id:'unknown',label:'재확인 필요',note:'누락·중복·수동 확인 등으로 해결 판단 보류'}] as const;
+export const comparisonGroups=[{id:'resolved',label:'통과 전환',note:'동일 항목이 보완에서 통과로 변경'},{id:'kept',label:'보완 유지',note:'양쪽 결과에서 보완 필요'},{id:'new',label:'새로 보완',note:'이전 통과에서 현재 보완으로 변경'},{id:'unknown',label:'재확인 필요',note:'누락·중복·수동 확인 등으로 해결 판단 보류'}] as const;
 export type DiagnosisChange=typeof comparisonGroups[number]['id'];
 export function buildDiagnosisComparison(report:MarketingReport) {
  const baseline=report.diagnosisBaseline;if(!baseline)return null;
@@ -37,12 +37,12 @@ export function buildDiagnosisComparison(report:MarketingReport) {
    if(!before&&after?.status==='pass')return [];
    let group:DiagnosisChange='unknown';
    if(!blocked&&p?.capturedAt&&baseline.capturedAt&&old.length<=1&&next.length<=1&&before?.status!=='review'&&after?.status!=='review'&&before?.status!=='not_applicable'&&after?.status!=='not_applicable'){
-     if((key.startsWith('check:')||key.startsWith('issue:'))&&report.diagnosisMethod&&baseline.method&&report.diagnosisMethod!==baseline.method)group='unknown';
+     if((key.startsWith('check:')||key.startsWith('issue:'))&&(!report.diagnosisMethod||report.diagnosisMethod!==baseline.method))group='unknown';
      else if(before&&before.status!=='pass'&&after?.status==='pass')group='resolved';
      else if(before&&before.status!=='pass'&&after&&after.status!=='pass')group='kept';
-     else if(after&&after.status!=='pass'&&(!before||before.status==='pass'))group='new';
+     else if(after&&after.status!=='pass'&&before?.status==='pass')group='new';
    }
-   return [{key,label:(after||before).label,before,after,group,reason:old.length>1||next.length>1?'동일 항목이 여러 번 저장되어 자동 비교 보류':!after?'현재 결과에서 빠졌으므로 해결 여부 미확인':group==='unknown'?'측정 조건·수동 확인 항목 대조 필요':''}];
+   return [{key,label:(after||before).label,before,after,group,reason:old.length>1||next.length>1?'동일 항목이 여러 번 저장되어 자동 비교 보류':!before?'이전 보고서에 같은 항목이 없어 새로 발생했는지 확인할 수 없습니다.':!after?'현재 결과에서 빠졌으므로 해결 여부 미확인':group==='unknown'?'측정 조건·수동 확인 항목 대조 필요':''}];
  });
  return {baseline,blocked,items,axes:diagnosisAxes.map(a=>({...a,before:baseline.diagnosis[a.key],after:report.diagnosis[a.key],delta:report.diagnosis[a.key]-baseline.diagnosis[a.key]})),methodMatched:!!report.diagnosisMethod&&report.diagnosisMethod===baseline.method,timeKnown:!!p?.capturedAt&&!!baseline.capturedAt,currentTime:p?.capturedAt};
 }

@@ -75,6 +75,6 @@ test('legacy consent text remains available as source data but never becomes a s
 
 test('responsive spacing variants do not occupy multiple service evidence cards',()=>{
  const text='컨설팅, 마케팅, 교육, 해외환자 유치 등 전반적인 업무를 도와드립니다.';
- const library:SourceLibrary={groups:[text,text.replace(/ /g,'')].map((text,i)=>({id:String(i),text,kinds:['text'],occurrences:1,heading:'서비스 소개',chrome:false,truncated:false,linkIds:[]})),links:[],rawCount:2,pageUrl:url,newCapture:true};
+ const library:SourceLibrary={groups:[text,text.replace(/ /g,'')].map((text,i)=>({id:String(i),text,kinds:['text'],occurrences:1,sourceUrl:url,heading:'서비스 소개',chrome:false,truncated:false,linkIds:[]})),links:[],rawCount:2,pageUrl:url,newCapture:true};
  assert.equal(buildContentFacets(library).find(f=>f.id==='offer')!.evidence.length,1);
 });

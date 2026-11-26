@@ -9,8 +9,8 @@ import { PDF_FONT, PDF_PAGE, type PdfTextStyle } from './pdfLayout';
 const yieldToBrowser=()=>new Promise<void>(resolve=>setTimeout(resolve,0));
 
 /** Prepare a browser-independent PDF result; saving is an explicit user action. */
-export async function renderReportPdf(report:MarketingReport,onProgress:(text:string)=>void,canvas:HTMLCanvasElement,fontFamily=PDF_FONT,signal?:AbortSignal,scope:PdfScope='full',showWatermark=true) {
-  report=reportForPresentation(report);
+export async function renderReportPdf(storedReport:MarketingReport,onProgress:(text:string)=>void,canvas:HTMLCanvasElement,fontFamily=PDF_FONT,signal?:AbortSignal,scope:PdfScope='full',showWatermark=true) {
+  const report=reportForPresentation(storedReport);
   signal?.throwIfAborted();
   onProgress(scope==='summary'?'한 장 요약을 정리 중...':'결과 차트·비교 카드·상세 안내를 정리 중...');
   const {default:JsPDF}=await import('jspdf');
@@ -27,7 +27,7 @@ export async function renderReportPdf(report:MarketingReport,onProgress:(text:st
   const summary=buildReportSummaryPage(report,measure);
   const visuals=scope==='full'?buildVisualPdfPages(report,measure):[];
   if(visuals.length)visuals[0].anchors=['visual-report-start'];
-  const detail=scope==='full'?buildDetailedReportPdf(report,measure,1+visuals.length):null;
+  const detail=scope==='full'?buildDetailedReportPdf(storedReport,measure,1+visuals.length):null;
   const pages=detail?[summary,...detail.contents,...visuals,...detail.pages]:[summary];
   const anchors=new Map<string,{pageNumber:number;top:number}>();
   pages.forEach((page,index)=>page.anchors?.forEach(id=>anchors.set(id,{pageNumber:index+1,top:Math.max(0,(page.anchorOffsets?.[id]||0)-12)*297/PDF_PAGE.height})));
