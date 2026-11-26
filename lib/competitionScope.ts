@@ -1,3 +1,4 @@
+import {sameSite} from './siteIdentity';
 import {z} from 'zod';
 import type {LocalPlaceEvidence} from './localPlaceSchema';
 import type {ExtractedWebsiteData} from './extractWebsite';
@@ -8,7 +9,7 @@ import {fortuneTopic,fortuneRemote,fortuneVisit} from './fortuneService';
 import {SKI_DESTINATIONS,seasonalProfile} from './seasonalPlaceCatalog';
 import {isEditorialPage} from './pageRole';
 import {serviceSpecialties} from './serviceSpecialties';
-import {retailFamilies,retailFormats,retailSearchTerms} from './retailOffer';
+import {retailFamilies,retailItems,retailFormats,retailSearchTerms} from './retailOffer';
 import {hairGoodsFacets,hairGoodsProducts,hairGoodsTopic} from './hairGoods';
 
 export const CompetitionScopeSchema=z.object({
@@ -17,6 +18,7 @@ export const CompetitionScopeSchema=z.object({
   profile:z.string().max(80),label:z.string().max(120),
   specialties:z.array(z.string().max(60)).max(16),
   serviceSpecialties:z.array(z.string().max(60)).max(8).optional(),
+  retailItems:z.array(z.string().max(60)).max(24).optional(),
   retailFormats:z.array(z.string().max(60)).max(4).optional(),
   area:z.string().max(100),destinations:z.array(z.string().max(60)).max(6),
   nationwide:z.boolean(),
@@ -125,7 +127,9 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   const specialties=providerSpecialties(profile,data);
   const declaredFocus=serviceSpecialties(profile,headings,providerBody(data));
   const serviceFocus=declaredFocus.length?declaredFocus:serviceSpecialties(profile,identity);
-  const formats=kind==='commerce'?retailFormats([identity,providerBody(data),...(data.productDiscovery?.sources||[]).map(p=>p.name),...(data.productContext?.sources||[]).map(p=>p.name)].join('\n')):[];
+  const inventory=[...data.productDiscovery?.sources||[],...data.productContext?.sources||[]].filter(p=>sameSite(p.url,data.finalUrl));
+  const items=profile==='commerce'?retailItems(identity,inventory,data.finalUrl):[];
+  const formats=kind==='commerce'?retailFormats([identity,providerBody(data),...inventory.map(p=>p.name)].join('\n')):[];
   const season=place?.seasonal?.profiles.map(p=>p.id)||[];
   if(season.length&&purpose.kind!=='commerce'&&!['agency','software','manufacturing'].includes(profile))specialties.push(...season.map(s=>'season:'+s));
   const headingDestinations=SKI_DESTINATIONS.filter(d=>d.aliases.test(headings));
@@ -134,14 +138,15 @@ export function buildCompetitionScope(input:Input):CompetitionScope{
   const fortuneText=fortuneConsult?classificationText([identity,providerBody(data)].join('\n')):'';
   const nationwide=profile==='fortune_digital'||(fortuneConsult?fortuneRemote.test(fortuneText):/(?:전국|온라인|비대면)\s*(?:출장|서비스|상담|수업|교육|진료|지원)/.test(identity));
   const area=((localProfiles.has(profile)&&!nationwide)||(fortuneConsult&&fortuneVisit.test(fortuneText)))?areaOf(place?.address||headings)||areaOf(identity):'';
-  return {version:1,sourceUrl:data.finalUrl,kind,profile,label:profiles[profile]||purpose.business?.label||book.label,specialties:[...new Set(specialties)].slice(0,16),...(serviceFocus.length?{serviceSpecialties:serviceFocus}:{}),...(formats.length?{retailFormats:formats}:{}),area,destinations:destinations.slice(0,6),nationwide};
+  return {version:1,sourceUrl:data.finalUrl,kind,profile,label:profiles[profile]||purpose.business?.label||book.label,specialties:[...new Set(specialties)].slice(0,16),...(serviceFocus.length?{serviceSpecialties:serviceFocus}:{}),...(formats.length?{retailFormats:formats}:{}),...(items.length?{retailItems:items}:{}),area,destinations:destinations.slice(0,6),nationwide};
 }
 
 /** Older scopes may omit specialties; retained original metadata can fill them. */
 export function refineStoredCompetitionScope(saved:CompetitionScope|undefined,input:Input):CompetitionScope{
   if(!saved)return buildCompetitionScope(input);
   const focus=saved.serviceSpecialties||serviceSpecialties(saved.profile,providerIdentity(input),providerBody(input));
-  return {...saved,specialties:saved.specialties.length?saved.specialties:providerSpecialties(saved.profile,input).slice(0,16),
+  const items=saved.retailItems||(saved.profile==='commerce'?retailItems(providerIdentity(input),[],input.finalUrl||input.url):[]);
+  return {...saved,...(items.length?{retailItems:items}:{}),specialties:saved.specialties.length?saved.specialties:providerSpecialties(saved.profile,input).slice(0,16),
     ...(focus.length?{serviceSpecialties:focus}:{})};
 }
 
@@ -153,6 +158,7 @@ export function competitionMismatch(own:CompetitionScope,candidate:CompetitionSc
   if(['commerce','mixed'].includes(own.kind)&&['content','education','public_service'].includes(candidate.kind))return '상품 판매 업체와 정보·교육 페이지의 사업 유형이 다름';
   if(own.kind==='commerce'&&candidate.kind!=='commerce'&&candidate.kind!=='mixed'&&candidate.kind!=='unknown')return '자사는 상품 판매형이며 후보는 다른 제공 방식의 업체';
   if(!['commerce','mixed','unknown'].includes(own.kind)&&candidate.kind==='commerce')return '자사는 서비스·기관형이며 후보는 상품 판매형';
+  if(own.retailItems?.length&&(strict||candidate.retailItems?.length)&&!own.retailItems.some(item=>candidate.retailItems?.includes(item)))return '같은 상품 대분류 안에서 공통 세부 품목을 확인하지 못함';
   if(own.retailFormats?.length&&!own.retailFormats.some(format=>candidate.retailFormats?.includes(format))&&(strict||candidate.retailFormats?.length))return '해외직구·정기구독 등 같은 판매 방식이 확인되지 않음';
   const editorialComparison=own.kind==='content'&&candidate.kind==='content'&&(own.profile==='editorial'||candidate.profile==='editorial');
   if(known(own)&&!editorialComparison){
@@ -187,6 +193,8 @@ export function scopeAllowsKeyword(query:string,scope?:CompetitionScope):boolean
   const subjects=serviceSpecialties(scope.profile,query),knownSubjects=scope.serviceSpecialties||[];
   if(knownSubjects.length&&subjects.length&&!subjects.some(service=>knownSubjects.includes(service)))return false;
   if(scope.profile==='commerce'&&scope.specialties.length){
+    const items=retailItems(query,[],scope.sourceUrl);
+    if(items.length&&scope.retailItems?.length&&!items.some(item=>scope.retailItems?.includes(item)))return false;
     const families=retailFamilies(query,[],scope.sourceUrl);
     if(families.length&&!families.some(family=>scope.specialties.includes(family)))return false;
     if(!families.length&&/^(?:(?:[가-힣]{2,10})\s+)?(?:치과|병원|의원|미용실|학원|식당|숙박|호텔|법률사무소)(?:\s*(?:예약|상담|추천))?$/u.test(query.trim()))return false;
@@ -209,7 +217,7 @@ export function eligibleMetadata(text:string|undefined):string{
 /** Search seeds come from the page's verified offering vocabulary. */
 export function scopedSearchTerms(text:string,scope:CompetitionScope|undefined):string[]{
   if(!scope)return [];
-  if(scope.profile==='commerce')return retailSearchTerms(text,[...scope.specialties,...scope.retailFormats||[]]);
+  if(scope.profile==='commerce')return retailSearchTerms(text,[...scope.specialties,...scope.retailItems||[],...scope.retailFormats||[]]);
   const rule=profileTerms[scope.profile];
   return rule?[...text.matchAll(new RegExp(rule.source,rule.flags+'g'))].map(match=>match[0]):[];
 }
@@ -218,5 +226,5 @@ export function competitionScopeLabel(scope:CompetitionScope):string{
   const season=scope.specialties.find(s=>s.startsWith('season:'))?.slice(7);
   const label=season&&seasonalProfile(season)?.label||scope.label;
   const destinations=scope.destinations.map(id=>SKI_DESTINATIONS.find(d=>d.id===id)?.label||id).filter(label=>!scope.area.split(' ').includes(label));
-  return [...new Set([label,...scope.specialties.filter(s=>!s.startsWith('season:')),...scope.serviceSpecialties||[],...scope.retailFormats||[],scope.area,...destinations])].filter(Boolean).join(' · ');
+  return [...new Set([label,...scope.specialties.filter(s=>!s.startsWith('season:')),...scope.retailItems?.slice(0,5)||[],...scope.serviceSpecialties||[],...scope.retailFormats||[],scope.area,...destinations])].filter(Boolean).join(' · ');
 }

@@ -1,5 +1,5 @@
 import {directIndustries} from './providerClaims';
-import {retailFormats} from './retailOffer';
+import {retailFormats,retailSubscriptionAction,verifiedRetailCollection} from './retailOffer';
 import {IndustryCategorySchema,INDUSTRY_LABELS} from './industryCategory';
 import {bareIndustryTag,keywordList} from './industryLanguage';
 import {providerIdentity,ownBusinessRole,isSecondarySection,classificationText,purposeSchemaTypes,isOtherBranch} from './websiteIdentity';
@@ -141,21 +141,26 @@ export function analyzeWebsitePurpose(data:PurposeInput):WebsitePurpose{
   const declaredKind=providerClaim&&({manufacturing:'organization',education:'education',media:'content',ecommerce:'commerce'} as Partial<Record<string,PurposeKind>>)[providerClaim.category];
   const candidate=sector?(genericCandidate==='public_service'?'public_service':'service'):genericCandidate||(place&&(!purchase.length||localPayment)&&!data.productContext?.commerce&&!data.productDiscovery?.commerce?'service':undefined);
   const explicitStore=role==='retail'&&/쇼핑몰|공식몰|전문몰|온라인\s*(?:몰|스토어|판매)/.test(providerIdentity(data));
-  const commerce=explicitStore||purchase.length>0&&!localPayment||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true||
+  const collection=!editorial&&!structuredKind&&verifiedRetailCollection(data);
+  const commerce=collection||explicitStore||purchase.length>0&&!localPayment||(!candidate&&(data.productContext?.commerce===true||data.productDiscovery?.commerce===true||
     data.productContext?.discovery==='public_catalog'&&data.productContext.sources.some(product=>sameSite(product.url,data.finalUrl||data.url))));
   const fortuneDescription=data.description||data.ogDescription||'';
   const serviceAction=actions.some(a=>actionPatterns.booking.test(a.text)||actionPatterns.contact.test(a.text)||actionPatterns.application.test(a.text));
   const topicOnly=!candidate||candidate==='service'&&!sector&&!serviceAction;
   const fortuneOverview=!business&&topicOnly&&!providerClaim&&!role&&!commerce&&hasFortuneOverview(fortuneDescription);
   const declaredIndustry=editorial?undefined:fortuneOverview?{category:'fortune' as const,evidence:{text:short(fortuneDescription),locator:data.description?'meta[name="description"]':'meta[property="og:description"]'}}:providerClaim;
-  const kind:PurposeKind=editorial?'content':business?.kind||(fortuneOverview?'content':commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||declaredKind||(declaredIndustry?'service':'unknown'));
-  const subscriptionStore=kind==='commerce'&&retailFormats(providerIdentity(data)).includes('정기구독');
+  const kind:PurposeKind=editorial?'content':business?.kind||(collection?'commerce':fortuneOverview?'content':commerce?(candidate&&candidate!=='content'&&role!=='retail'?'mixed':'commerce'):candidate||declaredKind||(declaredIndustry?'service':'unknown'));
+  const subscriptionStore=kind==='commerce'&&retailFormats([providerIdentity(data),...(data.productDiscovery?.sources||[]).filter(p=>sameSite(p.url,data.finalUrl||data.url)).map(p=>p.name)].join('\n')).includes('정기구독');
   const preferred:Record<PurposeKind,(keyof typeof actionPatterns)[]>={commerce:subscriptionStore?['subscribe','purchase','contact']:['purchase','contact'],mixed:['purchase','contact','booking','application','download'],service:['booking','contact','application','download'],organization:['contact','download','application'],education:['application','booking','download','contact'],content:['subscribe','download'],public_service:['application','download','contact'],unknown:['contact','booking','application','download','subscribe']};
   const provider=sector?.id==='medical_consulting'&&!commerce;
   const fortuneTools=business?.id==='fortune_digital'?firstPartyFortuneTools(data.finalUrl||data.url,ctaElements):[];
   const goalPattern=business?.id==='fortune_consultation'?/예약|(?:상담|전화|카톡|카카오톡|채팅)\s*(?:문의|신청|하기)|^상담$/u:business? actionPatterns[business.goalKey]:undefined;
-  const matchesGoal=(text:string,key?:keyof typeof actionPatterns)=>(goalPattern||key&&actionPatterns[key])?.test(text)||fortuneTools.some(tool=>short(tool.text)===text);
-  const action=business?(actions.some(a=>matchesGoal(a.text))?business.goalKey:undefined):provider?(actions.some(a=>actionPatterns.contact.test(a.text))?'contact':undefined):preferred[kind].find(k=>actions.some(a=>actionPatterns[k].test(a.text)));
+  const matchesGoal=(text:string,key?:keyof typeof actionPatterns)=>{
+    if((kind==='commerce'||kind==='mixed')&&key==='subscribe')return retailSubscriptionAction(text);
+    if((kind==='commerce'||kind==='mixed')&&(key==='purchase'||!key&&business?.goalKey==='purchase')&&/불가|구매\s*후기|구매\s*가이드|구매\s*내역|장바구니\s*(?:비우기|삭제)|sold out/iu.test(text))return false;
+    return (goalPattern||key&&actionPatterns[key])?.test(text)||fortuneTools.some(tool=>short(tool.text)===text);
+  };
+  const action=business?(actions.some(a=>matchesGoal(a.text))?business.goalKey:undefined):provider?(actions.some(a=>actionPatterns.contact.test(a.text))?'contact':undefined):preferred[kind].find(k=>actions.some(a=>matchesGoal(a.text,k)));
   const goalKey=business?.goalKey||(provider?'contact':action)||(['content','organization','education','public_service'].includes(kind)?'read':'unknown');
   const goalLabel=business?.goalLabel||(fortuneOverview&&goalKey==='read'?'운세 안내 열람':actionLabels[goalKey]);
   const evidence=(business?business.evidence:structuredKind&&(articleTypes.length||courseTypes.length)?[{text:'@type: '+[...articleTypes,...courseTypes].join(', '),locator:'script[type="application/ld+json"] · @type'},...units]:sector?sector.evidence:candidate?(matched[candidate].length?matched[candidate]:place?[{text:short(place.identity),locator:'입력 페이지 업체 정보'}]:units):units).slice(0,commerce?6:8).map(original);

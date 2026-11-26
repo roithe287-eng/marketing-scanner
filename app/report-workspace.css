@@ -140,3 +140,7 @@
  .report-v2 .goal-summary {grid-template-columns:1fr;gap:7px;}
  .report-v2 .goal-summary > div {padding:10px;}
 }
+
+.industry-merchandise {margin:14px auto;text-align:center;}
+.industry-merchandise ul {display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:8px 0;padding:0;list-style:none;}
+.industry-merchandise li {padding:4px 12px;border-radius:8px;background:#edf3fa;color:#28476c;font-size:14px;}

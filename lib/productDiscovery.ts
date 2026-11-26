@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import {sameSite} from './siteIdentity';
 import {publicUrl} from './security/safeFetch';
 import type {OwnProductSource} from './ownProductSchema';
 import {restoreStreamedHtml} from './streamedHtml';
@@ -10,7 +11,7 @@ const privatePath=/\/(?:auth|admin|api|exec|protected|order|cart|basket|mypage|m
 export function ownPublicUrl(value:string,base:string):URL|null{
   try{
     const url=publicUrl(new URL(value,base).href),root=publicUrl(base);
-    if(host(url)!==host(root)||url.protocol!==root.protocol||privatePath.test(url.pathname))return null;
+    if(host(url)!==host(root)||!sameSite(url.href,root.href)||url.protocol!==root.protocol||privatePath.test(url.pathname))return null;
     url.hash='';return url;
   }catch{return null;}
 }
@@ -48,21 +49,36 @@ export function productSourcesFromHtml(html:string,url:string):OwnProductSource[
 function collectProductSources($:cheerio.CheerioAPI,url:string):OwnProductSource[]{
   const sources:OwnProductSource[]=[],seen=new Set<string>();
   const add=(name:unknown,description:unknown,category:unknown,kind:OwnProductSource['kind'],link?:unknown)=>{
-    const value=clean(name,300),sourceUrl=typeof link==='string'&&ownProductUrl(link,url)||url;
+    const value=clean(name,300);
+    // An explicit reference identifies the product. Only unaddressed records belong to the capture by default.
+    const reference=typeof link==='object'&&link!==null?(link as Record<string,unknown>)['@id']:link;
+    if(reference!=null&&typeof reference!=='string')return;
+    const address=typeof reference==='string'?reference.trim():'';
+    const target=address?ownPublicUrl(address,url):null;
+    if(address&&!target)return;
+    if(target){
+      if([...target.searchParams.keys()].some(key=>/token|secret|password|session|email|signature|credential/i.test(key)))return;
+      for(const key of [...target.searchParams.keys()])if(/^(?:utm_.+|gclid|fbclid|n_media|n_query)$/i.test(key))target.searchParams.delete(key);
+    }
+    const sourceUrl=target?.href||url;
+    if(sourceUrl.length>2048)return;
     const key=kind==='catalog_product'?sourceUrl:sourceUrl+'\n'+value;
     if(value.length<2||seen.has(key)||sources.length>=12)return;
     const categories=(Array.isArray(category)?category:[category]).map(c=>clean(c,100)).filter(Boolean).slice(0,8);
     sources.push({url:sourceUrl,name:value,description:clean(description,1200),categories,kind});seen.add(key);
   };
   let visited=0;
-  const walk=(value:unknown,depth=0)=>{
+  const walk=(value:unknown,depth=0,itemUrl?:unknown)=>{
     if(!value||typeof value!=='object'||depth>18||visited++>6000||sources.length>=12)return;
     if(Array.isArray(value)){for(const v of value.slice(0,100))walk(v,depth+1);return;}
     const obj=value as Record<string,unknown>,types=[obj['@type']].flat();
-    if(types.some(t=>typeof t==='string'&&/(?:^|[\/#])Product$/.test(t)))add(obj.name,obj.description,obj.category,'structured_product',obj.url);
+    if(types.some(t=>typeof t==='string'&&/(?:^|[\/#])Product$/.test(t))){
+      const id=typeof obj['@id']==='string'&&!/^(?:urn:|_:)/i.test(obj['@id'])?obj['@id']:undefined;
+      add(obj.name,obj.description,obj.category,'structured_product',obj.url||itemUrl||id);
+    }
     else if(obj.goodsName||obj.goodsNm||obj.productName||obj.product_name||obj.goods_name)
       add(obj.goodsName||obj.goodsNm||obj.productName||obj.product_name||obj.goods_name,obj.description||obj.shortDescription||obj.goodsDescription,obj.categoryName||obj.category_name||obj.category,'structured_product',obj.url||obj.productUrl);
-    for(const [key,v] of Object.entries(obj))if(!/cookie|user|customer|member|session|token|review|recommend|related|cart|order|purchase|checkout|payment|history|wishlist/i.test(key))walk(v,depth+1);
+    for(const [key,v] of Object.entries(obj))if(!/cookie|user|customer|member|session|token|review|recommend|related|cart|order|purchase|checkout|payment|history|wishlist/i.test(key))walk(v,depth+1,key==='item'?obj.url:undefined);
   };
   $('script[type="application/ld+json"],script[type="application/json"]#__NEXT_DATA__,script[type="application/json"][data-product]').slice(0,10).each((_,el)=>{
     const raw=$(el).text();if(raw.length>1_000_000)return;

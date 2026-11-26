@@ -69,6 +69,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   if(report.industryDecision){
     const industry=report.industryDecision;
     blocks.push({kind:'heading',text:'업종과 분석 범위'},{kind:'body',text:industry.status==='review'?industryReviewMessage[industry.reason]:industry.label});
+    if(industry.status==='matched'&&industry.retailItems?.length)blocks.push({kind:'body',text:'확인한 판매 품목 · '+industry.retailItems.join(' / ')});
     if(industry.status==='review')for(const offer of industry.offerPages||[]){
       if(sameSite(offer.url,industry.sourceUrl))blocks.push({kind:'body',text:offer.title,href:safeHttpUrl(offer.url)||undefined});
     }
