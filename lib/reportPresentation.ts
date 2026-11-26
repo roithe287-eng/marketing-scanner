@@ -11,11 +11,20 @@ import {competitorDisplay,applyCompetitorExclusions} from './competitorDisplay';
 import {reconcileKeywordMetadata} from './analyzeKeywordFreq';
 import {canonicalPage} from './geoComparison';
 import {currentPlacePolicy,buildHospitalPlaceReview} from './hospitalPlace';
+import {retailSubscriptionAction} from './retailOffer';
 import {metadataCoverage} from './metadataCoverage';
 
 /** Reapply candidate policy to saved reports without mutating their observations. */
 export function reportForPresentation(report:MarketingReport):MarketingReport {
   report=applyActionableGuides(reconcileStoredIndustry(report));
+  const purpose=report.sitePurpose;
+  if(purpose?.kind==='commerce'&&purpose.goal.key==='subscribe'&&purpose.goal.observed&&purpose.goal.evidence.length){
+    const valid=purpose.goal.evidence.filter(e=>retailSubscriptionAction(e.text));
+    if(valid.length!==purpose.goal.evidence.length){
+      const goal=valid.length?{...purpose.goal,evidence:valid}:{key:'unknown' as const,label:'다음 행동 확인',observed:false,evidence:[]};
+      report={...report,sitePurpose:{...purpose,goal,checks:purpose.checks.map(c=>c.id==='goal'?{...c,label:'다음 행동 · '+goal.label,status:goal.observed?'observed':'review',evidence:valid,guide:'상품의 구독 신청 경로와 실제 접수 여부를 확인하세요.'}:c)}};
+    }
+  }
   if(report.evidenceReview?.assessed===0){
     const summary=report.oneLineSummary.replace(/^HTML 기본 항목 0개 중 0개 충족/,'HTML 기본 항목 판정 보류');
     const description=report.finalCta.description.replace(/^수집한 HTML 기본 항목 0개 중 0개가 점검 기준을 충족했습니다\./,'HTML 기본 항목의 충족 여부를 판정할 근거가 부족합니다.');

@@ -91,6 +91,8 @@ export function selectSearchCandidates(items: SearchItem[], ourDomain: string, q
 
 export function sharedCompetitorOffering(own:CompetitionScope|undefined,candidate:CompetitionScope|undefined):string[]{
   if(!own||!candidate)return [];
+  const items=own.retailItems?.filter(item=>candidate.retailItems?.includes(item));
+  if(own.retailItems?.length)return items?.slice(0,8)||[];
   const offered=new Set([...candidate.specialties,...candidate.serviceSpecialties||[]]);
   return [...new Set([...own.specialties,...own.serviceSpecialties||[]])].filter(label=>!label.startsWith('season:')&&offered.has(label)).slice(0,8);
 }

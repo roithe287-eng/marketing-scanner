@@ -35,6 +35,7 @@ export default function ReportIndustryEvidence({report,linkToPurpose=false}:{rep
       </ul>}
       {confirmed&&!!review.serviceSpecialties?.length&&<p className="industry-review-note"><strong>확인한 세부 서비스</strong> · {review.serviceSpecialties.join(' / ')}</p>}
       {confirmed&&!!review.retailSpecialties?.length&&<p className="industry-review-note"><strong>확인한 상품군</strong> · {review.retailSpecialties.join(' / ')}</p>}
+      {confirmed&&!!review.retailItems?.length&&<div className="industry-merchandise"><strong>확인한 판매 품목</strong><ul>{review.retailItems.map(item=><li key={item}>{item}</li>)}</ul></div>}
       {(held&&review.reason==='redirected'&&original)&&<p className="industry-review-note"><a href={original} target="_blank" rel="noopener noreferrer">최종 주소 열기 · {new URL(original).host} ↗</a></p>}
       {review.evidence.length>0&&<details><summary>{confirmed?'업종 판단 근거 보기':pageType?'URL 유형 판정 근거 보기':'수집한 페이지 문구 보기'}</summary>
         <dl>{review.evidence.map(item=>{const url=safeHttpUrl(item.url);return <div key={item.text}>

@@ -2,7 +2,7 @@ import {INDUSTRY_LABELS} from './industryCategory';
 export {INDUSTRY_LABELS} from './industryCategory';
 import {industryDocuments,isIndustryOverview} from './industrySourceScope';
 import {isEditorialPage} from './pageRole';
-import {retailFamilies} from './retailOffer';
+import {retailFamilies,retailItems,verifiedRetailCollection} from './retailOffer';
 import {placeSector} from './localPlaceCatalog';
 import {directIndustries} from './providerClaims';
 import {keywordList} from './industryLanguage';
@@ -147,7 +147,7 @@ export function reviewIndustry(input:IndustryInput):IndustryDecision{
   const rows:IndustryEvidence[]=[];
   const add=(field:IndustryEvidence['field'],value:string|undefined,url=sourceUrl)=>{
     const text=value?.replace(/\s+/g,' ').trim();
-    if(!text||text.length<2||keywordList(text)||isSecondarySection('',text,url)||!classificationText(text)||!sameSite(url,sourceUrl))return;
+    if(!text||text.length<2||(field!=='product'&&keywordList(text))||isSecondarySection('',text,url)||!classificationText(text)||!sameSite(url,sourceUrl))return;
     if(!rows.some(row=>row.text===text.slice(0,240)))rows.push({field,text:text.slice(0,240),url});
   };
   add('title',data.title);
@@ -190,13 +190,14 @@ export function reviewIndustry(input:IndustryInput):IndustryDecision{
   const claims=(list:IndustryEvidence[])=>new Set(list.flatMap(row=>[...providerClaims(row)].map(comparableCategory)));
   const lead=claims(headings),confirmed=claims(rows.filter(row=>row.field==='body'||row.field==='document'));
   const allClaims=claims(rows);
-  const candidate=shop&&!purpose.business?'ecommerce':classifyIndustryFromEvidence(data,purpose);
+  const collection=purpose.kind==='commerce'&&verifiedRetailCollection(data);
+  const candidate=(shop||collection)&&!purpose.business?'ecommerce':classifyIndustryFromEvidence(data,purpose);
   const selected=candidate&&comparableCategory(candidate);
   // If headline and substantive copy agree, a stale description may be ignored.
   // A competing service declared in the headline or substantive copy still requires review.
   const corroborated=lead.size===1&&confirmed.size===1&&[...lead][0]===[...confirmed][0];
   const conflict=lead.size>1||confirmed.size>1||allClaims.size>1&&!corroborated;
-  if(conflict&&!purpose.community){
+  if(conflict&&!purpose.community&&!(collection&&!lead.size)){
     const evidence=rows.filter(row=>providerClaims(row).length).slice(0,4);
     if(offerPages.size>=2)return {status:'review',reason:'multiple_offers',sourceUrl,evidence,offerPages:[...offerPages.values()].slice(0,4)};
     return {status:'review',reason:'conflicting',sourceUrl,evidence};
@@ -212,7 +213,7 @@ export function reviewIndustry(input:IndustryInput):IndustryDecision{
     specialistEvidence.length>0&&corroboratingFields.size>=2;
   const explicitProvider=direct.some(row=>row.field!=='description'&&directIndustries(row.text).length>0);
   const placeSupported=!!(place?.sector&&place.sector!=='local'&&place.address&&matched.length);
-  const supported=specialistSupported||shop||verifiedProducts||explicitProvider||corroboratingFields.size>=2||placeSupported;
+  const supported=collection||specialistSupported||shop||verifiedProducts||explicitProvider||corroboratingFields.size>=2||placeSupported;
   if(!candidate||candidate==='etc'||!supported)return {status:'review',reason:'insufficient',sourceUrl,evidence:primary.slice(0,2)};
   const actions=rows.filter(row=>row.field==='action');
   const evidence=[...new Set([...specialistEvidence,...direct,...actions,...(verifiedProducts?products:[]),...matched])].slice(0,4);
@@ -220,9 +221,10 @@ export function reviewIndustry(input:IndustryInput):IndustryDecision{
   const local=place&&isNonCommerce(purpose)&&(PLACE_INDUSTRIES[place.sector]===candidate||place.sector==='rental'&&candidate==='automotive')
     ?place.sector==='rental'?(candidate==='automotive'?'렌터카·차량 대여':INDUSTRY_LABELS.rental):placeSector(place.sector).label
     :undefined;
+  const items=purpose.kind==='commerce'?retailItems(providerIdentity(data),inventory,sourceUrl):[];
   const retail=families.length===1?`${families[0]} 판매`:undefined;
   const label=purpose.business?.label||purpose.sector?.label||(purpose.community?'커뮤니티':retail||local||INDUSTRY_LABELS[candidate]);
-  return {status:'matched',category:candidate,sourceUrl,label,evidence,...(families.length>1?{retailSpecialties:families.slice(0,8)}:{})};
+  return {status:'matched',category:candidate,sourceUrl,label,evidence,...(items.length?{retailItems:items}:{}),...(families.length>1?{retailSpecialties:families.slice(0,8)}:{})};
 }
 
 /** A model suggestion must cite literal eligible page text, never invent a basis. */
