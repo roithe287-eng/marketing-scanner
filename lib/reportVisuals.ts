@@ -40,8 +40,8 @@ export function buildObservationVisual(citation?:LlmCitationTest|null) {
   const unique=(r:Row)=>countByPair.get(pairKey(r))===1;
   const distributions=engines.map(engine=>{
     const rows=citation.results.filter(r=>r.engine===engine);
-    const counts={cited:0,uncited:0,unverified:0,unavailable:0,failed:0};
-    for (const r of rows) {const state=unique(r)?observationState(r):'unverified';if(state in counts)counts[state as keyof typeof counts]++;}
+    const counts={cited:0,uncited:0,unverified:0,unavailable:0,failed:0,duplicate:0};
+    for (const r of rows) {const state=unique(r)?observationState(r):'duplicate';if(state in counts)counts[state as keyof typeof counts]++;}
     return {engine,total:rows.length,counts};
   });
   const sourceRows=citation.results.filter(r=>unique(r)&&['cited','uncited'].includes(observationState(r)));

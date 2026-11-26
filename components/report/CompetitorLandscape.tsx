@@ -85,7 +85,7 @@ export default function CompetitorLandscape({report,productContextInScope,linkTo
         <div className="position-quadrants" aria-hidden="true"><div/><div/><div/><div/></div>
         <div className="position-grid-lines" aria-hidden="true"/>
         {groups.map(g=>{const point=positionCoordinates(g.x,g.y);return <button type="button" key={`${g.x}:${g.y}`} className={`position-dot ${g.rows.some(r=>r.own)?'is-own':''} ${g.rows.some(r=>r.id===active.id)?'is-active':''}`} style={{left:`${point.left}%`,top:`${point.top}%`,'--bubble-size':`${positionDiameter(g.signalCount)}px`,'--bubble-mobile-size':`${positionDiameter(g.signalCount,true)}px`} as CSSProperties} aria-pressed={g.rows.some(r=>r.id===active.id)} aria-controls={`${id}-evidence`} aria-label={`${g.rows.map(r=>r.own?'자사':r.name).join(', ')} · X ${g.x} · Y ${g.y} · 선택 정보 단서 ${g.signalCount.toFixed(1)}개${g.rows.length>1?' · 같은 위치, 아래 목록에서 개별 선택':''}`} onClick={()=>choose(g.rows[0].id)}>{g.rows.length>1?`${g.rows.length}곳`:g.rows[0].own?'자사':g.rows[0].id.split('-')[1]}</button>;})}
-        {!groups.length&&<p className="position-empty">두 필드를 확보한 사이트가 없어<br/>좌표를 표시하지 않습니다.</p>}
+        {!groups.length&&<p className="position-empty">같은 기준으로 비교할 원문이 없어<br/>좌표를 표시하지 않습니다.</p>}
       </div>
       <div className="position-x-scale" aria-hidden="true"><span>0</span><span>50</span><span>100</span></div>
       </div><div className="position-x-caption"><strong>X · {POSITION_AXES.x}</strong><span>오른쪽: 제공 정보·조건 단서가 더 많음</span></div>

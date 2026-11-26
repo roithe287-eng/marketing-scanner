@@ -12,7 +12,7 @@ export function calculateSimpleGoal(input:SimpleGoalInputs){
   }
   if(values.opportunities!==null&&values.completed!==null&&values.completed>values.opportunities)errors.completed='완료 횟수가 전체 횟수보다 큽니다. 같은 기간의 수치인지 확인하세요.';
   const valid=!Object.keys(errors).length;
-  const rate=valid&&values.opportunities&&values.completed!==null?values.completed/values.opportunities:null;
+  const rate=!errors.completed&&values.opportunities!==null&&values.opportunities>0&&values.completed!==null?values.completed/values.opportunities:null;
   let required:number|null=null;
   if(valid&&values.targetCompleted===0)required=0;
   else if(valid&&values.targetCompleted!==null&&values.opportunities!==null&&values.completed){
@@ -25,6 +25,23 @@ export function calculateSimpleGoal(input:SimpleGoalInputs){
   }
   return {values,errors,rate,required,additional:required!==null&&values.opportunities!==null?required-values.opportunities:null};
 }
+export function formatGoalRate(rate:number|null){
+  if(rate===null)return '미산출';
+  if(rate>0&&rate<0.0001)return '0.01% 미만';
+  if(rate<1&&rate>0.9999)return '99.99% 초과';
+  return (rate*100).toLocaleString('ko-KR',{maximumFractionDigits:2})+'%';
+}
+
+export function describeGoal(result:ReturnType<typeof calculateSimpleGoal>,unit:string,done:string){
+  const {values,errors,rate,required,additional}=result;
+  if(Object.keys(errors).length)return '표시된 입력 오류를 먼저 확인해 주세요.';
+  if(required===0)return '목표가 0회이므로 필요한 '+unit+'도 0회입니다.';
+  if(values.opportunities===0)return unit+'이 0회여서 현재 비율을 산출할 수 없습니다.';
+  if(rate===0&&values.targetCompleted!==null)return done+' 0회로 측정됐습니다. 현재 비율로 양수 목표에 필요한 '+unit+' 횟수를 계산할 수 없습니다.';
+  if(additional!==null)return additional>0?'현재보다 '+additional.toLocaleString('ko-KR')+'회가 더 필요합니다.':additional===0?'현재와 같은 횟수가 필요합니다.':'입력한 현재 횟수보다 낮은 목표입니다.';
+  return rate!==null?'목표 횟수를 입력하면 필요한 '+unit+'을 계산합니다.':'같은 기간의 현재 실적과 목표 횟수를 입력하세요.';
+}
+
 const names:Record<keyof KpiInputs,string>={impressions:'현재 노출수',clicks:'현재 클릭수',sessions:'현재 세션 수',converted:'현재 전환 세션 수',targetImpressions:'목표 노출수',targetCtr:'목표 CTR',targetSessions:'목표 세션 수',targetCvr:'목표 세션 전환율'};
 export function calculateGrowthKpi(input:KpiInputs) {
   const errors:Partial<Record<keyof KpiInputs,string>>={};

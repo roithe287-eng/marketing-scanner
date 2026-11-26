@@ -1,3 +1,4 @@
+import {MetadataTruncationSchema} from './metadataCoverage';
 import {CompetitionScopeSchema} from './competitionScope';
 import {z} from 'zod';
 import {OwnProductContextSchema} from './ownProductSchema';
@@ -27,4 +28,4 @@ export function reviewCandidateCoverage<T extends {research?:Research;filtering?
   return {...analysis,research:{...research,selectionStatus:read?'no_relevant_candidates':'lookup_unavailable',selectionMessage}};
 }
 
-export const CompetitorOwnSiteSchema=z.object({scope:CompetitionScopeSchema.optional(),url:z.string().optional(),domain:z.string(),title:z.string(),metaDescription:z.string(),h1:z.string()});
+export const CompetitorOwnSiteSchema=z.object({metadataTruncated:MetadataTruncationSchema.optional(),scope:CompetitionScopeSchema.optional(),url:z.string().optional(),domain:z.string(),title:z.string(),metaDescription:z.string(),h1:z.string()});

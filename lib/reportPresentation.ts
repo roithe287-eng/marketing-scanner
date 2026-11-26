@@ -11,7 +11,7 @@ import {competitorDisplay,applyCompetitorExclusions} from './competitorDisplay';
 import {reconcileKeywordMetadata} from './analyzeKeywordFreq';
 import {canonicalPage} from './geoComparison';
 import {currentPlacePolicy,buildHospitalPlaceReview} from './hospitalPlace';
-import {PAGE_EVIDENCE_METADATA_LIMITS} from './pageEvidence';
+import {metadataCoverage} from './metadataCoverage';
 
 /** Reapply candidate policy to saved reports without mutating their observations. */
 export function reportForPresentation(report:MarketingReport):MarketingReport {
@@ -26,8 +26,7 @@ export function reportForPresentation(report:MarketingReport):MarketingReport {
   if (diagnostics?.medicalAudit?.reviewedOn==='2026-11-04') report={...report,siteDiagnostics:{...diagnostics,medicalAudit:currentPlacePolicy(diagnostics.medicalAudit,!!buildHospitalPlaceReview(diagnostics))}};
   const page=report.pageEvidence;
   if(report.keywordFrequency&&page&&canonicalPage(page.requestedUrl)===canonicalPage(report.url)){
-    const titleClipped=page.metadataTruncated?.title??page.title.length>=PAGE_EVIDENCE_METADATA_LIMITS.title;
-    const descriptionClipped=page.metadataTruncated?.description??page.description.length>=PAGE_EVIDENCE_METADATA_LIMITS.description;
+    const {title:titleClipped,description:descriptionClipped}=metadataCoverage(page.title,page.description,page.metadataTruncated);
     report={...report,keywordFrequency:reconcileKeywordMetadata(report.keywordFrequency,titleClipped?undefined:page.title,descriptionClipped?undefined:page.description)};
   }
   // Reuse retained public source bodies when opening a saved report. No new request or invented fact.

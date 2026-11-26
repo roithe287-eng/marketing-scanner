@@ -9,7 +9,7 @@ import {observationQuestionAnchor} from '@/lib/reportVisuals';
 import {Guidebook} from './SiteGuidebook';
 import DiagnosisIcon from './DiagnosisIcon';
 import {reportGoal} from '@/lib/reportGoal';
-import {contentBrief,insightNotes,sourceReferenceGuide,messageThemes,type ReportInsights} from '@/lib/reportInsights';
+import {contentBrief,insightNotes,sourceReferenceGuide,messageThemes,messageCellLabel,messageReviewLabel,type ReportInsights} from '@/lib/reportInsights';
 
 function Heading({label,title,note}:{label:string;title:string;note?:string}) {return <div className="report-card-heading"><p className="report-eyebrow">{label}</p><h3>{title}</h3>{note&&<CompactText className="report-note" text={note} summary={label==='SOURCE DIRECTORY'?'AI 답변이 인용한 외부 링크입니다. 경쟁사 여부는 별도 확인이 필요합니다.':label==='BRAND ANSWER REVIEW'?'브랜드를 언급한 답변의 업체명·서비스·출처를 대조하세요.':label==='MESSAGE COVERAGE'?'제목·설명의 표현 비교입니다. 미탐지는 서비스 부재를 뜻하지 않습니다.':undefined}/>}{label==='QUESTION → PAGE'&&<VisualSteps kind="questions"/>}</div>;}
 function Empty({children}:{children:React.ReactNode}) {return <p className="report-empty">{children}</p>;}
@@ -88,36 +88,30 @@ export function SourceDirectory({data,linkToObservations=false}:{data:ReportInsi
     {!!data.excludedSources.length&&<details className="report-inline-details report-excluded-sources"><summary>목록에서 제외한 출처 {data.excludedSources.length}개 · 사유와 원문 기록</summary><p className="report-note">추천·비교 목록에서는 제외했습니다. AI가 실제 연결한 출처라는 관측 기록은 확인용으로 보존합니다.</p><ul>{data.excludedSources.map(s=><li key={s.url}><span><strong>{s.domain}</strong> · {s.reason}</span><Link url={s.url}>{s.title}</Link><small>{s.observations.length}건의 관측 · {s.questions.join(' / ')}</small></li>)}</ul></details>}
   </article>;
 }
-function MessageSignal({match}:{match:string|null|undefined}) {
-  const state=match===undefined?'unknown':match?'found':'absent';
-  return <span className={`report-message-signal is-${state}`}><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/>{state==='found'?<path d="m5 8 2 2 4-4"/>:state==='absent'?<path d="M5.5 8h5"/>:<><path d="M6.5 5.7a1.5 1.5 0 0 1 3 .3c0 1-1.5 1-1.5 2"/><path d="M8 10.5h.01"/></>}</svg><span>{match===undefined?'미확인':match||'미탐지'}</span></span>;
+function MessageSignal({match,restricted}:{match:string|null|undefined;restricted?:string}) {
+  const state=match===undefined?'unknown':match?'found':restricted?'limited':'absent';
+  return <span className={`report-message-signal is-${state}`}><svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="6.25"/>{state==='found'?<path d="m5 8 2 2 4-4"/>:state==='limited'?<path d="m5 11 6-6"/>:state==='absent'?<path d="M5.5 8h5"/>:<><path d="M6.5 5.7a1.5 1.5 0 0 1 3 .3c0 1-1.5 1-1.5 2"/><path d="M8 10.5h.01"/></>}</svg><span>{messageCellLabel({match,restricted})}</span></span>;
 }
-function messageReviewLabel(row:ReportInsights['messageRows'][number]) {
-  if(row.collectionFailed)return '페이지 수집 실패 · 비교 보류';
-  if(row.available)return '제목·설명 모두 확인';
-  return row.fieldCount?'제목·설명 중 1개 확인 · 비교 보류':'수집 미확인 · 제목과 설명 없음';
-}
-
 export function MessageMap({data}:{data:ReportInsights}) {
   const comparable=data.messageRows.filter(row=>!row.isOwn&&row.available).length;
   return <article className="report-card" aria-label="경쟁사 메시지 비교 지도">
     <Heading label="MESSAGE COVERAGE" title="제목과 설명에서 찾은 고객 선택 정보" note={insightNotes.messages}/>
     <p className="report-note">{data.competitorCount?`비교 후보 ${data.competitorCount}곳 중 제목과 설명을 모두 확보한 곳은 ${comparable}곳입니다.`:'저장된 외부 비교 후보가 없습니다.'}</p>
-    <div className="report-message-legend" aria-label="메시지 탐지 상태 범례"><MessageSignal match="표현 탐지"/><MessageSignal match={null}/><MessageSignal match={undefined}/></div>
+    <div className="report-message-legend" aria-label="메시지 탐지 상태 범례"><MessageSignal match="표현 탐지"/><MessageSignal match={null}/><MessageSignal match={null} restricted="제한·예정"/><MessageSignal match={undefined}/></div>
     <div className="report-table-scroll"><table className="report-message-table">
       <caption className="sr-only">제목·메타 설명에 저장된 메시지 표현 비교</caption>
       <thead><tr><th scope="col">사이트</th>{messageThemes.map(t=><th scope="col" key={t.label}>{t.label}</th>)}</tr></thead>
       <tbody>{data.messageRows.map((row,i)=><tr key={`${row.name}-${i}`} className={row.isOwn?'is-own':''}>
         <th scope="row">{row.name}<small>{messageReviewLabel(row)}</small></th>
-        {row.cells.map(cell=><td key={cell.label} className={cell.match?'has-match':''}><MessageSignal match={cell.match}/></td>)}
+        {row.cells.map(cell=><td key={cell.label} className={cell.match?'has-match':''}><MessageSignal match={cell.match} restricted={cell.restricted}/></td>)}
       </tr>)}</tbody>
     </table></div>
     <div className="report-message-mobile">{data.messageRows.map((row,i)=><div key={`${row.name}-${i}`}>
       <h4>{row.name} <span>{messageReviewLabel(row)}</span></h4>
-      <dl>{row.cells.map(cell=><div key={cell.label}><dt>{cell.label}</dt><dd><MessageSignal match={cell.match}/></dd></div>)}</dl>
+      <dl>{row.cells.map(cell=><div key={cell.label}><dt>{cell.label}</dt><dd><MessageSignal match={cell.match} restricted={cell.restricted}/></dd></div>)}</dl>
     </div>)}</div>
     <div className="report-callout"><strong>우리 문구에서 보완할 정보</strong>
-      {data.messageOpportunities.length?<ul className="report-message-opportunities">{data.messageOpportunities.map(o=><li key={o.label}><strong>{o.label}</strong><span>비교 가능한 후보 {o.total}곳 중 {o.count}곳에서 확인</span><ReportMeasureTrack count={o.count} total={o.total}/></li>)}</ul>:<p>현재 저장된 제목·설명에서 제안할 공통 표현이 없거나, 비교할 정보가 충분하지 않습니다.</p>}
+      {data.messageOpportunities.length?<ul className="report-message-opportunities">{data.messageOpportunities.map(o=><li key={o.label}><strong>{o.label}</strong><span>비교 가능한 후보 {o.total}곳 중 {o.count}곳에서 확인</span><ReportMeasureTrack count={o.count} total={o.total}/><details className="message-peer-evidence"><summary>근거 업체 {o.count}곳 보기</summary>{o.candidates.map(c=><div key={c.url}><Link url={c.url}>{c.name}</Link><small>{c.field} · 확인한 표현 “{c.expression}”</small><p>{c.quote}</p></div>)}</details></li>)}</ul>:<p>현재 저장된 제목·설명에서 제안할 공통 표현이 없거나, 비교할 정보가 충분하지 않습니다.</p>}
       {data.messageOpportunities.length>0&&<p>실제 제공하는 내용과 연결되는 항목을 먼저 검토하세요.</p>}
     </div>
     <details className="report-inline-details"><summary>업체별 제목·설명 확인</summary>
@@ -128,6 +122,7 @@ export function MessageMap({data}:{data:ReportInsights}) {
           <div><dt>페이지 제목</dt><dd>{row.title||'저장된 원문 없음'}</dd></div>
           <div><dt>메타 설명</dt><dd>{row.description||'저장된 원문 없음'}</dd></div>
         </dl>}
+        {row.cells.some(c=>c.restricted)&&<p className="report-note">제한·예정으로 읽은 표현 · {[...new Set(row.cells.flatMap(c=>c.restricted?[c.restricted]:[]))].join(' / ')}</p>}
         {row.url&&<Link url={row.url}>{row.name} 페이지 열기</Link>}
       </div>)}
     </details>

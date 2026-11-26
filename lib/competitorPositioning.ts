@@ -1,57 +1,43 @@
+import {marketingExpressions} from './marketingExpressions';
+import {metadataCoverage,type MetadataTruncation} from './metadataCoverage';
+import {matchesReportPage} from './geoComparison';
 import {withoutThirdPartyRoles} from './industryLanguage';
 import {positionProfile,defaultPositionIndustry,type PositionCategory} from './industryPositioning';
 import type {MarketingReport} from './reportSchema';
 import {queryMatches,COMPETITOR_API_NOTE,COMPETITOR_KEYWORD_NOTE} from './competitorResearch';
 import {safeHttpUrl} from './citationMeasurement';
 import {competitorDisplay} from './competitorDisplay';
-export const POSITION_METHOD='industry-evidence-v6';
+export const POSITION_METHOD='industry-evidence-v7';
 export const POSITION_AXES={x:'상품·서비스 설명',y:'선택·이용 근거'};
 export const POSITION_NOTE='동일하게 페이지 제목·메타 설명만 비교합니다. 좌표는 표현 탐지 지표이며 가격 수준·품질·시장점유율·검색 순위·성과를 평가한 점수가 아닙니다.';
 export const POSITION_CHECK_SCOPE='네 항목은 같은 제목·메타 설명을 서로 다른 관점으로 읽습니다. 띄어쓰기와 영문 대소문자는 구분하지 않습니다. 본문·이미지와 다른 말로 표현한 의미, 실제 제공 여부는 이 표현 탐지에 포함되지 않습니다.';
 export const POSITION_DRAFT_NOTE='항목별 대안입니다. 한 페이지에 네 안을 모두 합치지 말고 주된 목적에 맞는 안을 고르세요. [대괄호]는 본문·운영 자료에서 확인한 값으로 교체하고 해당하지 않는 내용은 삭제하세요. 미확인·예정인 내용을 현재 제공 사실로 바꾸지 않습니다.';
 export const POSITION_CRITERIA=positionProfile('etc').criteria;
-type Input={id:string;name:string;url:string;own:boolean;title?:string;description?:string;fetchError?:string;searchRank?:number;sourceLabel?:string;legacyMetadata?:boolean};
+type Input={id:string;name:string;url:string;own:boolean;title?:string;description?:string;fetchError?:string;searchRank?:number;sourceLabel?:string;legacyMetadata?:boolean;metadataTruncated?:MetadataTruncation};
 export const POSITION_SIZE_NOTE='버블 면적은 선택한 업종의 정보 단서 수에 따라 커집니다. 같은 표현은 한 번만 세며 종류별 최대 2개, 총 8개입니다. 실제 서비스 품질·매출·검색 순위의 강점은 아닙니다.';
 export function positionCoordinates(x:number,y:number){return {left:22+x*.56,top:78-y*.56};}
 export function positionDiameter(signals:number,mobile=false){const max=mobile?64:80;return Math.sqrt(44**2+(max**2-44**2)*Math.max(0,Math.min(8,signals))/8);}
-function positiveExpressions(text:string,pattern:RegExp) {
-  const found=new Map<string,string>();
-  const excluded:{expression:string;context:string}[]=[];
-  // Match spacing variants, but retain offsets into the original saved text for inspection.
-  const offsets:number[]=[];
-  for(let i=0;i<text.length;i++)if(!/\s/.test(text[i]))offsets.push(i);
-  const compact=offsets.map(i=>text[i]).join('');
-  for(const match of compact.matchAll(new RegExp(pattern.source.replace(/ /g,''),'gi'))) {
-    const start=match.index!,end=start+match[0].length;
-    const expression=text.slice(offsets[start],offsets[end-1]+1);
-    const negative=/^(?:[은는이가을를도])?(?:없|미제공|미보유|미지원|불가|예정|준비중|제공하지|지원하지|확인되지)/.exec(compact.slice(end));
-    if(negative){
-      const negativeEnd=offsets[end+negative[0].length-1]+1;
-      const tail=text.slice(negativeEnd).match(/^[^\n,;.!?·|。！？，；]{0,48}/)?.[0]||'';
-      const context=(text.slice(offsets[start],negativeEnd)+tail).trim();
-      if(!excluded.some(e=>e.context===context))excluded.push({expression,context});
-    }else found.set(match[0].toLocaleLowerCase(),expression);
-  }
-  return {matches:[...found.values()],excluded};
-}
 export function scorePosition(input:Input,keyword:string,category:PositionCategory='etc') {
   const title=(input.title||'').trim(),description=(input.description||'').trim();
-  const fields=[{label:'페이지 제목',text:title},{label:'메타 설명',text:description}];
+  const clipped=metadataCoverage(input.title,input.description,input.metadataTruncated);
+  const fields=[{label:'페이지 제목',text:title,clipped:clipped.title},{label:'메타 설명',text:description,clipped:clipped.description}];
   const fieldsPresent=fields.filter(f=>f.text).length,match=queryMatches(keyword,`${title} ${description}`);
-  const eligible=!input.fetchError&&fieldsPresent===2&&match.terms.length>0;
+  const completeMetadata=!input.fetchError&&fieldsPresent===2&&!clipped.title&&!clipped.description;
+  const eligible=completeMetadata&&match.terms.length>0;
   const termFields=fields.map(f=>({...f,matched:queryMatches(keyword,f.text).matched}));
   const profile=positionProfile(category);
-  const checks=profile.criteria.map(c=>{const sources=fields.map(f=>({...f,...positiveExpressions(category==='etc'?f.text:withoutThirdPartyRoles(f.text),c.pattern)}));const field=sources.find(f=>f.matches.length);const distinct=new Map<string,string>();for(const source of sources)for(const text of source.matches)distinct.set(text.toLocaleLowerCase().replace(/\s/g,''),text);const signals=[...distinct.values()];return {...c,sources,found:!!field,field:field?.label||'',excerpt:field?.text||'',matched:field?.matches[0]||'',signals,signalCount:Math.min(2,signals.length)};});
+  const checks=profile.criteria.map(c=>{const sources=fields.map(f=>({...f,...marketingExpressions(category==='etc'?f.text:withoutThirdPartyRoles(f.text),c.pattern)}));const field=sources.find(f=>f.matches.length);const distinct=new Map<string,string>();for(const source of sources)for(const text of source.matches)distinct.set(text.toLocaleLowerCase().replace(/\s/g,''),text);const signals=[...distinct.values()];return {...c,sources,found:!!field,field:field?.label||'',excerpt:field?.text||'',matched:field?.matches[0]||'',signals,signalCount:Math.min(2,signals.length)};});
   const signalCount=eligible?checks.reduce((sum,c)=>sum+c.signalCount,0):null;
   const keywordScore=eligible?Math.round(termFields.reduce((sum,f)=>sum+f.matched.length,0)/(match.terms.length*2)*100):null;
   const x=eligible?(checks[0].signalCount+checks[1].signalCount)*25:null;
   const y=eligible?(checks[2].signalCount+checks[3].signalCount)*25:null;
-  return {...input,profile,keywordScore,title,description,fieldsPresent,terms:match.terms,matched:match.matched,termFields,checks,signalCount,x,y,
-    reason:eligible?'':input.fetchError?'페이지 수집 실패 · 검색 요약으로 좌표를 대신 계산하지 않음':!match.terms.length?'비교할 검색어 구성 단어를 확인할 수 없음':`제목·메타 설명 ${fieldsPresent}/2개 확인 · 같은 범위로 비교하기 위해 판정 보류`};
+  return {...input,profile,keywordScore,title,description,fieldsPresent,completeMetadata,clipped,terms:match.terms,matched:match.matched,termFields,checks,signalCount,x,y,
+    reason:eligible?'':input.fetchError?'페이지 수집 실패 · 검색 요약으로 좌표를 대신 계산하지 않음':clipped.title||clipped.description?'제목·설명 원문 일부만 저장되어 전체 문구 비교를 보류합니다.':!match.terms.length?'비교할 검색어 구성 단어를 확인할 수 없음':`제목·메타 설명 ${fieldsPresent}/2개 확인 · 같은 범위로 비교하기 위해 판정 보류`};
 }
 export type PositionRow=ReturnType<typeof scorePosition>;
 export type PositionCheck=PositionRow['checks'][number];
 export function positionFieldFinding(source:PositionCheck['sources'][number]) {
+  if(source.clipped)return '일부만 저장된 원문 · 전체 표현 판단 보류';
   if(!source.text)return '원문 미확보 · 표현 유무를 확인할 수 없음';
   const excluded=source.excluded.length?`제외한 표현: ${source.excluded.map(e=>`“${e.context}”`).join(' · ')} (없음·미제공·예정 등의 인접 표현)` : '';
   return [source.matches.length?`확인: ${source.matches.join(' · ')}`:'이 관점의 기준 표현 미탐지',excluded].filter(Boolean).join(' / ');
@@ -63,7 +49,7 @@ export function positionCheckReason(row:PositionRow,check:PositionCheck) {
   return `현재 제목·설명에서는 ${check.label} 관련 표현을 찾지 못했습니다. 보완할 정보는 ${check.description}입니다.`;
 }
 export function positionCheckNextStep(row:PositionRow,check:PositionCheck) {
-  if(row.x===null)return '페이지 제목과 메타 설명을 모두 확보한 뒤 다시 비교하세요. 수집 오류와 실제 설명 누락을 먼저 구분해 주세요.';
+  if(row.x===null)return '페이지 제목과 메타 설명의 전체 원문을 확보한 뒤 다시 비교하세요. 수집 오류와 실제 설명 누락을 먼저 구분해 주세요.';
   return check.editorial.verify;
 }
 export function positionCheckDraft(row:PositionRow,check:PositionCheck){
@@ -74,6 +60,7 @@ export function positionCheckDraft(row:PositionRow,check:PositionCheck){
   return {title:`${brand} | [${check.editorial.titleSubject}]`,description:check.editorial.description};
 }
 export function positionFieldDirection(source:PositionCheck['sources'][number],check:PositionCheck){
+  if(source.clipped)return '전체 원문을 확인한 후 수정 여부를 결정합니다.';
   if(!source.text)return '원문을 확보한 후 수정안을 검토합니다.';
   if(source.excluded.length&&!source.matches.length)return '제외된 표현의 실제 운영 상태를 먼저 확인합니다.';
   if(source.matches.length)return source.label==='페이지 제목'?'확인된 주제는 유지하고 고객이 선택할 조건을 구체화합니다.':'확인된 표현에 해당하는 조건·근거를 본문과 연결합니다.';
@@ -87,11 +74,11 @@ export function positionGroups(rows:PositionRow[]) {
 export function buildCompetitorPositioning(report:MarketingReport,industry?:PositionCategory) {
   const storedAnalysis=report.competitorAnalysis;if(!storedAnalysis)return null;const analysis=competitorDisplay(storedAnalysis);
   const detected=defaultPositionIndustry(report),category=industry||detected.category,profile=positionProfile(category);
-  const samePage=(a:string,b:string)=>{try{const x=new URL(a),y=new URL(b);return x.hostname.replace(/^www\./,'')===y.hostname.replace(/^www\./,'')&&x.pathname.replace(/\/$/,'')===y.pathname.replace(/\/$/,'')&&x.search===y.search;}catch{return false;}};
-  const page=report.pageEvidence&&samePage(report.pageEvidence.requestedUrl,report.url)?report.pageEvidence:undefined;
-  const own=analysis.ourSite&&analysis.ourSite.url&&samePage(analysis.ourSite.url,report.url)?analysis.ourSite:undefined;
-  const rows=[scorePosition({id:'own',name:report.meta?.siteName||'자사',url:safeHttpUrl(report.url)||'',own:true,title:page?.title??own?.title,description:page?.description??own?.metaDescription,sourceLabel:page?'저장된 입력 페이지':own?'저장된 경쟁사 분석의 자사 원문':'자사 원문 미저장'},analysis.searchKeyword,category),
-    ...analysis.competitors.map((c,i)=>scorePosition({id:`candidate-${i+1}`,name:c.domain,url:safeHttpUrl(c.link)||'',own:false,title:c.metaTitle,description:c.metaDescription,fetchError:c.fetchError,searchRank:c.searchRank,sourceLabel:'저장된 후보 페이지',legacyMetadata:(analysis.filtering?.policyVersion??0)<3},analysis.searchKeyword,category))];
+  const page=report.pageEvidence&&matchesReportPage({url:report.url},report.pageEvidence.requestedUrl)?report.pageEvidence:undefined;
+  const own=analysis.ourSite?.url&&matchesReportPage(report,analysis.ourSite.url)?analysis.ourSite:undefined;
+  const ownCoverage=page?page.metadataTruncated:own&&metadataCoverage(own.title,own.metaDescription,own.metadataTruncated,'hint');
+  const rows=[scorePosition({id:'own',name:report.meta?.siteName||'자사',url:safeHttpUrl(report.url)||'',own:true,title:page?.title??own?.title,description:page?.description??own?.metaDescription,metadataTruncated:ownCoverage,sourceLabel:page?'저장된 입력 페이지':own?'저장된 경쟁사 분석의 자사 원문':'자사 원문 미저장'},analysis.searchKeyword,category),
+    ...analysis.competitors.map((c,i)=>scorePosition({id:`candidate-${i+1}`,name:c.domain,url:safeHttpUrl(c.link)||'',own:false,title:c.metaTitle,description:c.metaDescription,fetchError:c.fetchError,metadataTruncated:c.metadataTruncated,searchRank:c.searchRank,sourceLabel:'저장된 후보 페이지',legacyMetadata:(analysis.filtering?.policyVersion??0)<3},analysis.searchKeyword,category))];
   return {analysis,profile,industryBasis:industry?'직접 선택한 업종 기준':detected.basis,rows,groups:positionGroups(rows),known:rows.filter(r=>!r.own&&r.x!==null),own:rows[0]};
 }
 export function positioningActions(row:PositionRow) {

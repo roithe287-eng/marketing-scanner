@@ -50,6 +50,12 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
   if(naverOptimization&&!matchesReportPage(report,naverOptimization.targetUrl))report={...report,naverOptimization:undefined};
   if(officialSeoAudit&&!matchesReportPage(report,officialSeoAudit.targetUrl))report={...report,officialSeoAudit:undefined};
   if(siteDiagnostics&&!matchesReportPage(report,siteDiagnostics.targetUrl))report={...report,siteDiagnostics:undefined};
+  const target=report.llmCitationTest?.targetUrl;
+  if(target&&!matchesReportPage(report,target)){
+    const warnings=report.analysisWarnings||[];
+    const alert={key:'citationTarget',label:'AI 답변의 관측 주소 불일치',status:'unavailable' as const};
+    report={...report,llmCitationTest:null,analysisWarnings:[alert,...warnings.filter(w=>w.key!==alert.key)].slice(0,10)};
+  }
   if(report.industryDecision)return report;
   const page=report.pageEvidence, diagnostics=report.siteDiagnostics;
   if(!page||canonicalPage(page.requestedUrl)!==canonicalPage(report.url)||!sameSite(page.finalUrl,report.url))return report;

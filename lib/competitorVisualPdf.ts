@@ -19,7 +19,7 @@ export function buildCompetitorVisualPage(report:MarketingReport,measure:TextMea
   [100,50,0].forEach(n=>text(`${n}`,67,y0+h*(.15+.7*(1-n/100))-11,36,13));
   [0,50,100].forEach(n=>text(`${n}`,x0+w*(.15+.7*n/100)-12,y0+h+14,40,13));
   for(const g of positionGroups(model.rows.slice(0,6))){const point=positionCoordinates(g.x,g.y),x=x0+w*(point.left-10)/80,y=y0+h*(point.top-10)/80,d=positionDiameter(g.signalCount),own=g.rows.some(r=>r.own);rect(x-d/2+2,y-d/2+7,d,d,'#23405b25',d/2);rect(x-d/2,y-d/2,d,d,own?'#b91825':'#315d88',d/2);rect(x-d*.28,y-d*.35,d*.3,d*.18,own?'#f3a0ad':'#99c7e8',d*.09);const label=g.rows.length>1?`${g.rows.length}곳`:g.rows[0].own?'자사':g.rows[0].id.split('-')[1];const labelWidth=measure(label,{size:14,weight:700,color:'#ffffff',lineHeight:22.4});text(label,x-labelWidth/2,y-11.2,d,14,'#ffffff',700);}
-  if(!model.groups.length)text('두 필드가 확보된 사이트가 없어 좌표 판정 보류',168,363,454,16);
+  if(!model.rows.slice(0,6).some(row=>row.x!==null))text('표시 범위 안에서 좌표를 비교할 원문이 없습니다.',168,363,454,16);
   text('X · 상품·서비스 설명',280,550,260,15,'#202936',700);
   text('크기 = 업종별 정보 단서 0~8개 · 중복 표현 제외 · 종류별 최대 2개. 겹친 업체는 평균 단서 수로 표시합니다.',48,584,694,13);
   let y=622;
