@@ -111,7 +111,7 @@ export function MessageMap({data}:{data:ReportInsights}) {
       <dl>{row.cells.map(cell=><div key={cell.label}><dt>{cell.label}</dt><dd><MessageSignal match={cell.match} restricted={cell.restricted}/></dd></div>)}</dl>
     </div>)}</div>
     <div className="report-callout"><strong>우리 문구에서 보완할 정보</strong>
-      {data.messageOpportunities.length?<ul className="report-message-opportunities">{data.messageOpportunities.map(o=><li key={o.label}><strong>{o.label}</strong><span>비교 가능한 후보 {o.total}곳 중 {o.count}곳에서 확인</span><ReportMeasureTrack count={o.count} total={o.total}/><details className="message-peer-evidence"><summary>근거 업체 {o.count}곳 보기</summary>{o.candidates.map(c=><div key={c.url}><Link url={c.url}>{c.name}</Link><small>{c.field}</small><p>{c.quote}</p></div>)}</details></li>)}</ul>:<p>현재 저장된 제목·설명에서 제안할 공통 표현이 없거나, 비교할 정보가 충분하지 않습니다.</p>}
+      {data.messageOpportunities.length?<ul className="report-message-opportunities">{data.messageOpportunities.map(o=><li key={o.label}><strong>{o.label}</strong><span>비교 가능한 후보 {o.total}곳 중 {o.count}곳에서 확인</span><ReportMeasureTrack count={o.count} total={o.total}/><details className="message-peer-evidence"><summary>근거 업체 {o.count}곳 보기</summary>{o.candidates.map(c=><div key={c.url}><Link url={c.url}>{c.name}</Link><small>{c.field} · 확인한 표현 “{c.expression}”</small><p>{c.quote}</p></div>)}</details></li>)}</ul>:<p>현재 저장된 제목·설명에서 제안할 공통 표현이 없거나, 비교할 정보가 충분하지 않습니다.</p>}
       {data.messageOpportunities.length>0&&<p>실제 제공하는 내용과 연결되는 항목을 먼저 검토하세요.</p>}
     </div>
     <details className="report-inline-details"><summary>업체별 제목·설명 확인</summary>

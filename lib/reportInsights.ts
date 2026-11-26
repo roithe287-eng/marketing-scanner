@@ -90,7 +90,7 @@ export function buildReportInsights(report:MarketingReport) {
   const messageOpportunities=messageThemes.flatMap((theme,i)=>{
     const own=ownMessage?.cells[i];
     if(!ownMessage?.available||!own||own.match||own.restricted)return [];
-    const candidates=known.flatMap(r=>{const cell=r.cells[i];return cell.match&&cell.field&&cell.quote?[{name:r.name,url:r.url,field:cell.field,quote:cell.quote}]:[];});
+    const candidates=known.flatMap(r=>{const cell=r.cells[i];return cell.match&&cell.field&&cell.quote?[{name:r.name,url:r.url,field:cell.field,quote:cell.quote,expression:cell.match}]:[];});
     return candidates.length?[{label:theme.label,count:candidates.length,total:known.length,candidates}]:[];
   });
   const stages=[{label:'첫인상',key:'firstView' as const,action:'제안의 핵심과 첫 화면 문구 확인'},{label:'신뢰 형성',key:'trust' as const,action:'검증 가능한 사례·후기·근거 확인'},{label:'행동 유도',key:'cta' as const,action:'버튼 문구·위치·다음 행동 확인'},{label:'전환 흐름',key:'conversionFlow' as const,action:'문의·신청 과정의 마찰 확인'}].map(s=>({...s,score:report.diagnosis[s.key]}));

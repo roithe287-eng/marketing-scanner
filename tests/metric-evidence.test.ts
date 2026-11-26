@@ -9,6 +9,8 @@ import {buildCompetitorPositioning,scorePosition} from '../lib/competitorPositio
 import {marketingExpressions} from '../lib/marketingExpressions';
 import {buildReportInsights,messageCellLabel} from '../lib/reportInsights';
 import {buildReportDocument} from '../lib/reportDocument';
+import {buildInsightsPdfPages} from '../lib/reportInsightsPdf';
+import {PDF_PAGE} from '../lib/pdfLayout';
 import {calculateSimpleGoal,describeGoal,formatGoalRate} from '../lib/growthKpi';
 import {buildGeoComparison} from '../lib/geoComparison';
 import {reportForPresentation} from '../lib/reportPresentation';
@@ -60,12 +62,16 @@ test('peer recommendations expose only comparable official fields and keep restr
   assert.deepEqual(cells.map(cell=>cell.restricted),['할인 없음','당일 배송 불가','맞춤 제작 예정']);
   assert.ok(cells.every(cell=>messageCellLabel(cell)==='제한·예정'));
   assert.ok(partial.cells.every(cell=>messageCellLabel(cell)==='미확인'));
-  assert.deepEqual(insights.messageOpportunities,[{label:'맞춤·범위',count:1,total:2,candidates:[{name:'maker.example',url:'https://maker.example/',field:'메타 설명',quote:offer}]}]);
+  assert.deepEqual(insights.messageOpportunities,[{label:'맞춤·범위',count:1,total:2,candidates:[{name:'maker.example',url:'https://maker.example/',field:'메타 설명',quote:offer,expression:'맞춤'}]}]);
   const ownLimit=buildReportInsights({...report,pageEvidence:{...page,description:'맞춤 제작 예정'}});
   assert.equal(ownLimit.messageOpportunities.length,0);
   const docs=buildReportDocument(report);
   assert.ok(docs.some(block=>block.href==='https://maker.example/'&&block.text.includes(offer)));
   assert.ok(docs.some(block=>block.text.includes('제한·예정 · 당일 배송 불가')));
+  const visual=buildInsightsPdfPages(report,(value,style)=>Array.from(value).length*style.size);
+  const map=visual.find(p=>p.lines.some(l=>l.text==='경쟁사 메시지 비교 지도'))!;
+  assert.ok(map.lines.some(l=>l.text.includes(offer)));assert.ok(map.lines.some(l=>l.href==='https://maker.example/'));
+  assert.ok(map.lines.every(l=>l.x>=46&&l.x+l.width<=742.01&&l.y+l.lineHeight<=PDF_PAGE.contentBottom+.01));
   const mixed=marketingExpressions('상담 불가, 온라인 예약 가능. 수수료 없음. 당일 배송은 제한 없이 운영합니다.',/상담|예약|수수료|당일/);
   assert.deepEqual(mixed.matches,['예약','수수료','당일']);
   assert.deepEqual(mixed.excluded,[{expression:'상담',context:'상담 불가'}]);
