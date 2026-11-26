@@ -1,5 +1,4 @@
 import type {MarketingReport} from './reportSchema';
-import type {BusinessDocument} from './businessContext';
 import type {PageElement} from './siteEditingSchema';
 import {editingEvidence} from './siteGuidebook';
 import {safeHttpUrl} from './citationMeasurement';
@@ -19,7 +18,7 @@ export function sourcePageUrl(value:string):string|null{
  for(const key of [...url.searchParams.keys()])if(/^utm_|^(?:fbclid|gclid|msclkid)$/i.test(key))url.searchParams.delete(key);
  return url.href;
 }
-export function buildSourceLibrary(report:MarketingReport,retainedDocuments?:BusinessDocument[]):SourceLibrary{
+export function buildSourceLibrary(report:MarketingReport):SourceLibrary{
  const page=editingEvidence(report),pageUrl=sourcePageUrl(page?.finalUrl||report.url)||'',groups:SourceGroup[]=[],links:SourceLink[]=[];
  const byText=new Map<string,SourceGroup>(),byUrl=new Map<string,SourceLink>();let rawCount=0;
  function link(value:string,label:string,action=false):SourceLink|undefined {
@@ -65,7 +64,7 @@ export function buildSourceLibrary(report:MarketingReport,retainedDocuments?:Bus
   }
  }
  for(const page of report.sitePurpose?.community?.pages||[])link(page.url,'커뮤니티 공개 표본 · '+page.title);
- const currentDocuments=report.sitePurpose?.business?.documents||[];
+ const currentDocuments=report.sitePurpose?.business?.documents||[],retainedDocuments=page?.supplementalDocuments;
  // Industry reconciliation can update the label and replace its selected documents.
  // Preserve distinct captured references, including two captures of the same URL.
  const documents=!retainedDocuments||retainedDocuments===currentDocuments?currentDocuments:

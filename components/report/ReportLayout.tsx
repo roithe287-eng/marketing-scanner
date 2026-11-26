@@ -80,8 +80,7 @@ export default function ReportLayout({report:storedReport,actions,canDeepDive=fa
   const data=useMemo(()=>buildReportInsights(report),[report]);
   const placeReview=useMemo(()=>buildHospitalPlaceReview(report.siteDiagnostics),[report.siteDiagnostics]);
   const localPlaceReview=useMemo(()=>buildLocalPlaceReview(report.siteDiagnostics),[report.siteDiagnostics]);
-  const storedDocuments=storedReport.sitePurpose?.business?.documents;
-  const sources=useMemo(()=>buildSourceLibrary(report,storedDocuments),[report,storedDocuments]);
+  const sources=useMemo(()=>buildSourceLibrary(report),[report]);
   const execution=useMemo(()=>buildExecutionPlan(report,data),[report,data]);
   const diagrams=useMemo(()=>buildReportDiagrams(report,data,sources,execution),[report,data,sources,execution]);
   const briefs=useMemo(()=>buildSectionBriefs(report,data,sources),[report,data,sources]);

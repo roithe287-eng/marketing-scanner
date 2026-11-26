@@ -1,4 +1,4 @@
-import {reconcileStoredIndustry} from './storedIndustry';
+import {reconcileStoredIndustry,retainSourceDocuments} from './storedIndustry';
 import {providerIdentity} from './websiteIdentity';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
 import {applyActionableGuides} from './actionableGuides';
@@ -9,17 +9,12 @@ import {excludedPlatformReason} from './competitorSelection';
 import {ownHost,safeHttpUrl} from './citationMeasurement';
 import {competitorDisplay,applyCompetitorExclusions} from './competitorDisplay';
 import {reconcileKeywordMetadata} from './analyzeKeywordFreq';
-import {canonicalPage,matchesReportPage} from './geoComparison';
+import {canonicalPage} from './geoComparison';
 import {currentPlacePolicy,buildHospitalPlaceReview} from './hospitalPlace';
 import {PAGE_EVIDENCE_METADATA_LIMITS} from './pageEvidence';
 
 /** Reapply candidate policy to saved reports without mutating their observations. */
 export function reportForPresentation(report:MarketingReport):MarketingReport {
-  // Older snapshots may include observations from a different scan.
-  const {naverOptimization,officialSeoAudit,siteDiagnostics}=report;
-  if(naverOptimization&&!matchesReportPage(report,naverOptimization.targetUrl))report={...report,naverOptimization:undefined};
-  if(officialSeoAudit&&!matchesReportPage(report,officialSeoAudit.targetUrl))report={...report,officialSeoAudit:undefined};
-  if(siteDiagnostics&&!matchesReportPage(report,siteDiagnostics.targetUrl))report={...report,siteDiagnostics:undefined};
   report=applyActionableGuides(reconcileStoredIndustry(report));
   if(report.evidenceReview?.assessed===0){
     const summary=report.oneLineSummary.replace(/^HTML 기본 항목 0개 중 0개 충족/,'HTML 기본 항목 판정 보류');
@@ -48,7 +43,7 @@ export function reportForPresentation(report:MarketingReport):MarketingReport {
     const fresh=analyzeWebsitePurpose({url:report.url,finalUrl:page.finalUrl,title:page.title,description:page.description,h1:page.h1,h2:page.h2,bodyText:page.bodyText,siteEditing:page.siteEditing,ctaButtons:page.ctaButtons,businessDocuments:documents,localPlaceEvidence:place});
     if(fresh.kind===report.sitePurpose.kind&&(fresh.sector?.id===report.sitePurpose.sector?.id||!fresh.sector&&((place?.sector==='veterinary'&&report.sitePurpose.sector?.id==='medical')||(!!place?.branch&&['restaurant','cafe'].includes(place.sector)&&report.sitePurpose.sector?.id==='franchise')))){
       const book=nonCommercePlaybook(fresh,providerIdentity(page),place);
-      report={...report,sitePurpose:fresh,serviceStrategy:{...plan,...nonCommerceEditorialSections(fresh,plan.sources,page.finalUrl,(page.h1[0]||page.title||fresh.label).slice(0,70),book),findings:buildStrategyFindings(fresh,plan.sources,page.finalUrl)}};
+      report={...report,pageEvidence:retainSourceDocuments(page,report.sitePurpose),sitePurpose:fresh,serviceStrategy:{...plan,...nonCommerceEditorialSections(fresh,plan.sources,page.finalUrl,(page.h1[0]||page.title||fresh.label).slice(0,70),book),findings:buildStrategyFindings(fresh,plan.sources,page.finalUrl)}};
     }
   }
   const storedAnalysis=report.competitorAnalysis;if(!storedAnalysis)return report;const analysis=competitorDisplay(storedAnalysis);

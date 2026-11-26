@@ -1,3 +1,4 @@
+import {BusinessDocumentSchema} from './businessContext';
 import {IndustryCategorySchema} from './industryCategory';
 export {IndustryCategorySchema} from './industryCategory';
 import {CompetitionScopeSchema} from './competitionScope';
@@ -354,6 +355,7 @@ export const PageEvidenceSchema=z.object({
   h1:z.array(z.string().max(500)).max(6),
   h2:z.array(z.string().max(500)).max(12),
   ctaButtons:z.array(z.string().max(200)).max(12),
+  supplementalDocuments:z.array(BusinessDocumentSchema).max(9).optional(),
   bodyText:z.string().max(12000),
   bodyTruncated:z.boolean(),
   searchSignals:SearchSignalsSchema.optional(),

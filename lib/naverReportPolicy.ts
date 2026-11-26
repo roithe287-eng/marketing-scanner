@@ -10,6 +10,14 @@ export function naverReportSearchAllowed() {
 export function commercialSearchSnapshot(report:MarketingReport):MarketingReport{
   if(naverReportSearchAllowed())return report;
   const rest={...report};
+  const purpose=report.sitePurpose,business=purpose?.business;
+  if(purpose&&business?.documents.some(d=>d.source==='search_excerpt')){
+    rest.sitePurpose={...purpose,business:{...business,documents:business.documents.filter(d=>d.source!=='search_excerpt')}};
+  }
+  const page=report.pageEvidence;
+  if(page?.supplementalDocuments?.some(d=>d.source==='search_excerpt')){
+    rest.pageEvidence={...page,supplementalDocuments:page.supplementalDocuments.filter(d=>d.source!=='search_excerpt')};
+  }
   if(report.keywordRankTracking)rest.keywordRankTracking=null;
   if(report.competitorAnalysis?.research?.provider==='naver_web'){
     rest.competitorAnalysis=null;

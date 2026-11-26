@@ -4,6 +4,8 @@ import type {BusinessDocument} from '../lib/businessContext';
 import type {NaverCheck} from '../lib/naverSchema';
 import {MarketingReportSchema,type MarketingReport} from '../lib/reportSchema';
 import {buildSourceLibrary,buildContentFacets} from '../lib/reportContent';
+import {reconcileStoredIndustry} from '../lib/storedIndustry';
+import {commercialSearchSnapshot} from '../lib/naverReportPolicy';
 import {reportForPresentation} from '../lib/reportPresentation';
 import {buildReportDocument} from '../lib/reportDocument';
 import {buildExecutionPlan,visibleWorkZones} from '../lib/reportExecution';
@@ -35,6 +37,20 @@ test('only scoped merchant HTML can support a homepage interpretation; reference
  const pdf=buildReportDocument(report);
  assert.ok(pdf.some(b=>b.text===actual));
  assert.ok(!pdf.some(b=>b.text===docs[1].sections[0].text));
+});
+test('reopening a corrected legacy snapshot preserves captured HTML while respecting the search-provider setting',t=>{
+ const original=process.env.NAVER_REPORT_SEARCH_AUTHORIZED;
+ delete process.env.NAVER_REPORT_SEARCH_AUTHORIZED;
+ t.after(()=>{if(original===undefined)delete process.env.NAVER_REPORT_SEARCH_AUTHORIZED;else process.env.NAVER_REPORT_SEARCH_AUTHORIZED=original;});
+ const docs:BusinessDocument[]=(['merchant_html','search_excerpt'] as const).map(source=>({url,title:'원문 위치',capturedAt:date,source,sections:[{heading:'안내',text:source==='merchant_html'?'검증용 운영 안내 원문':'검색 요약 표본'}]}));
+ const report=MarketingReportSchema.parse({...base,sitePurpose:{...template.sitePurpose,business:{version:1,id:'travel_booking',label:'여행 예약',industry:'travel',kind:'service',goalKey:'booking',goalLabel:'예약',evidence:[],checks:[],keywords:[],note:'표본',documents:docs}}});
+ const corrected=reconcileStoredIndustry(commercialSearchSnapshot(report));
+ const roundTrip=MarketingReportSchema.parse(JSON.parse(JSON.stringify(corrected)));
+ const source=buildSourceLibrary(reportForPresentation(roundTrip));
+ assert.ok(source.groups.some(g=>g.text==='검증용 운영 안내 원문'));
+ assert.ok(!JSON.stringify(source).includes('검색 요약 표본'));
+ assert.ok(!JSON.stringify(commercialSearchSnapshot({...report,pageEvidence:{...page,supplementalDocuments:docs}})).includes('검색 요약 표본'));
+ assert.equal(report.sitePurpose!.business!.documents.length,2);
 });
 test('the submitted page and its captured redirect are valid; other offers, sites and orphan redirects cannot enter instructions or exports',()=>{
  const final='https://www.education.example.org/final?id=11';
