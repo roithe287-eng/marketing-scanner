@@ -1,3 +1,4 @@
+import {clipMetadata,METADATA_LIMITS,type MetadataTruncation} from './metadataCoverage';
 import {readWebsiteSchema} from './websiteSchema';
 import {restoreStreamedHtml} from './streamedHtml';
 import {captureCommunityContext} from './communityContext';
@@ -40,6 +41,7 @@ export type Competitor = SearchCandidate & {
   link: string;
   description: string;
   domain: string;
+  metadataTruncated?:MetadataTruncation;
   metaTitle?: string;
   metaDescription?: string;
   h1?: string;
@@ -64,6 +66,7 @@ export type CompetitorAnalysisResult = {
     domain: string;
     title: string;
     metaDescription: string;
+    metadataTruncated?:MetadataTruncation;
     h1: string;
   };
 };
@@ -147,11 +150,13 @@ async function fetchCompetitorMeta(competitor:Competitor,provider:'naver_web'|'p
 }
 
 /** Candidate facts are parsed from its own fetched page, never from the search snippet. */
-export function captureCompetitorPage(html:string,url:string,headers=new Headers()):Pick<Competitor,'finalUrl'|'metaTitle'|'metaDescription'|'h1'|'ctaTexts'|'bodySnippet'|'scope'|'fetchError'|'sourceExcerpt'|'verifiedOffering'|'canonicalUrl'>{
+export function captureCompetitorPage(html:string,url:string,headers=new Headers()):Pick<Competitor,'finalUrl'|'metadataTruncated'|'metaTitle'|'metaDescription'|'h1'|'ctaTexts'|'bodySnippet'|'scope'|'fetchError'|'sourceExcerpt'|'verifiedOffering'|'canonicalUrl'>{
   const $=cheerio.load(html);
   restoreStreamedHtml($);
   if($('meta[name="robots" i],meta[name="JinjjaScanner" i]').toArray().some(e=>/\b(?:noindex|none)\b/i.test($(e).attr('content')||'')))return {finalUrl:url,fetchError:'페이지 검색 수집 제한'};
-  const metaTitle=$('title').first().text().trim().slice(0,600),metaDescription=$('meta[name="description" i]').attr('content')?.trim().slice(0,1600)||'';
+  const title=$('title').first().text().trim(),description=$('meta[name="description" i]').attr('content')?.trim()||'';
+  const metaTitle=clipMetadata(title,METADATA_LIMITS.title),metaDescription=clipMetadata(description,METADATA_LIMITS.description);
+  const metadataTruncated={title:title.length>metaTitle.length,description:description.length>metaDescription.length};
   const siteEditing=captureSiteEditing($,url,headers);
   const place=captureLocalPlaceEvidence(html,url);
   const h1=$('h1').first().text().replace(/\s+/g,' ').trim().slice(0,200);
@@ -164,7 +169,7 @@ export function captureCompetitorPage(html:string,url:string,headers=new Headers
   const canonical=$('link[rel~="canonical" i]').first().attr('href');
   const canonicalUrl=canonical&&URL.canParse(canonical,url)?new URL(canonical,url).href:undefined;
   const sourceExcerpt=(industry.evidence.find(item=>item.field==='body'||item.field==='product')?.text||metaDescription||h1||metaTitle).replace(/\s+/g,' ').trim().slice(0,240);
-  return {finalUrl:url,metaTitle,metaDescription,h1,ctaTexts,bodySnippet,scope,sourceExcerpt,canonicalUrl,verifiedOffering:industry.status==='matched',
+  return {finalUrl:url,metaTitle,metaDescription,metadataTruncated,h1,ctaTexts,bodySnippet,scope,sourceExcerpt,canonicalUrl,verifiedOffering:industry.status==='matched',
     ...(industry.status==='review'&&industry.reason==='conflicting'?{fetchError:'후보 원문의 제공 업종 단서가 서로 다름'}:{}),
   };
 }
@@ -258,7 +263,7 @@ const wigStorefronts = [
   {title:'픽앤웨어',link:'https://www.picknwear.co.kr/'},
 ];
 
-async function compareWigStores(site:QuerySite&{url:string;title:string;description:string;h1:string[]},scope:CompetitionScope):Promise<CompetitorAnalysisResult>{
+async function compareWigStores(site:QuerySite&{url:string;title:string;description:string;h1:string[];metadataTruncated?:MetadataTruncation},scope:CompetitionScope):Promise<CompetitorAnalysisResult>{
   const domain=new URL(site.url).hostname.replace(/^www\./,'');
   const ownFacets=scope.specialties;
   const candidates:Competitor[]=wigStorefronts
@@ -280,7 +285,7 @@ async function compareWigStores(site:QuerySite&{url:string;title:string;descript
   const searchKeyword=ownFacets[0]||'';
   return reviewCandidateCoverage<CompetitorAnalysisResult>({
     searchKeyword,keywordSource:'fallback',competitors,
-    ourSite:{scope,url:site.url,domain,title:site.title,metaDescription:site.description,h1:site.h1[0]||''},
+    ourSite:{scope,url:site.url,domain,title:site.title,metaDescription:site.description,metadataTruncated:site.metadataTruncated,h1:site.h1[0]||''},
     filtering:{policyVersion:3,reviewedCount:candidates.length,metadataCheckedCount:targets.length,excluded},
     research:{version:2,provider:'official_wig_stores',capturedAt:new Date().toISOString(),requestedCount:targets.length,returnedCount:0,apiStart:1,totalDocuments:null,
       searchVolumeStatus:'not_measured',keywordReason:'자사와 공식몰 원문 양쪽에서 확인한 상품군으로 비교합니다.',keywordEvidence:[],alternatives:[],attemptedKeywords:[],
@@ -291,6 +296,7 @@ async function compareWigStores(site:QuerySite&{url:string;title:string;descript
 }
 
 export async function analyzeCompetitors(siteData: {
+  metadataTruncated?:MetadataTruncation;
   scope?:CompetitionScope;
   communityContext?:CommunityContext;
   url: string;
@@ -360,7 +366,7 @@ export async function analyzeCompetitors(siteData: {
           selectionStatus:'insufficient_source',selectionMessage:scope.kind==='commerce'
             ?'공개 원문에서 비교할 상품군을 확인하지 못했습니다. 대표 상품이나 카테고리 상세 URL로 다시 진단해 주세요.'
             :'공개 원문에서 비교할 업무 범위를 확인하지 못했습니다. 제공 서비스가 적힌 상세 URL로 다시 진단해 주세요.'},
-        ourSite:{scope,url:siteData.url,domain:ourDomain,title:rawSite.title,metaDescription:rawSite.description,h1:rawSite.h1[0]||''}};
+        ourSite:{scope,url:siteData.url,domain:ourDomain,title:rawSite.title,metaDescription:rawSite.description,metadataTruncated:rawSite.metadataTruncated,h1:rawSite.h1[0]||''}};
     }
     console.log(`[경쟁사] 키워드: "${keyword}" (${keywordSource})`);
 
@@ -421,6 +427,7 @@ export async function analyzeCompetitors(siteData: {
         domain: ourDomain,
         title: rawSite.title,
         metaDescription: rawSite.description,
+        metadataTruncated:rawSite.metadataTruncated,
         h1: rawSite.h1[0] || "",
       },
     });

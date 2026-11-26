@@ -4,7 +4,7 @@ import {buildExecutableRewrites} from './keywordExecution';
 import {diagnosisScores,radarPoint} from './diagnosisVisuals';
 import {rewriteKinds} from './keywordRewrite';
 import type {MarketingReport} from './reportSchema';
-import {buildReportInsights,insightNotes,messageThemes} from './reportInsights';
+import {buildReportInsights,insightNotes,messageThemes,messageCellLabel} from './reportInsights';
 import {wrapPdfText,PDF_PAGE,type TextMeasurer,type PdfTextStyle} from './pdfLayout';
 import type {VisualPdfPage} from './reportVisualPdf';
 import {reportRoles,type ReportRole} from './reportRoles';
@@ -64,7 +64,7 @@ export function buildInsightsPdfPages(report:MarketingReport,measure:TextMeasure
   next('경쟁사 메시지 비교 지도',note);
   function tableHead(){rect(48,y,694,38);text('사이트',58,y+9,164,11,gray,700);messageThemes.forEach((t,i)=>text(t.label,232+i*85,y+9,78,10,gray,700));y+=42;}
   tableHead();
-  for(const row of d.messageRows){if(y+80>PDF_PAGE.contentBottom){next('경쟁사 메시지 비교 · 계속',note);tableHead();}rect(48,y,694,72,row.isOwn?'#fff5f5':'#f7f8fa');text(short(row.name,26),58,y+10,164,12,ink,700);text(row.available?`${row.fieldCount}/2개 필드`:'수집 미확인',58,y+46,164,10,gray);row.cells.forEach((c,i)=>text(c.match===undefined?'미확인':c.match||'미탐지',232+i*85,y+22,78,10,c.match?ink:gray,c.match?700:400));y+=80;}
+  for(const row of d.messageRows){if(y+80>PDF_PAGE.contentBottom){next('경쟁사 메시지 비교 · 계속',note);tableHead();}rect(48,y,694,72,row.isOwn?'#fff5f5':'#f7f8fa');text(short(row.name,26),58,y+10,164,12,ink,700);text(row.available?`${row.fieldCount}/2개 필드`:row.clipped.title||row.clipped.description?'일부 저장 · 보류':'수집 미확인',58,y+46,164,10,gray);row.cells.forEach((c,i)=>text(messageCellLabel(c),232+i*85,y+22,78,10,c.match?ink:gray,c.match?700:400));y+=80;}
   y+=18;const summary=d.messageOpportunities.length?d.messageOpportunities.map(o=>`${o.label} (${o.total}개 중 ${o.count}개 후보에서 탐지)`).join(' · '):'제안할 공통 표현이 없거나 비교 정보가 충분하지 않습니다.';
   if(y+130>PDF_PAGE.contentBottom)next('메시지·키워드 연결 기회',note);
   y=text('자사 문구 검토 후보',48,y,694,16,ink,700)+6;y=text(summary,48,y,694,12,gray)+22;

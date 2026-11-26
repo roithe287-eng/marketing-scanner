@@ -15,7 +15,7 @@ test('visual metrics separate failed, unverified and absent observations from me
   const citation={...fixture.llmCitationTest!,results:[row({cited:true,brandMentioned:true}),row({engine:'gemini',status:'error'}),row({question:'비용 기준을 어떻게 확인하나요?',status:'unverified',citationVerified:false,brandMentioned:true})]};
   const visual=buildObservationVisual(citation)!;
   assert.equal(visual.citationRate,100);assert.equal(visual.sourceTotal,1);assert.equal(visual.mentionRate,100);assert.equal(visual.mentionTotal,2);
-  assert.deepEqual(visual.distributions[0].counts,{cited:1,uncited:0,unverified:1,unavailable:0,failed:0});
+  assert.deepEqual(visual.distributions[0].counts,{cited:1,uncited:0,unverified:1,unavailable:0,failed:0,duplicate:0});
   assert.equal(visual.distributions.length,1);assert.equal(visual.total,2);assert.deepEqual(Object.keys(visual.questions[0].cells),['chatgpt']);
   const failed=buildObservationVisual({...citation,results:[row({status:'error'})]})!;assert.equal(failed.citationRate,null);assert.equal(failed.mentionRate,null);
   const zero=buildObservationVisual({...citation,results:[row()]})!;assert.equal(zero.citationRate,0);assert.equal(zero.mentionRate,0);
@@ -24,7 +24,7 @@ test('legacy and duplicated observations cannot imply verified source rates',()=
   assert.equal(buildObservationVisual({...fixture.llmCitationTest!,measurementVersion:undefined}),null);
   assert.equal(observationCell([row(),row()]).state,'duplicate');
   const visual=buildObservationVisual({...fixture.llmCitationTest!,results:[row(),row({cited:true})]})!;
-  assert.equal(visual.citationRate,null);assert.equal(visual.distributions[0].counts.unverified,2);
+  assert.equal(visual.citationRate,null);assert.equal(visual.distributions[0].counts.duplicate,2);assert.equal(visual.distributions[0].counts.unverified,0);
 });
 test('accessible charts provide text equivalents and distinguish percentage points',()=>{
   assert.equal(percentageChange(20,40),'+20%p');assert.equal(percentageChange(20,0),'-20%p');assert.equal(percentageChange(0,0),'변화 없음');assert.equal(percentageChange(null,0),'비교 불가');

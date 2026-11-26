@@ -46,17 +46,22 @@ export function buildGeoComparison(report:MarketingReport) {
   report=activeCitationReport(report);
   const baseline=report.geoBaseline;if (!baseline) return null;
   const before=baseline.citation,after=report.llmCitationTest;
+  const beforeInScope=matchesReportPage({url:report.url},baseline.url)&&(!before.targetUrl||matchesReportPage(report,before.targetUrl));
+  const afterInScope=after?.targetUrl?matchesReportPage(report,after.targetUrl):!report.analysisWarnings?.some(w=>w.key==='citationTarget');
   const index=(rows:Row[])=>{const map=new Map<string,Row[]>();for (const row of rows) {const key=JSON.stringify([row.engine,row.question.trim()]);map.set(key,[...(map.get(key)||[]),row]);}return map;};
   const oldRows=index(before.results),newRows=index(after?.results||[]);
   const pairs:GeoPair[]=[...new Set([...oldRows.keys(),...newRows.keys()])].map(key=>{
     const a=oldRows.get(key)||[],b=newRows.get(key)||[];
-    const row=a[0]||b[0];const pair:GeoPair={key,question:row.question.trim(),engine:row.engine,before:a[0],after:b[0]};
+    const previous=beforeInScope?a[0]:undefined,current=afterInScope?b[0]:undefined;
+    const label=(previous||current)?.question.trim()||'대상 주소 불일치로 제외한 질문';
+    const pair:GeoPair={key,question:label,engine:(a[0]||b[0]).engine,before:previous,after:current};
     let reason:Reason|undefined;
-    if (a.length>1||b.length>1) reason='duplicate';
+    if (!beforeInScope||!afterInScope) reason='target';
+    else if (a.length>1||b.length>1) reason='duplicate';
     else if (!a[0]||!b[0]||!after) reason='missing';
     else if (!valid(a[0])||!valid(b[0])) reason='failed';
     else if (!['geo-compare-v1','geo-compare-v2','geo-compare-v3'].includes(before.measurementProtocol||'')||before.measurementProtocol!==after.measurementProtocol||!before.targetUrl||!after.targetUrl||!before.brandName||!after.brandName||!a[0].model||!b[0].model||!a[0].requestFingerprint||!b[0].requestFingerprint) reason='legacy';
-    else if (!canonicalPage(before.targetUrl)||canonicalPage(before.targetUrl)!==canonicalPage(after.targetUrl)||canonicalPage(baseline.url)!==canonicalPage(report.url)||before.brandName!==after.brandName) reason='target';
+    else if (!canonicalPage(before.targetUrl)||canonicalPage(before.targetUrl)!==canonicalPage(after.targetUrl)||before.brandName!==after.brandName) reason='target';
     else if (a[0].model!==b[0].model) reason='model';
     else if (a[0].requestFingerprint!==b[0].requestFingerprint) reason='request';
     else if (after.cacheHit!==false) reason='cached';
@@ -70,7 +75,7 @@ export function buildGeoComparison(report:MarketingReport) {
   const counts={gained:0,kept:0,lost:0,absent:0};
   for(const pair of matched)if(pair.change)counts[pair.change]++;
   const outcomes=(Object.keys(counts) as (keyof typeof counts)[]).map(id=>({id,label:changeLabels[id],count:counts[id]}));
-  return {baseline,current:after,pairs,matched:matched.length,excluded:pairs.length-matched.length,
+  return {baseline,beforeInScope,current:afterInScope?after:null,pairs,matched:matched.length,excluded:pairs.length-matched.length,
     beforeRate:rate(matched,'before','cited'),afterRate:rate(matched,'after','cited'),mentionCount:mentions.length,
     beforeMention:rate(mentions,'before','brandMentioned'),afterMention:rate(mentions,'after','brandMentioned'),
     ...counts,outcomes};

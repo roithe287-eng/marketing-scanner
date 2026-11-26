@@ -3,7 +3,7 @@ import {KEYWORD_REWRITE_NOTE} from './keywordRewrite';
 import {diagnosisScores} from './diagnosisVisuals';
 import type {MarketingReport} from './reportSchema';
 import type {ReportBlock} from './reportDocument';
-import {buildReportInsights,contentBrief,insightNotes,sourceReferenceGuide} from './reportInsights';
+import {buildReportInsights,contentBrief,insightNotes,sourceReferenceGuide,messageCellLabel,messageReviewLabel} from './reportInsights';
 export function buildInsightsDocument(report:MarketingReport):ReportBlock[] {
   const d=buildReportInsights(report),blocks:ReportBlock[]=[];
   const add=(kind:ReportBlock['kind'],text:string,href?:string)=>blocks.push({kind,text,...(href?{href}:{})});
@@ -26,7 +26,15 @@ export function buildInsightsDocument(report:MarketingReport):ReportBlock[] {
   d.eligibleSources.forEach(s=>{add('subheading',s.title);add('body',s.url,s.url);add('body',`${s.ownership==='own'?'자사':s.ownership==='external'?'외부':'도메인 미확인'} · ${s.observations.length}건의 관측 · ${s.questions.length}개 질문`);s.questions.forEach(q=>add('body',q));});
   if(d.excludedSources.length){add('subheading',`목록에서 제외한 출처 · ${d.excludedSources.length}개`);d.excludedSources.forEach(s=>{add('body',`${s.domain} · ${s.reason} · ${s.observations.length}건의 관측`,s.url);s.questions.forEach(q=>add('body',q));});}
   add('heading','경쟁사 메시지 비교 지도');add('body',insightNotes.messages);
-  d.messageRows.forEach(r=>{add('subheading',r.name);add('body',r.available?`수집된 필드 ${r.fieldCount}/2 · ${r.evidence}`:'제목·메타 설명 수집 미확인');if(r.url)add('body',r.url,r.url);add('body',r.cells.map(c=>`${c.label}: ${c.match===undefined?'미확인':c.match||'미탐지'}`).join(' · '));});
+  for(const row of d.messageRows){
+    add('subheading',row.name);
+    add('body',messageReviewLabel(row));
+    if(row.url)add('body',row.url,row.url);
+    if(row.title)add('body','페이지 제목 · '+row.title);
+    if(row.description)add('body','메타 설명 · '+row.description);
+    add('body',row.cells.map(c=>c.label+': '+messageCellLabel(c)+(c.restricted?' · '+c.restricted:'')).join(' · '));
+  }
+  for(const opportunity of d.messageOpportunities)for(const candidate of opportunity.candidates)add('body',`${opportunity.label} · ${candidate.name} · ${candidate.field}: ${candidate.quote}`,candidate.url);
   if(d.messageOpportunities.length)add('body','자사 문구 검토 후보: '+d.messageOpportunities.map(o=>`${o.label} (${o.total}개 수집 후보 중 ${o.count}개 탐지)`).join(' · '));
   const rewrites=buildExecutableRewrites(report);
   add('heading','반복 표현 TO-BE 제안');add('body',KEYWORD_REWRITE_NOTE);

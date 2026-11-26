@@ -1,3 +1,4 @@
+import {marketingExpressions} from './marketingExpressions';
 import {competitorCollectionState} from './competitorDisplay';
 import {reportForPresentation} from './reportPresentation';
 import {OFFICIAL_SEO_COVERAGE} from './officialSeoCatalog';
@@ -17,8 +18,17 @@ export const messageThemes=[
   {label:'전문성',pattern:/전문|경력|노하우|기술|컨설팅|전략/},
   {label:'속도·지원',pattern:/당일|빠른|신속|24시간|지원|응대/},
   {label:'상담·문의',pattern:/상담|문의|예약|신청/},
-  {label:'맞춤·범위',pattern:/맞춤|통합|종합|원스톱|맞춤형/},
+  {label:'맞춤·범위',pattern:/맞춤형|맞춤|통합|종합|원스톱/},
 ] as const;
+export function messageCellLabel(cell:{match:string|null|undefined;restricted?:string}){
+  return cell.match===undefined?'미확인':cell.match||(cell.restricted?'제한·예정':'미탐지');
+}
+export function messageReviewLabel(row:ReportInsights['messageRows'][number]) {
+  if(row.collectionFailed)return '페이지 수집 실패 · 비교 보류';
+  if(row.clipped.title||row.clipped.description)return '원문 일부 저장 · 비교 보류';
+  if(row.available)return '제목·설명 모두 확인';
+  return row.fieldCount?'제목·설명 중 1개 확인 · 비교 보류':'수집 미확인 · 제목과 설명 없음';
+}
 export const insightNotes={
   stages:'각 단계에 연결한 기존 진단 점수입니다. 실제 방문·구매 전환율이나 이탈률을 측정한 퍼널이 아닙니다.',
   sources:'AI 답변이 인용한 외부 링크 중 자사몰·대형몰·포털·SNS를 제외한 목록입니다. AI가 질문에 답하는 과정에서 다른 업종을 연결할 수도 있어, 아래 업체가 곧 경쟁사라는 뜻은 아닙니다.',
@@ -64,14 +74,24 @@ export function buildReportInsights(report:MarketingReport) {
     return {question:q.question,id:q.id,target,kind:owned?'인용 페이지':rows.length?'입력 페이지 검토':'재측정 후 연결',evidence:owned?`출처에서 확인: ${owned.title}`:rows.length?'이번 정상 관측에서 자사 URL을 확인하지 못했습니다. 페이지의 답변 적합성을 검토하세요.':'판정 가능한 관측이 없습니다. 콘텐츠 부족으로 단정하지 마세요.',observations:rows.length};
   })||[];
   const competitors=report.competitorAnalysis?.competitors||[];
-  const messageRows=(buildCompetitorPositioning(report)?.rows||[]).map(r=>({name:r.own?'자사':r.name,url:r.url,title:r.title,description:r.description,available:r.fieldsPresent===2&&!r.fetchError,collectionFailed:!!r.fetchError,isOwn:r.own,canPosition:r.x!==null})).map(r=>{
-    const fields=[r.title,r.description].filter((v):v is string=>typeof v==='string'&&!!v.trim());const content=fields.join(' ');
-    return {...r,fieldCount:fields.length,cells:messageThemes.map(theme=>({label:theme.label,match:r.available?content.match(theme.pattern)?.[0]||null:undefined})),evidence:content};
+  const messageRows=(buildCompetitorPositioning(report)?.rows||[]).map(r=>{
+    const fields=[{label:'페이지 제목',text:r.title},{label:'메타 설명',text:r.description}];
+    const cells=messageThemes.map(theme=>{
+      if(!r.completeMetadata)return {label:theme.label,match:undefined,restricted:undefined,field:undefined,quote:undefined};
+      const findings=fields.map(f=>({...f,...marketingExpressions(f.text,theme.pattern)}));
+      const positive=findings.find(f=>f.matches.length),limited=findings.find(f=>f.excluded.length);
+      return {label:theme.label,match:positive?.matches[0]||null,restricted:limited?.excluded[0].context,field:positive?.label,quote:positive?.text};
+    });
+    return {name:r.own?'자사':r.name,url:r.url,title:r.title,description:r.description,available:r.completeMetadata,
+      clipped:r.clipped,collectionFailed:!!r.fetchError,isOwn:r.own,canPosition:r.x!==null,fieldCount:r.fieldsPresent,cells,evidence:fields.map(f=>f.text).filter(Boolean).join(' ')};
   });
-  const ownMessage=messageRows[0];
+  const ownMessage=messageRows.find(r=>r.isOwn);
+  const known=messageRows.filter(r=>!r.isOwn&&r.available);
   const messageOpportunities=messageThemes.flatMap((theme,i)=>{
-    const known=messageRows.slice(1).filter(r=>r.available);const present=known.filter(r=>r.cells[i].match);
-    return ownMessage?.available && !ownMessage.cells[i].match && present.length?[{label:theme.label,count:present.length,total:known.length}]:[];
+    const own=ownMessage?.cells[i];
+    if(!ownMessage?.available||!own||own.match||own.restricted)return [];
+    const candidates=known.flatMap(r=>{const cell=r.cells[i];return cell.match&&cell.field&&cell.quote?[{name:r.name,url:r.url,field:cell.field,quote:cell.quote}]:[];});
+    return candidates.length?[{label:theme.label,count:candidates.length,total:known.length,candidates}]:[];
   });
   const stages=[{label:'첫인상',key:'firstView' as const,action:'제안의 핵심과 첫 화면 문구 확인'},{label:'신뢰 형성',key:'trust' as const,action:'검증 가능한 사례·후기·근거 확인'},{label:'행동 유도',key:'cta' as const,action:'버튼 문구·위치·다음 행동 확인'},{label:'전환 흐름',key:'conversionFlow' as const,action:'문의·신청 과정의 마찰 확인'}].map(s=>({...s,score:report.diagnosis[s.key]}));
   const gaps=(report.keywordFrequency?.singles||[]).filter(k=>isKeywordPlacementCandidate(k,report.meta)).slice(0,8);

@@ -1,3 +1,4 @@
+import {MetadataTruncationSchema} from './metadataCoverage';
 import {BusinessDocumentSchema} from './businessContext';
 import {IndustryCategorySchema} from './industryCategory';
 export {IndustryCategorySchema} from './industryCategory';
@@ -351,7 +352,7 @@ export const PageEvidenceSchema=z.object({
   capturedAt:z.string().datetime(),
   title:z.string().max(600),
   description:z.string().max(1600),
-  metadataTruncated:z.object({title:z.boolean(),description:z.boolean()}).optional(),
+  metadataTruncated:MetadataTruncationSchema.optional(),
   h1:z.array(z.string().max(500)).max(6),
   h2:z.array(z.string().max(500)).max(12),
   ctaButtons:z.array(z.string().max(200)).max(12),
@@ -545,6 +546,7 @@ export const MarketingReportSchema = z.object({
           matchedOffer:z.array(z.string().max(60)).max(8).optional(),
           matchedTerms:z.array(z.string()).optional(),
           relevanceBasis:z.enum(['page_metadata','page_content','search_snippet']).optional(),
+          metadataTruncated:MetadataTruncationSchema.optional(),
           metaTitle: z.string().optional(),
           metaDescription: z.string().optional(),
           h1: z.string().optional(),

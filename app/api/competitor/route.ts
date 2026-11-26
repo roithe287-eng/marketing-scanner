@@ -34,6 +34,7 @@ export async function POST(req: NextRequest) {
       url,
       communityContext: hints.communityContext,
       scope:hints.scope,
+      metadataTruncated:hints.metadataTruncated,
       title: hints.title || "",
       ogTitle: hints.ogTitle || "",
       ogDescription: hints.ogDescription || "",

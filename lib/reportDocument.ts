@@ -142,7 +142,7 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   if (comparison) {
     blocks.push({kind:'heading',text:GEO_COMPARISON_TITLE},{kind:'body',text:GEO_COMPARISON_NOTE},
       {kind:'body',text:`기준 보고서 ID: ${comparison.baseline.reportId}`},
-      {kind:'body',text:`이전 ${comparisonTime(comparison.baseline.citation.measuredAt)} / 현재 ${comparisonTime(comparison.current?.measuredAt)}`},
+      {kind:'body',text:`이전 ${comparisonTime(comparison.beforeInScope?comparison.baseline.citation.measuredAt:undefined)} / 현재 ${comparisonTime(comparison.current?.measuredAt)}`},
       {kind:'body',text:`자사 출처 인용률: ${comparisonRate(comparison.beforeRate)} → ${comparisonRate(comparison.afterRate)} · 같은 ${comparison.matched}쌍`},
       {kind:'body',text:`브랜드 언급률: ${comparisonRate(comparison.beforeMention)} → ${comparisonRate(comparison.afterMention)} · 같은 ${comparison.mentionCount}쌍`},
       {kind:'body',text:`${comparison.matched}쌍 비교 · ${comparison.excluded}쌍 제외`});
@@ -152,8 +152,10 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
         {kind:'body',text:pair.reason?`비교 제외 · ${comparisonReasons[pair.reason]}`:changeLabels[pair.change!]},
         {kind:'body',text:`이전: ${observationLabel(pair.before)} / 현재: ${observationLabel(pair.after)}`});
     }
-    blocks.push({kind:'heading',text:'비교 기준의 이전 답변·출처 원본'},{kind:'body',text:'기준 링크가 만료되어도 이 보고서에 저장된 이전 관측은 유지됩니다. 현재 답변은 다음 GEO 상세에 포함됩니다.'});
-    walk(comparison.baseline.citation);
+    if(comparison.beforeInScope){
+      blocks.push({kind:'heading',text:'비교 기준의 이전 답변·출처 원본'},{kind:'body',text:'기준 링크가 만료되어도 이 보고서에 저장된 이전 관측은 유지됩니다. 현재 답변은 다음 GEO 상세에 포함됩니다.'});
+      walk(comparison.baseline.citation);
+    }
   }
   const sections:[string,unknown][] = [
     ['영역별 점수',report.evidenceReview?undefined:report.diagnosis],['GEO 질문·답변·출처·실행 과제',report.llmCitationTest],
