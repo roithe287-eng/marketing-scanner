@@ -121,3 +121,33 @@ test('a reader keeps the candidate source link; the analysis action requires ent
   assert.match(share('[role=note]').text(),/링크를 받은 사람은 만료 전까지/);
   assert.equal(share('button').attr('aria-describedby'),share('[role=note]').attr('id'));
 });
+
+test('zero readable competitor originals is inconclusive in new and stored reports; a partially read set reports its actual sample',async t=>{
+  const {websiteHttp}=await import('../lib/security/safeFetch');
+  const {analyzeCompetitors}=await import('../lib/competitorAnalysis');
+  const {reviewCandidateCoverage}=await import('../lib/competitorSchema');
+  const requested:string[]=[];
+  t.mock.method(websiteHttp,'fetch',async(input:string|URL)=>{
+    const target=new URL(input);requested.push(target.pathname);
+    return new Response('User-agent: *\nDisallow: /',{headers:{'content-type':'text/plain'}});
+  });
+  const owner={...source,url:'https://www.picknwear.co.kr/',title:'인모 헤어피스·부분가발 전문몰',h1:['부분가발과 헤어피스']};
+  const fresh=await analyzeCompetitors(owner);
+  assert.ok(fresh);assert.equal(fresh.research.provider,'official_wig_stores');assert.ok(fresh.filtering.metadataCheckedCount>0);
+  assert.equal(fresh.research.successfulPages,0);assert.equal(fresh.research.selectionStatus,'lookup_unavailable');
+  assert.ok(requested.length>0);assert.ok(requested.every(path=>path==='/robots.txt'));
+  const historic={...fresh,research:{...fresh.research,selectionStatus:'no_relevant_candidates' as const,selectionMessage:'후보가 없습니다.'}};
+  const stored=MarketingReportSchema.parse({...fixture,competitorStatus:{status:'empty',message:'후보가 없습니다.'},competitorAnalysis:historic});
+  const view=reportForPresentation(stored);assert.equal(view.competitorStatus?.status,'error');
+  assert.equal(buildReportInsights(view).collection.measured,false);assert.equal(stored.competitorStatus?.status,'empty');
+  assert.equal(reportForPresentation({...stored,competitorStatus:null}).competitorStatus?.status,'error');
+  const {buildCompetitorDocument}=await import('../lib/competitorDocument');
+  const pdf=buildCompetitorDocument(view);
+  assert.ok(pdf.some(block=>block.text.includes('원문을 읽지 못했습니다')));
+  assert.ok(!pdf.some(block=>block.text==='같은 상품군을 판매하는 공식몰'));
+  const partial=reviewCandidateCoverage({...historic,research:{...historic.research,successfulPages:1}});
+  assert.equal(partial.research.selectionStatus,'no_relevant_candidates');assert.match(partial.research.selectionMessage,/원문을 읽은 1곳/);
+  assert.equal(reviewCandidateCoverage(partial),partial);
+  const noReturned={...historic,filtering:{...historic.filtering,metadataCheckedCount:0}};
+  assert.equal(reviewCandidateCoverage(noReturned),noReturned);
+});

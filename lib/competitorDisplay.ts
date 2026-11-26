@@ -1,15 +1,16 @@
 import {refineStoredCompetitionScope,competitionMismatch} from './competitionScope';
 import type {MarketingReport} from './reportSchema';
+import {reviewCandidateCoverage} from './competitorSchema';
 import {unrelatedPageReason} from './competitorRoles';
 type Analysis=NonNullable<MarketingReport['competitorAnalysis']>;
 type Exclusion=NonNullable<Analysis['filtering']>['excluded'][number];
 
 export function applyCompetitorExclusions(analysis:Analysis,competitors:Analysis['competitors'],removed:Exclusion[]):Analysis {
-  if(!removed.length)return analysis;
+  if(!removed.length)return reviewCandidateCoverage(analysis);
   const recorded=analysis.filtering?.excluded||[];
   const research=analysis.research;
   const incomplete=research?.selectionStatus==='lookup_unavailable'||research?.selectionStatus==='insufficient_source';
-  return {
+  return reviewCandidateCoverage<Analysis>({
     ...analysis,overallComparison:undefined,ourPositioning:undefined,
     competitors:competitors.map((candidate,index)=>({...candidate,rank:index+1})),
     filtering:{
@@ -22,7 +23,7 @@ export function applyCompetitorExclusions(analysis:Analysis,competitors:Analysis
       selectionStatus:competitors.length?'matched':'no_relevant_candidates',
       selectionMessage:competitors.length?'저장 자료에서 비교 기준에 맞는 후보만 표시합니다.':'저장된 후보 중 현재 비교 기준에 맞는 URL이 없습니다.',
     })}:undefined,
-  };
+  });
 }
 
 export function competitorCollectionState(report:MarketingReport){
