@@ -7,7 +7,7 @@ import {nonCommerceEditorialSections,buildStrategyFindings} from './nonCommerceS
 import type {MarketingReport} from './reportSchema';
 import {excludedPlatformReason} from './competitorSelection';
 import {ownHost,safeHttpUrl} from './citationMeasurement';
-import {competitorDisplay} from './competitorDisplay';
+import {competitorDisplay,applyCompetitorExclusions} from './competitorDisplay';
 import {reconcileKeywordMetadata} from './analyzeKeywordFreq';
 import {canonicalPage} from './geoComparison';
 import {currentPlacePolicy,buildHospitalPlaceReview} from './hospitalPlace';
@@ -49,16 +49,21 @@ export function reportForPresentation(report:MarketingReport):MarketingReport {
   const storedAnalysis=report.competitorAnalysis;if(!storedAnalysis)return report;const analysis=competitorDisplay(storedAnalysis);
   const excluded:NonNullable<typeof analysis.filtering>['excluded']=[];
   const competitors=analysis.competitors.filter(c=>{
-    const url=safeHttpUrl(c.link);
-    const reason=!url?'유효한 웹페이지 주소 미확인':ownHost(url,report.url)?'자사 도메인':excludedPlatformReason(new URL(url).hostname);
-    if(!reason)return true;
-    excluded.push({domain:c.domain,link:c.link,title:c.title,reason});return false;
+    const addresses=new Set([c.link,c.finalUrl??c.link]);
+    for(const address of addresses){
+      const url=safeHttpUrl(address);
+      const reason=!url?'유효한 웹페이지 주소 미확인':ownHost(url,report.url)?'자사 도메인':excludedPlatformReason(new URL(url).hostname);
+      if(reason){excluded.push({domain:c.domain,link:c.link,title:c.title,reason});return false;}
+    }
+    return true;
   });
-  if(!excluded.length)return analysis===storedAnalysis?report:{...report,competitorAnalysis:analysis};
-  const recorded=analysis.filtering?.excluded||[];
-  return {...report,competitorAnalysis:{...analysis,competitors:competitors.map((c,i)=>({...c,rank:i+1})),filtering:{
-    policyVersion:analysis.filtering?.policyVersion||1,reviewedCount:analysis.filtering?.reviewedCount??analysis.competitors.length,
-    metadataCheckedCount:analysis.filtering?.metadataCheckedCount??analysis.competitors.filter(c=>!!(c.metaTitle||c.metaDescription||c.h1||c.fetchError)).length,
-    excluded:[...recorded,...excluded.filter(c=>!recorded.some(e=>e.link===c.link))],
-  }}};
+  const visible=applyCompetitorExclusions(analysis,competitors,excluded);
+  if(visible===storedAnalysis)return report;
+  const previous=report.competitorStatus;
+  const status=visible.research?.selectionStatus==='lookup_unavailable'?'error':visible.competitors.length?'complete':'empty';
+  return {...report,competitorAnalysis:visible,
+    ...((previous?.status==='complete'||previous?.status==='empty')&&{competitorStatus:{
+      status,message:visible.research?.selectionMessage||(status==='error'?'공식 URL 조회를 완료하지 못했습니다.':status==='complete'?'비교 기준에 맞는 후보를 표시합니다.':'저장된 후보 중 현재 비교 기준에 맞는 URL이 없습니다.'),
+    }}),
+  };
 }

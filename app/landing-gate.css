@@ -45,7 +45,8 @@
 .scanner-scan-feedback p + p { margin-top:3px; }
 .scanner-scan-spinner { flex:none; width:22px; height:22px; border:2px solid #dbe7fa; border-top-color:#1745d1; border-radius:50%; }
 .scanner-scan-actions { display:flex; flex-wrap:wrap; gap:0 18px; margin-top:3px; }
-.scanner-scan-actions a { display:inline-flex; align-items:center; min-height:44px; color:#244778; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
+.scanner-feedback-url b, .scanner-scan-actions a span { overflow-wrap:anywhere; word-break:break-word; }
+.scanner-scan-actions a { display:inline-flex; flex-wrap:wrap; column-gap:.3em; max-width:100%; align-items:center; min-height:44px; color:#244778; font-weight:700; text-decoration:underline; text-underline-offset:3px; }
 .scanner-gate-entry .scanner-access-steps { justify-content:center; margin:15px 0 0; color:#616a78; font-size:12px; line-height:1.7; }
 .scanner-gate-entry .scanner-advanced { margin-top:10px; border:0; background:#fff; border-radius:10px; }
 .scanner-gate-entry .scanner-advanced>summary { display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;padding:10px 12px;color:#586274;font-size:13px;list-style:none;cursor:pointer; }

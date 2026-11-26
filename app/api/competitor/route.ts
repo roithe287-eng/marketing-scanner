@@ -1,10 +1,8 @@
 import {publicCompetitorSearchAvailable} from '@/lib/publicCompetitorSearch';
 import {naverReportSearchAllowed} from '@/lib/naverReportPolicy';
 import {sameSite} from '@/lib/siteIdentity';
-import {CompetitionScopeSchema} from '@/lib/competitionScope';
-import {CommunityContextSchema} from '@/lib/communityContext';
+import {COMPETITOR_REQUEST_BYTES,CompetitorRequestSchema} from '@/lib/competitorRequest';
 import {withBudget} from '@/lib/runtime/budget';
-import {z} from 'zod';
 import {requirePrincipal} from '@/lib/saas/auth';
 import {reserve} from '@/lib/saas/store';
 import {readJson,failure} from '@/lib/security/request';
@@ -20,34 +18,12 @@ export async function POST(req: NextRequest) {
   let finish:Awaited<ReturnType<typeof reserve>>|undefined;
   try {
     const principal=await requirePrincipal(req,true);
-    const hint=z.string().max(2000);
-    const body = z.object({url:z.string().min(1).max(2048),hints:z.object({scope:CompetitionScopeSchema.optional(),communityContext:CommunityContextSchema.optional(),title:hint.optional(),ogTitle:hint.optional(),ogDescription:hint.optional(),description:hint.optional(),h1:z.array(hint).max(50).optional(),h2:z.array(hint).max(100).optional(),keywords:hint.optional(),bodyText:z.string().max(8000).optional()})}).parse(await readJson(req,49_152));
-    const { url, hints } = body || {};
-
-    if (!url || typeof url !== "string") {
-      return NextResponse.json(
-        { message: "URL이 필요합니다." },
-        { status: 400 }
-      );
-    }
-
+    const {url,hints}=CompetitorRequestSchema.parse(await readJson(req,COMPETITOR_REQUEST_BYTES));
     const scope=hints.scope;
     const wigStores=scope?.profile==='hairpieces_wigs'&&scope.kind==='commerce'&&sameSite(scope.sourceUrl,url);
     if (!wigStores&&!naverReportSearchAllowed()&&!publicCompetitorSearchAvailable()) {
-      return NextResponse.json(
-        {
-          message: "이 보고서에서는 외부 검색 API를 이용한 자동 경쟁사 조회를 제공하지 않습니다.",
-          competitorAnalysis: null,
-        },
-        { status: 200 }
-      );
-    }
-
-    if (!hints || typeof hints !== "object") {
-      return NextResponse.json(
-        { message: "사이트 정보(hints)가 필요합니다." },
-        { status: 400 }
-      );
+      const message='현재 이 보고서의 외부 경쟁사 검색을 이용할 수 없습니다.';
+      return NextResponse.json({message,competitorAnalysis:null,competitorStatus:{status:'unavailable',message}});
     }
 
     publicUrl(url);

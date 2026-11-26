@@ -7,9 +7,9 @@ import CompetitorDeepDiveModal from '@/components/CompetitorDeepDiveModal';
 import {reportPhraseKey} from '@/lib/conciseReport';
 import {CompactText} from './report/ReportVisualSummary';
 import {competitorDisplay} from '@/lib/competitorDisplay';
-type Props={competitorAnalysis:NonNullable<MarketingReport['competitorAnalysis']>;ourUrl:string;ourTitle?:string};
+type Props={competitorAnalysis:NonNullable<MarketingReport['competitorAnalysis']>;ourUrl:string;ourTitle?:string;canDeepDive?:boolean};
 function getDomainFromUrl(url:string){try{return new URL(url).hostname.replace(/^www\./,'');}catch{return '';}}
-export default function CompetitorComparison({competitorAnalysis:storedAnalysis,ourUrl,ourTitle}:Props){
+export default function CompetitorComparison({competitorAnalysis:storedAnalysis,ourUrl,ourTitle,canDeepDive=false}:Props){
   const competitorAnalysis=competitorDisplay(storedAnalysis);
   const competitors=competitorAnalysis.competitors||[],ourDomain=getDomainFromUrl(ourUrl);
   const [deepDiveTarget,setDeepDiveTarget]=useState<{url:string;domain:string}|null>(null);
@@ -103,7 +103,7 @@ export default function CompetitorComparison({competitorAnalysis:storedAnalysis,
                   )}
                 </ReadingDisclosure> : null}
 
-                <button
+                {canDeepDive && safeHttpUrl(comp.link) && <button
                   type="button"
                   aria-label={`${comp.domain} 페이지 상세 분석`}
                   onClick={() =>
@@ -115,7 +115,7 @@ export default function CompetitorComparison({competitorAnalysis:storedAnalysis,
                   className="mt-4 w-full inline-flex items-center justify-center gap-1.5 bg-jm-black text-white text-xs font-bold py-2.5 rounded-lg hover:bg-jm-red transition-colors"
                 >
                   페이지 상세 분석
-                </button>
+                </button>}
               </div>
             ))}
           </div>

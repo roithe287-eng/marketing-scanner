@@ -1,7 +1,7 @@
 import {publicCompetitorSearchAvailable} from '@/lib/publicCompetitorSearch';
 import {naverReportSearchAllowed} from '@/lib/naverReportPolicy';
 import {buildCompetitionScope} from '@/lib/competitionScope';
-import {providerBody,isSecondarySection} from '@/lib/websiteIdentity';
+import {buildCompetitorHints} from '@/lib/competitorRequest';
 import {parseSmartstoreUrl} from '@/lib/smartstore';
 import {analyzeSmartstore} from '@/lib/analyzeSmartstore';
 import {analyzeOfficialSeo} from '@/lib/analyzeOfficialSeo';
@@ -32,7 +32,6 @@ import {analyzeNaverOptimization} from "@/lib/analyzeNaverOptimization";
 import {capturePageEvidence} from '@/lib/pageEvidence';
 import {analyzeAnswerContent} from '@/lib/analyzeAnswerContent';
 import {buildAnswerContentPlan} from '@/lib/answerContent';
-import {competitorOwnText} from '@/lib/competitorResearch';
 import {collectOwnProductContext} from '@/lib/ownProductSources';
 import {finalizeReportEvidence} from '@/lib/evidenceReview';
 import {MarketingReportSchema} from '@/lib/reportSchema';
@@ -236,25 +235,11 @@ export async function POST(req: NextRequest) {
 
     console.log(`[타이밍] 총 소요: ${Date.now() - t0}ms`);
 
-    return {
-      ...reviewedReport,
-      _hasCompetitor: !!(
-        competitionScope&&(naverReportSearchAllowed()||publicCompetitorSearchAvailable()||competitionScope.profile==='hairpieces_wigs'&&competitionScope.kind==='commerce')
-        && (principal.kind==='internal'||planFeatures(principal.account).competitor)
-      ),
-      _websiteHints: {
-        scope:competitionScope,
-        communityContext: websiteData.communityContext,
-        title: websiteData.title,
-        ogTitle: websiteData.ogTitle,
-        ogDescription: websiteData.ogDescription,
-        description: websiteData.description,
-        h1: websiteData.h1,
-        h2: websiteData.h2.filter(h=>!isSecondarySection(h,'')&&providerBody(websiteData).includes(h)),
-        keywords: websiteData.keywords,
-        bodyText:competitorOwnText(websiteData),
-      },
-    };
+    const canSearch=competitionScope&&(principal.kind==='internal'||planFeatures(principal.account).competitor)
+      &&(naverReportSearchAllowed()||publicCompetitorSearchAvailable()||competitionScope.profile==='hairpieces_wigs'&&competitionScope.kind==='commerce');
+    const hints=canSearch?buildCompetitorHints(reviewedReport.url,websiteData,competitionScope):null;
+    if(canSearch&&!hints)reviewedReport.competitorStatus={status:'unavailable',message:'이 URL의 비교 기준을 전달할 수 없습니다. 같은 업체의 짧은 대표 주소로 경쟁사를 확인해 주세요.'};
+    return {...reviewedReport,_hasCompetitor:!!hints,_websiteHints:hints};
     },req.signal);
     const {_hasCompetitor,_websiteHints,...report}=payload;
     const sharedRetention=await finish(false,false,report);

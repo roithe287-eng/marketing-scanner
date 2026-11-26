@@ -12,11 +12,13 @@ type Props = {
   onSubmit:(url:string, geoQuestions?:string[], baselineId?:string)=>void;
   loading:boolean;
   submittedUrl?:string;
+  singleUse?:boolean;
   feedback?:ReactNode;
 };
-export default function UrlForm({onSubmit,loading,submittedUrl,feedback}:Props) {
+export default function UrlForm({onSubmit,loading,submittedUrl,feedback,singleUse=false}:Props) {
   const [url,setUrl]=useState(submittedUrl ?? '');
   const smartstore=isSmartstoreUrl(url);
+  const unsupportedStore=smartstore && singleUse;
   const [questions,setQuestions]=useState('');
   const [reference,setReference]=useState('');
   const [baseline,setBaseline]=useState<DiagnosisBaseline|null>(null);
@@ -44,6 +46,7 @@ export default function UrlForm({onSubmit,loading,submittedUrl,feedback}:Props) 
   function handleSubmit(e:React.FormEvent) {
     e.preventDefault();if (loading||baselineLoading) return;
     if (!url.trim()) {setMessage('분석할 URL을 입력해 주세요.');return;}
+    if(unsupportedStore)return;
     if(smartstore){try{parseSmartstoreUrl(url);}catch(error){setMessage(error instanceof Error?error.message:'스토어 주소를 확인해 주세요.');return;}setMessage('');onSubmit(url.trim());return;}
     const rows=questions.split('\n').map(s=>s.trim()).filter(Boolean);
     if (rows.length>5||rows.some(s=>s.length<5||s.length>250)) {setMessage('질문은 한 줄에 하나씩 최대 5개, 각 5~250자로 입력해 주세요.');return;}
@@ -52,15 +55,16 @@ export default function UrlForm({onSubmit,loading,submittedUrl,feedback}:Props) 
   return <form onSubmit={handleSubmit} className="scanner-url-form">
     <label htmlFor="scanner-url" className="scanner-url-label">진단할 웹사이트 URL</label>
     <div className="scanner-url-row">
-      <input id="scanner-url" value={url} onChange={e=>setUrl(e.target.value)} placeholder="예: https://example.com" aria-label="분석할 웹사이트 URL" className="scanner-url-input" required disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" enterKeyHint="go" autoComplete="url" autoCapitalize="none" spellCheck={false} aria-describedby={smartstore?'scanner-url-help smartstore-url-notice':'scanner-url-help'}/>
-      <button type="submit" disabled={loading||baselineLoading} className={`jm-button scanner-submit${smartstore?' scanner-submit-store':''}`}>{loading?'분석 중...':smartstore?'스토어 제한 분석 시작':baseline?'같은 URL로 재진단·비교':'진단 시작'}<span aria-hidden="true">→</span></button>
+      <input id="scanner-url" value={url} onChange={e=>{setUrl(e.target.value);setMessage('');}} placeholder="예: https://example.com" aria-label="분석할 웹사이트 URL" className="scanner-url-input" required disabled={loading||baselineLoading} readOnly={!!baseline} inputMode="url" enterKeyHint="go" autoComplete="url" autoCapitalize="none" spellCheck={false} aria-describedby={smartstore?'scanner-url-help smartstore-url-notice':'scanner-url-help'}/>
+      <button type="submit" disabled={loading||baselineLoading||unsupportedStore} className={`jm-button scanner-submit${smartstore?' scanner-submit-store':''}`}>{loading?'분석 중...':unsupportedStore?'일반 웹사이트 URL 필요':smartstore?'스토어 제한 분석 시작':baseline?'같은 URL로 재진단·비교':'진단 시작'}<span aria-hidden="true">→</span></button>
     </div>
     {url.trim() === submittedUrl && feedback}
-    <p id="scanner-url-help" className="scanner-url-help">홈페이지·서비스 소개·광고 랜딩·스마트스토어·브랜드스토어 URL을 입력해 주세요.</p>
-    {smartstore&&<aside id="smartstore-url-notice" className="smartstore-notice" role="status"><strong><span aria-hidden="true">⚠️ </span>{storePlatformLabel(url)} · 콘텐츠 분석 대부분 제한</strong><p>{SMARTSTORE_NOTICE}</p><p>주소 입력 예: {storePlatformLabel(url)==='브랜드스토어'?'brand.naver.com/dongwon':'smartstore.naver.com/wodkq'} · 상품 주소도 분석 범위는 동일하게 제한됩니다.</p></aside>}
+    <p id="scanner-url-help" className="scanner-url-help">{singleUse?'홈페이지·서비스 소개·광고 랜딩 URL을 입력해 주세요.':'홈페이지·서비스 소개·광고 랜딩·스마트스토어·브랜드스토어 URL을 입력해 주세요.'}</p>
+    {unsupportedStore&&<aside id="smartstore-url-notice" className="smartstore-notice" role="status"><strong>1회 진단권은 일반 웹사이트용입니다.</strong><p>업체 홈페이지나 자사몰 주소를 입력해 주세요. 스토어 제한 분석은 월정액에서 이용할 수 있습니다.</p></aside>}
+    {smartstore&&!singleUse&&<aside id="smartstore-url-notice" className="smartstore-notice" role="status"><strong><span aria-hidden="true">⚠️ </span>{storePlatformLabel(url)} · 콘텐츠 분석 대부분 제한</strong><p>{SMARTSTORE_NOTICE}</p><p>주소 입력 예: {storePlatformLabel(url)==='브랜드스토어'?'brand.naver.com/dongwon':'smartstore.naver.com/wodkq'} · 상품 주소도 분석 범위는 동일하게 제한됩니다.</p></aside>}
     {!smartstore&&<details className="scanner-advanced">
-      <summary><span>질문 설정·이전 보고서 비교 <small>(선택)</small></span><ReadingToggle/></summary>
-    <details className="px-4 py-3 text-left text-sm">
+      <summary><span>{singleUse?'GEO 고객 질문 설정':'질문 설정·이전 보고서 비교'} <small>(선택)</small></span><ReadingToggle/></summary>
+    {!singleUse&&<details className="px-4 py-3 text-left text-sm">
       <summary className="cursor-pointer font-bold">이전 보고서와 재진단 비교하기</summary>
       <p className="mt-3 text-xs leading-6 text-jm-gray">보관한 보고서의 URL로 다시 진단해 레이더·보완 항목을 비교합니다. 재사용 가능한 GEO 질문이 있으면 동일 질문의 관측도 함께 비교합니다.</p><p className="mt-2 text-xs leading-6 text-jm-gray">공유 보고서는 최대 7일간 보관됩니다. 만료 전에 비교하세요. 비교를 저장해도 기준 보고서의 만료일은 연장되지 않습니다.</p>
       {!baseline ? <div className="mt-3 flex flex-col gap-2 sm:flex-row"><input aria-label="기준 보고서 공유 링크 또는 ID" value={reference} onChange={e=>{active.current?.abort();setBaselineLoading(false);setReference(e.target.value);setMessage('');}} disabled={loading} placeholder="https://www.mktscanner.com/r/..." className="min-w-0 flex-1 rounded-xl border p-3"/>
@@ -68,7 +72,7 @@ export default function UrlForm({onSubmit,loading,submittedUrl,feedback}:Props) 
         <div className="mt-3 rounded-xl border bg-neutral-50 p-4"><p className="font-bold">비교 기준을 불러왔습니다</p><p className="mt-2 break-all text-xs leading-6">{baseline.url}<br/>{baseline.expiresAt?`열람 종료: ${retentionTime(baseline.expiresAt)}`:null}<br/>{comparisonTime(baseline.capturedAt)} · {geoBaseline?`질문 ${baselineQuestions(geoBaseline).length}개 고정`:'페이지 진단 비교'}</p>
           {geoBaseline && !geoBaseline.citation.measurementProtocol && <p className="mt-2 text-xs leading-6 text-amber-800">이전 보고서에는 요청 설정 기록이 없어 변화율을 계산하지 않습니다. 이번 결과부터 다음 비교의 기준으로 사용할 수 있습니다.</p>}
           <button type="button" disabled={loading} onClick={()=>{setBaseline(null);setGeoBaseline(null);setMessage('');}} className="mt-3 text-xs underline">비교 해제 · 질문 직접 편집</button></div>}
-    </details>
+    </details>}
     {baseline && <p role="status" className="px-4 pb-2 text-left text-xs text-jm-gray">기준 보고서 {baseline.reportId}의 URL{geoBaseline?'과 질문':''}을 유지합니다.</p>}
     <details className="px-4 py-2 text-left text-sm">
       <summary className="cursor-pointer text-jm-gray">{geoBaseline?'비교할 고정 질문 보기':'GEO 고객 질문 직접 입력 (선택)'}</summary>

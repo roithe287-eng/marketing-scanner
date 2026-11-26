@@ -2,14 +2,14 @@
 
 import {useEffect, useRef, useState} from 'react';
 import {requestJson} from '@/lib/client/request';
-import {firstLandingCard, landingCards, landingCheckWindow, type LandingActivity, type LandingCard} from '@/lib/landingActivity';
+import {firstLandingCard, landingCards, landingCheckWindow, readLandingSnapshot, type LandingActivity, type LandingCard} from '@/lib/landingActivity';
 
 const ROTATE_MS = 2_000;
 const MANUAL_HOLD_MS = 3_000;
 const COUNT_UP_MS = 850;
 const LAST_CARD = 'scanner:landing:last-card';
 const formatter = new Intl.NumberFormat('ko-KR');
-type LandingData = {activity: LandingActivity | null; reviews: LandingCard[]};
+type LandingData = {activity: LandingActivity | null; reviews: LandingCard[]; totalsCurrent:boolean};
 type ReviewSelection = {id: string; delay: number; turn?: 'forward' | 'backward'};
 const EMPTY_TOTALS: LandingActivity = {requested:0,completed:0};
 
@@ -171,31 +171,34 @@ export default function LandingActivityPanel() {
   useEffect(() => {
     let request: AbortController | undefined;
     let timer: number | undefined;
-    let lastWindow: number | undefined;
+    let nextCheck=0;
+    let failures=0;
 
-    function check() {
+    function schedule(){
       window.clearTimeout(timer);
-      if (document.hidden) return;
-      const now = Date.now();
-      const {start, next} = landingCheckWindow(now);
-      if (lastWindow !== start) {
-        lastWindow = start;
-        request?.abort();
-        const controller = new AbortController();
-        request = controller;
-        void requestJson<LandingData>('/api/landing-activity', {signal:controller.signal,cache:'no-store'}, 8_000)
-          .then(result => {
-            if (controller.signal.aborted) return;
-            setData(previous => ({
-              activity:result.activity ?? previous?.activity ?? null,
-              reviews:previous && JSON.stringify(previous.reviews) === JSON.stringify(result.reviews) ? previous.reviews : result.reviews,
-            }));
-          })
-          .catch(() => {
-            if (!controller.signal.aborted) setData(previous => previous ?? {activity:null,reviews:[]});
-          });
-      }
-      timer = window.setTimeout(check, next - now);
+      if(!document.hidden)timer=window.setTimeout(check,Math.max(0,nextCheck-Date.now()));
+    }
+    async function check(){
+      window.clearTimeout(timer);
+      if(document.hidden||request)return;
+      if(Date.now()<nextCheck){schedule();return;}
+      const controller=new AbortController();
+      request=controller;
+      let result:unknown;
+      try{result=await requestJson('/api/landing-activity',{signal:controller.signal,cache:'no-store'},8000);}
+      catch{ /* Keep the last individual values until the next attempt. */ }
+      if(controller.signal.aborted)return;
+      request=undefined;
+      const {activity,reviews,complete}=readLandingSnapshot(result);
+      setData(previous=>({
+        activity:activity??previous?.activity??null,
+        totalsCurrent:activity!==null,
+        reviews:reviews===null||JSON.stringify(previous?.reviews)===JSON.stringify(reviews)?previous?.reviews??[]:reviews,
+      }));
+      const now=Date.now(),{next}=landingCheckWindow(now);
+      failures=complete?0:failures+1;
+      nextCheck=failures?Math.min(next,now+[60000,300000,900000][Math.min(failures-1,2)]):next;
+      schedule();
     }
 
     check();
@@ -211,7 +214,7 @@ export default function LandingActivityPanel() {
     <section className="scanner-live-card scanner-live-ledger" aria-labelledby="scanner-live-title" aria-busy={!data}>
       <h2 id="scanner-live-title">누적 진단 현황</h2>
       <LandingTotals activity={data?.activity ?? null} reducedMotion={reducedMotion}/>
-      {data && !data.activity && <p className="scanner-live-empty" role="status">누적 집계를 확인하지 못했습니다.</p>}
+      {data && !data.totalsCurrent && <p className="scanner-live-empty" role="status">{data.activity?'직전에 확인한 누적 집계입니다.':'누적 집계를 확인하지 못했습니다.'}</p>}
     </section>
     {data
       ? <LandingCarousel reviews={data.reviews} reducedMotion={reducedMotion}/>

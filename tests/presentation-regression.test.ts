@@ -91,7 +91,7 @@ test('long explanations and procedures remain complete in responsive parallel ca
 
 test('competitor cards expose complete saved descriptions, headings and every CTA',()=>{
   const competitor={rank:1,title:'제목',link:'https://example.org',domain:'example.org',description:'검색 설명',metaTitle:long+'제목 끝',metaDescription:long+'설명 끝',h1:long+'H1 끝',ctaTexts:Array.from({length:15},(_,i)=>`저장된 CTA ${i+1}`),keyMessage:long+'메시지 끝',differentiation:long+'차이 끝'};
-  const $=load(renderToStaticMarkup(React.createElement(CompetitorComparison,{ourUrl:fixture.url,competitorAnalysis:{searchKeyword:'검증',competitors:[competitor]}})));
+  const $=load(renderToStaticMarkup(React.createElement(CompetitorComparison,{ourUrl:fixture.url,canDeepDive:true,competitorAnalysis:{searchKeyword:'검증',competitors:[competitor]}})));
   const card=$('.competitor-card'),detail=card.find('.report-supporting-detail');
   assert.equal(card.children('h4').text(),competitor.metaTitle);
   assert.equal(detail.attr('open'),undefined);

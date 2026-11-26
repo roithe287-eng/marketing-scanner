@@ -6,7 +6,7 @@ import {canReadClinicWebsite} from '@/lib/clinicPlaceInsights';
 import SharedReportView from '@/components/SharedReportView';
 import {headers} from 'next/headers';
 import {captureActivity,targetHost} from '@/lib/saas/activity';
-import {canShareReports} from '@/lib/saas/types';
+import {canShareReports,planFeatures} from '@/lib/saas/types';
 export const dynamic='force-dynamic';
 export const metadata:Metadata={title:'보관된 진단 결과 | 마케팅스캐너',description:'보관 기간은 최대 7일입니다.',robots:{index:false,follow:false}};
 export default async function SharedReportPage({params}:{params:Promise<{id:string}>}){
@@ -20,5 +20,5 @@ export default async function SharedReportPage({params}:{params:Promise<{id:stri
   const h=await headers();
   if(principal?.kind==='account'&&!h.get('next-router-prefetch')&&!/prefetch/i.test(h.get('purpose')||h.get('sec-purpose')||''))
     await captureActivity(principal.account.id,'report_view',h,{reportId:id,target:targetHost(report.url)});
-  return <SharedReportView key={id} report={report} shareId={id} canSave={canSave} privateReport={!publicReport} clinicWebAllowed={canReadClinicWebsite(principal)}/>;
+  return <SharedReportView key={id} report={report} shareId={id} canSave={canSave} canDeepDive={principal?.kind==='internal'||!!principal&&planFeatures(principal.account).deepdive} privateReport={!publicReport} clinicWebAllowed={canReadClinicWebsite(principal)}/>;
 }
