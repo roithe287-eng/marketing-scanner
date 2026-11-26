@@ -115,7 +115,7 @@ test('collector respects robots and redirect boundaries, limits HTML samples and
   assert.ok(audit.attempts.some(a=>a.status==='blocked'));
   assert.equal(audit.llms.status,'missing');assert.equal(audit.sitemap.status,'observed');
   assert.ok(SiteDiagnosticsSchema.safeParse(audit).success);
-  const report=MarketingReportSchema.parse({...fixture,siteDiagnostics:audit});
+  const report=MarketingReportSchema.parse({...fixture,url:audit.targetUrl,siteDiagnostics:audit});
   assert.deepEqual(MarketingReportSchema.parse(JSON.parse(JSON.stringify(report))).siteDiagnostics,audit);
   assert.ok(buildSourceLibrary(report).links.some(l=>l.url===url+'service'));
   assert.match(JSON.stringify(buildReportDocument(report)),/OAI-SearchBot/);

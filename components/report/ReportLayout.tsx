@@ -110,7 +110,7 @@ export default function ReportLayout({report:storedReport,actions,canDeepDive=fa
     <ReportNavigation chapters={chapters}/><ReportReadingKey/>
     <Chapter id="overview" number="01" title="홈페이지에서 무엇부터 확인할까요?" note="고객이 홈페이지에서 읽을 수 있는 내용을 살펴보세요. 답이 부족한 질문과 먼저 확인할 작업도 정리했습니다.">
       <ReportSections chapter="overview" diagrams={diagrams} briefs={briefs} items={[
-        {id:'overview-main',label:'홈페이지 내용',defaultOpen:!!wigPurpose,embedded:!!wigPurpose,children:<>{wigPurpose&&<WigPurchaseJourney purpose={wigPurpose}/>}<SiteContentOverview report={report}/></>},
+        {id:'overview-main',label:'홈페이지 내용',defaultOpen:!!wigPurpose,embedded:!!wigPurpose,children:<>{wigPurpose&&<WigPurchaseJourney purpose={wigPurpose}/>}<SiteContentOverview report={report} sources={sources}/></>},
         ...(report.serviceStrategy?[{id:'overview-services',label:report.serviceStrategy.industry==='noncommerce'?'고객의 선택 기준':'서비스·고객별 전략',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="segments" purpose={report.sitePurpose}/>}]:[]),
         {id:'overview-questions',label:placeReview||localPlaceReview?'플레이스·고객 질문':'고객 질문·답변',children:<>{localPlaceReview&&<LocalPlacePanel key={localPlaceReview.page.url} review={localPlaceReview}/>}<AnswerContentPanel plan={report.answerContentPlan} opportunityFirst placeReview={placeReview} clinicWebAllowed={clinicWebAllowed}/></>},
         {id:'overview-priority',label:'우선 할 일',children:<TodayWork plan={execution}/>},
@@ -135,7 +135,7 @@ export default function ReportLayout({report:storedReport,actions,canDeepDive=fa
       <ReportSections chapter="search" diagrams={diagrams} briefs={briefs} items={[
         {id:'search-platforms',label:'플랫폼별 적용',children:<PlatformApplicationPanel report={report}/>},
         {id:'search-edits',label:'페이지 문구 수정',children:<PageEditPreview key={`edits:${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report}/>},
-        {id:'search-sources',label:'원문·링크',children:<><SiteGuidebookOverview report={report}/>{searchEvidenceAllowed&&<BacklinkEvidencePanel target={searchTarget} brand={report.meta?.siteName||''}/>}</>},
+        {id:'search-sources',label:'원문·링크',children:<><SiteGuidebookOverview report={report} sources={sources}/>{searchEvidenceAllowed&&<BacklinkEvidencePanel target={searchTarget} brand={report.meta?.siteName||''}/>}</>},
         {id:'search-keywords',label:'키워드',children:<><KeywordWorkspace key={`${report.url}:${report.pageEvidence?.capturedAt||'legacy'}`} report={report} data={data}/>{report.keywordRankTracking&&<KeywordRankCard tracking={report.keywordRankTracking}/>}<SearchConsoleEvidencePanel target={searchTarget}/></>},
         ...(report.serviceStrategy?[{id:'search-intents',label:'검색어와 연결할 페이지',children:<ServiceStrategyPanel plan={report.serviceStrategy} view="search" purpose={report.sitePurpose}/>}]:[]),
         {id:'search-naver',label:'네이버 운영 점검',children:<NaverOptimizationPanel optimization={report.naverOptimization} targetUrl={report.url}/>},

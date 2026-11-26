@@ -1,4 +1,4 @@
-import {reconcileStoredIndustry} from './storedIndustry';
+import {reconcileStoredIndustry,retainSourceDocuments} from './storedIndustry';
 import {providerIdentity} from './websiteIdentity';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
 import {applyActionableGuides} from './actionableGuides';
@@ -43,7 +43,7 @@ export function reportForPresentation(report:MarketingReport):MarketingReport {
     const fresh=analyzeWebsitePurpose({url:report.url,finalUrl:page.finalUrl,title:page.title,description:page.description,h1:page.h1,h2:page.h2,bodyText:page.bodyText,siteEditing:page.siteEditing,ctaButtons:page.ctaButtons,businessDocuments:documents,localPlaceEvidence:place});
     if(fresh.kind===report.sitePurpose.kind&&(fresh.sector?.id===report.sitePurpose.sector?.id||!fresh.sector&&((place?.sector==='veterinary'&&report.sitePurpose.sector?.id==='medical')||(!!place?.branch&&['restaurant','cafe'].includes(place.sector)&&report.sitePurpose.sector?.id==='franchise')))){
       const book=nonCommercePlaybook(fresh,providerIdentity(page),place);
-      report={...report,sitePurpose:fresh,serviceStrategy:{...plan,...nonCommerceEditorialSections(fresh,plan.sources,page.finalUrl,(page.h1[0]||page.title||fresh.label).slice(0,70),book),findings:buildStrategyFindings(fresh,plan.sources,page.finalUrl)}};
+      report={...report,pageEvidence:retainSourceDocuments(page,report.sitePurpose),sitePurpose:fresh,serviceStrategy:{...plan,...nonCommerceEditorialSections(fresh,plan.sources,page.finalUrl,(page.h1[0]||page.title||fresh.label).slice(0,70),book),findings:buildStrategyFindings(fresh,plan.sources,page.finalUrl)}};
     }
   }
   const storedAnalysis=report.competitorAnalysis;if(!storedAnalysis)return report;const analysis=competitorDisplay(storedAnalysis);

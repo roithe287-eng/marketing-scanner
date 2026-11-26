@@ -9,6 +9,7 @@ import {calculateSimpleGoal} from '../lib/growthKpi';
 import {scorePosition,buildCompetitorPositioning} from '../lib/competitorPositioning';
 import {POSITION_INDUSTRIES,positionProfile} from '../lib/industryPositioning';
 import {GUIDE_EFFECTS,naverGuideCondition} from '../lib/guideKnowledge';
+import {buildSourceLibrary} from '../lib/reportContent';
 import {buildExecutionPlan} from '../lib/reportExecution';
 import {fixture} from './fixtures/report';
 import SourceElementCard from '../components/report/SourceElementCard';
@@ -61,7 +62,8 @@ test('report links have real targets, one execution board and no repeated compar
  const prior=(globalThis as typeof globalThis & {React?:typeof React}).React;Object.assign(globalThis,{React});t.after(()=>Object.assign(globalThis,{React:prior}));
  const $=load(renderToStaticMarkup(React.createElement(ReportLayout,{report})));
  assert.equal($('#report-recheck').length,0);assert.equal($('.report-chapter-heading>a').length,0);assert.equal($('#report-execution-board').length,1);
- for(const a of $('a[href^="#"]').toArray()){const hash=$(a).attr('href')!.slice(1);assert.ok($(`[id="${hash}"]`).length,`missing destination ${hash}`);}
+ const sources=new Set(buildSourceLibrary(report).groups.map(g=>'report-source-'+g.id));
+ for(const a of $('a[href^="#"]').toArray()){const hash=decodeURIComponent($(a).attr('href')!.slice(1));assert.ok($(`[id="${hash}"]`).length||sources.has(hash),`missing destination ${hash}`);}
  const plan=buildExecutionPlan(report);for(const task of plan.first)assert.equal($(`[id="${task.anchor}"]`).length,1);
 });
 

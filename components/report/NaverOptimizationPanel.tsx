@@ -1,7 +1,7 @@
 "use client";
 import ReadingDisclosure from '../ReadingDisclosure';
 import ReportItemPanels from './ReportItemPanels';
-import {revealReportTarget} from './ReportJumpLink';
+import {revealReportTarget,useReportLocator} from './ReportJumpLink';
 import {RoleBox,RoleLabel} from './ReportRole';
 import EvidenceFlow from './EvidenceFlow';
 import PagePatternGuide from './PagePatternGuide';
@@ -24,6 +24,12 @@ export default function NaverOptimizationPanel({optimization,targetUrl}:{optimiz
   const counts=naverCounts(report.checks);const guide=report.mode==='guide';
   const rows=report.checks.filter(c=>c.category===category&&(filter==='all'||c.status===filter));
   const priorities=report.checks.filter(c=>c.status==='action').sort((a,b)=>Number(b.priority==='high')-Number(a.priority==='high')).slice(0,3);
+  useReportLocator('naver-optimization',id=>{
+    const check=report.checks.find(c=>`report-naver-check-${c.id}`===id);
+    if(!check)return false;
+    setCategory(check.category);setFilter('all');setSelectedId(check.id);
+    return true;
+  });
   function openPriority(check:NaverCheck) {
     setCategory(check.category);
     setFilter('action');
@@ -36,7 +42,7 @@ export default function NaverOptimizationPanel({optimization,targetUrl}:{optimiz
   }
   return <section className="report-card naver-workbench" id="naver-optimization" aria-labelledby="naver-optimization-title">
     <div className="report-card-heading naver-heading"><div><p className="report-eyebrow">NAVER · OPTIMIZATION WORKBENCH</p><h3 id="naver-optimization-title">네이버에서 확인할 설정과 운영 작업</h3><p className="report-note">네이버 검색 수집이나 광고·상품 연동에 관한 점검입니다. 항목을 열면 직접 확인할 메뉴와 완료 기준을 볼 수 있습니다.</p></div><span className="naver-reviewed">공식 문서 확인<br/><strong>{report.rulesReviewedAt}</strong></span></div>
-    {guide?<div className="naver-legacy"><strong>이전 보고서 · 새 기준으로 재진단해 주세요</strong><p>구버전의 네이버 준비도·기술 점수와 자동 생성 과제는 표시하지 않습니다. 아래는 검증한 기준의 안내이며, 이 URL의 현재 진단 결과가 아닙니다.</p></div>:<><div className="naver-counts">{(Object.keys(NAVER_STATUS) as (keyof typeof NAVER_STATUS)[]).map(status=><div key={status} data-state={status}><span>{NAVER_STATUS[status]}</span><strong>{counts[status]}<small>개</small></strong></div>)}</div><div className="naver-status-bar" aria-hidden="true">{(Object.keys(counts) as (keyof typeof counts)[]).map(status=><span key={status} data-state={status} style={{flex:counts[status]}}/>)}</div></>}
+    {guide?<div className="naver-legacy"><strong>이 URL의 네이버 관측 기록이 없습니다</strong><p>구버전의 네이버 준비도·기술 점수와 자동 생성 과제는 표시하지 않습니다. 아래는 검증한 기준의 안내이며, 이 URL의 현재 진단 결과가 아닙니다.</p></div>:<><div className="naver-counts">{(Object.keys(NAVER_STATUS) as (keyof typeof NAVER_STATUS)[]).map(status=><div key={status} data-state={status}><span>{NAVER_STATUS[status]}</span><strong>{counts[status]}<small>개</small></strong></div>)}</div><div className="naver-status-bar" aria-hidden="true">{(Object.keys(counts) as (keyof typeof counts)[]).map(status=><span key={status} data-state={status} style={{flex:counts[status]}}/>)}</div></>}
     <p className="report-note naver-scope">{NAVER_SCOPE}{report.observedAt&&<> 관측: <time dateTime={report.observedAt}>{new Date(report.observedAt).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})} KST</time></>}</p>
     {!guide&&priorities.length>0&&<div className="naver-priorities"><span>먼저 열어볼 보완 항목</span>{priorities.map((check,i)=><button key={check.id} type="button" aria-label={`${check.title} 점검 열기`} onClick={()=>openPriority(check)}><b>{String(i+1).padStart(2,'0')}</b><span>{check.title}<small>{NAVER_CATEGORIES[check.category]}</small></span><span aria-hidden="true">↗</span></button>)}</div>}
     <div className="naver-categories" role="group" aria-label="최적화 분야 선택">{(Object.keys(NAVER_CATEGORIES) as (keyof typeof NAVER_CATEGORIES)[]).map(key=><button key={key} type="button" data-category={key} aria-pressed={category===key} onClick={()=>{setCategory(key);setFilter('all');setSelectedId('');}}><CategoryIcon kind={key}/><span className="naver-category-label">{NAVER_CATEGORIES[key]}</span><strong>{categoryNotes[key][0]}</strong><small>{categoryNotes[key][1]}</small></button>)}</div>

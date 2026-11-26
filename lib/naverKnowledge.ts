@@ -3,6 +3,11 @@ export const NAVER_REVIEWED_AT='2026-10-03';
 export const NAVER_CATEGORIES={search:'SEO·서치어드바이저',ads:'ADVoost 검색·AI 광고',shopping:'ADVoost 쇼핑',developers:'디벨로퍼스·API'} as const;
 export const NAVER_STATUS={observed:'확인됨',action:'보완 필요',manual:'직접 확인',not_applicable:'해당 없음'} as const;
 export const NAVER_OWNERS={content:'콘텐츠 담당',developer:'개발 담당',marketer:'마케팅 담당'} as const;
+/** Account settings and the HTML of the advertising landing page have different editing routes. */
+export function naverWorkScope(check:NaverCheck):'page'|'account' {
+  if(check.category==='developers'||check.category==='shopping'||check.id==='ads-conversion')return 'account';
+  return check.owner==='marketer'&&check.id!=='search-sourceinfo'?'account':'page';
+}
 export const NAVER_SCOPE='입력 URL의 정적 HTML·응답 헤더·robots.txt를 관측합니다. 계정 설정, 실제 색인·노출, 전환 수신은 별도로 확인해야 합니다. 확인됨은 해당 근거의 관측을 뜻하며 네이버 인증·성과 점수가 아닙니다.';
 const source=(id:string,title:string,url:string,updatedAt?:string):NaverSource=>({id,title,url,reviewedAt:NAVER_REVIEWED_AT,...updatedAt?{updatedAt}:{}});
 export const NAVER_SOURCES:NaverSource[]=[

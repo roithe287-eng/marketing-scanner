@@ -39,4 +39,4 @@ function GuidebookContent(props:GuidebookProps){
   </div>
  </div>;
 }
-export function SiteGuidebookOverview({report}:{report:MarketingReport}){return <ReportSourceLibrary report={report}/>;}
+export function SiteGuidebookOverview({report,sources}:{report:MarketingReport;sources?:import('@/lib/reportContent').SourceLibrary}){return <ReportSourceLibrary report={report} sources={sources}/>;}

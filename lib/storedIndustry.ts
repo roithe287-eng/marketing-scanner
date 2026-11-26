@@ -4,15 +4,21 @@ import {apparelTerms,customApparelIdentity} from './customApparel';
 import {placeSector,PLACE_DETECTION_ORDER} from './localPlaceCatalog';
 import {buildStrategyFindings,nonCommerceEditorialSections} from './nonCommerceStrategy';
 import {nonCommercePlaybook} from './nonCommercePlaybook';
-import type {MarketingReport} from './reportSchema';
+import type {MarketingReport,PageEvidence} from './reportSchema';
 import type {DiagnosticPage} from './siteDiagnosticsSchema';
-import {canonicalPage} from './geoComparison';
+import {canonicalPage,matchesReportPage} from './geoComparison';
 import {analyzeWebsitePurpose,isNonCommerce} from './websitePurpose';
 import {providerIdentity,isSecondarySection,ownBusinessRole,classificationText,providerBody} from './websiteIdentity';
 import {keywordList,withoutThirdPartyRoles} from './industryLanguage';
 import {placeFromDescription} from './placeIndustry';
 import {sameSite} from './siteIdentity';
 import {firstPartyFortuneTools,hasFortuneOverview} from './fortuneService';
+
+/** Observations survive a changed industry label in live, saved and exported views. */
+export function retainSourceDocuments(page:PageEvidence,purpose:MarketingReport['sitePurpose']):PageEvidence {
+  const documents=purpose?.business?.documents;
+  return page.supplementalDocuments?.length||!documents?.length?page:{...page,supplementalDocuments:documents};
+}
 
 function correctedSector(page:DiagnosticPage,capturedBody:readonly string[]=[]){
   const old=page.localPlaceEvidence;
@@ -39,6 +45,11 @@ function correctedSector(page:DiagnosticPage,capturedBody:readonly string[]=[]){
 
 /** Repair editorial outputs from the original capture, without network calls or new measurements. */
 export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
+  // Older snapshots may include observations from a different scan.
+  const {naverOptimization,officialSeoAudit,siteDiagnostics}=report;
+  if(naverOptimization&&!matchesReportPage(report,naverOptimization.targetUrl))report={...report,naverOptimization:undefined};
+  if(officialSeoAudit&&!matchesReportPage(report,officialSeoAudit.targetUrl))report={...report,officialSeoAudit:undefined};
+  if(siteDiagnostics&&!matchesReportPage(report,siteDiagnostics.targetUrl))report={...report,siteDiagnostics:undefined};
   if(report.industryDecision)return report;
   const page=report.pageEvidence, diagnostics=report.siteDiagnostics;
   if(!page||canonicalPage(page.requestedUrl)!==canonicalPage(report.url)||!sameSite(page.finalUrl,report.url))return report;
@@ -85,7 +96,7 @@ export function reconcileStoredIndustry(report:MarketingReport):MarketingReport{
   const rebuilt=buildAnswerContentPlan(data);
   const staleBenchmark=!!report.industryBenchmark&&(changedPlace||changedPurpose||reviewClaim&&!!purpose.declaredIndustry&&purpose.declaredIndustry.category!==report.industryBenchmark.category)||report.industryBenchmark?.category==='medical'&&book.id!=='medical'&&current?.localPlaceEvidence?.sector!=='medical';
   const comparison=report.competitorAnalysis;
-  return {...report,sitePurpose:purpose,
+  return {...report,pageEvidence:retainSourceDocuments(page,report.sitePurpose),sitePurpose:purpose,
     ...((changedPlace||changedPurpose)&&comparison?.ourSite?.scope&&[old?.sector,previous?.business?.id,previous?.sector?.id,previous?.kind==='unknown'?'unknown':undefined].includes(comparison.ourSite.scope.profile)?
       {competitorAnalysis:null,competitorStatus:{status:'unavailable' as const,message:'업종을 바로잡아 이전 업종으로 수집한 경쟁사 비교를 제외했습니다.'}}:{}),
     ...(report.evidenceReview&&report.oneLineSummary.startsWith('HTML 기본 항목 ')?{oneLineSummary:`HTML 기본 항목 ${report.evidenceReview.assessed}개 중 ${report.evidenceReview.passed}개 충족 · ${purpose.label} · ${purpose.goal.label} 동선과 실제 화면은 별도 확인이 필요합니다.`}:{}),

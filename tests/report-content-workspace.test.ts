@@ -84,6 +84,11 @@ test('all report categories read continuously and their menus link to individual
   assert.equal($(`[data-report-item-group="${group}"]:not([hidden])`).length,1,`${group} bounds visible detail while retaining every item`);
  }
  const ids=$('[id]').toArray().map(e=>$(e).attr('id'));assert.equal(ids.length,new Set(ids).size);
- for(const link of $('a[href^="#"]').toArray())assert.ok(ids.includes($(link).attr('href')!.slice(1)),$(link).attr('href'));
+ // Filtered and paginated detail destinations are materialized from these stored rows on demand.
+ const destinations=new Set([...ids,...buildSourceLibrary(report).groups.map(g=>'report-source-'+g.id),
+  ...(report.naverOptimization?.checks||[]).map(c=>'report-naver-check-'+c.id),
+  ...(report.officialSeoAudit?.checks||[]).map(c=>'report-official-check-'+c.id),
+  ...(report.siteDiagnostics?.findings||[]).map(f=>'report-finding-'+f.id)]);
+ for(const link of $('a[href^="#"]').toArray())assert.ok(destinations.has(decodeURIComponent($(link).attr('href')!.slice(1))),$(link).attr('href'));
  assert.equal(JSON.stringify(report),before);
 });

@@ -151,9 +151,10 @@ test('legacy grades and misleading API conclusions are suppressed in UI, tasks a
 test('new report PDF contains URL-specific steps, completion and clickable official sources',async(t)=>{
   const d=await extract(t,'<meta name="robots" content="noindex">');
   const naverOptimization=analyzeNaverOptimization(d);
-  const blocks=buildReportDocument({...fixture,naverOptimization});
+  const report={...fixture,url:naverOptimization.targetUrl,naverOptimization};
+  const blocks=buildReportDocument(report);
   assert.ok(blocks.some(b=>b.text.includes('완료 확인: 공개 의도')));
   assert.ok(blocks.some(b=>b.href==='https://searchadvisor.naver.com/guide/markup-structure'));
-  assert.ok(buildReportInsights({...fixture,naverOptimization}).tasks.some(t=>t.id==='naver-search-index'&&t.status==='fail'));
+  assert.ok(buildReportInsights(report).tasks.some(t=>t.id==='naver-search-index'&&t.status==='fail'));
   const guide=analyzeNaverOptimization(null,'https://example.com');assert.ok(guide.checks.every(c=>c.status==='manual'));assert.equal(guide.observedAt,undefined);
 });

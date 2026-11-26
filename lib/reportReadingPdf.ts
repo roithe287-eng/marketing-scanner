@@ -1,3 +1,4 @@
+import {reportForPresentation} from './reportPresentation';
 import { buildReportDocument, type ReportBlock } from './reportDocument';
 import type { MarketingReport } from './reportSchema';
 import { PDF_PAGE, wrapPdfText, type PdfTextStyle, type TextMeasurer } from './pdfLayout';
@@ -84,7 +85,7 @@ export function buildReadingSections(report:MarketingReport):ReadingSection[] {
       else {const id='detail-source-'+b.sourceId;b.anchor=id;repeated.set(value,{id,label:item+(f?' · '+f.label.replace(/[:：]$/,''):'')});}
     }
   }
-  const handoffs=buildDeveloperHandoffs(report);
+  const handoffs=buildDeveloperHandoffs(reportForPresentation(report));
   return sections.flatMap((section,index)=>{
     if(sections[index+1]?.group===section.group)return [section];
     const handoff=handoffs.find(item=>item.group===section.group);

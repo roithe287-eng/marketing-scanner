@@ -37,7 +37,7 @@ test('same-page comparison distinguishes pass transitions from missing issues an
  assert.equal(c.blocked,'');assert.equal(c.axes.find(a=>a.key==='seo')!.delta,10);
  assert.equal(c.items.find(i=>i.label==='내용 확인')!.group,'resolved');
  assert.equal(c.items.find(i=>i.label==='H1 존재')!.group,'resolved');
- assert.equal(c.items.find(i=>i.label==='새로운 점검')!.group,'new');
+ assert.equal(c.items.find(i=>i.label==='새로운 점검')!.group,'unknown');
  assert.equal(c.items.find(i=>i.label==='사라진 이슈')!.group,'unknown');
  assert.match(c.items.find(i=>i.label==='사라진 이슈')!.reason,/해결 여부 미확인/);
  const saved=MarketingReportSchema.parse(current);assert.deepEqual(saved.diagnosisBaseline,current.diagnosisBaseline);

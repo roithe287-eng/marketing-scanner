@@ -1,3 +1,4 @@
+import {NAVER_OWNERS} from './naverKnowledge';
 import {buildSiteGuide,guideInstruction,guideTopic} from './siteGuidebook';
 import type {MarketingReport} from './reportSchema';
 import {buildReportInsights, type ReportInsights} from './reportInsights';
@@ -11,26 +12,29 @@ export const workZones=[
  {id:'body',label:'서비스 소개',hint:'제공 범위 · 진행 방식 · FAQ',metric:'해당 콘텐츠 유입 · 다음 행동 클릭 · 유효한 AI 출처 관측',check:'고객 질문에 답하고 조건·범위가 원문과 일치하는지 확인'},
  {id:'proof',label:'후기·근거',hint:'사례 · 담당자 · 확인 가능한 출처',metric:'근거 링크 클릭 · 상담에서 반복되는 확인 질문',check:'성과·후기·자격의 사실과 공개 사용 가능 여부를 담당자가 확인'},
  {id:'action',label:'문의·다음 행동',hint:'CTA 버튼 · 문의 폼 · 완료 화면',metric:'CTA 클릭 세션 비율 → 문의 완료 세션 비율',check:'모바일·PC에서 클릭부터 제출 완료 및 이벤트 수신까지 테스트'},
+ {id:'account',label:'운영 계정',hint:'해당 매체의 관리자 화면 · 계정 설정',metric:'관리 화면의 설정 상태와 해당 매체의 진단 결과',check:'담당 계정에서 적용 범위와 저장된 설정을 다시 확인'},
 ] as const;
 export type WorkZone=typeof workZones[number]['id'];
 export type WorkOwner=typeof workOwners[number]['id'];
 function zoneFor(title:string):WorkZone {
  if(/\bH1\b|첫 화면|첫인상|헤드라인|대표 제목/i.test(title))return 'hero';
- if(/robots|색인|수집|canonical|구조화|schema|메타|검색 제목|검색 설명|SEO|title|description|사이트맵|성능|모바일|속도|이미지|alt|스크립트/i.test(title))return 'settings';
+ if(/robots|색인|수집|canonical|구조화|schema|메타|(?:검색|페이지) (?:제목|설명)|대표 URL|이동 경로|HTML 크기|SEO|title|description|사이트맵|성능|모바일|속도|이미지|alt|스크립트|내부 링크가 없는 페이지/i.test(title))return 'settings';
  if(/CTA|버튼|전환|문의|폼|구매|신청/i.test(title))return 'action';
  if(/신뢰|후기|사례|근거|출처|자격|인증/i.test(title))return 'proof';
  return 'body';
 }
 export function buildExecutionPlan(report:MarketingReport,data:ReportInsights=buildReportInsights(report)) {
  const tasks=data.tasks.map((task,index)=>{
-   const zone=workZones.find(z=>z.id===zoneFor(task.title))!;
+   const zoneId=task.guideScope==='account'?'account':task.group==='페이지·기술'?'settings':zoneFor(task.title);
+   const zone=workZones.find(z=>z.id===zoneId)!;
    const h1=/\bH1\b/i.test(task.title);
-   const owner:WorkOwner=task.status==='review'||task.group==='AI 답변'?'verify':zone.id==='settings'||h1?'developer':'direct';
-   const location=task.location||(h1?'첫 화면 대표 제목 · 해당 제목의 H1 태그':/모바일|성능|속도/.test(task.title)?'모바일 레이아웃 · 리소스 · 클릭·입력 동작':/이미지|\balt\b/i.test(task.title)?'해당 이미지의 대체 텍스트·파일·로딩 설정':zone.hint);
+   const owner:WorkOwner=task.status==='review'||task.group==='AI 답변'?'verify':task.ownerHint?task.ownerHint==='developer'?'developer':'direct':zone.id==='settings'||h1?'developer':'direct';
+   const ownerLabel=workOwners.find(o=>o.id===owner)!.label+(task.ownerHint?' · '+NAVER_OWNERS[task.ownerHint]:'');
+   const location=task.location||(zone.id==='account'?`${task.source} 관리 화면`:h1?'첫 화면 대표 제목 · 해당 제목의 H1 태그':/모바일|성능|속도/.test(task.title)?'모바일 레이아웃 · 리소스 · 클릭·입력 동작':/이미지|\balt\b/i.test(task.title)?'해당 이미지의 대체 텍스트·파일·로딩 설정':zone.hint);
    const completion=task.completion||(h1?'수집 HTML과 렌더링 결과에서 의도한 대표 제목·H1 반영을 확인':zone.check);
    const goal=report.sitePurpose?.goal;
    const kpi=goal&&(zone.id==='hero'||zone.id==='action')?(goal.key==='read'?'본문 참여·원출처·관련 자료 이동을 별도로 측정':`${goal.label} 경로의 클릭·완료 이벤트를 구분해 실제 계정에서 확인`):zone.metric;
-   return {...task,anchor:`execution-task-${index+1}`,zone:zone.id,location,kpi,completion,owner};
+   return {...task,anchor:`execution-task-${index+1}`,zone:zone.id,location,kpi,completion,owner,ownerLabel};
  });
  // Only the starting list is deduplicated. Every original evidence row remains in the board and backlog.
  const seen=new Set<string>();
@@ -38,6 +42,9 @@ export function buildExecutionPlan(report:MarketingReport,data:ReportInsights=bu
  return {tasks,first};
 }
 export type ExecutionPlan=ReturnType<typeof buildExecutionPlan>;
+export function visibleWorkZones(plan:ExecutionPlan){
+ return workZones.filter(zone=>zone.id!=='account'||plan.tasks.some(task=>task.zone==='account'));
+}
 export function groupExecutionTasks(tasks:ExecutionPlan['tasks']){
  const groups=new Map<string,ExecutionPlan['tasks']>();
  for(const task of tasks){
@@ -47,7 +54,7 @@ export function groupExecutionTasks(tasks:ExecutionPlan['tasks']){
  return [...groups.values()].map(members=>({primary:members[0],related:members.slice(1),members}));
 }
 export function executionBrief(report:MarketingReport,tasks:ExecutionPlan['tasks'],owner?:string) {
- return [`마케팅스캐너 · ${owner||'전체'} 작업 지시서`,`대상 URL: ${report.url}`,'담당 구분과 수정 위치는 추천입니다. 원문·실제 설정을 확인한 뒤 적용하세요.',...tasks.map((t,i)=>`\n${i+1}. ${t.title}\n담당: ${workOwners.find(o=>o.id===t.owner)!.label}\n진단 출처: ${t.source}\n위치: ${t.location}\n확인 근거: ${t.evidence}\n실행: ${t.action}\n완료 확인: ${t.completion}\n관찰 KPI: ${t.kpi}\n\n${guideInstruction(buildSiteGuide(report,{title:t.title,scope:t.guideScope,instructions:t.instructions,completion:t.completion,current:t.current,evidence:t.evidence,proposal:t.action}))}`),'\n완료 후 같은 URL을 재진단하고, 실제 사업 성과는 같은 기간·채널·기기 조건으로 별도 비교하세요.'].join('\n');
+ return [`마케팅스캐너 · ${owner||'전체'} 작업 지시서`,`대상 URL: ${report.url}`,'담당 구분과 수정 위치는 추천입니다. 원문·실제 설정을 확인한 뒤 적용하세요.',...tasks.map((t,i)=>`\n${i+1}. ${t.title}\n담당: ${t.ownerLabel}\n진단 출처: ${t.source}\n위치: ${t.location}\n확인 근거: ${t.evidence}\n실행: ${t.action}\n완료 확인: ${t.completion}\n관찰 KPI: ${t.kpi}\n\n${guideInstruction(buildSiteGuide(report,{title:t.title,scope:t.guideScope,instructions:t.instructions,completion:t.completion,current:t.current,evidence:t.evidence,proposal:t.action}))}`),'\n완료 후 같은 URL을 재진단하고, 실제 사업 성과는 같은 기간·채널·기기 조건으로 별도 비교하세요.'].join('\n');
 }
 export function buildPageEdits(report:MarketingReport) {
  const p=growthPageEvidence(report),application=buildPlatformApplication(report);

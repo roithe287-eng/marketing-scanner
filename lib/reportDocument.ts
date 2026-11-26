@@ -16,6 +16,7 @@ import {keywordFrequencyScope,keywordDensityNote} from './keywordFrequencyPresen
 import {presentBenchmark} from './benchmarkPresentation';
 import {AD_BUDGET_NOTE} from './adBudgetScenario';
 import {buildNaverReportDocument} from './naverReportDocument';
+import {buildContentFacets,buildSourceLibrary} from './reportContent';
 import {buildExecutionDocument} from './executionDocument';
 import {buildSiteGuidebookDocument} from './siteGuidebookDocument';
 import {buildPlatformApplicationDocument} from './platformApplicationDocument';
@@ -94,6 +95,13 @@ export function buildReportDocument(report:MarketingReport):ReportBlock[] {
   if(report.keywordFrequency)blocks.push({kind:'heading',text:'반복 표현 집계 범위'},{kind:'body',text:keywordFrequencyScope(report.keywordFrequency)},{kind:'body',text:keywordDensityNote(report.keywordFrequency,false)},{kind:'body',text:keywordDensityNote(report.keywordFrequency,true)});
   blocks.push(...buildInsightsDocument(report));
   blocks.push(...buildGrowthDocument(report));
+  const facets=buildContentFacets(buildSourceLibrary(report));
+  const quotes=new Map(facets.flatMap(f=>f.evidence.map(e=>[e.id,e] as const)));
+  if(quotes.size){
+    blocks.push({kind:'heading',text:'홈페이지 문구와 진단 근거'});
+    for(const f of facets.filter(f=>f.evidence.length))blocks.push({kind:'subheading',text:f.label},{kind:'body',text:`관련 원문 ${f.evidence.map(e=>e.id).join(' · ')} · ${f.why}`},{kind:'body',text:f.action});
+    for(const e of quotes.values())blocks.push({kind:'subheading',text:`${e.id} · ${e.heading||'수집 원문'}`},{kind:'body',text:e.text},{kind:'body',text:`${e.truncated?'일부 저장 · ':''}수집 위치 · ${e.sourceUrl}`,href:e.sourceUrl||undefined});
+  }
   blocks.push(...buildExecutionDocument(report));
   blocks.push(...buildPlatformApplicationDocument(report),...buildSiteGuidebookDocument(report));
   function walk(value:unknown,key='',depth=0) {

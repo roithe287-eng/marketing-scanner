@@ -14,6 +14,13 @@ export const changeLabels = {gained:'새로 인용',kept:'인용 유지',lost:'�
 export function canonicalPage(value:string):string|null {
   try {const u=new URL(value);if (!/^https?:$/.test(u.protocol)||u.username||u.password) return null;u.hash='';return u.href;} catch {return null;}
 }
+/** Only a redirect recorded for this request can extend the page identity. */
+export function matchesReportPage(report:Pick<MarketingReport,'url'|'pageEvidence'>,value:string):boolean {
+  const target=canonicalPage(value), submitted=canonicalPage(report.url);
+  if(!target||!submitted)return false;
+  const page=report.pageEvidence;
+  return target===submitted||!!page&&canonicalPage(page.requestedUrl)===submitted&&canonicalPage(page.finalUrl)===target;
+}
 export function parseReportReference(value:string, origin?:string):string|null {
   const raw=value.trim();if (/^[A-Za-z0-9]{4,12}$/.test(raw)) return raw;
   try {

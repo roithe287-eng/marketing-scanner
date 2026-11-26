@@ -1,6 +1,7 @@
 'use client';
 import {useState} from 'react';
 import type {SiteDiagnostics} from '@/lib/siteDiagnosticsSchema';
+import {useReportLocator} from './ReportJumpLink';
 import ReportItemPanels from './ReportItemPanels';
 import EvidenceFlow from './EvidenceFlow';
 import {RoleBox} from './ReportRole';
@@ -16,17 +17,23 @@ const findingGroups=[
 ];
 export default function SiteDiagnosticsPanel({audit}:{audit?:SiteDiagnostics}){
   const [filter,setFilter]=useState('all');
-  if(!audit)return <section className="report-card"><h3>페이지·기술 정밀 점검</h3><p className="report-note">이 보고서는 추가 점검 이전에 생성되었습니다. URL을 다시 진단하면 페이지 중복·구조화 데이터·AI 봇 정책을 확인할 수 있습니다.</p></section>;
+  const [selectedCheck,setSelectedCheck]=useState('');
+  useReportLocator('report-site-diagnostics',id=>{
+    const finding=audit?.findings.find(f=>`report-finding-${f.id}`===id);
+    if(!finding)return false;
+    setFilter('all');setSelectedCheck(finding.id);return true;
+  });
+  if(!audit)return <section className="report-card"><h3>페이지·기술 정밀 점검</h3><p className="report-note">이 URL의 페이지·기술 관측 기록이 없습니다. URL을 다시 진단하면 페이지 중복·구조화 데이터·AI 봇 정책을 확인할 수 있습니다.</p></section>;
   const available=findingGroups.filter(group=>audit.findings.some(f=>group.pattern.test(f.id)));
   const selected=available.find(group=>group.id===filter);
   const rows=selected?audit.findings.filter(f=>selected.pattern.test(f.id)):audit.findings;
-  return <section className="report-card official-seo site-diagnostics" aria-labelledby="site-diagnostics-title">
+  return <section className="report-card official-seo site-diagnostics" id="report-site-diagnostics" aria-labelledby="site-diagnostics-title">
     <div className="report-card-heading"><div><p className="report-eyebrow">PAGE · ENTITY · CRAWLER</p><h3 id="site-diagnostics-title">페이지·기술 정밀 점검</h3></div><div className="naver-reviewed"><span>관측 시각</span><time dateTime={audit.observedAt}>{Number.isFinite(Date.parse(audit.observedAt))?`${localTime.format(new Date(audit.observedAt))} (한국시간)`:audit.observedAt}</time></div></div>
     <p className="report-note">{audit.scopeNote}</p>
     <div className="naver-counts"><div data-state="observed"><span>수집한 HTML</span><strong>{audit.pages.length}<small>페이지</small></strong></div><div data-state="action"><span>보완 필요</span><strong>{audit.findings.filter(f=>f.status==='action').length}<small>항목</small></strong></div><div data-state="manual"><span>직접 확인</span><strong>{audit.findings.filter(f=>f.status==='review').length}<small>항목</small></strong></div></div>
     <InternalLinkAuditCard audit={audit.internalLinks}/>
     <div className="official-seo-controls"><label>확인할 점검 분야<select value={selected?.id||'all'} onChange={e=>setFilter(e.target.value)}><option value="all">전체 항목</option>{available.map(group=><option key={group.id} value={group.id}>{group.label}</option>)}</select></label><span role="status">{selected?.label||'전체 분야'}에서 {rows.length}개 점검 항목 표시</span></div>
-    {rows.length?<ReportItemPanels id="site-diagnostic-checks" label="정밀 점검 결과" items={rows.map(f=>({id:f.id,label:f.title,children:<details className="naver-check" data-state={f.status==='review'?'manual':f.status} open><summary><strong>{f.title}</strong><span className="naver-badge">{status[f.status]}</span><span aria-hidden="true">+</span></summary><div className="naver-check-body"><EvidenceFlow items={[{label:'확인 근거',role:'current',content:f.evidence}]}/><RoleBox role="proposal" label="다음에 확인할 것"><p>{f.action}</p></RoleBox><div className="naver-sources">{f.urls.map(url=><a key={url} href={url} target="_blank" rel="noopener noreferrer">관측 페이지 ↗</a>)}{f.id.startsWith('medical-')&&<a href="https://schema.org/MedicalClinic" target="_blank" rel="noopener noreferrer">Schema.org 의료기관 명세 ↗</a>}</div></div></details>}))}/>:<p className="report-empty">이 분야에서 확인된 점검 항목이 없습니다.</p>}
+    {rows.length?<ReportItemPanels selection={{id:selectedCheck,onSelect:setSelectedCheck}} id="site-diagnostic-checks" label="정밀 점검 결과" items={rows.map(f=>({id:f.id,label:f.title,children:<details id={`report-finding-${f.id}`} className="naver-check" data-state={f.status==='review'?'manual':f.status} open><summary><strong>{f.title}</strong><span className="naver-badge">{status[f.status]}</span><span aria-hidden="true">+</span></summary><div className="naver-check-body"><EvidenceFlow items={[{label:'확인 근거',role:'current',content:f.evidence}]}/><RoleBox role="proposal" label="다음에 확인할 것"><p>{f.action}</p></RoleBox><div className="naver-sources">{f.urls.map(url=><a key={url} href={url} target="_blank" rel="noopener noreferrer">관측 페이지 ↗</a>)}{f.id.startsWith('medical-')&&<a href="https://schema.org/MedicalClinic" target="_blank" rel="noopener noreferrer">Schema.org 의료기관 명세 ↗</a>}</div></div></details>}))}/>:<p className="report-empty">이 분야에서 확인된 점검 항목이 없습니다.</p>}
     <div className="site-diagnostics-records">
     <details className="naver-check"><summary><strong>직접 읽은 페이지와 추가 요청 기록<small>{audit.pages.length}개 페이지 · 추가 요청 {audit.attempts.length}건</small></strong><span aria-hidden="true">+</span></summary><div className="naver-check-body">
       {audit.pages.length?<div className="site-diagnostics-pages">{audit.pages.map(p=><div key={p.url}><a href={p.url} target="_blank" rel="noopener noreferrer">{p.title||'제목 미감지'} ↗</a><small>{p.url}</small><p>{p.description||'메타 설명 미감지'}</p><small>대표 URL: {p.canonicals.join(' · ')||'미감지'}{p.noindex?' · noindex 선언':''}</small></div>)}</div>:<p>비교 가능한 원문 페이지를 수집하지 못했습니다.</p>}
