@@ -17,9 +17,10 @@ import {industryReviewMessage} from './industryDecisionSchema';
 import {CommunityContextSchema,communityChecks} from './communityContext';
 
 export const PurposeKindSchema=z.enum(['commerce','service','organization','education','content','public_service','mixed','unknown']);
-const source=z.object({text:z.string().max(600),locator:z.string().max(1000)});
+const purposeUrl=z.string().max(4000).url().refine(value=>{try{const u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;}catch{return false;}});
+const source=z.object({text:z.string().max(600),locator:z.union([z.string().max(1000),purposeUrl])});
 export const WebsitePurposeSchema=z.object({
-  version:z.literal(1),kind:PurposeKindSchema,label:z.string().max(100),sourceUrl:z.string().max(4000).url().refine(value=>{try{const u=new URL(value);return /^https?:$/.test(u.protocol)&&!u.username&&!u.password;}catch{return false;}}),
+  version:z.literal(1),kind:PurposeKindSchema,label:z.string().max(100),sourceUrl:purposeUrl,
   capturedAt:z.string().datetime().optional(),evidence:z.array(source).max(8),
   goal:z.object({key:z.enum(['purchase','contact','booking','application','download','subscribe','start','read','unknown']),label:z.string().max(100),observed:z.boolean(),evidence:z.array(source).max(4)}),
   pricingObserved:z.boolean(),note:z.string().max(1000),

@@ -66,7 +66,7 @@ import Disclaimer from '@/components/Disclaimer';
 import GrowthPlanPanel from './GrowthPlanPanel';
 import GrowthKpiPanel from './GrowthKpiPanel';
 import {REPORT_CHAPTERS as chapters,ReportChapter as Chapter} from './ReportChapter';
-export default function ReportLayout({report:storedReport,actions,clinicWebAllowed=true,searchEvidenceAllowed=false,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;clinicWebAllowed?:boolean;searchEvidenceAllowed?:boolean;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
+export default function ReportLayout({report:storedReport,actions,canDeepDive=false,clinicWebAllowed=true,searchEvidenceAllowed=false,competitorLoading=false,onRetry,onComparisonChange}:{report:MarketingReport;actions?:React.ReactNode;canDeepDive?:boolean;clinicWebAllowed?:boolean;searchEvidenceAllowed?:boolean;competitorLoading?:boolean;onRetry?:()=>void;onComparisonChange?:(baseline?:DiagnosisBaseline)=>void}) {
   const report=useMemo(()=>reportForPresentation(storedReport),[storedReport]);
   const expiry=reportExpiry(report);
   const [expired,setExpired]=useState(false);
@@ -154,7 +154,7 @@ export default function ReportLayout({report:storedReport,actions,clinicWebAllow
           {detailedMap&&<ReadingDisclosure title="제목·메타 설명 비교 지도"><CompetitorLandscape report={report} productContextInScope={productContextInScope} linkToCandidateCards/></ReadingDisclosure>}
         </>},
         {id:'competition-messages',label:'제목·설명 표현 비교',children:<MessageMap data={data}/>},
-        ...(report.competitorAnalysis&&(data.competitorCount>0||report.competitorAnalysis.filtering)?[{id:'competition-pages',label:'후보별 페이지 자료',children:<CompetitorComparison competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/>}]:[]),
+        ...(report.competitorAnalysis&&data.competitorCount>0?[{id:'competition-pages',label:'후보별 페이지 자료',children:<CompetitorComparison canDeepDive={canDeepDive} competitorAnalysis={report.competitorAnalysis} ourUrl={report.url} ourTitle={report.meta?.siteName||report.meta?.ogTitle}/>}]:[]),
         ...(!report.evidenceReview&&report.industryBenchmark?[{id:'competition-benchmark',label:'업종 표본',children:<IndustryBenchmarkCard benchmark={report.industryBenchmark}/>}]:[]),
       ]}/>
     </Chapter>

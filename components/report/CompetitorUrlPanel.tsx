@@ -24,10 +24,10 @@ export default function CompetitorUrlPanel({analysis:stored,linkToDetails=false}
   const steps=[
     {label:'비교 기준',value:basis||'저장 근거 확인'},
     {label:'원문 확인 시도',value:typeof checked==='number'?`${checked}곳`:'저장 기록 확인'},
-    {label:'비교 후보',value:`${candidates.length}곳`},
+    {label:'비교 후보',value:research?.selectionStatus==='insufficient_source'?'판정 보류':`${candidates.length}곳`},
   ];
   return <section className="report-card report-competitor-urls" data-page-model="competitor-urls" aria-label={official?'가발·헤어피스 경쟁사':'경쟁사 원문 URL'}>
-    <header><h3>{official?'같은 상품군을 판매하는 공식몰':confirmed?'원문으로 확인한 경쟁사':'저장된 경쟁사 후보'}</h3></header>
+    <header><h3>{!candidates.length?'경쟁사 후보 확인 결과':official?'같은 상품군을 판매하는 공식몰':confirmed?'원문으로 확인한 경쟁사':'저장된 경쟁사 후보'}</h3></header>
     <ol className="report-competitor-flow" aria-label="경쟁사 선정 과정">
       {steps.map(({label,value})=><li key={label}><span>{label}</span><strong>{value}</strong></li>)}
     </ol>

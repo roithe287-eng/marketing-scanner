@@ -10,7 +10,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { CompetitorDeepDiveSchema, type CompetitorDeepDive } from "../lib/reportSchema";
-import {requestJson} from '@/lib/client/request';
+import {requestJson,RequestError} from '@/lib/client/request';
 
 type Props = {
   open: boolean;
@@ -30,7 +30,8 @@ export default function CompetitorDeepDiveModal({
   ourTitle,
 }: Props) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{message:string;retryable:boolean} | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const [data, setData] = useState<CompetitorDeepDive | null>(null);
 
   const dialogRef=useRef<HTMLDivElement>(null);
@@ -89,10 +90,15 @@ export default function CompetitorDeepDiveModal({
         if(!parsed.success)throw new Error('경쟁사 상세 결과 형식을 확인하지 못했습니다. 다시 시도해 주세요.');
         if(!controller.signal.aborted)setData(parsed.data);
       })
-      .catch((e) => {if(!controller.signal.aborted)setError(e?.message || "딥다이브 분석 실패");})
+      .catch((error:unknown) => {
+        if(!controller.signal.aborted)setError({
+          message:error instanceof Error?error.message:'상세 분석 결과를 확인하지 못했습니다.',
+          retryable:error instanceof RequestError&&(error.status===0||error.status===408||error.status>=500),
+        });
+      })
       .finally(() => {if(!controller.signal.aborted)setLoading(false);});
     return()=>controller.abort();
-  }, [open, targetUrl, ourDomain, ourTitle]);
+  }, [open, targetUrl, ourDomain, ourTitle, attempt]);
 
   if (!open) return null;
 
@@ -131,33 +137,30 @@ export default function CompetitorDeepDiveModal({
         <div className="flex-1 overflow-y-auto p-5 md:p-6">
           {/* Loading */}
           {loading && (
-            <div className="flex flex-col items-center justify-center py-16 md:py-20">
+            <div role="status" className="flex flex-col items-center justify-center py-16 md:py-20">
               <div className="w-12 h-12 md:w-14 md:h-14 rounded-full border-4 border-neutral-200 border-t-neutral-900 animate-spin mb-4" />
               <p className="text-[14px] md:text-[15px] text-neutral-700 font-semibold">
                 경쟁사 심층 분석 중...
               </p>
               <p className="text-[12px] md:text-[13px] text-neutral-500 mt-1">
-                5~15초 소요 예정
+                선택한 페이지의 제목과 고객이 누르는 버튼을 확인합니다.
               </p>
             </div>
           )}
 
           {/* Error */}
           {error && !loading && (
-            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 md:p-6">
+            <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-5 md:p-6">
               <div className="flex items-start gap-3">
                 <span className="text-[20px]">❌</span>
                 <div className="min-w-0">
                   <h4 className="text-[15px] md:text-[16px] font-bold text-rose-800 mb-1">
-                    딥다이브 실패
+                    상세 분석을 완료하지 못했습니다
                   </h4>
                   <p className="text-[13px] md:text-[14px] text-rose-700 break-words">
-                    {error}
+                    {error.message}
                   </p>
-                  <p className="text-[12px] md:text-[13px] text-rose-600/80 mt-2 leading-relaxed">
-                    경쟁사 사이트가 접근을 차단했거나, 응답 시간이 초과되었을 수
-                    있습니다.
-                  </p>
+                  {error.retryable&&<button type="button" className="jm-button mt-4" onClick={()=>setAttempt(n=>n+1)}>이 페이지 다시 분석</button>}
                 </div>
               </div>
             </div>

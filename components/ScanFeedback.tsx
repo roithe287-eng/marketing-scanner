@@ -6,9 +6,11 @@ type Props = {
   error: string | null;
   restrictedReport: RestrictedWebsiteReport | null;
   hasPreviousResult: boolean;
+  previousUrl?: string;
+  submittedUrl?: string;
 };
 
-export default function ScanFeedback({loading, error, restrictedReport, hasPreviousResult}: Props) {
+export default function ScanFeedback({loading, error, restrictedReport, hasPreviousResult, submittedUrl, previousUrl}: Props) {
   if (loading) {
     return <div className="scanner-scan-feedback scanner-scan-feedback--loading" role="status">
       <span className="scanner-scan-spinner animate-spin" aria-hidden="true" />
@@ -23,7 +25,8 @@ export default function ScanFeedback({loading, error, restrictedReport, hasPrevi
     return <div className="scanner-scan-feedback scanner-scan-feedback--notice" role="alert">
       <p className="scanner-scan-title">{hasPreviousResult ? '새 진단을 완료하지 못했습니다' : '분석을 완료하지 못했습니다'}</p>
       <p>{error}</p>
-      {hasPreviousResult && <p>이전 진단 결과는 아래에서 확인할 수 있습니다.</p>}
+      {submittedUrl&&<p className="scanner-feedback-url">요청한 주소 <b>{submittedUrl}</b></p>}
+      {hasPreviousResult && <div className="scanner-scan-actions"><a href="#report-area">이전 진단 결과 보기{previousUrl&&<span> · {previousUrl}</span>}</a></div>}
     </div>;
   }
 

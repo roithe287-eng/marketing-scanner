@@ -23,11 +23,7 @@ function ObservationBars({data}:{data:ReportInsights}){
 
 export default function ReportOutcomeVisuals({report,data,firstTaskCount}:{report:MarketingReport;data:ReportInsights;firstTaskCount:number}){
   const audit=report.siteDiagnostics;
-  const status=report.competitorAnalysis?.research?.selectionStatus;
-  const pending=report.competitorStatus?.status==='pending';
-  const checked=!pending&&status!=='lookup_unavailable'&&status!=='insufficient_source'?report.competitorAnalysis?.filtering?.metadataCheckedCount:undefined;
-  const competitorNotice=pending?'경쟁사 원문 확인 중':status==='lookup_unavailable'?'공식 URL 조회 미완료':status==='insufficient_source'?'비교할 원문 근거 부족':
-    data.competitorCount>0?`저장 후보 ${data.competitorCount}곳`:'저장된 비교 자료 없음';
+  const checked=data.collection.measured?report.competitorAnalysis?.filtering?.metadataCheckedCount:undefined;
   const schedules=[
     ['즉시',report.priorityRoadmap.immediately.length],
     ['이번 주',report.priorityRoadmap.thisWeek.length],
@@ -41,7 +37,7 @@ export default function ReportOutcomeVisuals({report,data,firstTaskCount}:{repor
       <CountPair unit="개" items={[{label:'수집 페이지',count:audit.pages.length},{label:'기술 점검 결과',count:audit.findings.length}]}/>:<span className="report-outcome-empty">수집한 페이지 자료 없음</span>},
     {id:'competition',target:'report-view-competition-map',title:'경쟁사 URL',icon:'adLanding',link:'공식 URL과 근거 보기',content:checked!==undefined?
       <CountPair unit="곳" items={[{label:'원문 확인 시도',count:checked},{label:'남은 비교 후보',count:data.competitorCount}]}/>:
-      <span className="report-outcome-empty">{competitorNotice}</span>},
+      <span className="report-outcome-empty">{data.collection.label}</span>},
     {id:'actions',target:priorityOnly?'report-view-overview-priority':'report-view-actions-schedule',title:priorityOnly?'우선 작업':'실행 일정',icon:'conversionFlow',link:priorityOnly?'우선 작업 보기':'시점별 작업 보기',content:scheduled?
       <span className="report-outcome-timeline">{schedules.map(([label,count])=><span key={label} data-assigned={count>0}><small>{label}</small><strong>{count}개</strong></span>)}</span>:
       <span className="report-outcome-empty">{firstTaskCount>0?`우선 확인 작업 ${firstTaskCount}개`:'배정된 일정 없음'}</span>},

@@ -1,3 +1,5 @@
+import {z} from 'zod';
+
 export type LandingActivity = {
   requested: number;
   completed: number;
@@ -12,6 +14,33 @@ export type LandingCard = {
   byline?: string;
   sourceUrl?: string;
 };
+
+export const landingReviewSchema = z.object({
+  title: z.string().trim().min(1).max(70),
+  text: z.string().trim().min(1).max(240),
+  byline: z.string().trim().min(1).max(40),
+  industry: z.string().trim().min(1).max(24).optional(),
+  sourceUrl: z.string().url().max(512).refine(value => {
+    try {const url=new URL(value);return url.protocol==='https:'&&!url.username&&!url.password;}
+    catch{return false;}
+  }).optional(),
+});
+
+const totalsSchema=z.object({requested:z.number().int().safe().nonnegative(),completed:z.number().int().safe().nonnegative()});
+const publishedCard=landingReviewSchema.extend({id:z.string().min(1),kind:z.literal('review')});
+
+export function readLandingSnapshot(input:unknown) {
+  const envelope=z.object({activity:z.unknown(),reviews:z.unknown()}).safeParse(input);
+  const totals=totalsSchema.safeParse(envelope.success?envelope.data.activity:null);
+  const entries=envelope.success?envelope.data.reviews:null;
+  const valid=Array.isArray(entries)?entries.slice(0,20).flatMap(entry=>{
+    const card=publishedCard.safeParse(entry);
+    return card.success?[card.data]:[];
+  }):[];
+  const reviews=Array.isArray(entries)&&(entries.length===0||valid.length>0)?valid:null;
+  return {activity:totals.success?totals.data:null,reviews,complete:totals.success&&Array.isArray(entries)&&valid.length===entries.length};
+
+}
 
 const reviewExamples = [
   {id:'beauty', industry:'뷰티 쇼핑몰', quotes:[

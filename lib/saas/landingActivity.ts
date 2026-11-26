@@ -1,5 +1,4 @@
-import {z} from 'zod';
-import type {LandingActivity, LandingCard} from '../landingActivity';
+import {landingReviewSchema,type LandingActivity,type LandingCard} from '../landingActivity';
 import {NETWORK_ACTIVITY_ID} from './activityTypes';
 import {db, key} from './store';
 
@@ -32,25 +31,13 @@ export async function readLandingActivity(namespace = key('')): Promise<LandingA
   return activity;
 }
 
-const reviewSchema = z.object({
-  title: z.string().trim().min(1).max(70),
-  text: z.string().trim().min(1).max(240),
-  byline: z.string().trim().min(1).max(40),
-  industry: z.string().trim().min(1).max(24).optional(),
-  sourceUrl: z.string().url().max(512).refine(value => {
-    if (!URL.canParse(value)) return false;
-    const url = new URL(value);
-    return url.protocol === 'https:' && !url.username && !url.password;
-  }).optional(),
-});
-
 export function publicLandingReviews(raw = process.env.SCANNER_PUBLIC_REVIEWS_JSON): LandingCard[] {
   if (!raw) return [];
   try {
     const data: unknown = JSON.parse(raw);
     if (!Array.isArray(data)) return [];
     const reviews = data.slice(0, 20).flatMap(entry => {
-      const parsed = reviewSchema.safeParse(entry);
+      const parsed = landingReviewSchema.safeParse(entry);
       return parsed.success ? [parsed.data] : [];
     });
     return reviews.filter((review, index) => reviews.findIndex(item => item.text === review.text) === index)
